@@ -11,4 +11,8 @@
     <Folder Include="wwwroot\uploads\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="bootstrap" Version="5.3.7" />
+  </ItemGroup>
+
 </Project>
