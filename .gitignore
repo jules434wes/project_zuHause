@@ -1,0 +1,26 @@
+.vs/
+*.user
+
+bin/
+obj/
+
+*.nupkg
+project.lock.json
+project.assets.json
+*.nuget.cache
+*.nuget.dgspec.json
+*.nuget.g.props
+*.nuget.targets
+
+**/CopilotIndices/
+**/SemanticSymbols.*
+
+# Others
+*.suo
+*.cache
+*.db
+*.db-wal
+*.db-shm
+*.vshost.*
+*.log
+node_modules/
