@@ -1,0 +1,51 @@
+﻿@model zuHause.ViewModels.ProductViewModel
+@{
+    ViewBag.Tile = "家具詳細資訊";
+    Layout = "~/Views/Shared/_NavigationBar.cshtml";  //目前使用的導覽列
+    var categories = ViewBag.categories as List<zuHause.ViewModels.FurnitureCategories>;
+}
+<div class="row">
+    <!-- 左側分類清單 -->
+    <div class="col-md-3">
+        @Html.Partial("_FurnitureCategoryList", categories)
+    </div>
+
+    <!-- 商品詳細內容 -->
+    <div class="col-md-9">
+        <h2 class="mb-4">@Model.name</h2>
+        <div class="row">
+            <div class="col-md-6">
+                <img src="@Model.imageUrl" class="img-fluid" alt="商品圖片">
+            </div>
+            <div class="col-md-6">
+                <h4 class="text-danger">售價：NT$45,200</h4>
+                <p>每日租金：NT$45</p>
+                <p>租期總天數：196 天</p>
+                <p>總租金：NT$8,820   (租期*日租金)</p>
+
+                <ul>
+                    <li>義大利Nappa牛皮</li>
+                    <li>T-Motion電機</li>
+                    <li>180度平躺 + 電動起身</li>
+                    <li>震動 + 加熱功能</li>
+                </ul>
+
+                <div class="mb-3 bg-info-subtle p-3 rounded">
+                    <strong class="text-danger">目前綁定房源</strong><br />
+                    房屋編號：A00001<br />
+                    房屋到期日：2025-12-31<br />
+                    房客：OO小姐
+                </div>
+
+                <div class="mb-3">
+                    <label for="houseSelect">選擇房源</label>
+                    <select class="form-select" id="houseSelect">
+                        <option>房屋編號：A00001</option>
+                    </select>
+                </div>
+
+                <button class="btn btn-info text-white w-100">加入租借清單</button>
+            </div>
+        </div>
+    </div>
+</div>
