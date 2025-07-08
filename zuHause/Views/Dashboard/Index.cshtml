@@ -1,0 +1,21 @@
+﻿@{
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+    ViewData["Title"] = "Dashboard";
+    var tab = ViewBag.Tab as string ?? "overview";
+}
+
+@* 當前頁籤顯示（可選） *@
+<h4>當前：@ViewBag.CurrentTabName</h4>
+
+@* 根據 tab 載入不同頁籤 *@
+@{
+    string partialView = $"_Tab_{tab}";
+    try
+    {
+        @await Html.PartialAsync(partialView)
+    }
+    catch
+    {
+        <div class="alert alert-danger">找不到對應的頁籤：@tab</div>
+    }
+}

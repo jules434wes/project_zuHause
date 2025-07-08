@@ -1,0 +1,95 @@
+﻿@{
+    var currentRole = "超級管理員"; // 未來可從登入者取得
+    var currentTab = ViewBag.CurrentTab as string ?? ""; // 用來加上 active 樣式
+
+    var roleAccess = new Dictionary<string, string[]> {
+        { "超級管理員", new[] { "overview", "monitor", "behavior", "orders", "system", "roles", "Backend_user_list", "contract_template", "platform_fee", "imgup", "furniture_fee", "Marquee_edit", "furniture_management" } },
+        { "管理員", new[] { "overview", "behavior", "orders" } },
+        { "房源審核員", new[] { "monitor" } },
+        { "客服", new[] { "behavior", "orders" } }
+    };
+
+    var tabNames = new Dictionary<string, string> {
+        { "overview", "📊 平台整體概況" },
+        { "monitor", "📦 商品/房源監控" },
+        { "behavior", "👤 用戶行為監控" },
+        { "orders", "🛒 訂單金流" },
+        { "system", "🛠️ 系統狀態" },
+        { "roles", "👑 角色管理" },
+        { "Backend_user_list", "👨‍💻 後臺用戶" },
+        { "contract_template", "📄 合約範本" },
+        { "platform_fee", "💰 費用設定" },
+        { "imgup", "🖼️ 輪播圖片" },
+        { "furniture_fee", "🚚 配送費設定" },
+        { "Marquee_edit", "🎠 跑馬燈管理" },
+        { "furniture_management", "📦 家具管理" }
+    };
+
+    var groupTabs = new Dictionary<string, (string title, string[] keys)> {
+        { "dashboard", ("📊 儀表板", new[] { "overview", "monitor", "behavior", "orders", "system" }) },
+        { "permission", ("🛡️ 權限管理", new[] { "roles", "Backend_user_list" }) },
+        { "template", ("📂 模板管理", new[] { "contract_template" }) },
+        { "image_text", ("🖼️ 圖片與文字管理", new[] { "imgup", "Marquee_edit", "furniture_management" }) },
+        { "fee", ("💸 平台費用設定", new[] { "platform_fee", "furniture_fee" }) },
+    };
+}
+
+<style>
+    .sidebar-group-title {
+        font-weight: bold;
+        margin: 16px 0 8px 10px;
+        font-size: 0.95rem;
+    }
+
+    .sidebar-link {
+        display: flex;
+        align-items: center;
+        padding: 8px 12px;
+        color: #000;
+        text-decoration: none;
+        border-radius: 6px;
+        transition: background-color 0.2s;
+        font-size: 0.95rem;
+    }
+
+        .sidebar-link:hover {
+            background-color: #e9ecef;
+        }
+
+        .sidebar-link.active {
+            background-color: #dee2e6;
+            font-weight: bold;
+        }
+
+        .sidebar-link span.icon {
+            margin-right: 8px;
+            font-size: 1.1rem;
+        }
+</style>
+
+<div>
+    @foreach (var group in groupTabs)
+    {
+        var groupTitle = group.Value.title;
+        var keys = group.Value.keys;
+        var showItems = keys.Where(k => roleAccess[currentRole].Contains(k)).ToList();
+
+        if (showItems.Any())
+        {
+            <div class="mb-3">
+                <div class="sidebar-group-title">@groupTitle</div>
+                @foreach (var key in showItems)
+                {
+                    var isActive = currentTab == key ? "active" : "";
+                    var label = tabNames[key] as string ?? "";
+                    var icon = label.Length >= 2 ? label.Substring(0, 2) : "";
+                    var text = label.Length > 2 ? label.Substring(2) : label;
+
+                    <a class="sidebar-link @isActive" href="javascript:void(0);" onclick="openTab('@key', '@label', '@Url.Action("Index", "Dashboard", new { tab = key })')">
+                        <span class="icon">@icon</span> @text
+                    </a>
+                }
+            </div>
+        }
+    }
+</div>
