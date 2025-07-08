@@ -1,0 +1,46 @@
+﻿@model dynamic
+@{
+    ViewBag.Title = "商品分類";
+    Layout = "~/Views/Shared/_NavigationBar.cshtml";
+
+    var products = ViewBag.Products as List<zuHause.ViewModels.ProductViewModel>;
+    var categories = ViewBag.categories as List<zuHause.ViewModels.FurnitureCategories>;
+}
+
+<div class="row">
+    <!-- 左側分類選單 -->
+    <div class="col-md-3">
+        @await Html.PartialAsync("_FurnitureCategoryList", categories)
+    </div>
+
+    <!-- 右側商品卡片區 -->
+    <div class="col-md-9">
+        <h3 class="mb-4">分類商品列表：</h3>
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4">
+            @if (products != null && products.Count > 0)
+            {
+                foreach (var item in products)
+                {
+                    <div class="col">
+                        <div class="card h-100 shadow-sm">
+                            <img src="@item.imageUrl" class="card-img-top" alt="@item.name" />
+                            <div class="card-body">
+                                <h5 class="card-title">@item.name</h5>
+                                <p class="card-text">@item.description</p>
+                            </div>
+                            <div class="card-footer text-end">
+                                <a href="@Url.Action("ProductPurchasePage", "Furniture", new { id = item.productId })" class="btn btn-primary">
+                                    查看商品
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <p>此分類下目前沒有商品。</p>
+            }
+        </div>
+    </div>
+</div>
