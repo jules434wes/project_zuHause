@@ -2,41 +2,54 @@
 
 namespace zuHause.Controllers
 {
+    [Route("Dashboard")]
     public class DashboardController : Controller
     {
-       
-        public IActionResult Index(string tab = "overview")
+        [HttpGet("")]
+        public IActionResult Index()
         {
-            ViewBag.Tab = tab;
-            ViewBag.CurrentTabName = GetTabName(tab);
-
-            // 模擬登入者資訊
-            ViewBag.UserName = "使用者名稱";
-            ViewBag.UserId = "使用者編號";
-            ViewBag.UserRole = "超級管理員";
+            ViewBag.Role = "超級管理員";
+            ViewBag.EmployeeID = "9527";
+            ViewBag.RoleAccess = new Dictionary<string, List<string>> {
+                { "超級管理員", new List<string>{ "overview", "monitor", "behavior", "orders", "system", "roles", "Backend_user_list", "contract_template", "platform_fee", "imgup", "furniture_fee", "Marquee_edit", "furniture_management" } },
+                { "管理員", new List<string>{ "overview", "behavior", "orders" } },
+                { "房源審核員", new List<string>{ "monitor" } },
+                { "客服", new List<string>{ "behavior", "orders" } }
+                    };
             return View();
-        }
-        private string GetTabName(string tab)
-        {
-            var tabNames = new Dictionary<string, string>
-            {
-                { "overview", "📊 平台整體概況" },
-                { "monitor", "📦 商品/房源監控" },
-                { "behavior", "👤 用戶行為監控" },
-                { "orders", "🛒 訂單金流" },
-                { "system", "🛠️ 系統狀態" },
-                { "roles", "👑 角色管理" },
-                { "Backend_user_list", "👨‍💻 後臺用戶" },
-                { "contract_template", "📄 合約範本" },
-                { "platform_fee", "💰 費用設定" },
-                { "imgup", "🖼️ 輪播圖片" },
-                { "furniture_fee", "🚚 配送費設定" },
-                { "Marquee_edit", "🎠 跑馬燈管理" },
-                { "furniture_management", "📦 家具管理" }
-            };
 
-            return tabNames.ContainsKey(tab) ? tabNames[tab] : "未知";
+
         }
+        [HttpGet("{id}")]
+        public IActionResult LoadTab(string id)
+        {
+            if (string.IsNullOrWhiteSpace(id)) return NotFound();
+
+            var viewPath = $"~/Views/Dashboard/Partial/{id}.cshtml";
+            if (!System.IO.File.Exists(System.IO.Path.Combine(Directory.GetCurrentDirectory(), "Views", "Dashboard", "Partial", $"{id}.cshtml")))
+            {
+                return Content($"⚠️ 找不到對應的分頁檔案：{id}");
+            }
+
+            return PartialView(viewPath);
+
+        }
+
+        public IActionResult Backend_user_list()
+        {
+            return PartialView("Partial/_Backend_user_list");
+        }
+
+
+
+
+
+
+
+
+
+
     }
+
 
 }

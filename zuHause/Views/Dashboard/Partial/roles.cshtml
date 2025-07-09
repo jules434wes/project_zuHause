@@ -1,0 +1,22 @@
+﻿<div class='row g-3'>
+    <div class='col-md-12'>
+        <div class='card p-3'>
+            <h5>身分權限列表</h5>
+            <ul class='list-group mb-3' id='roleList'></ul>
+
+            <h6>新增身分</h6>
+            <input type='text' class='form-control mb-2' id='newRoleInput' placeholder='輸入新角色名稱'>
+
+            <label>選擇功能權限：</label>
+            <div class='form-check'><input class='form-check-input' type='checkbox' id='chkOverview'><label class='form-check-label'>📊平台概況</label></div>
+            <div class='form-check'><input class='form-check-input' type='checkbox' id='chkMonitor'><label class='form-check-label'>📦商品監控</label></div>
+            <div class='form-check'><input class='form-check-input' type='checkbox' id='chkBehavior'><label class='form-check-label'>👤用戶行為</label></div>
+            <div class='form-check'><input class='form-check-input' type='checkbox' id='chkOrders'><label class='form-check-label'>🛒訂單金流</label></div>
+            <div class='form-check mb-2'><input class='form-check-input' type='checkbox' id='chkSystem'><label class='form-check-label'>🛠️系統健康</label></div>
+
+            <div class="col-auto">
+                <button class="btn btn-success" onclick="addRole()">新增角色</button>
+            </div>
+        </div>
+    </div>
+</div>
