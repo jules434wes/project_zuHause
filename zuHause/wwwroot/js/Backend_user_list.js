@@ -47,7 +47,8 @@
     }
 
     // 🔁 渲染表格
-    function renderUserTable() {
+    window.renderUserTable = function ()
+    {
         const users = getUsers();
         const tbody = document.getElementById("backendUserTable");
         tbody.innerHTML = "";

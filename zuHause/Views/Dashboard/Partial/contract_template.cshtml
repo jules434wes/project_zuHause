@@ -3,3 +3,39 @@
 *@
 @{
 }
+<div class="row g-3">
+    <div class="col-md-4">
+        <div class="card h-100 p-3">
+            <h5 class="mb-3">📁 範本列表</h5>
+            <div id="fileList" style="max-height: 600px; overflow-y: auto;" class="border rounded p-2 bg-light"></div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <div class="card h-100 p-3">
+            <h5 class="mb-3">📄 上傳與預覽</h5>
+
+            <div class="mb-3">
+                <label class="form-label">選擇 合約 檔案</label>
+                <input type="file" class="form-control" id="fileInput" accept=".html,text/html">    
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">檔案名稱</label>
+                <input type="text" class="form-control" id="fileNameInput" placeholder="請輸入檔案名稱">
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">畫面預覽</label>
+                <div class="border rounded bg-light" style="height: 400px; overflow: auto;">
+                    <iframe id="pdfPreview" style="width: 100%; height: 100%; border: none;"></iframe>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2">
+                <button class="btn btn-success" onclick="uploadFile()">✅ 確認上傳</button>
+                <button class="btn btn-outline-danger" onclick="cancelUpload()">❌ 取消上傳</button>
+            </div>
+        </div>
+    </div>
+</div>

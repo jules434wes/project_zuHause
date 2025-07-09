@@ -158,6 +158,12 @@ function openTab(tabKey) {
                     if (tabKey === "roles" && typeof updateRoleListWithPermissions === "function") {
                         updateRoleListWithPermissions();
                     }
+                     if (tabKey === "Backend_user_list" && typeof renderUserTable === "function") {
+                        renderUserTable();
+                    }
+                    if (tabKey === "contract_template" && typeof renderTemplateList === "function") {
+                        renderTemplateList();
+                    }
                 };
 
                 document.body.appendChild(script);
