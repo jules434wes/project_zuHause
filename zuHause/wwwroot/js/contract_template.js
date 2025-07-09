@@ -2,27 +2,22 @@
     const STORAGE_KEY = "contractTemplates";
 
     // 初始化
-    document.addEventListener("DOMContentLoaded", () => {
-        renderTemplateList();
-
-        const input = document.getElementById("fileInput");
-        if (input) {
-            input.addEventListener("change", handleFilePreview);
-        }
-    });
+    
+    
 
     // 立即預覽 HTML
     function handleFilePreview(event) {
+        console.log("📥 選擇檔案事件觸發");
         const file = event.target.files[0];
         if (!file || !file.name.endsWith(".html")) {
             alert("請上傳 .html 檔案");
             return;
         }
-
+        console.log("✅ 正確的 HTML 檔案被選擇：", file.name);
         const reader = new FileReader();
         reader.onload = (e) => {
             const htmlContent = e.target.result;
-
+            console.log("📄 檔案內容成功讀取");
             // ✅ 建立 blob URL 作為 iframe 預覽內容
             const blob = new Blob([htmlContent], { type: "text/html" });
             const previewUrl = URL.createObjectURL(blob);
@@ -36,6 +31,7 @@
 
             iframe.src = previewUrl;
             iframe.dataset.url = previewUrl; // 儲存目前 URL 做清除用
+            console.log("🔍 iframe 已設為預覽 URL");
         };
         reader.readAsText(file);
     }
@@ -106,9 +102,22 @@
         if (!confirm("確定要刪除這個範本？")) return;
 
         const list = getTemplates();
+        const deletedItem = list[index];
+
+        // 執行刪除
         list.splice(index, 1);
         saveTemplates(list);
         renderTemplateList();
+
+        // 如果正在預覽的是被刪除的那一筆，就清除預覽
+        const iframe = document.getElementById("pdfPreview");
+        const currentSrcDoc = iframe?.srcdoc || "";
+        if (deletedItem && currentSrcDoc === deletedItem.content) {
+            iframe.srcdoc = "";
+            iframe.src = "about:blank";
+            document.getElementById("fileNameInput").value = "";
+        }
+
         cancelUpload();
     };
 
@@ -137,4 +146,15 @@
     function saveTemplates(list) {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
     }
+    // 🔧 提供外部呼叫初始化事件綁定用（給 dashboard.js 用）
+    window.bindContractUploadEvents = () => {
+        const input = document.getElementById("fileInput");
+        if (input) {
+            console.log("📎 bindContractUploadEvents: input found");
+            input.addEventListener("change", handleFilePreview);
+        } else {
+            console.warn("❌ bindContractUploadEvents: 找不到 input 元素");
+        }
+    };
+
 })();

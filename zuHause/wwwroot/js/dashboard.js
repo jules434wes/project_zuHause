@@ -161,9 +161,14 @@ function openTab(tabKey) {
                      if (tabKey === "Backend_user_list" && typeof renderUserTable === "function") {
                         renderUserTable();
                     }
-                    if (tabKey === "contract_template" && typeof renderTemplateList === "function") {
-                        renderTemplateList();
+                    if (tabKey === "contract_template") {
+                        if (typeof renderTemplateList === "function") renderTemplateList();
+                        if (typeof bindContractUploadEvents === "function") bindContractUploadEvents(); // 👈 這要新增
                     }
+                    if (tabKey === "furniture_management") {
+            // 你也可以判斷是否要初始化資料或執行 resetForm
+            if (typeof resetForm === "function") resetForm();
+        }
                 };
 
                 document.body.appendChild(script);
