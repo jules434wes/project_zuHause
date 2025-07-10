@@ -1,5 +1,10 @@
+using zuHause.Data; // ← 加這行
+using Microsoft.EntityFrameworkCore;
 var builder = WebApplication.CreateBuilder(args);
-
+// 加入資料庫連線字串
+builder.Services.AddDbContext<ZuhauseDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("ZuhauseDb"))
+);
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 

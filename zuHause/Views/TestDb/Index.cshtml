@@ -1,0 +1,9 @@
+﻿@model List<zuHause.Models.Member>
+
+<h2>成員資料（前5筆）</h2>
+<ul>
+    @foreach (var m in Model)
+    {
+        <li>@m.MemberID - @m.MemberName - @m.Email</li>
+    }
+</ul>
