@@ -165,14 +165,22 @@ function openTab(tabKey) {
                         if (typeof renderTemplateList === "function") renderTemplateList();
                         if (typeof bindContractUploadEvents === "function") bindContractUploadEvents(); // 👈 這要新增
                     }
-                    if (tabKey === "furniture_management") {
-            // 你也可以判斷是否要初始化資料或執行 resetForm
-            if (typeof resetForm === "function") resetForm();
-        }
+                    if (tabKey === "furniture_management"){
+                    // 你也可以判斷是否要初始化資料或執行 resetForm
+                        if (typeof resetForm === "function") resetForm();
+                    }
+                    if (tabKey === "platform_fee") {
+                        if (typeof initPlatformFee === "function") initPlatformFee();
+                    }
+                    if (tabKey === "furniture_fee") {
+                        if (typeof initShipFee === "function") initShipFee();
+                    }
                 };
 
                 document.body.appendChild(script);
             }
+
+
         });
 
 
