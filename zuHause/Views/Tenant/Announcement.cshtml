@@ -1,0 +1,100 @@
+﻿<div class="page-container">
+    <div class="content-wrapper">
+        <aside class="sidebar">
+            <div class="logo">
+                <img src="/images/zuHause_Logo.svg" alt="zuHause Logo">
+            </div>
+            <nav class="main-nav">
+                <ul>
+                    <li class="nav-item active" data-content-id="announcements"><a href="#">公告</a></li>
+                    <li class="nav-item" data-content-id="terms"><a href="#">服務條款</a></li>
+                    <li class="nav-item" data-content-id="disclaimer"><a href="#">免責聲明</a></li>
+                    <li class="nav-item" data-content-id="privacy"><a href="#">隱私權說明</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <section id="announcements" class="content-section active">
+                <h1>公告介紹</h1>
+                <div class="announcement-list">
+                    <article class="announcement-item expanded">
+                        <div class="announcement-header">
+                            <h2 class="announcement-title">公告1</h2>
+                            <span class="last-modified-date">最後修改日期: 2025年7月2日</span>
+                        </div>
+                        <div class="announcement-body">
+                            <div class="announcement-content">
+                                <p>親愛的用戶您好：</p>
+                                <p>為提供更穩定優質的服務，本公司將於以下時間進行系統維護：</p>
+                                <ul>
+                                    <li>日期：2025年7月5日</li>
+                                    <li>時間：凌晨 01:00 至 03:00</li>
+                                </ul>
+                                <p>維護期間部分服務將暫停，造成不便敬請見諒。</p>
+                            </div>
+                            <button class="toggle-button">點擊收起 <span class="arrow up"></span></button>
+                        </div>
+                    </article>
+
+                    <article class="announcement-item">
+                        <div class="announcement-header">
+                            <h2 class="announcement-title">公告2</h2>
+                            <span class="last-modified-date">最後修改日期: 2025年6月30日</span>
+                        </div>
+                        <div class="announcement-body">
+                            <div class="announcement-content">
+                                <p>這是一個示範公告2的內文，當點擊時會展開。</p>
+                                <p>可以包含更多文字、圖片、連結等。</p>
+                            </div>
+                            <button class="toggle-button">點擊收起 <span class="arrow up"></span></button>
+                        </div>
+                    </article>
+
+                </div>
+
+                <div class="pagination">
+                    <a href="#" class="page-link active">1</a>
+                    <a href="#" class="page-link">2</a>
+                    <a href="#" class="page-link">3</a>
+                    <a href="#" class="page-link">4</a>
+                    <span>...</span>
+                    <a href="#" class="page-link">下一頁</a>
+                </div>
+            </section>
+
+            <section id="terms" class="content-section">
+                <h1>服務條款</h1>
+                <div class="document-content">
+                    <p>這是服務條款的詳細內容。</p>
+                    <p>通常會是一大段文字，可以分段落、加粗等。</p>
+                </div>
+            </section>
+
+            <section id="disclaimer" class="content-section">
+                <h1>免責聲明</h1>
+                <div class="document-content">
+                    <p>這是免責聲明的詳細內容。</p>
+                </div>
+            </section>
+
+            <section id="privacy" class="content-section">
+                <h1>隱私權說明</h1>
+                <div class="document-content">
+                    <p>這是隱私權說明的詳細內容。</p>
+                </div>
+            </section>
+
+        </main>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/Announcement.js" asp-append-version="true"></script>
+    @*
+        // 解釋：
+        // `~/` 會映射到 `wwwroot`。
+        // `asp-append-version="true"` 確保瀏覽器載入最新版本。
+        // 由於只在這裡引用，這個 JS 只會在公告頁面載入。
+    *@
+}

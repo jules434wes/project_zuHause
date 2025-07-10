@@ -1,0 +1,239 @@
+﻿/* Custom CSS for Collection and Comparison Page */
+
+/* 確保 HTML 和 Body 佔滿整個視窗高度 */
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+/* 確保主內容容器能佔據所有可用空間 */
+.container-fluid {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+/* main 標籤也需要 flex 屬性來填充空間 */
+main {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 主要頁面內容的容器 */
+.tab-content-container {
+    flex-grow: 1; /* 讓容器佔滿可用高度 */
+    display: flex;
+    flex-direction: column;
+}
+
+/* Tab 內容區的父容器 - 核心修正點 */
+/* 這個容器必須設定為 position: relative; 以便其子元素 (tab-pane) 能夠相對它進行絕對定位 */
+#collectionTabContent {
+    position: relative; /* 核心設定：為子元素的絕對定位提供參考 */
+    flex-grow: 1; /* 讓內容區塊佔滿剩餘空間，確保其高度會根據其 flex 內容而擴展 */
+    display: flex; /* 內部使用 flex 佈局 */
+    flex-direction: column;
+    /* 你可以根據需要為此容器設置一個最小高度，以確保即使內容很少時，頁面也不會看起來太空 */
+    /* 例如：min-height: 500px; */
+}
+
+/* 每個 Tab 頁面內容的樣式 - 核心修正點 */
+.tab-pane {
+    position: absolute; /* 核心設定：使元素脫離正常文件流，不佔據空間 */
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%; /* 確保絕對定位的元素填滿其相對定位的父容器 */
+    display: flex; /* 保持 flex 佈局，讓其內部內容能夠佔滿空間 */
+    flex-direction: column;
+    padding: 1rem; /* 保持你的內邊距 */
+    overflow-y: auto; /* 如果內容超過高度，顯示垂直滾動條 */
+    /* 隱藏非活動頁籤的視覺和互動 */
+    opacity: 0; /* 設置透明度為0，使其不可見 */
+    pointer-events: none; /* 禁用鼠標事件，使其不可點擊或選擇 */
+    transition: opacity 0.15s ease-in-out; /* 為透明度變化添加過渡效果，使切換更平滑 */
+}
+
+    /* 只有 active 的 tab-pane 才會顯示並參與佈局 - 核心修正點 */
+    .tab-pane.active {
+        position: relative; /* 核心設定：當頁籤激活時，恢復到正常文件流，重新佔據空間 */
+        opacity: 1; /* 設置透明度為1，使其可見 */
+        pointer-events: auto; /* 啟用鼠標事件，使其可互動 */
+    }
+
+    /* 確保 Bootstrap 的 .fade 類別在未激活時完全隱藏元素 */
+    /* 這個規則是為了覆蓋 Bootstrap 預設的 display: block 或 flex 行為，
+   確保當頁籤隱藏時，它最終會被設定為 display: none，提高性能。 */
+    .tab-pane.fade:not(.show) {
+        display: none;
+    }
+    /* 當 tab-pane 準備顯示時 (fade.show)，使其顯示為 flex */
+    /* 這是為了與 tab-pane 本身的 display: flex 協同工作，確保在顯示時正確佈局 */
+    .tab-pane.fade.show {
+        display: flex;
+    }
+
+
+/* tab-pane 內部的內容包裹器 */
+.tab-pane-content-wrapper {
+    flex-grow: 1; /* 確保內容包裹器能佔滿 tab-pane 的所有可用空間 */
+    display: flex;
+    flex-direction: column;
+}
+
+/* 收藏卡片和比較卡片的樣式 */
+.house-card, .compare-card {
+    min-height: 400px; /* 設定最小高度，確保卡片視覺一致性 */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between; /* 內容均勻分佈 */
+    position: relative; /* 為了關閉按鈕定位 */
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075); /* 添加輕微陰影 */
+    border-radius: 0.5rem; /* 輕微圓角 */
+}
+
+    .house-card .card-body, .compare-card ul {
+        flex-grow: 1; /* 讓卡片內容區佔滿剩餘空間 */
+    }
+
+    .house-card .close-btn, .compare-card .close-btn {
+        position: absolute;
+        top: 0;
+        right: 0;
+        z-index: 1; /* 確保關閉按鈕在圖片和內容之上 */
+        background: none;
+        border: none;
+        padding: 0.25rem 0.5rem;
+        line-height: 1;
+        cursor: pointer;
+        opacity: 0.7;
+        transition: opacity 0.2s ease-in-out;
+    }
+
+        .house-card .close-btn:hover, .compare-card .close-btn:hover {
+            opacity: 1;
+        }
+
+
+/* 列表視圖的收藏項目 */
+.list-group-item {
+    position: relative; /* 為了關閉按鈕定位 */
+    align-items: center;
+    border-radius: 0.5rem; /* 輕微圓角 */
+    box-shadow: 0 0.0625rem 0.125rem rgba(0, 0, 0, 0.05); /* 添加輕微陰影 */
+}
+
+    .list-group-item .close-btn {
+        position: absolute;
+        top: 0;
+        right: 0;
+        z-index: 1;
+        background: none;
+        border: none;
+        padding: 0.25rem 0.5rem;
+        line-height: 1;
+        cursor: pointer;
+        opacity: 0.7;
+        transition: opacity 0.2s ease-in-out;
+    }
+
+        .list-group-item .close-btn:hover {
+            opacity: 1;
+        }
+
+/* 自定義 Tab 導航欄樣式 (可選) */
+.nav-tabs-custom .nav-link {
+    border: 1px solid #dee2e6;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    margin-right: 2px;
+    background-color: #f8f9fa;
+    color: #495057;
+    transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+}
+
+    .nav-tabs-custom .nav-link.active {
+        border-color: #0d6efd #0d6efd #fff; /* active 時底部邊框為白色，與內容區背景融合 */
+        background-color: #fff;
+        color: #0d6efd;
+        font-weight: bold;
+    }
+
+    .nav-tabs-custom .nav-link:hover:not(.active) {
+        border-color: #e9ecef #e9ecef #dee2e6;
+        background-color: #e9ecef;
+    }
+
+/* 新增比較頁籤按鈕樣式 */
+.add-new-compare-tab-item .nav-link {
+    background-color: #e9f5ff; /* 淺藍色背景 */
+    color: #0d6efd; /* 藍色文字 */
+    font-weight: bold;
+    border-style: dashed; /* 虛線邊框 */
+    border-color: #0d6efd;
+    transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+}
+
+    .add-new-compare-tab-item .nav-link:hover {
+        background-color: #d8edff;
+        border-color: #007bff; /* hover 時顏色加深 */
+    }
+
+/* 確保 Toast 容器在最上層 */
+.position-fixed.top-0.end-0.p-3 {
+    z-index: 1100; /* Bootstrap modal 預設 z-index 是 1050，確保 Toast 在 Modal 之上 */
+}
+
+/* 分頁器樣式 (可選) */
+.pagination-custom {
+    margin-top: auto; /* 將分頁器推到底部 */
+    padding-top: 1rem; /* 與上方內容保持距離 */
+}
+
+/* 確保下拉菜單不超出卡片範圍 */
+.house-card .dropdown-menu {
+    width: 100%;
+}
+
+/* 調整列表視圖中圖片的大小 */
+.list-group-item img {
+    width: 120px; /* 固定寬度 */
+    height: 90px; /* 固定高度 */
+    object-fit: cover; /* 圖片裁剪以填充元素，保持比例 */
+    border-radius: 0.25rem; /* 輕微圓角 */
+}
+
+/* 比較卡片中的圖片 */
+.compare-card img {
+    max-width: 100%;
+    height: auto;
+    display: block; /* 移除圖片底部的空白 */
+    margin: 0 auto; /* 居中圖片 */
+}
+
+/* 調整比較卡片中的列表項目文字大小 */
+.compare-card .list-group-item span {
+    white-space: normal; /* 允許文字換行 */
+    text-align: right; /* 右對齊值 */
+    word-break: break-word; /* 長單詞換行 */
+}
+
+    .compare-card .list-group-item span:first-child {
+        text-align: left; /* 左對齊標籤 */
+    }
+
+/* 小螢幕調整 */
+@media (max-width: 767.98px) {
+    .house-card .card-body .d-flex.justify-content-between.align-items-center.mb-2.small {
+        flex-direction: column; /* 小螢幕下垂直排列 */
+        align-items: flex-start !important; /* 左對齊 */
+    }
+
+        .house-card .card-body .d-flex.justify-content-between.align-items-center.mb-2.small span {
+            width: 100%; /* 每個項目佔滿一行 */
+        }
+}
