@@ -1,241 +1,248 @@
-﻿console.log('Announcement JS loaded!');
+﻿// wwwroot/js/Announcement.js
 
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', () => {
+    const navItems = document.querySelectorAll('.sidebar .nav-item');
+    const contentSections = document.querySelectorAll('.main-content .content-section');
+    const announcementListContainer = document.querySelector('.announcement-list');
+    const paginationContainer = document.querySelector('.pagination');
 
-    // --- 分頁邏輯 ---
-    const announcementItems = document.querySelectorAll('.announcement-item');
-    const pageLinks = document.querySelectorAll('.pagination .page-link');
-    const nextPageLink = document.querySelector('.pagination .next-page'); // 獲取下一頁連結
-    const itemsPerPage = 6; // 每頁顯示的公告數量
-    let currentPage = 1; // 當前頁碼，初始化為第一頁
+    const API_BASE_URL = '/api/Tenant'; // API 基礎 URL
+    const MAX_PARTIAL_LENGTH = 50; // 定義部分展開的字數限制
 
-    // 函數：顯示指定頁碼的公告
-    function displayPage(pageNumber) {
-        // 隱藏所有公告
-        announcementItems.forEach(item => {
-            item.classList.remove('active-page');
-            item.style.display = 'none'; // 確保隱藏
-        });
+    let currentPage = 1; // 當前公告頁碼
 
-        // 顯示當前頁的公告
-        const startIndex = (pageNumber - 1) * itemsPerPage;
-        const endIndex = startIndex + itemsPerPage;
-        const itemsToDisplay = Array.from(announcementItems).slice(startIndex, endIndex);
+    // 輔助函數：清除指定容器的內容
+    function clearContent(container) {
+        if (container) {
+            container.innerHTML = '';
+        }
+    }
 
-        itemsToDisplay.forEach(item => {
-            item.classList.add('active-page');
-            item.style.display = 'block'; // 或您公告列表項目的原始 display 屬性
-        });
+    // 載入公告列表的函數
+    async function loadAnnouncements(page) {
+        clearContent(announcementListContainer); // 清空現有公告
+        clearContent(paginationContainer);       // 清空分頁
 
-        // 更新分頁連結的 active 狀態
-        pageLinks.forEach(link => {
-            link.classList.remove('active');
-            if (parseInt(link.dataset.pageNumber) === pageNumber) {
-                link.classList.add('active');
+        announcementListContainer.innerHTML = '<p>載入中，請稍候...</p>'; // 顯示載入提示
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/Announcements/list?pageNumber=${page}&pageSize=6`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
-        });
+            const data = await response.json();
 
-        currentPage = pageNumber; // 更新當前頁碼
+            if (data.announcements && data.announcements.length > 0) {
+                clearContent(announcementListContainer); // 清除載入提示
 
-        // 這裡可以處理「下一頁」和「上一頁」按鈕的啟用/禁用狀態
-        // 簡單示範「下一頁」：如果還有下一頁，則啟用
-        if (nextPageLink) {
-            const totalPages = Math.ceil(announcementItems.length / itemsPerPage);
-            if (currentPage < totalPages) {
-                nextPageLink.style.display = 'inline-block'; // 顯示
+                for (const announcement of data.announcements) { // 使用 for...of 以便在循環中使用 await
+                    const announcementItem = document.createElement('div');
+                    announcementItem.classList.add('announcement-item', 'closed'); // 初始狀態設為 closed
+
+                    // Fetch full content for each announcement initially, but do not display it yet.
+                    let fullContent = '';
+                    try {
+                        const detailResponse = await fetch(`${API_BASE_URL}/Announcements/${announcement.id}`);
+                        if (!detailResponse.ok) {
+                            throw new Error(`Failed to fetch detail for ID: ${announcement.id}`);
+                        }
+                        const detailData = await detailResponse.json();
+                        fullContent = detailData.content || ''; // Ensure content is a string
+                    } catch (error) {
+                        console.error(`Error fetching full content for announcement ID ${announcement.id}:`, error);
+                        fullContent = '<p>載入內容失敗。</p>'; // fallback content as HTML
+                    }
+
+                    const isContentLong = fullContent.length > MAX_PARTIAL_LENGTH;
+                    // Note: fullContent might contain HTML tags, so direct substring for partialContent
+                    // might cut off tags. For robust solution, parse HTML or use a library.
+                    // For now, assuming basic text, or if HTML is cut, it's okay for preview.
+                    const partialContent = isContentLong ? fullContent.substring(0, MAX_PARTIAL_LENGTH) + '...' : fullContent;
+
+
+                    // Initial HTML structure for each item
+                    announcementItem.innerHTML = `
+                        <div class="announcement-header">
+                            <h2 class="announcement-title">${announcement.title}</h2>
+                            <span class="last-modified-date">最後修改日期: ${announcement.updatedAt}</span>
+                        </div>
+                        <div class="announcement-body">
+                            <div class="announcement-content"></div>
+                            ${isContentLong ? `<button type="button" class="toggle-button"><span>點擊展開 </span><span class="arrow"></span></button>` : ''}
+                        </div>
+                    `;
+                    announcementListContainer.appendChild(announcementItem);
+
+                    const announcementHeader = announcementItem.querySelector('.announcement-header');
+                    const announcementBody = announcementItem.querySelector('.announcement-body');
+                    const announcementContentDiv = announcementBody.querySelector('.announcement-content');
+                    const toggleButton = announcementBody.querySelector('.toggle-button');
+
+                    // Store full content and partial content for easy toggling
+                    // Using innerHTML to set, as fullContent might contain HTML
+                    announcementContentDiv.dataset.fullContent = fullContent;
+                    announcementContentDiv.dataset.partialContent = partialContent;
+
+
+                    // Set initial content based on 'closed' state (CSS will hide it)
+                    // When partial-expanded, this content will appear.
+                    announcementContentDiv.innerHTML = partialContent;
+
+
+                    // --- Event Listener for announcement header ---
+                    announcementHeader.addEventListener('click', () => {
+                        if (announcementItem.classList.contains('fully-expanded') || announcementItem.classList.contains('partial-expanded')) {
+                            // From Partial-Expanded or Fully-Expanded -> Closed
+                            announcementItem.classList.remove('fully-expanded');
+                            announcementItem.classList.remove('partial-expanded');
+                            announcementItem.classList.add('closed'); // Ensure 'closed' state is explicit
+                            if (toggleButton) { // If button exists, reset its text/arrow
+                                toggleButton.querySelector('span:first-child').textContent = '點擊展開 ';
+                                toggleButton.querySelector('.arrow').style.transform = 'rotate(0deg)';
+                            }
+                            announcementContentDiv.innerHTML = partialContent; // Reset content to partial for next expansion
+                        } else {
+                            // From Closed -> Partial-Expanded
+                            announcementItem.classList.remove('closed');
+                            announcementItem.classList.add('partial-expanded');
+                            announcementContentDiv.innerHTML = partialContent; // Display partial content
+                            if (toggleButton) { // If button exists, ensure correct text/arrow
+                                toggleButton.querySelector('span:first-child').textContent = '點擊展開 ';
+                                toggleButton.querySelector('.arrow').style.transform = 'rotate(0deg)';
+                            }
+                        }
+                    });
+
+                    // --- Event Listener for the "點擊展開/收起" button ---
+                    if (toggleButton) { // Only attach if the button exists (i.e., content is long)
+                        toggleButton.addEventListener('click', (event) => {
+                            event.stopPropagation(); // Prevent header click from also firing
+
+                            if (announcementItem.classList.contains('fully-expanded')) {
+                                // From Fully-Expanded -> Partial-Expanded
+                                announcementItem.classList.remove('fully-expanded');
+                                announcementItem.classList.add('partial-expanded');
+                                announcementContentDiv.innerHTML = partialContent;
+                                toggleButton.querySelector('span:first-child').textContent = '點擊展開 ';
+                                toggleButton.querySelector('.arrow').style.transform = 'rotate(0deg)';
+                            } else if (announcementItem.classList.contains('partial-expanded')) {
+                                // From Partial-Expanded -> Fully-Expanded
+                                announcementItem.classList.remove('partial-expanded');
+                                announcementItem.classList.add('fully-expanded');
+                                announcementContentDiv.innerHTML = fullContent; // Show full content
+                                toggleButton.querySelector('span:first-child').textContent = '點擊收起 ';
+                                toggleButton.querySelector('.arrow').style.transform = 'rotate(180deg)';
+                            }
+                            // No need for 'else' here, as button only exists in partial/full states.
+                        });
+                    }
+                }
+
+                renderPagination(data.currentPage, data.totalPages);
             } else {
-                nextPageLink.style.display = 'none'; // 隱藏
+                announcementListContainer.innerHTML = '<p>目前沒有公告。</p>';
+            }
+
+            currentPage = page; // 更新當前頁碼
+
+            const paginationDiv = document.querySelector('.pagination');
+            if (paginationDiv) {
+                paginationDiv.style.display = 'flex'; // 確保分頁顯示
+            }
+
+        } catch (error) {
+            console.error('Error loading announcements:', error);
+            announcementListContainer.innerHTML = '<p>載入公告失敗，請稍後再試。</p>';
+            clearContent(paginationContainer);
+            const paginationDiv = document.querySelector('.pagination');
+            if (paginationDiv) {
+                paginationDiv.style.display = 'none'; // 載入失敗也隱藏分頁
             }
         }
     }
 
-    // 頁碼連結點擊事件
-    pageLinks.forEach(link => {
-        if (!link.classList.contains('next-page')) { // 排除「下一頁」連結
-            link.addEventListener('click', function (e) {
-                e.preventDefault();
-                const pageNumber = parseInt(this.dataset.pageNumber);
-                displayPage(pageNumber);
-            });
+    // 渲染分頁按鈕的函數 (與之前相同)
+    function renderPagination(currentPage, totalPages) {
+        clearContent(paginationContainer);
+        if (totalPages <= 1) {
+            paginationContainer.style.display = 'none';
+            return;
         }
-    });
 
-    // 「下一頁」連結點擊事件
-    if (nextPageLink) {
-        nextPageLink.addEventListener('click', function (e) {
-            e.preventDefault();
-            const totalPages = Math.ceil(announcementItems.length / itemsPerPage);
-            if (currentPage < totalPages) {
-                displayPage(currentPage + 1);
+        paginationContainer.style.display = 'flex';
+
+        // 添加「上一頁」按鈕
+        if (currentPage > 1) {
+            const prevPageButton = document.createElement('button');
+            prevPageButton.textContent = '上一頁';
+            prevPageButton.classList.add('page-button', 'page-link');
+            prevPageButton.addEventListener('click', () => {
+                loadAnnouncements(currentPage - 1);
+            });
+            paginationContainer.appendChild(prevPageButton);
+        }
+
+        // 渲染頁碼按鈕
+        for (let i = 1; i <= totalPages; i++) {
+            const pageButton = document.createElement('button');
+            pageButton.textContent = i;
+            pageButton.classList.add('page-button', 'page-link');
+            if (i === currentPage) {
+                pageButton.classList.add('active');
             }
+            pageButton.addEventListener('click', () => {
+                loadAnnouncements(i);
+            });
+            paginationContainer.appendChild(pageButton);
+        }
+
+        // 添加「下一頁」按鈕
+        if (currentPage < totalPages) {
+            const nextPageButton = document.createElement('button');
+            nextPageButton.textContent = '下一頁';
+            nextPageButton.classList.add('page-button', 'page-link');
+            nextPageButton.addEventListener('click', () => {
+                loadAnnouncements(currentPage + 1);
+            });
+            paginationContainer.appendChild(nextPageButton);
+        }
+    }
+
+    // 處理導航切換內容的函數 (與之前相同)
+    async function switchContent(targetId) {
+        contentSections.forEach(section => section.classList.remove('active'));
+        navItems.forEach(item => item.classList.remove('active'));
+
+        const targetSection = document.getElementById(targetId);
+        const targetNavItem = document.querySelector(`.nav-item[data-content-id="${targetId}"]`);
+
+        if (targetSection) {
+            targetSection.classList.add('active');
+        }
+        if (targetNavItem) {
+            targetNavItem.classList.add('active');
+        }
+
+        if (targetId === 'announcements') {
+            currentPage = 1;
+            loadAnnouncements(currentPage);
+        } else {
+            const paginationDiv = document.querySelector('.pagination');
+            if (paginationDiv) {
+                paginationDiv.style.display = 'none';
+            }
+        }
+    }
+
+    // 為側邊欄導航項目添加點擊事件監聽器
+    navItems.forEach(item => {
+        item.addEventListener('click', (event) => {
+            event.preventDefault();
+            const targetId = item.dataset.contentId;
+            switchContent(targetId);
         });
-    }
-
-    // 初始載入時顯示第一頁公告
-    displayPage(1);
-
-    // --- 公告展開/收起邏輯 (可能需要微調) ---
-    // (將您之前的公告展開/收起邏輯貼在這裡，注意選擇器是否會衝突，
-    // 尤其是在 displayPage 隱藏/顯示元素後，事件監聽器是否仍能工作)
-
-    // *** 確保以下現有邏輯在 DOM 載入後和分頁初始化後執行 ***
-    // 處理公告的展開/收起功能
-    const announcementItemsAccordion = document.querySelectorAll('.announcement-item'); // 重新選擇，確保選到所有
-
-    announcementItemsAccordion.forEach(item => {
-        const header = item.querySelector('.announcement-header');
-        const toggleButton = item.querySelector('.toggle-button');
-        const readMoreToggle = item.querySelector('.read-more-toggle');
-
-        if (header) {
-            header.addEventListener('click', function () {
-                toggleAnnouncement(item);
-            });
-        }
-        if (toggleButton) {
-            toggleButton.addEventListener('click', function (e) {
-                e.stopPropagation();
-                toggleAnnouncement(item);
-            });
-        }
-
-        if (readMoreToggle) {
-            readMoreToggle.addEventListener('click', function (e) {
-                e.preventDefault();
-                e.stopPropagation();
-
-                const preview = item.querySelector('.announcement-preview');
-                const fullContent = item.querySelector('.announcement-full-content');
-                const button = item.querySelector('.toggle-button');
-
-                if (this.dataset.action === 'expand') {
-                    preview.style.display = 'none';
-                    fullContent.style.display = 'block';
-                    this.dataset.action = 'collapse';
-                    this.style.display = 'none';
-
-                    if (!item.classList.contains('expanded')) {
-                        toggleAnnouncement(item, true);
-                    }
-                    button.querySelector('span').textContent = '收起';
-                    button.querySelector('.arrow.up').style.transform = 'rotate(0deg)';
-                    button.querySelector('.arrow.up').style.borderBottom = '5px solid #555';
-                    button.querySelector('.arrow.up').style.borderTop = 'none';
-                }
-            });
-        }
-
-        // 初始設定展開狀態的邏輯，可能需要根據分頁後的顯示情況進行微調
-        const preview = item.querySelector('.announcement-preview');
-        const fullContent = item.querySelector('.announcement-full-content');
-        const currentReadMoreToggle = item.querySelector('.read-more-toggle');
-
-        if (item.classList.contains('expanded')) {
-            item.querySelector('.announcement-body').style.maxHeight = '500px';
-            item.querySelector('.announcement-body').style.paddingTop = '15px';
-            if (item.querySelector('.toggle-button .arrow.up')) {
-                item.querySelector('.toggle-button .arrow.up').style.transform = 'rotate(0deg)';
-                item.querySelector('.toggle-button .arrow.up').style.borderBottom = '5px solid #555';
-                item.querySelector('.toggle-button .arrow.up').style.borderTop = 'none';
-            }
-            if (preview && fullContent) {
-                preview.style.display = 'none';
-                fullContent.style.display = 'block';
-                if (currentReadMoreToggle) currentReadMoreToggle.style.display = 'none';
-            }
-        } else {
-            item.querySelector('.announcement-body').style.maxHeight = '0';
-            item.querySelector('.announcement-body').style.paddingTop = '0';
-            if (item.querySelector('.toggle-button .arrow.up')) {
-                item.querySelector('.toggle-button .arrow.up').style.transform = 'rotate(180deg)';
-                item.querySelector('.toggle-button .arrow.up').style.borderTop = '5px solid #555';
-                item.querySelector('.toggle-button .arrow.up').style.borderBottom = 'none';
-            }
-            if (preview && fullContent) {
-                preview.style.display = 'block';
-                fullContent.style.display = 'none';
-                if (currentReadMoreToggle) currentReadMoreToggle.style.display = 'inline';
-            }
-        }
     });
 
-    // 修正 toggleAnnouncement 函數，使其可以強制展開
-    function toggleAnnouncement(item, forceExpand = false) {
-        const body = item.querySelector('.announcement-body');
-        const arrow = item.querySelector('.toggle-button .arrow.up');
-        const preview = item.querySelector('.announcement-preview');
-        const fullContent = item.querySelector('.announcement-full-content');
-        const readMoreToggle = item.querySelector('.read-more-toggle');
-
-        if (item.classList.contains('expanded') && !forceExpand) {
-            // 收起
-            body.style.maxHeight = '0';
-            body.style.paddingTop = '0';
-            item.classList.remove('expanded');
-            if (arrow) {
-                arrow.style.transform = 'rotate(180deg)';
-                arrow.style.borderTop = '5px solid #555';
-                arrow.style.borderBottom = 'none';
-            }
-            if (preview && fullContent) {
-                preview.style.display = 'block';
-                fullContent.style.display = 'none';
-                if (readMoreToggle) readMoreToggle.style.display = 'inline';
-            }
-        } else {
-            announcementItemsAccordion.forEach(otherItem => { // 注意這裡用 announcementItemsAccordion
-                if (otherItem !== item && otherItem.classList.contains('expanded')) {
-                    otherItem.classList.remove('expanded');
-                    otherItem.querySelector('.announcement-body').style.maxHeight = '0';
-                    otherItem.querySelector('.announcement-body').style.paddingTop = '0';
-                    const otherArrow = otherItem.querySelector('.toggle-button .arrow.up');
-                    if (otherArrow) {
-                        otherArrow.style.transform = 'rotate(180deg)';
-                        otherArrow.style.borderTop = '5px solid #555';
-                        otherArrow.style.borderBottom = 'none';
-                    }
-                    const otherPreview = otherItem.querySelector('.announcement-preview');
-                    const otherFullContent = otherItem.querySelector('.announcement-full-content');
-                    const otherReadMoreToggle = otherItem.querySelector('.read-more-toggle');
-                    if (otherPreview && otherFullContent) {
-                        otherPreview.style.display = 'block';
-                        otherFullContent.style.display = 'none';
-                        if (otherReadMoreToggle) otherReadMoreToggle.style.display = 'inline';
-                    }
-                }
-            });
-
-            // 展開當前點擊的公告
-            body.style.maxHeight = '500px';
-            body.style.paddingTop = '15px';
-            item.classList.add('expanded');
-            if (arrow) {
-                arrow.style.transform = 'rotate(0deg)';
-                arrow.style.borderBottom = '5px solid #555';
-                arrow.style.borderTop = 'none';
-            }
-            if (preview && fullContent) {
-                preview.style.display = 'none';
-                fullContent.style.display = 'block';
-                if (readMoreToggle) readMoreToggle.style.display = 'none';
-            }
-        }
-    }
-
-    // 初始載入時的邏輯 (這段保持不變，因為分頁邏輯會處理第一個公告的顯示)
-    const initialActiveNavItem = document.querySelector('.sidebar .nav-item.active');
-    if (initialActiveNavItem) {
-        const initialContentId = initialActiveNavItem.dataset.contentId;
-        const initialContentSection = document.getElementById(initialContentId);
-        if (initialContentSection) {
-            initialContentSection.classList.add('active');
-        }
-    }
-    // 預設展開第一個公告（如果需要的話，但分頁已經顯示第一頁了）
-    // 如果您希望第一頁的第一個公告在載入時就展開，可以在此處呼叫 toggleAnnouncement(firstAnnouncement, true);
-    // 但請注意，分頁邏輯會先顯示第一頁的公告。
-    const firstAnnouncementOnLoad = document.querySelector('.announcement-item[data-page="1"]');
-    if (firstAnnouncementOnLoad && !firstAnnouncementOnLoad.classList.contains('expanded')) {
-        toggleAnnouncement(firstAnnouncementOnLoad, true);
-    }
+    // 頁面載入後，預設顯示「公告」內容
+    switchContent('announcements');
 });
