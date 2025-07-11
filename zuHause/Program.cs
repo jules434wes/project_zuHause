@@ -1,15 +1,20 @@
+using Microsoft.EntityFrameworkCore;
+using zuHause.Models; // ← Scaffold 出來的 DbContext 命名空間
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// ? 註冊 Scaffold 出來的資料庫連線
+builder.Services.AddDbContext<ZuHauseContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("ZuhauseDb")));
+
 builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// 中介層設定
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
@@ -20,8 +25,9 @@ app.UseRouting();
 
 app.UseAuthorization();
 
+// ? 預設首頁路由：導向 FurnitureController 的 FurnitureHomePage
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+    pattern: "{controller=Furniture}/{action=FurnitureHomePage}/{id?}");
 
 app.Run();

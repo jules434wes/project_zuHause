@@ -1,46 +1,48 @@
-﻿@model dynamic
+﻿@model List<zuHause.Models.FurnitureProduct>  
+
 @{
     ViewBag.Title = "商品分類";
     Layout = "~/Views/Shared/_NavigationBar.cshtml";
-
-    var products = ViewBag.Products as List<zuHause.ViewModels.ProductViewModel>;
-    var categories = ViewBag.categories as List<zuHause.ViewModels.FurnitureCategories>;
+    var categories = ViewBag.categories as List<zuHause.Models.FurnitureCategory>; // 左側分類
 }
 
 <div class="row">
-    <!-- 左側分類選單 -->
+    <!-- 左側分類清單 -->
     <div class="col-md-3">
-        @await Html.PartialAsync("_FurnitureCategoryList", categories)
+        @Html.Partial("_FurnitureCategoryList", categories)
     </div>
-
-    <!-- 右側商品卡片區 -->
+    
     <div class="col-md-9">
-        <h3 class="mb-4">分類商品列表：</h3>
-        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4">
-            @if (products != null && products.Count > 0)
+        <h3 class="text-primary mb-4">@ViewBag.CategoryName</h3> <!-- 紅框：分類名稱 -->
+
+        <div class="row">
+            @foreach (var item in Model)
             {
-                foreach (var item in products)
-                {
-                    <div class="col">
-                        <div class="card h-100 shadow-sm">
-                            <img src="@item.imageUrl" class="card-img-top" alt="@item.name" />
-                            <div class="card-body">
-                                <h5 class="card-title">@item.name</h5>
-                                <p class="card-text">@item.description</p>
-                            </div>
-                            <div class="card-footer text-end">
-                                <a href="@Url.Action("ProductPurchasePage", "Furniture", new { id = item.productId })" class="btn btn-primary">
-                                    查看商品
-                                </a>
-                            </div>
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <img src="@item.ImageUrl" class="card-img-top" alt="@item.ProductName">
+                        <div class="card-body">
+                            <h5 class="card-title">@item.ProductName</h5>
+                            <p class="card-text">@item.Description</p>
+                            <a href="@Url.Action("ProductPurchasePage", "Furniture", new { id = item.FurnitureProductId })" class="btn btn-primary">查看商品</a>
                         </div>
                     </div>
-                }
-            }
-            else
-            {
-                <p>此分類下目前沒有商品。</p>
+                </div>
             }
         </div>
     </div>
+<div class="row">
+    @foreach (var item in Model)
+    {
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <img src="@item.ImageUrl" class="card-img-top" alt="@item.ProductName">
+                <div class="card-body">
+                    <h5 class="card-title">@item.ProductName</h5>
+                    <p class="card-text">@item.Description</p>
+                    <a href="@Url.Action("ProductPurchasePage", "Furniture", new { id = item.FurnitureProductId })" class="btn btn-primary">查看商品</a>
+                </div>
+            </div>
+        </div>
+    }
 </div>
