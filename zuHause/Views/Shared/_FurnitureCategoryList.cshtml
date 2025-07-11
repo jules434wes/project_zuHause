@@ -1,4 +1,4 @@
-﻿@model List<zuHause.ViewModels.FurnitureCategories>
+﻿@model List<zuHause.Models.FurnitureCategory>
 
 @if (Model != null && Model.Any())
 {
@@ -6,8 +6,9 @@
         @foreach (var item in Model)
         {
             <li class="list-group-item">
-                <a class="text-decoration-none" href="@Url.Action("ClassificationItems", "Furniture", new { categoryId = item.categoryId })">
-                    @item.categoryName
+                <a class="text-decoration-none"
+                   href="@Url.Action("ClassificationItems", "Furniture", new { categoryId = item.FurnitureCategoriesId })">
+                    @item.Name
                 </a>
             </li>
         }
