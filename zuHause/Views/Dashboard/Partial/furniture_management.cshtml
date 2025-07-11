@@ -1,9 +1,8 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
+﻿
+@model List<zuHause.ViewModels.FurnitureCardViewModel>
 @{
     ViewBag.Title = "家具管理";
-    
+   
 }
 <div class="container-fluid">
     <div class="row">
@@ -27,158 +26,37 @@
             <div class="furniture-list-scroll mb-4">
                 <div class="row row-cols-1 row-cols-md-3 g-4">
                     <!-- 你的 .col > .card 組件，一樣放這裡 -->
-                    <div class="col">
-                        <div class="card h-100" onclick="editFurniture(1)">
-                            <!-- <div class="image-preview">
-                              <img src="https://via.placeholder.com/150" alt="家具圖" />
-                            </div> -->
-                            <div class="card-body">
-                                <p class="mb-1">家具編號: 01</p>
-                                <p class="mb-1">名稱: 魚皮沙發</p>
-                                <p class="mb-1">狀態: 上架</p>
-                                <p class="mb-1">庫存: 10</p>
-                                <p class="mb-1">以出租: 10</p>
-                                <p class="mb-1">類別: 沙發</p>
-                                <p class="mb-1">介紹: 柔軟舒適</p>
-                                <p class="mb-1">原價: NT$ 45,000</p>
-                                <p class="mb-1">每日租金: NT$ 150</p>
-                                <p class="mb-1">年租金: NT$ 36,000</p>
-                                <p class="mb-1">🔥 熱門商品:是</p>
-                                <p class="mb-1">🎯 特惠商品:是</p>
-                                <p class="mb-1">上架時間: 2025/6/20 16:00 ~ 2025/6/24 18:00</p>
-                                <div class="d-flex justify-content-between">
-                                    <button class="btn btn-sm btn-primary">編輯</button>
-                                    <button class="btn btn-sm btn-danger">下架</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    @foreach (var item in Model)
+                    {
+                        <div class="col">
+                            <div class="card h-100" onclick="editFurniture('@item.FurnitureID')">
+                                <div class="card-body">
+                                    <p class="mb-1">家具編號: @item.FurnitureID</p>
+                                    <p class="mb-1">名稱: @item.Name</p>
+                                    <p class="mb-1">狀態: @item.Status</p>
+                                    <p class="mb-1">庫存: @item.Stock</p>
+                                    <p class="mb-1">以出租: @item.RentedCount</p>
+                                    <p class="mb-1">類別: @item.Type</p>
+                                    <p class="mb-1">介紹: @item.Description</p>
+                                    <p class="mb-1">原價: NT$ @item.OriginalPrice</p>
+                                    <p class="mb-1">每日租金: NT$ @item.RentPerDay</p>
+                                    <p class="mb-1">上架時間: @item.ListDate.ToString("yyyy/M/d HH:mm") ~ @item.DelistDate.ToString("yyyy/M/d HH:mm")</p>
+                                    <p class="mb-1">建立時間: @(item.CreatedAt?.ToString("yyyy/M/d HH:mm") ?? "未設定")</p>
+                                    <p class="mb-1">更新時間: @(item.UpdatedAt?.ToString("yyyy/M/d HH:mm") ?? "未更新")</p>
+                                    
 
-                    <!-- 更多卡片… -->
-                    <!-- 家具編號 02 -->
-                    <div class="col">
-                        <div class="card h-100" onclick="editFurniture(2)">
-                            <div class="card-body">
-                                <p class="mb-1">家具編號: 02</p>
-                                <p class="mb-1">名稱: 絲絨沙發</p>
-                                <p class="mb-1">狀態: 上架</p>
-                                <p class="mb-1">庫存: 12</p>
-                                <p class="mb-1">以出租: 10</p>
-                                <p class="mb-1">類別: 沙發</p>
-                                <p class="mb-1">介紹: 柔軟豪華</p>
-                                <p class="mb-1">原價: NT$ 55,000</p>
-                                <p class="mb-1">每日租金: NT$ 200</p>
-                                <p class="mb-1">年租金: NT$ 48,000</p>
-                                <p class="mb-1">🔥 熱門商品: 否</p>
-                                <p class="mb-1">🎯 特惠商品: 是</p>
-                                <p class="mb-1">上架時間: 2025/6/18 10:00 ~ 2025/6/25 10:00</p>
-                                <div class="d-flex justify-content-between">
-                                    <button class="btn btn-sm btn-primary">編輯</button>
-                                    <button class="btn btn-sm btn-danger">下架</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <button class="btn btn-sm btn-primary">編輯</button>
+                                        
+                                        <button class="btn btn-sm btn-warning" onclick="setProductOffline('@item.FurnitureID')">提前下架</button>
+                                        <button class="btn btn-sm btn-danger" onclick="deleteFurniture('@item.FurnitureID')">刪除</button>
 
-                    <!-- 家具編號 03 -->
-                    <div class="col">
-                        <div class="card h-100" onclick="editFurniture(3)">
-                            <div class="card-body">
-                                <p class="mb-1">家具編號: 03</p>
-                                <p class="mb-1">名稱: 胡桃木書桌</p>
-                                <p class="mb-1">狀態: 上架</p>
-                                <p class="mb-1">庫存: 5</p>
-                                <p class="mb-1">以出租: 10</p>
-                                <p class="mb-1">類別: 書桌</p>
-                                <p class="mb-1">介紹: 堅固耐用</p>
-                                <p class="mb-1">原價: NT$ 20,000</p>
-                                <p class="mb-1">每日租金: NT$ 80</p>
-                                <p class="mb-1">年租金: NT$ 19,200</p>
-                                <p class="mb-1">🔥 熱門商品: 是</p>
-                                <p class="mb-1">🎯 特惠商品: 否</p>
-                                <p class="mb-1">上架時間: 2025/6/15 09:00 ~ 2025/6/22 09:00</p>
-                                <div class="d-flex justify-content-between">
-                                    <button class="btn btn-sm btn-primary">編輯</button>
-                                    <button class="btn btn-sm btn-danger">下架</button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    }
 
-                    <!-- 家具編號 04 -->
-                    <div class="col">
-                        <div class="card h-100" onclick="editFurniture(4)">
-                            <div class="card-body">
-                                <p class="mb-1">家具編號: 04</p>
-                                <p class="mb-1">名稱: 皮革躺椅</p>
-                                <p class="mb-1">狀態: 下架</p>
-                                <p class="mb-1">庫存: 0</p>
-                                <p class="mb-1">以出租: 10</p>
-                                <p class="mb-1">類別: 椅子</p>
-                                <p class="mb-1">介紹: 皮革舒適</p>
-                                <p class="mb-1">原價: NT$ 30,000</p>
-                                <p class="mb-1">每日租金: NT$ 120</p>
-                                <p class="mb-1">年租金: NT$ 28,800</p>
-                                <p class="mb-1">🔥 熱門商品: 是</p>
-                                <p class="mb-1">🎯 特惠商品: 否</p>
-                                <p class="mb-1">上架時間: 2025/6/10 09:00 ~ 2025/6/20 17:00</p>
-                                <div class="d-flex justify-content-between">
-                                    <button class="btn btn-sm btn-primary">編輯</button>
-                                    <button class="btn btn-sm btn-danger">下架</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 家具編號 05 -->
-                    <div class="col">
-                        <div class="card h-100" onclick="editFurniture(5)">
-                            <div class="card-body">
-                                <p class="mb-1">家具編號: 05</p>
-                                <p class="mb-1">名稱: 多功能衣櫃</p>
-                                <p class="mb-1">狀態: 上架</p>
-                                <p class="mb-1">庫存: 7</p>
-                                <p class="mb-1">以出租: 10</p>
-                                <p class="mb-1">類別: 衣櫃</p>
-                                <p class="mb-1">介紹: 大容量收納</p>
-                                <p class="mb-1">原價: NT$ 40,000</p>
-                                <p class="mb-1">每日租金: NT$ 130</p>
-                                <p class="mb-1">年租金: NT$ 31,200</p>
-                                <p class="mb-1">🔥 熱門商品: 否</p>
-                                <p class="mb-1">🎯 特惠商品: 否</p>
-                                <p class="mb-1">上架時間: 2025/6/22 14:00 ~ 2025/7/05 14:00</p>
-                                <div class="d-flex justify-content-between">
-                                    <button class="btn btn-sm btn-primary">編輯</button>
-                                    <button class="btn btn-sm btn-danger">下架</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 家具編號 06 -->
-                    <div class="col">
-                        <div class="card h-100" onclick="editFurniture(6)">
-                            <div class="card-body">
-                                <p class="mb-1">家具編號: 06</p>
-                                <p class="mb-1">名稱: 玻璃茶几</p>
-                                <p class="mb-1">狀態: 上架</p>
-                                <p class="mb-1">庫存: 15</p>
-                                <p class="mb-1">以出租: 10</p>
-                                <p class="mb-1">類別: 茶几</p>
-                                <p class="mb-1">介紹: 現代簡約</p>
-                                <p class="mb-1">原價: NT$ 12,000</p>
-                                <p class="mb-1">每日租金: NT$ 50</p>
-                                <p class="mb-1">年租金: NT$ 12,000</p>
-                                <p class="mb-1">🔥 熱門商品: 否</p>
-                                <p class="mb-1">🎯 特惠商品: 是</p>
-                                <p class="mb-1">上架時間: 2025/6/15 12:00 ~ 2025/6/30 12:00</p>
-                                <div class="d-flex justify-content-between">
-                                    <button class="btn btn-sm btn-primary">編輯</button>
-                                    <button class="btn btn-sm btn-danger">下架</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
 
@@ -193,19 +71,19 @@
             </div>
 
             <div class="card p-4" id="furnitureForm">
-                <!-- <div class="mb-3">
-                  <label class="form-label">選擇家具圖片</label>
-                  <input type="file" class="form-control" id="imageUpload" />
-                </div> -->
+                <!-- 家具名稱 -->
                 <div class="mb-3">
                     <label class="form-label">家具名稱</label>
                     <input type="text" class="form-control" id="furnitureName" />
                 </div>
+
+                <!-- 家具介紹 -->
                 <div class="mb-3">
                     <label class="form-label">家具介紹</label>
                     <textarea class="form-control" id="furnitureDesc"></textarea>
                 </div>
 
+                <!-- 價格 -->
                 <div class="row mb-3">
                     <div class="col-md-4">
                         <label class="form-label">原價</label>
@@ -215,12 +93,9 @@
                         <label class="form-label">每日租金</label>
                         <input type="number" class="form-control" id="rentPerDay" />
                     </div>
-                    <div class="col-md-4">
-                        <label class="form-label">年租金（選填）</label>
-                        <input type="number" class="form-control" id="rentPerYear" />
-                    </div>
                 </div>
 
+                <!-- 類別、庫存、時間 -->
                 <div class="row mb-3">
                     <div class="col-md-4">
                         <label class="form-label">上架庫存</label>
@@ -229,47 +104,38 @@
                     <div class="col-md-4">
                         <label class="form-label">家具類別</label>
                         <select class="form-select" id="furnitureType">
-                            <option>沙發</option>
-                            <option>書桌</option>
-                            <option>衣櫃</option>
+                            <option value="">請選擇</option>
+                            <option value="sofa">沙發</option>
+                            <option value="desk">書桌</option>
+                            <option value="closet">衣櫃</option>
                         </select>
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">上架時間</label>
-                        <input type="datetime-local" class="form-control mb-2" />
-                        <input type="datetime-local" class="form-control" />
+                        <input type="datetime-local" class="form-control" id="listDate" />
+                        <label class="form-label">下架時間</label>
+                        <input type="datetime-local" class="form-control" id="delistDate" />
                     </div>
                 </div>
 
+                <!-- 狀態 -->
                 <div class="row mb-3">
-                    <div class="col-md-3">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="isHot" />
-                            <label class="form-check-label" for="isHot">🔥 熱門商品</label>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="isSpecial" />
-                            <label class="form-check-label" for="isSpecial">🎯 特惠商品</label>
-                        </div>
-                    </div>
                     <div class="col-md-6">
                         <label class="form-label">商品狀態</label>
                         <select class="form-select" id="productStatus">
-                            <option>上架</option>
-                            <option>下架</option>
-                            <option>預購中</option>
+                            <option value="true">上架</option>
+                            <option value="false">下架</option>
                         </select>
                     </div>
                 </div>
 
+                <!-- 操作按鈕 -->
                 <div class="mt-4 d-flex justify-content-between">
-                    <button class="btn btn-success" onclick="submitFurniture()">確認上傳</button>
+                    <button id="submitBtn" class="btn btn-success">確認上傳</button>
                     <button class="btn btn-danger" onclick="resetForm()">取消上傳</button>
-
                 </div>
             </div>
+
         </div>
     </div>
 </div>

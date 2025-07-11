@@ -1,4 +1,4 @@
-using zuHause.Data; // ← 加這行
+using zuHause.Data;
 using Microsoft.EntityFrameworkCore;
 var builder = WebApplication.CreateBuilder(args);
 // 加入資料庫連線字串

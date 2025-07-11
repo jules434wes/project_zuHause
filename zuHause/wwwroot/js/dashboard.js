@@ -175,6 +175,17 @@ function openTab(tabKey) {
                     if (tabKey === "furniture_fee") {
                         if (typeof initShipFee === "function") initShipFee();
                     }
+                    if (tabKey === "furniture_management") {
+                        if (typeof resetForm === "function") resetForm();
+                        if (typeof submitFurniture === "function") {
+                            const btn = document.getElementById("submitBtn");
+                            if (btn) {
+                                btn.addEventListener("click", submitFurniture);
+                            }
+                        }
+                    }
+
+
                 };
 
                 document.body.appendChild(script);
