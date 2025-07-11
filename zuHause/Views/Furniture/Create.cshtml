@@ -1,0 +1,113 @@
+﻿<!--https://localhost:7010/Furniture/Create-->
+<!--新增商品-->
+@model zuHause.Models.FurnitureProduct
+@{
+    ViewBag.Title = "新增商品";
+    Layout = "~/Views/Shared/_NavigationBar.cshtml";
+    var categories = ViewBag.Categories as List<zuHause.Models.FurnitureCategory>;
+}
+
+<h2 class="my-4">新增商品</h2>
+
+<form asp-action="Create" method="post" enctype="multipart/form-data">
+    <div class="mb-3">
+        <label asp-for="ProductName" class="form-label"></label>
+        <input asp-for="ProductName" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Description" class="form-label"></label>
+        <textarea asp-for="Description" class="form-control"></textarea>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="ListPrice" class="form-label"></label>
+        <input asp-for="ListPrice" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="DailyRental" class="form-label"></label>
+        <input asp-for="DailyRental" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">商品圖片上傳</label>
+        <input type="file" name="ImageFile" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="CategoryId" class="form-label">商品分類</label>
+        <select asp-for="CategoryId" class="form-select">
+            <option value="">-- 請選擇分類 --</option>
+            @foreach (var cat in categories)
+            {
+                <option value="@cat.FurnitureCategoriesId">@cat.Name</option>
+            }
+        </select>
+    </div>
+
+    <div class="form-check mb-3">
+        <input asp-for="Status" class="form-check-input" type="checkbox" checked />
+        <label asp-for="Status" class="form-check-label">是否上架</label>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="ListedAt" class="form-label">上架日期</label>
+        <input asp-for="ListedAt" class="form-control" type="date" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">新增商品</button>
+</form>
+
+<!-- Bootstrap Modal 成功提示 -->
+<div class="modal fade" id="successModal" tabindex="-1" aria-labelledby="successModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="successModalLabel">新增成功</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="關閉"></button>
+            </div>
+            <div class="modal-body">
+                商品已成功新增至資料庫！
+            </div>
+            <div class="modal-footer">
+                <a href="@Url.Action("FurnitureHomePage", "Furniture")" class="btn btn-secondary">返回首頁</a>
+                <button type="button" class="btn btn-success" data-bs-dismiss="modal">繼續新增</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ❌ 失敗提示 Modal -->
+<div class="modal fade" id="failModal" tabindex="-1" aria-labelledby="failModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="failModalLabel">新增失敗</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="關閉"></button>
+            </div>
+            <div class="modal-body">
+                商品新增失敗，請確認欄位是否正確填寫！
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" data-bs-dismiss="modal">關閉</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            var result = '@ViewBag.SubmitStatus';
+            if (result === 'success') {
+                new bootstrap.Modal(document.getElementById('successModal')).show();
+            }
+            else if (result === 'fail') {
+                new bootstrap.Modal(document.getElementById('failModal')).show();
+            }
+        });
+    </script>
+}
+}
