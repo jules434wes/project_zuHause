@@ -95,7 +95,19 @@
             .then(msg => {
                 alert(msg);
                 resetForm();
-                openTab("furniture_management");
+
+                // 部分重新載入家具卡片區域
+                fetch('/Dashboard/furniture_management')
+                    .then(res => res.text())
+                    .then(html => {
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(html, 'text/html');
+                        const newList = doc.querySelector('.furniture-list-scroll');
+                        if (newList) {
+                            document.querySelector('.furniture-list-scroll').replaceWith(newList);
+                            alert("✅ 家具已上傳並即時刷新！");
+                        }
+                    });
             })
             .catch(err => alert("❌ 錯誤：" + err.message));
     };

@@ -132,10 +132,10 @@ namespace zuHause.Controllers
                 ListPrice = vm.OriginalPrice,
                 DailyRental = vm.RentPerDay,
                 Status = vm.Status,
-                ListedAt = vm.StartDate ?? DateTime.UtcNow,
-                DelistedAt = vm.EndDate ?? DateTime.UtcNow.AddMonths(1),
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
+                ListedAt = vm.StartDate ?? DateTime.Now,
+                DelistedAt = vm.EndDate ?? DateTime.Now.AddMonths(1),
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now
             };
 
             _context.FurnitureProducts.Add(product);
