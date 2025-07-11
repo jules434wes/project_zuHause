@@ -16,5 +16,7 @@ namespace zuHause.Models
         public int AvailableQuantity { get; set; }
         public int SafetyStock { get; set; }
         public DateTime UpdatedAt { get; set; }
+        
+
     }
 }

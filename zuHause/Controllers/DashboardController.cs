@@ -37,6 +37,10 @@ namespace zuHause.Controllers
 
             if (id == "furniture_management")
             {
+                var categories = _context.FurnitureCategories
+                    .Where(c => c.ParentId == null) // 你可以保留或移除條件
+                    .OrderBy(c => c.DisplayOrder)
+                    .ToList();
                 var data = from p in _context.FurnitureProducts
                            join i in _context.FurnitureInventories on p.FurnitureProductId equals i.ProductId
                            join c in _context.FurnitureCategories on p.CategoryId equals c.FurnitureCategoriesId into pc
@@ -60,6 +64,7 @@ namespace zuHause.Controllers
                                DeletedAt = p.DeletedAt
 
                            };
+                ViewBag.Categories = categories;
 
                 return PartialView("~/Views/Dashboard/Partial/furniture_management.cshtml", data.ToList());
             }
@@ -100,13 +105,22 @@ namespace zuHause.Controllers
             _context.SaveChanges();
             return Content("✅ 已提前下架");
         }
-        [HttpPost]
+
+        [HttpPost("UploadFurniture")]
         public IActionResult UploadFurniture([FromBody] FurnitureUploadViewModel vm)
         {
-            if (string.IsNullOrWhiteSpace(vm.Name))
-                return BadRequest("家具名稱不能為空");
+            if (vm == null || string.IsNullOrWhiteSpace(vm.Name))
+                return BadRequest("家具資料不完整");
 
             var newId = "FP" + DateTime.Now.ToString("yyyyMMddHHmmss") + "_" + Guid.NewGuid().ToString("N").Substring(0, 6);
+
+            if (string.IsNullOrWhiteSpace(vm.Type))
+                return BadRequest("❌ 請選擇一個家具分類");
+
+            var categoryId = vm.Type.Trim();
+
+            if (!_context.FurnitureCategories.Any(c => c.FurnitureCategoriesId == categoryId))
+                return BadRequest("❌ 所選分類不存在，請重新選擇");
 
 
             var product = new FurnitureProduct
@@ -114,14 +128,18 @@ namespace zuHause.Controllers
                 FurnitureProductId = newId,
                 ProductName = vm.Name,
                 Description = vm.Description,
-                CategoryId = string.IsNullOrWhiteSpace(vm.Type) ? "UNCATEGORIZED" : vm.Type,
+                CategoryId = categoryId,
                 ListPrice = vm.OriginalPrice,
                 DailyRental = vm.RentPerDay,
                 Status = vm.Status,
                 ListedAt = vm.StartDate ?? DateTime.UtcNow,
                 DelistedAt = vm.EndDate ?? DateTime.UtcNow.AddMonths(1),
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
             };
+
+            _context.FurnitureProducts.Add(product);
+            _context.SaveChanges(); // ← 保證 FK 可用
 
             var inventory = new FurnitureInventory
             {
@@ -132,12 +150,12 @@ namespace zuHause.Controllers
                 RentedQuantity = 0
             };
 
-            _context.FurnitureProducts.Add(product);
             _context.FurnitureInventories.Add(inventory);
             _context.SaveChanges();
 
             return Ok("✅ 家具已成功上傳！");
         }
+
 
 
 

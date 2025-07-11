@@ -63,23 +63,25 @@
         alert("你有觸發 submitFurniture！");
 
         const data = {
-            name: document.getElementById("furnitureName").value.trim(),
-            description: document.getElementById("furnitureDesc").value.trim(),
-            type: document.getElementById("furnitureType").value,
-            originalPrice: parseFloat(document.getElementById("originalPrice").value),
-            rentPerDay: parseFloat(document.getElementById("rentPerDay").value),
-            stock: parseInt(document.getElementById("furnitureStock").value),
-            startDate: document.getElementById("listDate").value,
-            endDate: document.getElementById("delistDate").value,
-            status: document.getElementById("productStatus").value === "true"
+            Name: $("#furnitureName").val().trim(),
+            Description: $("#furnitureDesc").val().trim(),
+            Type: $("#furnitureType").val(),
+            OriginalPrice: parseFloat($("#originalPrice").val()),
+            RentPerDay: parseFloat($("#rentPerDay").val()),
+            Stock: parseInt($("#furnitureStock").val()),
+            StartDate: $("#listDate").val(),
+            EndDate: $("#delistDate").val(),
+            Status: $("#productStatus").val() === "true"
         };
+
 
         console.log("送出的資料：", data);
 
-        if (!data.name || isNaN(data.originalPrice) || isNaN(data.rentPerDay) || isNaN(data.stock)) {
+        if (!data.Name || isNaN(data.OriginalPrice) || isNaN(data.RentPerDay) || isNaN(data.Stock)) {
             alert("❌ 請確認所有欄位都有正確填寫！");
             return;
         }
+
 
         fetch('/Dashboard/UploadFurniture', {
             method: 'POST',

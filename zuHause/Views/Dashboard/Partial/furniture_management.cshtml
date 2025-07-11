@@ -102,13 +102,14 @@
                         <input type="number" class="form-control" id="furnitureStock" />
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label">家具類別</label>
-                        <select class="form-select" id="furnitureType">
+                       <label class="form-label">家具類別</label>
+                           <select class="form-select" id="furnitureType">
                             <option value="">請選擇</option>
-                            <option value="sofa">沙發</option>
-                            <option value="desk">書桌</option>
-                            <option value="closet">衣櫃</option>
-                        </select>
+                            @foreach (var c in ViewBag.Categories as List<zuHause.Models.FurnitureCategory>)
+                            {
+                                <option value="@c.FurnitureCategoriesId">@c.Name</option>
+                            }
+                            </select>
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">上架時間</label>
