@@ -11,15 +11,12 @@ namespace zuHause.Data
 
         public DbSet<Member> Members { get; set; }
         public DbSet<FurnitureProduct> FurnitureProducts { get; set; }
-        public DbSet<FurnitureInventory> FurnitureInventories { get; set; }
         public DbSet<FurnitureCategory> FurnitureCategories { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<FurnitureProduct>()
                 .HasKey(p => p.FurnitureProductId);
 
-            modelBuilder.Entity<FurnitureInventory>()
-                .HasKey(i => i.FurnitureInventoryId);
 
             modelBuilder.Entity<FurnitureCategory>()
                 .HasKey(c => c.FurnitureCategoriesId);
