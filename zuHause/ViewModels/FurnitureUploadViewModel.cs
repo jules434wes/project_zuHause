@@ -1,4 +1,4 @@
-﻿namespace zuHause.Models
+﻿namespace zuHause.ViewModels
 {
     public class FurnitureUploadViewModel
     {

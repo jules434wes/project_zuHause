@@ -1,7 +1,6 @@
 ﻿using Azure.Core;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using zuHause.Data;
 using zuHause.Models;
 using zuHause.ViewModels;
 
@@ -11,8 +10,8 @@ namespace zuHause.Controllers
     [Route("Dashboard")]
     public class DashboardController : Controller
     {
-        private readonly ZuhauseDbContext _context;
-        public DashboardController(ZuhauseDbContext context)
+        private readonly ZuHauseContext _context;
+        public DashboardController(ZuHauseContext context)
         {
             _context = context;
         }
@@ -58,8 +57,12 @@ namespace zuHause.Controllers
                                Description = p.Description,
                                OriginalPrice = p.ListPrice,
                                RentPerDay = p.DailyRental,
-                               ListDate = p.ListedAt ?? DateTime.MinValue,
-                               DelistDate = p.DelistedAt ?? DateTime.MaxValue,
+                               ListDate = p.ListedAt.HasValue
+                                ? p.ListedAt.Value.ToDateTime(TimeOnly.MinValue)
+                                : DateTime.MinValue,
+                               DelistDate = p.DelistedAt.HasValue
+                                ? p.DelistedAt.Value.ToDateTime(TimeOnly.MinValue)
+                                : DateTime.MaxValue,
                                CreatedAt = p.CreatedAt,
                                UpdatedAt = p.UpdatedAt,
                                DeletedAt = p.DeletedAt
@@ -74,7 +77,7 @@ namespace zuHause.Controllers
             {
                 return Content($"⚠️ 找不到對應的分頁檔案：{id}");
             }
-            
+
             return PartialView(viewPath);
 
         }
@@ -124,51 +127,72 @@ namespace zuHause.Controllers
         [HttpPost("UploadFurniture")]
         public IActionResult UploadFurniture([FromBody] FurnitureUploadViewModel vm)
         {
+            using var transaction = _context.Database.BeginTransaction();
+
             if (vm == null || string.IsNullOrWhiteSpace(vm.Name))
-                return BadRequest("家具資料不完整");
+                    return BadRequest("家具資料不完整");
 
-            var newId = "FP" + DateTime.Now.ToString("yyyyMMddHHmmss") + "_" + Guid.NewGuid().ToString("N").Substring(0, 6);
+                var newId = "FP" + DateTime.Now.ToString("yyyyMMddHHmmss") + "_" + Guid.NewGuid().ToString("N").Substring(0, 6);
 
-            if (string.IsNullOrWhiteSpace(vm.Type))
-                return BadRequest("❌ 請選擇一個家具分類");
+                if (string.IsNullOrWhiteSpace(vm.Type))
+                    return BadRequest("❌ 請選擇一個家具分類");
 
-            var categoryId = vm.Type.Trim();
+                var categoryId = vm.Type.Trim();
 
-            if (!_context.FurnitureCategories.Any(c => c.FurnitureCategoriesId == categoryId))
-                return BadRequest("❌ 所選分類不存在，請重新選擇");
+                if (!_context.FurnitureCategories.Any(c => c.FurnitureCategoriesId == categoryId))
+                    return BadRequest("❌ 所選分類不存在，請重新選擇");
 
+                var product = new FurnitureProduct
+                {
+                    FurnitureProductId = newId,
+                    ProductName = vm.Name,
+                    Description = vm.Description,
+                    CategoryId = categoryId,
+                    ListPrice = vm.OriginalPrice,
+                    DailyRental = vm.RentPerDay,
+                    Status = vm.Status,
+                    ListedAt = vm.StartDate.HasValue ? DateOnly.FromDateTime(vm.StartDate.Value) : DateOnly.FromDateTime(DateTime.Now),
+                    DelistedAt = vm.EndDate.HasValue ? DateOnly.FromDateTime(vm.EndDate.Value) : DateOnly.FromDateTime(DateTime.Now.AddMonths(1)),
+                    CreatedAt = DateTime.Now,
+                    UpdatedAt = DateTime.Now
+                };
 
-            var product = new FurnitureProduct
+                var inventory = new FurnitureInventory
+                {
+                    FurnitureInventoryId = Guid.NewGuid().ToString(),
+                    ProductId = newId,
+                    TotalQuantity = vm.Stock,
+                    AvailableQuantity = vm.Stock,
+                    RentedQuantity = 0
+                };
+
+                var inventoryEvent = new InventoryEvent
+                {
+                    FurnitureInventoryId = Guid.NewGuid(), // PK
+                    ProductId = newId,
+                    EventType = "StockIn",       // 原本是 "上架入庫"
+                    Quantity = vm.Stock,
+                    SourceType = "Upload",       // 原本是 "上架"
+                    SourceId = newId,
+                    OccurredAt = DateTime.Now,
+                    RecordedAt = DateTime.Now
+                };
+            try
             {
-                FurnitureProductId = newId,
-                ProductName = vm.Name,
-                Description = vm.Description,
-                CategoryId = categoryId,
-                ListPrice = vm.OriginalPrice,
-                DailyRental = vm.RentPerDay,
-                Status = vm.Status,
-                ListedAt = vm.StartDate ?? DateTime.Now,
-                DelistedAt = vm.EndDate ?? DateTime.Now.AddMonths(1),
-                CreatedAt = DateTime.Now,
-                UpdatedAt = DateTime.Now
-            };
+                _context.FurnitureProducts.Add(product);
+                _context.FurnitureInventories.Add(inventory);
+                _context.InventoryEvents.Add(inventoryEvent);
+                _context.SaveChanges(); // ← 保證 FK 可用
 
-            _context.FurnitureProducts.Add(product);
-            _context.SaveChanges(); // ← 保證 FK 可用
-
-            var inventory = new FurnitureInventory
+                // ✅ 成功後記得 Commit
+                transaction.Commit();
+                return Ok("✅ 家具已成功上傳！");
+            }
+            catch (Exception ex)
             {
-                FurnitureInventoryId = Guid.NewGuid().ToString(),
-                ProductId = newId,
-                TotalQuantity = vm.Stock,
-                AvailableQuantity = vm.Stock,
-                RentedQuantity = 0
-            };
-
-            _context.FurnitureInventories.Add(inventory);
-            _context.SaveChanges();
-
-            return Ok("✅ 家具已成功上傳！");
+                transaction.Rollback();
+                return StatusCode(500, $"❌ 上傳失敗：{ex.Message}");
+            }
         }
 
 

@@ -7,6 +7,17 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Data\**" />
+    <Compile Remove="OldModels\**" />
+    <Content Remove="Data\**" />
+    <Content Remove="OldModels\**" />
+    <EmbeddedResource Remove="Data\**" />
+    <EmbeddedResource Remove="OldModels\**" />
+    <None Remove="Data\**" />
+    <None Remove="OldModels\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Folder Include="wwwroot\images\" />
     <Folder Include="wwwroot\uploads\" />
   </ItemGroup>

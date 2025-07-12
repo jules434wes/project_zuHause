@@ -1,8 +1,9 @@
-using zuHause.Data;
+
 using Microsoft.EntityFrameworkCore;
+using zuHause.Models;
 var builder = WebApplication.CreateBuilder(args);
 // 加入資料庫連線字串
-builder.Services.AddDbContext<ZuhauseDbContext>(options =>
+builder.Services.AddDbContext<ZuHauseContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("ZuhauseDb"))
 );
 // Add services to the container.
