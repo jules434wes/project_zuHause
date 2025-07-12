@@ -38,24 +38,39 @@
     };
 
     // 提前下架家具
-    window.deactivateFurniture = function (furnitureId) {
+    window.setProductOffline = function (furnitureId) {
         if (!confirm(`確定要提前下架家具 ${furnitureId} 嗎？`)) return;
-        fetch(`/Dashboard/DeactivateFurniture/${furnitureId}`, {
-            method: 'POST',
+            
+        fetch("/Dashboard/SetOffline", {
+            method: "POST",
             headers: {
-                'Content-Type': 'application/json',
-                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
-            }
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ id: furnitureId })  // ✅ 用物件包裝
         })
             .then(response => {
-                if (response.ok) {
-                    alert('✅ 家具已提前下架');
-                    openTab("furniture_management");
-                } else {
-                    return response.text().then(msg => { throw new Error(msg); });
-                }
+                if (!response.ok) throw new Error("伺服器回應失敗");
+                return response.text();
             })
-            .catch(err => alert("❌ 錯誤：" + err.message));
+            .then(msg => {
+                alert(msg);
+               
+                
+
+                // ✅ 重新載入家具列表區域
+                fetch('/Dashboard/furniture_management')
+                    .then(res => res.text())
+                    .then(html => {
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(html, 'text/html');
+                        const newList = doc.querySelector('.furniture-list-scroll');
+                        if (newList) {
+                            document.querySelector('.furniture-list-scroll').replaceWith(newList);
+                            console.log("✅ 家具狀態已更新！");
+                        }
+                    });
+            })
+            .catch(err => alert("❌ 發生錯誤：" + err.message));
     };
 
     // 提交家具資料

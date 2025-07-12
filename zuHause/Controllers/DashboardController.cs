@@ -1,4 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+﻿using Azure.Core;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using zuHause.Data;
 using zuHause.Models;
@@ -42,7 +44,6 @@ namespace zuHause.Controllers
                     .OrderBy(c => c.DisplayOrder)
                     .ToList();
                 var data = from p in _context.FurnitureProducts
-                           join i in _context.FurnitureInventories on p.FurnitureProductId equals i.ProductId
                            join c in _context.FurnitureCategories on p.CategoryId equals c.FurnitureCategoriesId into pc
                            from c in pc.DefaultIfEmpty()
                            where p.DeletedAt == null
@@ -51,8 +52,6 @@ namespace zuHause.Controllers
                                FurnitureID = p.FurnitureProductId,
                                Name = p.ProductName,
                                Status = p.Status == true ? "上架" : "下架",
-                               Stock = i.AvailableQuantity,
-                               RentedCount = i.RentedQuantity,
                                Type = c != null ? c.Name : "(未分類)",
                                Description = p.Description,
                                OriginalPrice = p.ListPrice,
@@ -94,15 +93,29 @@ namespace zuHause.Controllers
             return Content("✅ 已軟刪除");
         }
         // 提前下架
-        [HttpPost]
-        public IActionResult SetOffline(string id)
+        public class FurnitureOfflineRequest
         {
-            var product = _context.FurnitureProducts.FirstOrDefault(p => p.FurnitureProductId == id && p.DeletedAt == null);
-            if (product == null) return NotFound("找不到資料");
+            public string? Id { get; set; }
+        }
+        [HttpPost("SetOffline")]
+        public IActionResult SetOffline([FromBody] FurnitureOfflineRequest request)
+        {
 
+            var id = request?.Id;
+            if (string.IsNullOrWhiteSpace(id)) return BadRequest("❌ 家具ID不能為空");
+
+            // 避免拉出 categoryId 或 imageUrl 造成 Null 崩潰
+            var exists = _context.FurnitureProducts
+                .Any(p => p.FurnitureProductId == id && p.DeletedAt == null);
+
+            if (!exists) return NotFound("找不到資料");
+
+            // 進行更新
+            var product = _context.FurnitureProducts.First(p => p.FurnitureProductId == id);
             product.Status = false;
             product.UpdatedAt = DateTime.Now;
             _context.SaveChanges();
+
             return Content("✅ 已提前下架");
         }
 
@@ -141,16 +154,9 @@ namespace zuHause.Controllers
             _context.FurnitureProducts.Add(product);
             _context.SaveChanges(); // ← 保證 FK 可用
 
-            var inventory = new FurnitureInventory
             {
-                FurnitureInventoryId = Guid.NewGuid().ToString(),
-                ProductId = newId,
-                TotalQuantity = vm.Stock,
-                AvailableQuantity = vm.Stock,
-                RentedQuantity = 0
             };
 
-            _context.FurnitureInventories.Add(inventory);
             _context.SaveChanges();
 
             return Ok("✅ 家具已成功上傳！");

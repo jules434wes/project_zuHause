@@ -177,11 +177,25 @@ function openTab(tabKey) {
                     }
                     if (tabKey === "furniture_management") {
                         if (typeof resetForm === "function") resetForm();
+
                         if (typeof submitFurniture === "function") {
                             const btn = document.getElementById("submitBtn");
                             if (btn) {
                                 btn.addEventListener("click", submitFurniture);
                             }
+                        }
+
+                        // 🔧 綁定「提前下架」按鈕
+                        if (typeof setProductOffline === "function") {
+                            const offlineBtns = document.querySelectorAll(".btn-warning");
+                            offlineBtns.forEach(btn => {
+                                const id = btn.getAttribute("onclick")?.match(/'(.+)'/)?.[1];
+                                if (id) {
+                                    btn.addEventListener("click", () => setProductOffline(id));
+                                    // 🔄 清掉原本的 onclick
+                                    btn.removeAttribute("onclick");
+                                }
+                            });
                         }
                     }
 

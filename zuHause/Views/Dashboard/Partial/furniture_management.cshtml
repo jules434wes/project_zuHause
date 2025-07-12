@@ -2,8 +2,8 @@
 @model List<zuHause.ViewModels.FurnitureCardViewModel>
 @{
     ViewBag.Title = "家具管理";
-   
 }
+
 <div class="container-fluid">
     <div class="row">
 
@@ -29,7 +29,7 @@
                     @foreach (var item in Model)
                     {
                         <div class="col">
-                            <div class="card h-100" onclick="editFurniture('@item.FurnitureID')">
+                            <div class="card h-100" >
                                 <div class="card-body">
                                     <p class="mb-1">家具編號: @item.FurnitureID</p>
                                     <p class="mb-1">名稱: @item.Name</p>
@@ -43,15 +43,23 @@
                                     <p class="mb-1">上架時間: @item.ListDate.ToString("yyyy/M/d HH:mm") ~ @item.DelistDate.ToString("yyyy/M/d HH:mm")</p>
                                     <p class="mb-1">建立時間: @(item.CreatedAt?.ToString("yyyy/M/d HH:mm") ?? "未設定")</p>
                                     <p class="mb-1">更新時間: @(item.UpdatedAt?.ToString("yyyy/M/d HH:mm") ?? "未更新")</p>
-                                    
+
 
                                     <div class="d-flex justify-content-between">
-                                        <button class="btn btn-sm btn-primary">編輯</button>
-                                        
-                                        <button class="btn btn-sm btn-warning" onclick="setProductOffline('@item.FurnitureID')">提前下架</button>
-                                        <button class="btn btn-sm btn-danger" onclick="deleteFurniture('@item.FurnitureID')">刪除</button>
+                                        <button class="btn btn-sm btn-primary" onclick="editFurniture('@item.FurnitureID')">編輯</button>
 
+                                        @if (item.Status == "上架")
+                                        {
+                                            <button class="btn btn-sm btn-warning" onclick="event.stopPropagation(); setProductOffline('@item.FurnitureID')">提前下架</button>
+                                        }
+                                        else
+                                        {
+                                            <button class="btn btn-sm btn-secondary" disabled>已下架</button>
+                                        }
+
+                                        <button class="btn btn-sm btn-danger" onclick="event.stopPropagation(); deleteFurniture('@item.FurnitureID')">刪除</button>
                                     </div>
+
                                 </div>
                             </div>
                         </div>
