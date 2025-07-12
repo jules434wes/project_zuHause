@@ -1,0 +1,89 @@
+<!-- Modal彈窗區域 -->
+<!-- 查看證件Modal -->
+<div class="modal fade" id="viewDocumentModal" tabindex="-1" aria-labelledby="viewDocumentModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewDocumentModalLabel">查看身分證件</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- 證件查看內容 - 後續開發 -->
+                <p>證件查看功能內容後續製作...</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">關閉</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 身分驗證操作Modal -->
+<div class="modal fade" id="verificationModal" tabindex="-1" aria-labelledby="verificationModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="verificationModalLabel">身分驗證操作</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- 驗證操作內容 - 後續開發 -->
+                <p>身分驗證操作功能內容後續製作...</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-success" id="verificationApproveBtn">審核通過</button>
+                <button type="button" class="btn btn-danger" id="verificationRejectBtn">審核拒絕</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 房東驗證操作Modal -->
+<div class="modal fade" id="landlordVerificationModal" tabindex="-1" aria-labelledby="landlordVerificationModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="landlordVerificationModalLabel">房東驗證操作</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- 房東驗證操作內容 - 後續開發 -->
+                <p>房東驗證操作功能內容後續製作...</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-success" id="landlordApproveBtn">審核通過並設為房東</button>
+                <button type="button" class="btn btn-danger" id="landlordRejectBtn">審核拒絕</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Double Check 確認Modal -->
+<div class="modal fade" id="doubleCheckModal" tabindex="-1" aria-labelledby="doubleCheckModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="doubleCheckModalLabel">
+                    <i class="fas fa-exclamation-triangle text-warning"></i> 確認操作
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <p id="doubleCheckMessage" class="mb-3">確定要執行此操作嗎？</p>
+                <div class="alert alert-warning" role="alert">
+                    <small><i class="fas fa-info-circle"></i> 此操作執行後無法復原，請謹慎確認</small>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> 取消
+                </button>
+                <button type="button" class="btn btn-primary" id="finalConfirmBtn">
+                    <i class="fas fa-check"></i> 確定執行
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
