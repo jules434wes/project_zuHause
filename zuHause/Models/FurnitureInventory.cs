@@ -8,9 +8,9 @@ namespace zuHause.Models
     {
         [Key]
         [Column("furnitureInventoryId")]
-        public string FurnitureInventoryId { get; set; }
+        public string? FurnitureInventoryId { get; set; }
 
-        public string ProductId { get; set; }
+        public string? ProductId { get; set; }
         public int TotalQuantity { get; set; }
         public int RentedQuantity { get; set; }
         public int AvailableQuantity { get; set; }

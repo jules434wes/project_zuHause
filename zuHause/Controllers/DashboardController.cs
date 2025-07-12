@@ -43,7 +43,7 @@ namespace zuHause.Controllers
                     .OrderBy(c => c.DisplayOrder)
                     .ToList();
                 var data = from p in _context.FurnitureProducts
-                           join i in _context.furnitureInventories on p.FurnitureProductId equals i.productId
+                           join i in _context.FurnitureInventories on p.FurnitureProductId equals i.ProductId
                            join c in _context.FurnitureCategories on p.CategoryId equals c.FurnitureCategoriesId into pc
                            from c in pc.DefaultIfEmpty()
                            where p.DeletedAt == null
@@ -52,8 +52,8 @@ namespace zuHause.Controllers
                                FurnitureID = p.FurnitureProductId,
                                Name = p.ProductName,
                                Status = p.Status == true ? "上架" : "下架",
-                               Stock = i.availableQuantity,
-                               RentedCount = i.rentedQuantity,
+                               Stock = i.AvailableQuantity,
+                               RentedCount = i.RentedQuantity,
                                Type = c != null ? c.Name : "(未分類)",
                                Description = p.Description,
                                OriginalPrice = p.ListPrice,
@@ -156,16 +156,16 @@ namespace zuHause.Controllers
             _context.FurnitureProducts.Add(product);
             _context.SaveChanges(); // ← 保證 FK 可用
 
-            var inventory = new furnitureInventory
+            var inventory = new FurnitureInventory
             {
-                furnitureInventoryId = Guid.NewGuid().ToString(),
-                productId = newId,
-                totalQuantity = vm.Stock,
-                availableQuantity = vm.Stock,
-                rentedQuantity = 0
+                FurnitureInventoryId = Guid.NewGuid().ToString(),
+                ProductId = newId,
+                TotalQuantity = vm.Stock,
+                AvailableQuantity = vm.Stock,
+                RentedQuantity = 0
             };
 
-            _context.furnitureInventories.Add(inventory);
+            _context.FurnitureInventories.Add(inventory);
             _context.SaveChanges();
 
             return Ok("✅ 家具已成功上傳！");
