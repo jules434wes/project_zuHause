@@ -1,0 +1,177 @@
+<!-- 屋源審核Modal -->
+<div class="modal fade" id="reviewModal" tabindex="-1" aria-labelledby="reviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="reviewModalLabel">
+                    <i class="fas fa-clipboard-check me-2"></i>屋源審核操作
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    請仔細檢查屋源資訊及房屋證明文件後再進行審核操作。此操作將影響房源的上架狀態。
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="fw-bold mb-3"><i class="fas fa-home me-2"></i>屋源基本資訊</h6>
+                        <table class="table table-borderless table-sm">
+                            <tr>
+                                <td class="fw-bold" style="width: 30%;">房源ID:</td>
+                                <td>P002</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">房源標題:</td>
+                                <td>新北市板橋區溫馨雅房</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">房源地址:</td>
+                                <td>新北市板橋區文化路二段88號</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">月租金:</td>
+                                <td class="text-success fw-bold">NT$ 12,000</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">所屬房東:</td>
+                                <td>李小華</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">申請時間:</td>
+                                <td>2024-07-05 10:30</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="fw-bold mb-3"><i class="fas fa-file-alt me-2"></i>房屋證明文件</h6>
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <i class="fas fa-file-image fa-3x text-info mb-3"></i>
+                                <p class="card-text">房屋證明文件已上傳</p>
+                                <button class="btn btn-outline-primary btn-sm" onclick="openDocumentModal('P002')">
+                                    <i class="fas fa-eye me-1"></i>檢視文件
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="row">
+                    <div class="col-12">
+                        <h6 class="fw-bold mb-3"><i class="fas fa-comments me-2"></i>審核備註</h6>
+                        <textarea class="form-control" rows="3" placeholder="請輸入審核備註（選填）..." id="reviewNotes"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>取消
+                </button>
+                <button type="button" class="btn btn-danger" id="reviewRejectBtn">
+                    <i class="fas fa-times-circle me-1"></i>拒絕審核
+                </button>
+                <button type="button" class="btn btn-success" id="reviewApproveBtn">
+                    <i class="fas fa-check-circle me-1"></i>審核通過
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 文件查看Modal -->
+<div class="modal fade" id="viewDocumentModal" tabindex="-1" aria-labelledby="viewDocumentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewDocumentModalLabel">
+                    <i class="fas fa-file-image me-2"></i>房屋證明文件檢視
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        以下為該屋源的房屋證明文件，請仔細檢查文件的真實性和完整性。
+                    </div>
+                    
+                    <!-- 模擬文件顯示區域 -->
+                    <div class="border rounded p-4 bg-light" style="min-height: 400px;">
+                        <i class="fas fa-file-image fa-5x text-muted mb-3"></i>
+                        <p class="text-muted">房屋證明文件預覽</p>
+                        <p class="small text-muted">（實際應用中這裡會顯示上傳的文件圖片或PDF）</p>
+                        
+                        <div class="mt-4">
+                            <button class="btn btn-outline-primary me-2">
+                                <i class="fas fa-download me-1"></i>下載原始文件
+                            </button>
+                            <button class="btn btn-outline-secondary">
+                                <i class="fas fa-search-plus me-1"></i>放大檢視
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>關閉
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Double Check 確認Modal -->
+<div class="modal fade" id="doubleCheckModal" tabindex="-1" aria-labelledby="doubleCheckModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title" id="doubleCheckModalLabel">
+                    <i class="fas fa-exclamation-triangle me-2"></i>確認操作
+                </h5>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    <strong>重要提醒：</strong>此操作將直接影響屋源的審核狀態，請確認您已仔細檢查所有相關資訊。
+                </div>
+                
+                <p class="mb-3" id="doubleCheckMessage">確定要執行此操作嗎？</p>
+                
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="confirmCheckbox">
+                    <label class="form-check-label fw-bold" for="confirmCheckbox">
+                        我已仔細檢查並確認要執行此操作
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-arrow-left me-1"></i>返回檢查
+                </button>
+                <button type="button" class="btn btn-danger" id="finalConfirmBtn" disabled>
+                    <i class="fas fa-check me-1"></i>確定執行
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Double Check 確認框的checkbox控制
+    document.getElementById('confirmCheckbox').addEventListener('change', function() {
+        document.getElementById('finalConfirmBtn').disabled = !this.checked;
+    });
+    
+    // 當 doubleCheckModal 關閉時重置 checkbox
+    document.getElementById('doubleCheckModal').addEventListener('hidden.bs.modal', function() {
+        document.getElementById('confirmCheckbox').checked = false;
+        document.getElementById('finalConfirmBtn').disabled = true;
+    });
+});
+</script>
