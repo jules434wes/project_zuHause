@@ -8,7 +8,7 @@ namespace zuHause.Controllers
         {
             return View();
         }
-        public IActionResult admin_userslist()
+        public IActionResult admin_usersList()
         {
             return View();
         }
@@ -16,7 +16,11 @@ namespace zuHause.Controllers
         {
             return View();
         }
-
+        
+        public IActionResult admin_userDetails()
+        {
+            return View();
+        }
 
     }
 }

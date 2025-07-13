@@ -4,76 +4,8 @@
 
 <!-- Bootstrap Icons CDN -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
-
-<style>
-    .sortable {
-        cursor: pointer;
-        user-select: none;
-        position: relative;
-        transition: all 0.3s ease;
-        border-bottom: 2px solid transparent;
-    }
-    
-    .sortable:hover {
-        background-color: rgba(0, 123, 255, 0.15);
-        border-bottom-color: rgba(0, 123, 255, 0.3);
-    }
-    
-    .sortable.active {
-        background-color: rgba(0, 123, 255, 0.2);
-        border-bottom-color: #007bff;
-    }
-    
-    .sort-icon {
-        margin-left: 6px;
-        font-size: 0.9em;
-        color: #adb5bd;
-        transition: all 0.3s ease;
-        vertical-align: middle;
-    }
-    
-    .sort-icon.active {
-        color: #007bff;
-        transform: scale(1.1);
-    }
-    
-    .sortable:hover .sort-icon {
-        color: #007bff;
-        transform: scale(1.05);
-    }
-    
-    .sortable .sort-icon:not(.active) {
-        opacity: 0.7;
-    }
-    
-    .sortable:hover .sort-icon:not(.active) {
-        opacity: 1;
-    }
-    
-    /* 增加視覺提示 */
-    .sortable::after {
-        content: '';
-        position: absolute;
-        top: 50%;
-        right: 8px;
-        width: 0;
-        height: 0;
-        border-left: 3px solid transparent;
-        border-right: 3px solid transparent;
-        border-bottom: 3px solid #adb5bd;
-        transform: translateY(-50%);
-        opacity: 0;
-        transition: opacity 0.3s ease;
-    }
-    
-    .sortable:hover::after {
-        opacity: 0.6;
-    }
-    
-    .sortable.active::after {
-        opacity: 0;
-    }
-</style>
+<!-- Admin Common Styles -->
+<link href="~/css/admin-common.css" rel="stylesheet" />
 
 <div class="container-fluid">
     <div class="row">

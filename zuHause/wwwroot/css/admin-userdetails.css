@@ -1,0 +1,58 @@
+/* Admin User Details Page Styles */
+
+body {
+    background-color: #f8f9fa;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    cursor: pointer;
+}
+
+.card-header, 
+.modal-header {
+    background-color: #e9ecef;
+}
+
+.list-group-item-action {
+    cursor: pointer;
+}
+
+.key-value-list dt {
+    font-weight: 600;
+}
+
+.key-value-list dd {
+    margin-left: 1.5rem;
+}
+
+.sortable {
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+    transition: all 0.3s ease;
+    border-bottom: 2px solid transparent;
+}
+
+.sortable:hover {
+    background-color: rgba(0, 123, 255, 0.15);
+    border-bottom-color: rgba(0, 123, 255, 0.3);
+}
+
+.sortable.active {
+    background-color: rgba(0, 123, 255, 0.2);
+    border-bottom-color: #007bff;
+}
+
+.sort-icon {
+    margin-left: 6px;
+    font-size: 0.9em;
+    color: #adb5bd;
+    transition: all 0.3s ease;
+    vertical-align: middle;
+}
+
+.sort-icon.active {
+    color: #007bff;
+    transform: scale(1.1);
+}
