@@ -2957,7 +2957,6 @@ public partial class ZuHauseContext : DbContext
             entity.ToTable("userUploads", tb => tb.HasComment("會員上傳資料紀錄表"));
 
             entity.Property(e => e.UploadId)
-                .ValueGeneratedNever()
                 .HasComment("上傳ID")
                 .HasColumnName("uploadID");
             entity.Property(e => e.ApprovalId)

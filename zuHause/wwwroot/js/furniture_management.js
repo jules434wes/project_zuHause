@@ -24,8 +24,10 @@
         if (document.getElementById("imageUpload")) {
             document.getElementById("imageUpload").value = "";
         }
-    };
 
+    };
+  
+    
     // 軟刪除家具
     window.deleteFurniture = function (furnitureId) {
         if (!confirm("確定要刪除這筆家具嗎？")) return;
@@ -126,6 +128,63 @@
             })
             .catch(err => alert("❌ 錯誤：" + err.message));
     };
+    //家具庫存歷史紀錄表
+    window.loadAllInventoryEvents = function () {
+        console.log("查詢庫存歷史");
+        fetch("/Dashboard/AllInventoryEvents")
+            .then(res => res.json())
+            .then(data => {
+                const tbody = document.getElementById("inventoryEventBody");
+                tbody.innerHTML = "";
+                data.forEach(row => {
+                    tbody.innerHTML += `
+                    <tr>
+                        <td>${row.productId}</td>
+                        <td>${row.eventType}</td>
+                        <td>${row.quantity}</td>
+                        <td>${row.sourceType}</td>
+                        <td>${row.sourceId}</td>
+                        <td>${row.occurredAt}</td>
+                        <td>${row.recordedAt}</td>
+                    </tr>`;
+                });
+            });
+    }
+    window.submitInventoryAdjustment = function () {
+        const data = {
+            ProductId: document.getElementById("adjustProductId").value.trim(),
+            Quantity: parseInt(document.getElementById("adjustQuantity").value),
+            SourceType: document.getElementById("adjustSourceType").value.trim(),
+            SourceId: document.getElementById("adjustSourceId").value.trim()
+        };
+
+        if (!data.ProductId || isNaN(data.Quantity) || !data.SourceType) {
+            alert("❌ 請完整填寫 商品ID、異動數量 和 來源類型！");
+            return;
+        }
+
+        fetch("/Dashboard/AdjustInventory", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(data)
+        })
+            .then(res => res.text())
+            .then(msg => {
+                alert(msg);
+                document.getElementById("adjustProductId").value = "";
+                document.getElementById("adjustQuantity").value = "";
+                document.getElementById("adjustSourceType").value = "";
+                document.getElementById("adjustSourceId").value = "";
+
+                // 🌀 異動成功 → 重新載入紀錄表
+                if (typeof loadAllInventoryEvents === "function") loadAllInventoryEvents();
+            })
+            .catch(err => alert("❌ 發生錯誤：" + err.message));
+    };
+
+
 
     // 👉 確保載入成功後綁定 submit 按鈕
     const btn = document.getElementById("submitBtn");

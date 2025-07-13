@@ -1,9 +1,7 @@
-﻿
-@model List<zuHause.ViewModels.FurnitureCardViewModel>
+﻿@model List<zuHause.ViewModels.FurnitureCardViewModel>
 @{
     ViewBag.Title = "家具管理";
 }
-
 <div class="container-fluid">
     <div class="row">
 
@@ -144,7 +142,58 @@
                     <button class="btn btn-danger" onclick="resetForm()">取消上傳</button>
                 </div>
             </div>
+            
+            <!-- 庫存異動紀錄區塊（直接展開） -->
+            <div class="card p-3 mt-4">
+                <h5 class="mb-3">📋 所有家具庫存異動紀錄</h5>
+                <table class="table table-sm table-bordered text-center">
+                    <thead>
+                        <tr>
+                            <th>商品ID</th>
+                            <th>事件類型</th>
+                            <th>異動數量</th>
+                            <th>來源類型</th>
+                            <th>來源編號</th>
+                            <th>發生時間</th>
+                            <th>寫入時間</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventoryEventBody">
+                        <!-- JavaScript 動態填入 -->
+                    </tbody>
+                </table>
+            </div>
+            <!-- 🔧 庫存調整區 -->
+            <hr class="my-4" />
+            <div class="card p-4">
+                <h5>🔧 手動調整庫存</h5>
+
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label">📦 商品編號（Furniture ID）</label>
+                        <input type="text" class="form-control" id="adjustProductId" placeholder="如 F123" />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">🔢 異動數量（可為負）</label>
+                        <input type="number" class="form-control" id="adjustQuantity" />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">📋 來源類型</label>
+                        <input type="text" class="form-control" id="adjustSourceType" placeholder="手動調整 / 補貨 / 減損" />
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">🆔 來源編號（選填）</label>
+                        <input type="text" class="form-control" id="adjustSourceId" placeholder="如訂單編號或維修單" />
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" onclick="submitInventoryAdjustment()">✅ 送出異動</button>
+            </div>
 
         </div>
+
     </div>
 </div>

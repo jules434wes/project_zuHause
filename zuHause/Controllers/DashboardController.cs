@@ -15,6 +15,7 @@ namespace zuHause.Controllers
         {
             _context = context;
         }
+
         [HttpGet("")]
         public IActionResult Index()
         {
@@ -30,6 +31,7 @@ namespace zuHause.Controllers
 
 
         }
+        
         [HttpGet("{id}")]
         public IActionResult LoadTab(string id)
         {
@@ -58,14 +60,14 @@ namespace zuHause.Controllers
                                OriginalPrice = p.ListPrice,
                                RentPerDay = p.DailyRental,
                                ListDate = p.ListedAt.HasValue
-                                ? p.ListedAt.Value.ToDateTime(TimeOnly.MinValue)
+                                ? p.ListedAt.Value.ToDateTime(TimeOnly.MinValue).AddHours(8)
                                 : DateTime.MinValue,
                                DelistDate = p.DelistedAt.HasValue
-                                ? p.DelistedAt.Value.ToDateTime(TimeOnly.MinValue)
+                                ? p.DelistedAt.Value.ToDateTime(TimeOnly.MinValue).AddHours(8)
                                 : DateTime.MaxValue,
-                               CreatedAt = p.CreatedAt,
-                               UpdatedAt = p.UpdatedAt,
-                               DeletedAt = p.DeletedAt
+                               CreatedAt = p.CreatedAt.AddHours(8),
+                               UpdatedAt = p.UpdatedAt.AddHours(8),
+                               DeletedAt = p.DeletedAt.HasValue ? p.DeletedAt.Value.AddHours(8) : null,
 
                            };
                 ViewBag.Categories = categories;
@@ -93,7 +95,7 @@ namespace zuHause.Controllers
             var item = _context.FurnitureProducts.FirstOrDefault(f => f.FurnitureProductId == id);
             if (item == null) return NotFound("找不到家具");
 
-            item.DeletedAt = DateTime.Now;
+            item.DeletedAt = DateTime.UtcNow;
             _context.SaveChanges();
             return Content("✅ 已軟刪除");
         }
@@ -118,7 +120,7 @@ namespace zuHause.Controllers
             // 進行更新
             var product = _context.FurnitureProducts.First(p => p.FurnitureProductId == id);
             product.Status = false;
-            product.UpdatedAt = DateTime.Now;
+            product.UpdatedAt = DateTime.UtcNow;
             _context.SaveChanges();
 
             return Content("✅ 已提前下架");
@@ -151,10 +153,10 @@ namespace zuHause.Controllers
                     ListPrice = vm.OriginalPrice,
                     DailyRental = vm.RentPerDay,
                     Status = vm.Status,
-                    ListedAt = vm.StartDate.HasValue ? DateOnly.FromDateTime(vm.StartDate.Value) : DateOnly.FromDateTime(DateTime.Now),
-                    DelistedAt = vm.EndDate.HasValue ? DateOnly.FromDateTime(vm.EndDate.Value) : DateOnly.FromDateTime(DateTime.Now.AddMonths(1)),
-                    CreatedAt = DateTime.Now,
-                    UpdatedAt = DateTime.Now
+                    ListedAt = vm.StartDate.HasValue ? DateOnly.FromDateTime(vm.StartDate.Value) : DateOnly.FromDateTime(DateTime.UtcNow),
+                    DelistedAt = vm.EndDate.HasValue ? DateOnly.FromDateTime(vm.EndDate.Value) : DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(1)),
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
                 };
 
                 var inventory = new FurnitureInventory
@@ -170,13 +172,14 @@ namespace zuHause.Controllers
                 {
                     FurnitureInventoryId = Guid.NewGuid(), // PK
                     ProductId = newId,
-                    EventType = "StockIn",       // 原本是 "上架入庫"
-                    Quantity = vm.Stock,
-                    SourceType = "Upload",       // 原本是 "上架"
-                    SourceId = newId,
-                    OccurredAt = DateTime.Now,
-                    RecordedAt = DateTime.Now
+                    EventType = "adjust",       // 調整類型（ex: 初始上架）
+                    Quantity = vm.Stock,        // 入庫 → 正數
+                    SourceType = "manual",      // 手動建立
+                    SourceId = newId,           // 產品ID
+                    OccurredAt = DateTime.UtcNow,
+                    RecordedAt = DateTime.UtcNow
                 };
+
             try
             {
                 _context.FurnitureProducts.Add(product);
@@ -194,6 +197,48 @@ namespace zuHause.Controllers
                 return StatusCode(500, $"❌ 上傳失敗：{ex.Message}");
             }
         }
+
+        [HttpGet("AllInventoryEvents")]
+        public IActionResult AllInventoryEvents()
+        {
+            var events = _context.InventoryEvents
+                .OrderByDescending(e => e.OccurredAt)
+                .Select(e => new
+                {
+                    ProductId = e.ProductId,
+                    e.EventType,
+                    e.Quantity,
+                    e.SourceType,
+                    e.SourceId,
+                    OccurredAt = e.OccurredAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm"),
+                    RecordedAt = e.RecordedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")
+                }).ToList();
+
+            return Json(events);
+        }
+        [HttpPost("AdjustInventory")]
+        public IActionResult AdjustInventory([FromBody] InventoryEvent data)
+        {
+            if (string.IsNullOrWhiteSpace(data.ProductId) || string.IsNullOrWhiteSpace(data.SourceType))
+                return BadRequest("商品ID 和 來源類型 為必填");
+
+            var entity = new InventoryEvent
+            {
+                ProductId = data.ProductId,
+                Quantity = data.Quantity,
+                SourceType = data.SourceType,
+                SourceId = data.SourceId,
+                EventType = data.Quantity > 0 ? "入庫" : "出庫",
+                OccurredAt = DateTime.UtcNow,
+                RecordedAt = DateTime.UtcNow
+            };
+
+            _context.InventoryEvents.Add(entity);
+            _context.SaveChanges();
+
+            return Content("✅ 庫存異動成功！");
+        }
+
 
 
 

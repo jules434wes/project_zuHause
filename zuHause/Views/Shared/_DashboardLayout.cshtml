@@ -41,6 +41,6 @@
         const EmployeeID = @Html.Raw(JsonSerializer.Serialize(ViewBag.EmployeeID ?? ""));
          const roleAccess = @Html.Raw(JsonSerializer.Serialize(ViewBag.RoleAccess ?? new Dictionary<string, List<string>>()));
     </script>
-    <script src="~/js/dashboard.js?v=1"></script>
+    <script src="~/js/dashboard.js?v=@DateTime.Now.Ticks"></script>
 </body>
 </html>
