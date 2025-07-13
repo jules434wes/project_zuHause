@@ -1,0 +1,201 @@
+﻿@{
+    ViewData["Title"] = "會員註冊 - 填寫會員資料";
+}
+
+
+@await Html.PartialAsync("_PartialRegisterActiveProgress")
+
+
+
+<form action="" method="post" class="w-100 text-light">
+    <div class="row">
+        <div class="col-9 mx-auto d-flex flex-column gap-3 p-5 shadow-lg bg-white-aqua">
+            <h1 class="text-start title-text mb-3">填寫會員資料</h1>
+            <div class="row mx-auto w-100 mb-4">
+
+
+
+                <div class="col-12 d-flex flex-column gap-2 p-0">
+                    <div class="row">
+                        <label for="inputPhone" class="col-2 col-form-label text-end">手機號碼</label>
+                        <div class="col-auto d-flex align-items-center gap-3">
+                            <input type="hidden" readonly class="form-control-plaintext" id="inputPhone" value="0912345678">
+                            <p class="m-0">0912345678</p>
+                            <i class="bi bi-check-circle-fill"></i>
+                        </div>
+                    </div>
+                    <div class="row align-items-start">
+                        <label for="inputPassword" class="col-2 col-form-label text-end">密碼</label>
+                        <div class="col-6 pe-0">
+                            <input type="password" id="inputPassword" class="form-control is-invalid" aria-describedby="inputPasswordFeedback"
+                                   placeholder="請輸入密碼">
+                            <div id="inputPasswordFeedback" class="invalid-feedback">
+                                密碼需為八位數
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row align-items-start">
+                        <label for="inputPasswordAgain" class="col-form-label col-2 text-end">確認密碼</label>
+                        <div class="col-6 pe-0">
+                            <input type="password" id="inputPasswordAgain" class="form-control is-invalid"
+                                   aria-describedby="inputPasswordAgainFeedback" placeholder="請再次輸入密碼">
+                            <div id="inputPasswordAgainFeedback" class="invalid-feedback">
+                                密碼需為八位數
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row align-items-start">
+                        <label for="inputName" class="col-2 col-form-label text-end">姓名</label>
+                        <div class="col-6 pe-0">
+                            <input type="text" id="inputName" class="form-control is-invalid" aria-describedby="inputNameHelpInline"
+                                   placeholder="請輸入真實姓名">
+                            <div id="inputNameFeedback" class="invalid-feedback">
+                                密碼需為八位數
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row align-items-start">
+                        <label for="inputEmail" class="col-2 col-form-label text-end">電子信箱</label>
+                        <div class="col-5 pe-0">
+                            <input type="email" id="inputEmail" class="form-control is-invalid" aria-describedby="inputEmailHelpInline"
+                                   placeholder="請輸入電子信箱">
+                            <div id="inputEmailFeedback" class="invalid-feedback">
+                                密碼需為八位數
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <!-- Button trigger modal -->
+                            <button type="button" class="btn btn-aqua" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
+                                驗證信箱
+                            </button>
+                        </div>
+                    </div>
+                    <div class="row align-items-center">
+                        <label for="inputName" class="col-2 col-form-label text-end">性別</label>
+                        <div class="col-6 d-flex align-items-center gap-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="changeGender" id="changeGenderMale">
+                                <label class="form-check-label" for="changeGenderMale">
+                                    男性
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="changeGender" id="changeGenderFemale" checked>
+                                <label class="form-check-label" for="changeGenderFemale">
+                                    女性
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row align-items-start">
+                        <label for="inputBirthday" class="col-2 col-form-label text-end">生日</label>
+                        <div class="col-6 pe-0">
+                            <input type="date" id="inputBirthday" name="inputBirthday" value="2018-07-22"
+                                   class="w-100 rounded-2 border-1 is-invalid" style="padding: 0.375rem .75rem; border-color: #dee2e6;" />
+                            <div id="inputBirthdayFeedback" class="invalid-feedback">
+                                密碼需為八位數
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row align-items-center">
+                        <label for="inputBirthday" class="col-2 col-form-label text-end">聯絡地址</label>
+                        <div class="col-2 pe-1">
+                            <label class="visually-hidden" for="inputLiveCity">居住縣市</label>
+                            <select class="form-select" id="inputLiveCity">
+                                <option selected>縣市</option>
+                                <option value="1">One</option>
+                                <option value="2">Two</option>
+                                <option value="3">Three</option>
+                            </select>
+                        </div>
+                        <div class="col-2 px-1">
+                            <label class="visually-hidden" for="inputLiveDistrict">居住區域</label>
+                            <select class="form-select" id="inputLiveDistrict">
+                                <option selected>區域</option>
+                                <option value="1">One</option>
+                                <option value="2">Two</option>
+                                <option value="3">Three</option>
+                            </select>
+                        </div>
+                        <div class="col-5 px-1">
+                            <label class="visually-hidden" for="inputAddress">詳細地址</label>
+                            <input type="text" class="form-control" id="inputAddress" placeholder="請輸入地址">
+                        </div>
+                    </div>
+                    <div class="row align-items-center">
+                        <label for="inputBirthday" class="col-2 col-form-label text-end">主要承租區域</label>
+                        <div class="col-3 pe-1">
+                            <label class="visually-hidden" for="inputPerferredCity">主要承租縣市</label>
+                            <select class="form-select" id="inputPerferredCity">
+                                <option selected>縣市</option>
+                                <option value="1">One</option>
+                                <option value="2">Two</option>
+                                <option value="3">Three</option>
+                            </select>
+                        </div>
+                        <div class="col-3 px-1 pe-0">
+                            <label class="visually-hidden" for="inputPerferredDistrict">主要承租區域</label>
+                            <select class="form-select" id="inputPerferredDistrict">
+                                <option selected>區域</option>
+                                <option value="1">One</option>
+                                <option value="2">Two</option>
+                                <option value="3">Three</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-4 mx-auto d-flex flex-column align-items-center gap-2 p-0">
+                    <button class="btn btn-aqua w-100" type="submit">送出</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<!-- Modal -->
+<div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="staticBackdropLabel">驗證電子信箱</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-3">
+                <form action="" method="post" class="w-100">
+                            <div class="row mx-auto w-100 gap-3 mb-2">
+                                <div class="col-12 px-0 pb-2">
+                                    <small>已發送驗證碼至example@gmail.com</small>
+                                </div>
+                                <div class="col-12 mx-auto p-0 d-flex flex-column gap-2">
+                                    <div class="input-group has-validation">
+                                        <span class="input-group-text rounded-0 px-3 bg-white">
+                                            <i class="text-aqua bi bi-send-fill"></i>
+                                        </span>
+                                        <div class="form-floating is-invalid">
+                                            <!-- is-invalid -->
+                                            <input type="text" class=" is-invalid form-control rounded-0 pe-5" id="floatingInputGroup2"
+                                                   placeholder="Username" required>
+                                            <label for="floatingInputGroup2">請輸入驗證碼</label>
+                                        </div>
+                                        <div class="invalid-feedback">
+                                            Please choose a username.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row mx-auto w-100">
+                                <div class="col-6 mx-auto">
+                                    <button type="button" class="btn btn-aqua-sub btn-sm w-100 rounded-0">重新發送(60)</button>
+                                </div>
+                            </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-aqua">送出</button>
+            </div>
+        </div>
+    </div>
+</div>

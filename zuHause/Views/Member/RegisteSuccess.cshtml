@@ -1,0 +1,33 @@
+﻿@{
+    ViewData["Title"] = "會員註冊 - 驗證手機號碼";
+}
+@await Html.PartialAsync("_PartialRegisterActiveProgress")
+
+
+<form action="" method="post" class="w-100 text-light position-absolute top-50 translate-middle-y">
+    <div class="row">
+        <div class="col-4 mx-auto d-flex flex-column gap-3 p-5 shadow-lg bg-white-aqua">
+            <h1 class="text-start title-text">註冊會員</h1>
+            <div class="my-4 mx-auto w-100 d-flex align-items-center justify-content-center gap-3">
+                <div>
+                    <i class="bi bi-check-circle-fill fs-1"></i>
+                </div>
+                <div class="fs-2">完成註冊</div>
+            </div>
+            <div class="row">
+                <div class="col-12 text-center">
+
+                    <small>提醒：為確保您的租屋/刊登權益，請盡速完成身分驗證</small>
+                </div>
+            </div>
+            <div class="row mx-auto w-100 gx-3">
+                <div class="col-6">
+                    <a class="btn btn-aqua-sub w-100 py-1">立即驗證身分</a>
+                </div>
+                <div class="col-6">
+                    <a class="btn btn-aqua-sub w-100 py-1">回到首頁</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
