@@ -8,17 +8,20 @@
 
   <ItemGroup>
     <Compile Remove="Data\**" />
+    <Compile Remove="Helpers\**" />
     <Compile Remove="OldModels\**" />
     <Content Remove="Data\**" />
+    <Content Remove="Helpers\**" />
     <Content Remove="OldModels\**" />
     <EmbeddedResource Remove="Data\**" />
+    <EmbeddedResource Remove="Helpers\**" />
     <EmbeddedResource Remove="OldModels\**" />
     <None Remove="Data\**" />
+    <None Remove="Helpers\**" />
     <None Remove="OldModels\**" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Helpers\" />
     <Folder Include="wwwroot\images\" />
     <Folder Include="wwwroot\uploads\" />
   </ItemGroup>

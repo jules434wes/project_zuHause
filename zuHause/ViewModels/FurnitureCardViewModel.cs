@@ -13,7 +13,9 @@
         public decimal RentPerDay { get; set; }
         public decimal RentPerYear { get; set; }
         public bool IsHot { get; set; }
+        public int TotalQuantity { get; set; }
         public bool IsSpecial { get; set; }
+        public int SafetyStock { get; set; }
         public DateTime ListDate { get; set; }
         public DateTime DelistDate { get; set; }
         public DateTime? CreatedAt { get; set; }

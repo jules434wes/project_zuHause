@@ -36,6 +36,17 @@
             .then(msg => {
                 alert(msg);
                 openTab("furniture_management");
+                fetch('/Dashboard/furniture_management')
+                    .then(res => res.text())
+                    .then(html => {
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(html, 'text/html');
+                        const newList = doc.querySelector('.furniture-list-scroll');
+                        if (newList) {
+                            document.querySelector('.furniture-list-scroll').replaceWith(newList);
+                          
+                        }
+                    });
             });
     };
 
@@ -86,6 +97,7 @@
             OriginalPrice: parseFloat($("#originalPrice").val()),
             RentPerDay: parseFloat($("#rentPerDay").val()),
             Stock: parseInt($("#furnitureStock").val()),
+            SafetyStock: parseInt($("#furnitureSafeStock").val()),
             StartDate: $("#listDate").val(),
             EndDate: $("#delistDate").val(),
             Status: $("#productStatus").val() === "true"
@@ -140,26 +152,42 @@
                     tbody.innerHTML += `
                     <tr>
                         <td>${row.productId}</td>
-                        <td>${row.eventType}</td>
+                        <td>${row.eventType === 'adjust_in' ? '入庫' : '出庫'}</td>
                         <td>${row.quantity}</td>
-                        <td>${row.sourceType}</td>
+                         <td>
+                            ${row.sourceType === 'shrinkage' ? '🧹 減損' :
+                        row.sourceType === 'restock' ? '📦 補貨' :
+                            row.sourceType === 'manual' ? '✋ 手動' : row.sourceType}
+                        </td>
                         <td>${row.sourceId}</td>
                         <td>${row.occurredAt}</td>
                         <td>${row.recordedAt}</td>
                     </tr>`;
                 });
+                // 部分重新載入家具卡片區域
+                fetch('/Dashboard/furniture_management')
+                    .then(res => res.text())
+                    .then(html => {
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(html, 'text/html');
+                        const newList = doc.querySelector('.furniture-list-scroll');
+                        if (newList) {
+                            document.querySelector('.furniture-list-scroll').replaceWith(newList);
+                           
+                        }
+                    });
             });
     }
     window.submitInventoryAdjustment = function () {
         const data = {
             ProductId: document.getElementById("adjustProductId").value.trim(),
             Quantity: parseInt(document.getElementById("adjustQuantity").value),
-            SourceType: document.getElementById("adjustSourceType").value.trim(),
+            SourceType: document.getElementById("adjustSourceType").value,
             SourceId: document.getElementById("adjustSourceId").value.trim()
         };
 
-        if (!data.ProductId || isNaN(data.Quantity) || !data.SourceType) {
-            alert("❌ 請完整填寫 商品ID、異動數量 和 來源類型！");
+        if (!data.ProductId || isNaN(data.Quantity)) {
+            alert("❌ 請完整填寫 商品ID 與 異動數量！");
             return;
         }
 
@@ -175,15 +203,35 @@
                 alert(msg);
                 document.getElementById("adjustProductId").value = "";
                 document.getElementById("adjustQuantity").value = "";
-                document.getElementById("adjustSourceType").value = "";
                 document.getElementById("adjustSourceId").value = "";
-
-                // 🌀 異動成功 → 重新載入紀錄表
                 if (typeof loadAllInventoryEvents === "function") loadAllInventoryEvents();
             })
             .catch(err => alert("❌ 發生錯誤：" + err.message));
     };
+    // 家具卡片篩選功能
+    document.getElementById("filterCategory").addEventListener("change", filterFurnitureCards);
+    document.getElementById("searchKeyword").addEventListener("input", filterFurnitureCards);
 
+    function filterFurnitureCards() {
+        const category = document.getElementById("filterCategory").value.trim();
+        const keyword = document.getElementById("searchKeyword").value.trim().toLowerCase();
+
+        const cards = document.querySelectorAll(".furniture-list-scroll .col");
+        cards.forEach(card => {
+            const type = card.querySelector("p:nth-child(2)").innerText.trim();  // 類別
+            const name = card.querySelector("p:nth-child(3)").innerText.toLowerCase();  // 名稱
+            const desc = card.querySelector("p[title]")?.title?.toLowerCase() || ""; // 描述
+
+            const matchType = !category || type.includes(category);
+            const matchKeyword = !keyword || name.includes(keyword) || desc.includes(keyword);
+
+            if (matchType && matchKeyword) {
+                card.style.display = "";
+            } else {
+                card.style.display = "none";
+            }
+        });
+    }
 
 
     // 👉 確保載入成功後綁定 submit 按鈕

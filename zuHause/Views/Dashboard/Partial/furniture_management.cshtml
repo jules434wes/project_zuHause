@@ -2,6 +2,17 @@
 @{
     ViewBag.Title = "家具管理";
 }
+<style>
+    .furniture-list-scroll {
+        max-height: 700px;
+        overflow-y: auto;
+        border: 1px solid #dee2e6;
+        border-radius: 0.5rem;
+        padding: 1rem;
+    }
+</style>
+
+
 <div class="container-fluid">
     <div class="row">
 
@@ -11,13 +22,14 @@
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h4>家具列表</h4>
                 <div class="d-flex gap-2">
-                    <select class="form-select">
-                        <option selected>全部類別</option>
-                        <option>沙發</option>
-                        <option>書桌</option>
-                        <option>衣櫃</option>
+                    <select class="form-select" id="filterCategory">
+                        <option value="">📁 全部類別</option>
+                        @foreach (var cat in ViewBag.Categories as List<zuHause.Models.FurnitureCategory>)
+                        {
+                            <option value="@cat.Name">@cat.Name</option>
+                        }
                     </select>
-                    <input type="text" class="form-control" placeholder="搜尋關鍵字" />
+                    <input type="text" class="form-control" id="searchKeyword" placeholder="🔍 搜尋名稱／介紹" />
                 </div>
             </div>
             <!-- 家具卡片列表（加了 .furniture-list-scroll） -->
@@ -30,22 +42,28 @@
                             <div class="card h-100" >
                                 <div class="card-body">
                                     <p class="mb-1">家具編號: @item.FurnitureID</p>
+                                    <p class="mb-1">類別: @item.Type</p>
                                     <p class="mb-1">名稱: @item.Name</p>
                                     <p class="mb-1">狀態: @item.Status</p>
-                                    <p class="mb-1">庫存: @item.Stock</p>
+                                    <p class="mb-1">總上架庫存: @item.TotalQuantity</p>
+                                    <p class="mb-1">
+                                        可用庫存: @item.Stock @if (item.Stock < item.SafetyStock)
+                                        {<span class="text-danger ms-2">
+                                                <i class="bi bi-exclamation-triangle-fill"></i> 可用量低於安全庫存
+                                        </span>}
+                                    </p>
+                                    <p class="mb-1">安全庫存: @item.SafetyStock</p>
                                     <p class="mb-1">以出租: @item.RentedCount</p>
-                                    <p class="mb-1">類別: @item.Type</p>
-                                    <p class="mb-1">介紹: @item.Description</p>
+                                    <p class="mb-1" title="@item.Description">
+                                        介紹: @(item.Description?.Length > 30 ? item.Description.Substring(0, 30) + "..." : item.Description)
+                                    </p>
                                     <p class="mb-1">原價: NT$ @item.OriginalPrice</p>
                                     <p class="mb-1">每日租金: NT$ @item.RentPerDay</p>
                                     <p class="mb-1">上架時間: @item.ListDate.ToString("yyyy/M/d HH:mm") ~ @item.DelistDate.ToString("yyyy/M/d HH:mm")</p>
                                     <p class="mb-1">建立時間: @(item.CreatedAt?.ToString("yyyy/M/d HH:mm") ?? "未設定")</p>
                                     <p class="mb-1">更新時間: @(item.UpdatedAt?.ToString("yyyy/M/d HH:mm") ?? "未更新")</p>
-
-
                                     <div class="d-flex justify-content-between">
                                         <button class="btn btn-sm btn-primary" onclick="editFurniture('@item.FurnitureID')">編輯</button>
-
                                         @if (item.Status == "上架")
                                         {
                                             <button class="btn btn-sm btn-warning" onclick="event.stopPropagation(); setProductOffline('@item.FurnitureID')">提前下架</button>
@@ -54,10 +72,8 @@
                                         {
                                             <button class="btn btn-sm btn-secondary" disabled>已下架</button>
                                         }
-
                                         <button class="btn btn-sm btn-danger" onclick="event.stopPropagation(); deleteFurniture('@item.FurnitureID')">刪除</button>
                                     </div>
-
                                 </div>
                             </div>
                         </div>
@@ -108,6 +124,10 @@
                         <input type="number" class="form-control" id="furnitureStock" />
                     </div>
                     <div class="col-md-4">
+                        <label class="form-label">安全庫存</label>
+                        <input type="number" class="form-control" id="furnitureSafeStock" />
+                    </div>
+                    <div class="col-md-4">
                        <label class="form-label">家具類別</label>
                            <select class="form-select" id="furnitureType">
                             <option value="">請選擇</option>
@@ -119,9 +139,9 @@
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">上架時間</label>
-                        <input type="datetime-local" class="form-control" id="listDate" />
+                        <input type="date" class="form-control" id="listDate" />
                         <label class="form-label">下架時間</label>
-                        <input type="datetime-local" class="form-control" id="delistDate" />
+                        <input type="date" class="form-control" id="delistDate" />
                     </div>
                 </div>
 
@@ -167,7 +187,7 @@
             <hr class="my-4" />
             <div class="card p-4">
                 <h5>🔧 手動調整庫存</h5>
-
+                
                 <div class="row mb-3">
                     <div class="col-md-4">
                         <label class="form-label">📦 商品編號（Furniture ID）</label>
@@ -179,7 +199,11 @@
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">📋 來源類型</label>
-                        <input type="text" class="form-control" id="adjustSourceType" placeholder="手動調整 / 補貨 / 減損" />
+                        <select class="form-select" id="adjustSourceType">
+                            <option value="manual">✋ 手動調整</option>
+                            <option value="restock">📦 補貨</option>
+                            <option value="shrinkage">🧹 減損</option>
+                        </select>
                     </div>
                 </div>
 

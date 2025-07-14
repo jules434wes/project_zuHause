@@ -53,7 +53,9 @@ namespace zuHause.Controllers
                                FurnitureID = p.FurnitureProductId,
                                Name = p.ProductName,
                                Status = p.Status == true ? "上架" : "下架",
+                               TotalQuantity = i.TotalQuantity,
                                Stock = i.AvailableQuantity,
+                               SafetyStock = i.SafetyStock,
                                RentedCount = i.RentedQuantity,
                                Type = c != null ? c.Name : "(未分類)",
                                Description = p.Description,
@@ -88,17 +90,20 @@ namespace zuHause.Controllers
         {
             return PartialView("Partial/_Backend_user_list");
         }
-
-        [HttpPost]
-        public IActionResult SoftDeleteFurniture(string id)
+        [HttpPost("SoftDeleteFurniture")]
+        public IActionResult SoftDeleteFurniture([FromQuery] string id)
         {
-            var item = _context.FurnitureProducts.FirstOrDefault(f => f.FurnitureProductId == id);
-            if (item == null) return NotFound("找不到家具");
+            var product = _context.FurnitureProducts.FirstOrDefault(p => p.FurnitureProductId == id);
+            if (product == null)
+                return NotFound("找不到對應的家具資料");
+            product.Status=false; // 先將狀態設為下架,避免使用者誤租
+            product.DeletedAt = DateTime.UtcNow;
+            product.UpdatedAt = DateTime.UtcNow;
 
-            item.DeletedAt = DateTime.UtcNow;
             _context.SaveChanges();
-            return Content("✅ 已軟刪除");
+            return Content("✅ 家具已軟刪除！");
         }
+
         // 提前下架
         public class FurnitureOfflineRequest
         {
@@ -164,15 +169,17 @@ namespace zuHause.Controllers
                     FurnitureInventoryId = Guid.NewGuid().ToString(),
                     ProductId = newId,
                     TotalQuantity = vm.Stock,
+                    SafetyStock = vm.SafetyStock,
                     AvailableQuantity = vm.Stock,
                     RentedQuantity = 0
+
                 };
 
                 var inventoryEvent = new InventoryEvent
                 {
                     FurnitureInventoryId = Guid.NewGuid(), // PK
                     ProductId = newId,
-                    EventType = "adjust",       // 調整類型（ex: 初始上架）
+                    EventType = "adjust_in",       // 調整類型
                     Quantity = vm.Stock,        // 入庫 → 正數
                     SourceType = "manual",      // 手動建立
                     SourceId = newId,           // 產品ID
@@ -219,25 +226,42 @@ namespace zuHause.Controllers
         [HttpPost("AdjustInventory")]
         public IActionResult AdjustInventory([FromBody] InventoryEvent data)
         {
-            if (string.IsNullOrWhiteSpace(data.ProductId) || string.IsNullOrWhiteSpace(data.SourceType))
-                return BadRequest("商品ID 和 來源類型 為必填");
+            if (string.IsNullOrWhiteSpace(data.ProductId))
+                return BadRequest("商品ID 為必填");
 
+            // 🔍 查詢對應的庫存快照
+            var inventory = _context.FurnitureInventories.FirstOrDefault(f => f.ProductId == data.ProductId);
+            if (inventory == null)
+                return NotFound("找不到對應的庫存資料");
+
+            // 💾 建立異動事件
             var entity = new InventoryEvent
             {
                 ProductId = data.ProductId,
                 Quantity = data.Quantity,
                 SourceType = data.SourceType,
                 SourceId = data.SourceId,
-                EventType = data.Quantity > 0 ? "入庫" : "出庫",
+                EventType = data.Quantity > 0 ? "adjust_in" : "adjust_out",
                 OccurredAt = DateTime.UtcNow,
                 RecordedAt = DateTime.UtcNow
             };
-
             _context.InventoryEvents.Add(entity);
+
+            // 📦 更新快照資料
+            inventory.TotalQuantity += data.Quantity;
+            inventory.AvailableQuantity += data.Quantity;
+            inventory.UpdatedAt = DateTime.UtcNow;
+
+            // ✅ 避免負值
+            if (inventory.TotalQuantity < 0) inventory.TotalQuantity = 0;
+            if (inventory.AvailableQuantity < 0) inventory.AvailableQuantity = 0;
+
             _context.SaveChanges();
 
-            return Content("✅ 庫存異動成功！");
+            return Content("✅ 手動庫存異動已紀錄並同步更新快照！");
         }
+
+
 
 
 

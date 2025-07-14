@@ -10,7 +10,7 @@
         public int Stock { get; set; }
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
-
+        public int SafetyStock { get; set; }
         public bool Status { get; set; } // 是否上架
     }
 
