@@ -24,3 +24,14 @@ project.assets.json
 *.vshost.*
 *.log
 node_modules/
+
+# Documentation folder (should not be committed)
+docs/
+
+# Third-party libraries
+wwwroot/lib/
+
+# MCP and temporary files
+.claude/
+wsl-dotnet-setup.sh
+~/
