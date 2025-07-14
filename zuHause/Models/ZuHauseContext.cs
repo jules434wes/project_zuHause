@@ -331,8 +331,7 @@ public partial class ZuHauseContext : DbContext
                 .HasColumnName("sourceID");
             entity.Property(e => e.StatusCategory)
                 .HasMaxLength(20)
-                .HasComputedColumnSql("(CONVERT([nvarchar](20),N'ApprovalStatus'))", true)
-                .HasComment("審核狀態分類")
+                .HasComputedColumnSql("(CONVERT([nvarchar](20),N'APPROVAL_STATUS'))", true)
                 .HasColumnName("statusCategory");
             entity.Property(e => e.StatusCode)
                 .HasMaxLength(20)
@@ -372,7 +371,7 @@ public partial class ZuHauseContext : DbContext
                 .HasColumnName("actionBy");
             entity.Property(e => e.ActionCategory)
                 .HasMaxLength(20)
-                .HasComputedColumnSql("(CONVERT([nvarchar](20),N'ApprovalAction'))", true)
+                .HasComputedColumnSql("(CONVERT([nvarchar](20),N'APPROVAL_ACTION'))", true)
                 .HasColumnName("actionCategory");
             entity.Property(e => e.ActionNote)
                 .HasComment("操作備註")
@@ -2022,7 +2021,11 @@ public partial class ZuHauseContext : DbContext
 
         modelBuilder.Entity<Property>(entity =>
         {
-            entity.ToTable("properties", tb => tb.HasComment("房源資料表"));
+            entity.ToTable("properties", tb =>
+                {
+                    tb.HasComment("房源資料表");
+                    tb.HasTrigger("trg_properties_validate_landlord");
+                });
 
             entity.HasIndex(e => new { e.CityId, e.DistrictId }, "IX_properties_location");
 
@@ -2260,10 +2263,7 @@ public partial class ZuHauseContext : DbContext
 
             entity.ToTable("propertyEquipmentCategories", tb => tb.HasComment("房源設備分類資料表"));
 
-            entity.Property(e => e.CategoryId)
-                .ValueGeneratedNever()
-                .HasComment("設備分類ID")
-                .HasColumnName("categoryID");
+            entity.Property(e => e.CategoryId).HasColumnName("categoryID");
             entity.Property(e => e.CategoryName)
                 .HasMaxLength(50)
                 .HasComment("設備名稱")

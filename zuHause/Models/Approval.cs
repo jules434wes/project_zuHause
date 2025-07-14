@@ -48,9 +48,6 @@ public partial class Approval
     /// </summary>
     public DateTime UpdatedAt { get; set; }
 
-    /// <summary>
-    /// 審核狀態分類
-    /// </summary>
     public string? StatusCategory { get; set; }
 
     public virtual Member ApplicantMember { get; set; } = null!;
