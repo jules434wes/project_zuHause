@@ -240,9 +240,8 @@ body {
 .announcement-content {
     line-height: 1.8;
     color: #555;
-    /* 確保此元素是附件定位的參考點 */
-    position: relative; /* <--- 新增：為了 .announcement-attachment-wrapper 的絕對定位 */
-    padding-bottom: 80px; /* <--- 調整：為右下角附件預留空間，確保不會被文字覆蓋 */
+    position: static; /* 將此改為 static，移除相對定位 */
+    padding-bottom: 0; /* 將此改為 0，或直接移除，不再為附件預留空間 */
 }
 
     .announcement-content p {
@@ -271,9 +270,9 @@ body {
     font-size: 14px;
     color: #555;
     display: flex; /* 使用 flexbox 讓文字和箭頭對齊 */
-    justify-content: center; /* 水平居中 */
+    justify-content: flex-start; /* 水平居中 */
     align-items: center; /* 垂直居中 */
-    margin: 15px auto 0 auto; /* 外邊距並水平居中 */
+    margin: 15px 0 0 0; /* 外邊距並水平居中 */
     /* 初始隱藏，僅當 parent 有 partial-expanded 或 expanded class 時才顯示 */
     opacity: 0; /* 預設隱藏，由 JS 控制顯示 */
     visibility: hidden;
@@ -364,14 +363,16 @@ body {
 /* --- 附件樣式 (右下角圖片/連結) --- */
 /* 注意：這些樣式現在將作用於動態插入到 .announcement-content 內的附件 */
 .announcement-attachment-wrapper {
-    position: absolute; /* 相對於設定了 position: relative 的父元素定位 (即 .announcement-content) */
-    bottom: 20px; /* 距離底部 */
-    right: 20px; /* 距離右側 */
-    z-index: 10; /* 確保在其他內容之上 */
-    background-color: #f0f0f0; /* 給附件一個背景色，讓它更突出 */
+    z-index: 10;
+    background-color: #f0f0f0;
     padding: 5px;
     border-radius: 5px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    /* 關鍵：讓它在內容下方顯示，並靠左對齊 */
+    margin-top: 15px; /* 與上方內容的間距 */
+    margin-left: 0; /* 確保靠左 */
+    display: block; /* 讓容器獨佔一行，強制換行 */
+    width: fit-content; /* 讓容器寬度只包含其內容 */
 }
 
 /* 縮小顯示的附件圖片 */
@@ -489,18 +490,7 @@ body {
     }
 
     /* 在小螢幕上調整附件位置 */
-    .announcement-attachment-wrapper {
-        position: static; /* 取消絕對定位，讓它回到文檔流中 */
-        margin-top: 20px; /* 在內容下方留出一些間距 */
-        text-align: center; /* 如果是圖片，可以居中 */
-        right: auto; /* 移除右側定位 */
-        bottom: auto; /* 移除底部定位 */
-        width: 100%; /* 佔滿寬度 */
-        /* background-color 和 padding 可以根據需要在小螢幕上調整 */
-        background-color: transparent; /* 小螢幕可能不需要背景色 */
-        padding: 0;
-        box-shadow: none;
-    }
+  
 
     .announcement-attachment-image {
         max-width: 150px; /* 在小螢幕上可以稍微大一點 */

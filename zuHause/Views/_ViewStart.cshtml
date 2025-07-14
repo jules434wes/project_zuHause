@@ -1,11 +1,11 @@
 ﻿@{
-<<<<<<< HEAD
-    Layout = "_LayoutTenant";
-=======
     Layout = "_Layout";
     if(ViewContext.RouteData.Values["Controller"]?.ToString() == "Member")
     {
         Layout = "_LoginLayout";
     }
->>>>>>> 833e7adfff67098b362873df560cf979c9de7330
+    else if(ViewContext.RouteData.Values["Controller"]?.ToString() == "Tenant")
+    {
+        Layout = "_LayoutTenant";
+    }
 }
