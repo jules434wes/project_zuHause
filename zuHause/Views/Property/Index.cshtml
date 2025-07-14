@@ -1,0 +1,148 @@
+@model PropertyListViewModel
+@{
+    ViewData["Title"] = "房源列表";
+    Layout = "_Layout";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/property-list.css" />
+}
+
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="page-title">房源搜尋</h1>
+            
+            <!-- 搜尋區域 -->
+            <div class="search-container mb-4">
+                <form method="get" asp-action="Index">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <input type="text" class="form-control" name="search.Keyword" value="@Model.SearchCriteria.Keyword" placeholder="關鍵字搜尋">
+                        </div>
+                        <div class="col-md-2">
+                            <select class="form-select" name="search.CityId">
+                                <option value="">選擇城市</option>
+                                <!-- TODO: 從資料庫載入城市選項 -->
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <select class="form-select" name="search.DistrictId">
+                                <option value="">選擇區域</option>
+                                <!-- TODO: 從資料庫載入區域選項 -->
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <input type="number" class="form-control" name="search.MinPrice" value="@Model.SearchCriteria.MinPrice" placeholder="最低租金">
+                        </div>
+                        <div class="col-md-2">
+                            <input type="number" class="form-control" name="search.MaxPrice" value="@Model.SearchCriteria.MaxPrice" placeholder="最高租金">
+                        </div>
+                        <div class="col-md-1">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- 結果統計 -->
+            <div class="results-info mb-3">
+                <span class="results-count">共找到 @Model.TotalCount 筆房源</span>
+                <div class="sort-options">
+                    <select class="form-select form-select-sm" id="sortSelect">
+                        <option value="CreatedDate-desc" selected="@(Model.SearchCriteria.SortBy == "CreatedDate" && Model.SearchCriteria.SortOrder == "desc")">最新發布</option>
+                        <option value="Price-asc" selected="@(Model.SearchCriteria.SortBy == "Price" && Model.SearchCriteria.SortOrder == "asc")">租金由低到高</option>
+                        <option value="Price-desc" selected="@(Model.SearchCriteria.SortBy == "Price" && Model.SearchCriteria.SortOrder == "desc")">租金由高到低</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- 房源列表 -->
+            <div class="property-grid">
+                @if (Model.Properties.Any())
+                {
+                    @foreach (var property in Model.Properties)
+                    {
+                        <div class="property-card">
+                            <div class="property-image">
+                                <img src="@property.MainImagePath" alt="@property.Title" loading="lazy">
+                                <div class="property-actions">
+                                    <button class="btn-favorite" data-property-id="@property.PropertyId">
+                                        <i class="@(property.IsFavorite ? "fas" : "far") fa-heart"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="property-content">
+                                <h3 class="property-title">
+                                    <a href="@Url.Action("Detail", new { id = property.PropertyId })">@property.Title</a>
+                                </h3>
+                                <p class="property-address">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    @property.Address, @property.DistrictName, @property.CityName
+                                </p>
+                                <div class="property-price">
+                                    NT$ @property.Price.ToString("N0") / 月
+                                </div>
+                                <div class="property-meta">
+                                    <span class="view-count">
+                                        <i class="fas fa-eye"></i>
+                                        @property.ViewCount
+                                    </span>
+                                    <span class="publish-date">
+                                        @property.CreatedDate.ToString("MM/dd")
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="no-results">
+                        <i class="fas fa-home fa-3x text-muted"></i>
+                        <h3>未找到符合條件的房源</h3>
+                        <p class="text-muted">請嘗試調整搜尋條件</p>
+                    </div>
+                }
+            </div>
+
+            <!-- 分頁 -->
+            @if (Model.TotalPages > 1)
+            {
+                <nav aria-label="房源分頁">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item @(Model.CurrentPage == 1 ? "disabled" : "")">
+                            <a class="page-link" href="@Url.Action("Index", new { 
+                                search = Model.SearchCriteria, 
+                                page = Model.CurrentPage - 1 
+                            })">上一頁</a>
+                        </li>
+                        
+                        @for (int i = Math.Max(1, Model.CurrentPage - 2); i <= Math.Min(Model.TotalPages, Model.CurrentPage + 2); i++)
+                        {
+                            <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                                <a class="page-link" href="@Url.Action("Index", new { 
+                                    search = Model.SearchCriteria, 
+                                    page = i 
+                                })">@i</a>
+                            </li>
+                        }
+                        
+                        <li class="page-item @(Model.CurrentPage == Model.TotalPages ? "disabled" : "")">
+                            <a class="page-link" href="@Url.Action("Index", new { 
+                                search = Model.SearchCriteria, 
+                                page = Model.CurrentPage + 1 
+                            })">下一頁</a>
+                        </li>
+                    </ul>
+                </nav>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/property-list.js"></script>
+}
