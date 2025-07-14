@@ -1,0 +1,36 @@
+@{
+    dynamic propertyData = ViewData["PropertyData"];
+}
+
+<!-- 頁籤導航區 -->
+<ul class="nav nav-tabs" id="propertyDetailsTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="main-info-tab" data-bs-toggle="tab" data-bs-target="#main-info" type="button" role="tab" aria-controls="main-info" aria-selected="true">
+            主要資訊
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="media-equipment-tab" data-bs-toggle="tab" data-bs-target="#media-equipment" type="button" role="tab" aria-controls="media-equipment" aria-selected="false">
+            照片與設備
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="lease-history-tab" data-bs-toggle="tab" data-bs-target="#lease-history" type="button" role="tab" aria-controls="lease-history" aria-selected="false">
+            歷史租約
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="complaints-tab" data-bs-toggle="tab" data-bs-target="#complaints" type="button" role="tab" aria-controls="complaints" aria-selected="false">
+            收到的檢舉
+            @if (propertyData.ComplaintCount > 0)
+            {
+                <span class="badge rounded-pill text-bg-danger">@propertyData.ComplaintCount</span>
+            }
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="approval-history-tab" data-bs-toggle="tab" data-bs-target="#approval-history" type="button" role="tab" aria-controls="approval-history" aria-selected="false">
+            審核記錄
+        </button>
+    </li>
+</ul>

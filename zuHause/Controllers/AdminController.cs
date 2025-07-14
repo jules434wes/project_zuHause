@@ -22,5 +22,10 @@ namespace zuHause.Controllers
             return View();
         }
 
+        public IActionResult admin_propertyDetails()
+        {
+            return View();
+        }
+
     }
 }
