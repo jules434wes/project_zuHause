@@ -59,27 +59,48 @@ namespace zuhause.Controllers
             query = query.Where(sm => sm.Category == "ANNOUNCEMENT" && sm.IsActive == true && sm.DeletedAt == null);
 
             // 您可能需要根據 StartAt 和 EndAt 篩選，確保只顯示當前有效的公告
-            var now = DateTime.Now;
-            query = query.Where(sm => sm.StartAt <= now && (sm.EndAt == null || sm.EndAt >= now));
+            //var now = DateTime.Now;
+            //query = query.Where(sm => sm.StartAt <= now && (sm.EndAt == null || sm.EndAt >= now));
 
 
             // 總筆數用於計算總頁數
             var totalCount = await query.CountAsync();
             var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
 
-            var announcements = await query
-                .OrderByDescending(sm => sm.UpdatedAt) // 依更新日期降序排列
-                .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize)
-                .Select(sm => new
+            var rawAnnouncements = await query
+     .OrderByDescending(sm => sm.UpdatedAt)
+     .Skip((pageNumber - 1) * pageSize)
+     .Take(pageSize)
+     // 注意：這裡只選擇原始的 moduleScope，不進行轉換
+     .Select(sm => new
+     {
+         sm.SiteMessagesId,
+         sm.Title,
+         sm.ModuleScope, // 原始的 ModuleScope
+         sm.SiteMessageContent,
+         sm.UpdatedAt,
+         sm.AttachmentUrl
+     })
+     .ToListAsync(); // <-- 在這裡將資料庫查詢結果載入到記憶體
+
+            // 然後在記憶體中對載入的資料進行處理和轉換
+            var announcements = rawAnnouncements.Select(sm => new
+            {
+                id = sm.SiteMessagesId,
+                title = sm.Title,
+                // 現在可以在記憶體中使用 switch 表達式進行轉換
+                moduleScope = sm.ModuleScope switch
                 {
-                    id = sm.SiteMessagesId,
-                    title = sm.Title,
-                    // 關鍵：這裡必須使用 sm.SiteMessageContent 來匹配模型和資料庫欄位
-                    contentPreview = sm.SiteMessageContent.Length > 100 ? sm.SiteMessageContent.Substring(0, 100) + "..." : sm.SiteMessageContent,
-                    updatedAt = sm.UpdatedAt.ToString("yyyy-MM-dd HH:mm")
-                })
-                .ToListAsync();
+                    "TENANT" => "[租客]",
+                    "LANDLORD" => "[房東]",
+                    "FURNITURE" => "[家具]",
+                    "COMMON" => "[營運]",
+                    _ => "" // 如果都不符合，為空字串
+                },
+                contentPreview = sm.SiteMessageContent.Length > 100 ? sm.SiteMessageContent.Substring(0, 100) + "..." : sm.SiteMessageContent,
+                updatedAt = sm.UpdatedAt.ToString("yyyy-MM-dd HH:mm"),
+                attachmentUrl = sm.AttachmentUrl
+            }).ToList(); // 轉換為最終的列表
 
             return Ok(new
             {
@@ -106,58 +127,10 @@ namespace zuhause.Controllers
             {
                 id = announcement.SiteMessagesId,
                 title = announcement.Title,
-                // 關鍵：這裡也必須使用 announcement.SiteMessageContent
+                attachmentUrl = announcement.AttachmentUrl, 
                 content = announcement.SiteMessageContent,
                 updatedAt = announcement.UpdatedAt.ToString("yyyy-MM-dd HH:mm")
             });
         }
-
-        // GET: /api/Tenant/StaticContent/terms (或 /disclaimer, /privacy)
-        // 這個 Action 用於獲取靜態頁面的內容
-        [HttpGet("api/Tenant/StaticContent/{code}")]
-        public async Task<IActionResult> GetStaticContent(string code)
-        {
-            // 假設靜態內容的識別碼 (code) 存儲在 Category 欄位中
-            // 並且這些靜態內容也是啟用的
-            var staticContent = await _context.SiteMessages
-                                            .FirstOrDefaultAsync(sm => sm.Category == code && sm.IsActive && sm.DeletedAt == null);
-
-            if (staticContent == null)
-            {
-                return NotFound();
-            }
-
-            return Ok(new
-            {
-                Code = staticContent.Category, // 返回 Category 作為 Code
-                staticContent.Title,
-                Content = staticContent.SiteMessageContent, // 返回 SiteMessageContent 作為 Content
-                UpdatedAt = staticContent.UpdatedAt.ToString("yyyy-MM-dd HH:mm")
-            });
-        }
-        // 在 TenantController.cs 中，貼到現有方法 (如 CollectionAndComparison()) 之後
-        // ...
-
-        // 這個 API 端點用於測試資料庫連線
-        [HttpGet("api/TestDbConnection")]
-        public async Task<IActionResult> TestDatabaseConnection()
-        {
-            try
-            {
-                // 嘗試從 SiteMessages 集合中讀取資料
-                // 這會強制 Entity Framework Core 建立與資料庫的連線
-                var messageCount = await _context.SiteMessages.CountAsync();
-
-                // 如果執行到這裡，表示連線成功且讀取到資料
-                return Ok($"資料庫連接成功！總共有 {messageCount} 筆網站訊息。");
-            }
-            catch (Exception ex)
-            {
-                // 如果發生任何錯誤，捕獲異常並回傳錯誤訊息
-                // 這將幫助您診斷問題，例如連接字串錯誤或權限問題
-                return StatusCode(500, $"資料庫連接失敗！錯誤訊息：{ex.Message}");
-            }
-        }
-
     }
 }

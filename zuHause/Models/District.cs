@@ -48,5 +48,19 @@ public partial class District
     /// </summary>
     public int DisplayOrder { get; set; }
 
-    public virtual City CityCodeNavigation { get; set; } = null!;
+    /// <summary>
+    /// 鄉鎮區ID
+    /// </summary>
+    public int DistrictId { get; set; }
+
+    /// <summary>
+    /// 縣市ID
+    /// </summary>
+    public int CityId { get; set; }
+
+    public virtual City City { get; set; } = null!;
+
+    public virtual ICollection<Member> MemberPrimaryRentalDistricts { get; set; } = new List<Member>();
+
+    public virtual ICollection<Member> MemberResidenceDistricts { get; set; } = new List<Member>();
 }

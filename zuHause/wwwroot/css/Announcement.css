@@ -9,7 +9,6 @@ body {
 .pagination {
     margin-top: 20px;
     text-align: center;
-    /* 確保 JS 的 flexbox 佈局生效，這裡可設置為默認顯示 */
     display: flex; /* 確保分頁按鈕能居中 */
     justify-content: center; /* 確保分頁按鈕能居中 */
 }
@@ -128,7 +127,6 @@ body {
 .announcement-item {
     background-color: #f9f9f9;
     border: 1px solid #ddd;
-    /* 調整邊框和圓角，使項目看起來獨立但又連貫 */
     border-bottom: none; /* 讓 item 自己不帶底邊框 */
     margin-bottom: 0; /* 讓 item 之間無縫連接 */
     padding: 15px 20px 0px 20px; /* 標題部分的內邊距，底部留空給body和分隔線 */
@@ -136,7 +134,7 @@ body {
     overflow: hidden;
     cursor: pointer;
     transition: background-color 0.2s ease, box-shadow 0.2s ease;
-    position: relative;
+    position: relative; /* 確保公告項本身可以有自己的定位上下文，雖然附件主要在 content 內部 */
 }
 
 /* 確保第一個和最後一個項目有圓角，中間的沒有 */
@@ -218,12 +216,12 @@ body {
 
 /* 當點擊標題後，進入「部分展開」狀態：顯示部分內容和按鈕 */
 .announcement-item.partial-expanded .announcement-body {
-    max-height: 200px; /* 足夠顯示預覽內容和按鈕的高度，可能需要根據實際字體和內容調整 */
+    max-height: 500px; /* 足夠顯示預覽內容和按鈕的高度，可能需要根據實際字體和內容調整 */
     padding-top: 15px;
     padding-bottom: 15px;
     opacity: 1;
     visibility: visible;
-    /* 可以添加一個底邊框來分隔內容，如果需要的話 */
+    /* 在 partial-expanded 狀態下，如果內容較長，也需要底部邊框 */
     border-bottom: 1px solid #eee;
     margin-bottom: 15px; /* 給下一個 item 留出間距 */
 }
@@ -242,7 +240,9 @@ body {
 .announcement-content {
     line-height: 1.8;
     color: #555;
-    /* margin-bottom 將由 toggle-button 的 margin-top 處理 */
+    /* 確保此元素是附件定位的參考點 */
+    position: relative; /* <--- 新增：為了 .announcement-attachment-wrapper 的絕對定位 */
+    padding-bottom: 80px; /* <--- 調整：為右下角附件預留空間，確保不會被文字覆蓋 */
 }
 
     .announcement-content p {
@@ -275,9 +275,9 @@ body {
     align-items: center; /* 垂直居中 */
     margin: 15px auto 0 auto; /* 外邊距並水平居中 */
     /* 初始隱藏，僅當 parent 有 partial-expanded 或 expanded class 時才顯示 */
-    opacity: 0;
+    opacity: 0; /* 預設隱藏，由 JS 控制顯示 */
     visibility: hidden;
-    pointer-events: none; /* 隱藏時不可點擊 */
+    pointer-events: none;
     transition: background-color 0.2s ease, opacity 0.3s ease, visibility 0.3s ease;
 }
 
@@ -285,7 +285,7 @@ body {
         background-color: #d0d0d0;
     }
 
-/* 按鈕只在 partial-expanded 或 expanded 狀態下顯示 */
+/* 按鈕只在 partial-expanded 或 fully-expanded 狀態下顯示 */
 .announcement-item.partial-expanded .toggle-button,
 .announcement-item.fully-expanded .toggle-button {
     opacity: 1;
@@ -321,6 +321,137 @@ body {
         margin-bottom: 15px;
     }
 
+/* --- 調整：移除不再需要的 CSS 樣式 --- */
+/* 以下這些樣式是為獨立的詳細頁面設計，在新邏輯中不再需要 */
+/*
+.announcement-detail-container {
+    display: none;
+    padding: 20px;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    margin-top: 20px;
+    position: relative;
+    min-height: 300px;
+}
+
+.full-announcement-item {
+    padding: 0;
+}
+
+.back-to-list-button {
+    display: block;
+    margin-top: 30px;
+    padding: 10px 20px;
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.2s ease;
+    width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+    .back-to-list-button:hover {
+        background-color: #5a6268;
+    }
+*/
+
+/* --- 附件樣式 (右下角圖片/連結) --- */
+/* 注意：這些樣式現在將作用於動態插入到 .announcement-content 內的附件 */
+.announcement-attachment-wrapper {
+    position: absolute; /* 相對於設定了 position: relative 的父元素定位 (即 .announcement-content) */
+    bottom: 20px; /* 距離底部 */
+    right: 20px; /* 距離右側 */
+    z-index: 10; /* 確保在其他內容之上 */
+    background-color: #f0f0f0; /* 給附件一個背景色，讓它更突出 */
+    padding: 5px;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+/* 縮小顯示的附件圖片 */
+.announcement-attachment-image {
+    max-width: 100px; /* 縮小圖片尺寸 */
+    height: auto;
+    border: 1px solid #ccc; /* 添加邊框讓它更明顯 */
+    cursor: pointer; /* 鼠標變為手型，提示可點擊 */
+    transition: transform 0.2s ease-in-out; /* 添加過渡效果 */
+    display: block; /* 確保圖片獨佔一行，如果有多個圖片或與連結並排 */
+}
+
+    .announcement-attachment-image:hover {
+        transform: scale(1.05); /* 鼠標懸停時輕微放大 */
+    }
+
+/* 附件連結的樣式 */
+.announcement-attachment-link {
+    display: inline-block;
+    padding: 5px 10px;
+    background-color: #007bff;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    font-size: 14px;
+    transition: background-color 0.2s ease;
+}
+
+    .announcement-attachment-link:hover {
+        background-color: #0056b3;
+    }
+
+
+/* --- 圖片放大器 (Modal) 的樣式 --- */
+.image-modal {
+    display: none; /* 預設隱藏，由 JS 控制顯示 */
+    position: fixed; /* 固定定位在視窗上 */
+    z-index: 9999; /* 確保在所有內容之上 */
+    left: 0;
+    top: 0;
+    width: 100%; /* 佔滿整個視窗 */
+    height: 100%;
+    overflow: auto; /* 如果圖片太大可以滾動 */
+    background-color: rgba(0,0,0,0.9); /* 半透明黑色背景 */
+    display: flex; /* 使用 flex 方便圖片居中 */
+    align-items: center; /* 垂直居中 */
+    justify-content: center; /* 水平居中 */
+}
+
+    .image-modal.active { /* JS 會添加此 class 來顯示 */
+        display: flex;
+    }
+
+.modal-content {
+    margin: auto;
+    display: block;
+    max-width: 90%; /* 圖片最大寬度 */
+    max-height: 90%; /* 圖片最大高度 */
+    object-fit: contain; /* 確保圖片完全顯示在容器內 */
+}
+
+.close-button {
+    position: absolute;
+    top: 15px;
+    right: 35px;
+    color: #f1f1f1;
+    font-size: 40px;
+    font-weight: bold;
+    transition: 0.3s;
+    cursor: pointer;
+}
+
+    .close-button:hover,
+    .close-button:focus {
+        color: #bbb;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+/* --- 響應式設計 --- */
 @media (max-width: 768px) {
     .content-wrapper {
         flex-direction: column;
@@ -355,5 +486,24 @@ body {
     .last-modified-date {
         margin-left: 0;
         margin-top: 5px;
+    }
+
+    /* 在小螢幕上調整附件位置 */
+    .announcement-attachment-wrapper {
+        position: static; /* 取消絕對定位，讓它回到文檔流中 */
+        margin-top: 20px; /* 在內容下方留出一些間距 */
+        text-align: center; /* 如果是圖片，可以居中 */
+        right: auto; /* 移除右側定位 */
+        bottom: auto; /* 移除底部定位 */
+        width: 100%; /* 佔滿寬度 */
+        /* background-color 和 padding 可以根據需要在小螢幕上調整 */
+        background-color: transparent; /* 小螢幕可能不需要背景色 */
+        padding: 0;
+        box-shadow: none;
+    }
+
+    .announcement-attachment-image {
+        max-width: 150px; /* 在小螢幕上可以稍微大一點 */
+        margin: 0 auto; /* 圖片居中 */
     }
 }

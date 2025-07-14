@@ -48,7 +48,16 @@ public partial class Approval
     /// </summary>
     public DateTime UpdatedAt { get; set; }
 
+    /// <summary>
+    /// 審核狀態分類
+    /// </summary>
+    public string? StatusCategory { get; set; }
+
     public virtual Member ApplicantMember { get; set; } = null!;
 
     public virtual ICollection<ApprovalItem> ApprovalItems { get; set; } = new List<ApprovalItem>();
+
+    public virtual Property Source { get; set; } = null!;
+
+    public virtual SystemCode? SystemCode { get; set; }
 }
