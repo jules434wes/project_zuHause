@@ -1,0 +1,52 @@
+﻿@{
+    ViewData["Title"] = "會員註冊 - 發送驗證碼";
+}
+
+@await Html.PartialAsync("_PartialRegisterActiveProgress")
+
+<form action="" method="post" class="w-100 text-light position-absolute top-50 translate-middle-y">
+    <div class="row">
+        <div class="col-4 mx-auto d-flex flex-column gap-3 p-5 shadow-lg bg-white-aqua">
+            <div class="row">
+                <div class="col-8">
+                    <button class="btn btn-white-sub ps-0 text-white d-flex align-items-center gap-2  py-0">
+                        <i class="bi bi-arrow-left-circle-fill fs-4"></i>
+                        <span>回上一步</span>
+                    </button>
+                </div>
+            </div>
+            <h1 class="text-start title-text  mb-2">註冊 - 輸入驗證碼</h1>
+            <div class="row mx-auto w-100 ">
+                <div class="col-12 px-0 pb-2">
+                    <small>已發送驗證碼至09xx-xxx-xxx</small>
+                </div>
+                <div class="col-12 mx-auto p-0 d-flex flex-column gap-2">
+                    <div class="input-group has-validation">
+                        <span class="input-group-text rounded-0 px-3 bg-white">
+                            <i class="text-aqua bi bi-send-fill"></i>
+                        </span>
+                        <div class="form-floating is-invalid">
+                            <!-- is-invalid -->
+                            <input type="text" class=" is-invalid form-control rounded-0 pe-5" id="floatingInputGroup2"
+                                   placeholder="Username" required>
+                            <label for="floatingInputGroup2">請輸入驗證碼</label>
+                        </div>
+                        <div class="invalid-feedback">
+                            Please choose a username.
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row mx-auto w-100 mb-1">
+                <div class="col-12 d-flex flex-column align-items-center gap-2 p-0">
+                    <button class="btn btn-aqua w-100 rounded-0" type="submit">送出</button>
+                </div>
+            </div>
+            <div class="row mx-auto w-100">
+                <div class="col-6 mx-auto">
+                    <button type="button" class="btn btn-aqua-sub btn-sm w-100 text-white">重新發送(60)</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
