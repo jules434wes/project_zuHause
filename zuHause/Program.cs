@@ -1,7 +1,25 @@
 using Microsoft.EntityFrameworkCore;
+<<<<<<< HEAD
 using zuHause.Models; // ½T«O³o¬O ZuHauseContext ¥¿½Tªº©R¦WªÅ¶¡
+=======
+using zuHause.Models;
+>>>>>>> 833e7adfff67098b362873df560cf979c9de7330
 
 var builder = WebApplication.CreateBuilder(args);
+
+// æœƒå“¡
+builder.Services.AddAuthentication("MemberCookieAuth").AddCookie("MemberCookieAuth", options =>
+{
+    options.LoginPath = "/Member/Login";
+    options.AccessDeniedPath = "/Member/AccessDenied";
+});
+
+
+builder.Services.AddDbContext<ZuHauseContext>(
+            options => options.UseSqlServer(builder.Configuration.GetConnectionString("zuHauseDBConnstring")));
+
+
+builder.Services.AddMemoryCache();
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
@@ -22,9 +40,8 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-
 app.UseRouting();
-
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllerRoute(
