@@ -43,5 +43,9 @@ public partial class SystemCode
     /// </summary>
     public DateTime UpdatedAt { get; set; }
 
+    public virtual ICollection<ApprovalItem> ApprovalItems { get; set; } = new List<ApprovalItem>();
+
+    public virtual ICollection<Approval> Approvals { get; set; } = new List<Approval>();
+
     public virtual SystemCodeCategory CodeCategoryNavigation { get; set; } = null!;
 }

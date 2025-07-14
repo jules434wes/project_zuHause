@@ -35,8 +35,6 @@ public partial class FurnitureCategory
     /// <summary>
     /// 階層層級
     /// </summary>
-    [Column("depth")]
-    public byte Depth { get; set; } =0; // 預設為0，表示頂層分類
 
     /// <summary>
     /// 顯示排序

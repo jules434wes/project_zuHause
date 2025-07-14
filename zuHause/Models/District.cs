@@ -48,5 +48,4 @@ public partial class District
     /// </summary>
     public int DisplayOrder { get; set; }
 
-    public virtual City CityCodeNavigation { get; set; } = null!;
 }
