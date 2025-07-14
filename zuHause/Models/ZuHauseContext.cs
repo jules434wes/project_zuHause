@@ -273,7 +273,6 @@ public partial class ZuHauseContext : DbContext
             entity.ToTable("applicationStatusLogs", tb => tb.HasComment("申請狀態歷程表"));
 
             entity.Property(e => e.StatusLogId)
-                .ValueGeneratedNever()
                 .HasComment("狀態歷程ID")
                 .HasColumnName("statusLogID");
             entity.Property(e => e.ApplicationId)
@@ -602,7 +601,6 @@ public partial class ZuHauseContext : DbContext
             entity.HasIndex(e => new { e.Status, e.StartDate, e.EndDate }, "IX_contracts_status_dates");
 
             entity.Property(e => e.ContractId)
-                .ValueGeneratedNever()
                 .HasComment("合約ID")
                 .HasColumnName("contractId");
             entity.Property(e => e.CleaningFee)
@@ -673,7 +671,6 @@ public partial class ZuHauseContext : DbContext
             entity.ToTable("contractComments", tb => tb.HasComment("合約備註表"));
 
             entity.Property(e => e.ContractCommentId)
-                .ValueGeneratedNever()
                 .HasComment("合約備註ID")
                 .HasColumnName("contractCommentId");
             entity.Property(e => e.CommentText)
@@ -707,7 +704,6 @@ public partial class ZuHauseContext : DbContext
             entity.ToTable("contractCustomFields", tb => tb.HasComment("合約附表(動態欄位)"));
 
             entity.Property(e => e.ContractCustomFieldId)
-                .ValueGeneratedNever()
                 .HasComment("動態欄位ID")
                 .HasColumnName("contractCustomFieldId");
             entity.Property(e => e.ContractId)
@@ -740,7 +736,6 @@ public partial class ZuHauseContext : DbContext
             entity.ToTable("contractFurnitureItems", tb => tb.HasComment("合約內容家具表"));
 
             entity.Property(e => e.ContractFurnitureItemId)
-                .ValueGeneratedNever()
                 .HasComment("家具清單ID")
                 .HasColumnName("contractFurnitureItemId");
             entity.Property(e => e.Amount)
@@ -784,7 +779,6 @@ public partial class ZuHauseContext : DbContext
             entity.ToTable("contractSignatures", tb => tb.HasComment("電子簽名儲存表"));
 
             entity.Property(e => e.IdcontractSignatureId)
-                .ValueGeneratedNever()
                 .HasComment("電子簽名ID")
                 .HasColumnName("idcontractSignatureId");
             entity.Property(e => e.ContractId)
@@ -1834,7 +1828,6 @@ public partial class ZuHauseContext : DbContext
             entity.ToTable("memberTypes", tb => tb.HasComment("會員身分表"));
 
             entity.Property(e => e.MemberTypeId)
-                .ValueGeneratedNever()
                 .HasComment("身份ID")
                 .HasColumnName("memberTypeID");
             entity.Property(e => e.CreatedAt)
@@ -1868,7 +1861,6 @@ public partial class ZuHauseContext : DbContext
             entity.ToTable("memberVerifications", tb => tb.HasComment("通訊相關驗證表"));
 
             entity.Property(e => e.VerificationId)
-                .ValueGeneratedNever()
                 .HasComment("驗證ID")
                 .HasColumnName("verificationID");
             entity.Property(e => e.IsSuccessful)
@@ -2380,7 +2372,6 @@ public partial class ZuHauseContext : DbContext
             entity.ToTable("rentalApplications", tb => tb.HasComment("租賃/看房申請資料表"));
 
             entity.Property(e => e.ApplicationId)
-                .ValueGeneratedNever()
                 .HasComment("申請ID")
                 .HasColumnName("applicationID");
             entity.Property(e => e.ApplicationType)
@@ -2879,7 +2870,6 @@ public partial class ZuHauseContext : DbContext
             entity.HasIndex(e => new { e.ReceiverId, e.IsRead }, "IX_userNotifications_receiver_isRead");
 
             entity.Property(e => e.NotificationId)
-                .ValueGeneratedNever()
                 .HasComment("通知ID")
                 .HasColumnName("notificationID");
             entity.Property(e => e.CreatedAt)
