@@ -1,0 +1,35 @@
+@{
+    ViewData["Title"] = "客服案件列表";
+    Layout = "_Layout";
+}
+
+<link href="~/css/admin-common.css" rel="stylesheet" />
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- 頁面標題區 -->
+            <partial name="_CustomerService/_HeaderSection" />
+            
+            <!-- 頁籤切換區 -->
+            <ul class="nav nav-tabs" id="ticketTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="all-tab" data-bs-toggle="tab" data-bs-target="#all-tickets" type="button" role="tab" aria-controls="all-tickets" aria-selected="true">
+                        全部案件 <span class="badge bg-primary ms-2">8</span>
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="unresolved-tab" data-bs-toggle="tab" data-bs-target="#unresolved-tickets" type="button" role="tab" aria-controls="unresolved-tickets" aria-selected="false">
+                        未結案 <span class="badge bg-warning ms-2">5</span>
+                    </button>
+                </li>
+            </ul>
+
+            <!-- 頁籤內容區 -->
+            <partial name="_CustomerService/_TabContent" />
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript功能 -->
+<partial name="_CustomerService/_CustomerServiceScripts" />

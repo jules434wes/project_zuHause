@@ -26,33 +26,4 @@ body {
     margin-left: 1.5rem;
 }
 
-.sortable {
-    cursor: pointer;
-    user-select: none;
-    position: relative;
-    transition: all 0.3s ease;
-    border-bottom: 2px solid transparent;
-}
-
-.sortable:hover {
-    background-color: rgba(0, 123, 255, 0.15);
-    border-bottom-color: rgba(0, 123, 255, 0.3);
-}
-
-.sortable.active {
-    background-color: rgba(0, 123, 255, 0.2);
-    border-bottom-color: #007bff;
-}
-
-.sort-icon {
-    margin-left: 6px;
-    font-size: 0.9em;
-    color: #adb5bd;
-    transition: all 0.3s ease;
-    vertical-align: middle;
-}
-
-.sort-icon.active {
-    color: #007bff;
-    transform: scale(1.1);
-}
+/* Sortable table styles moved to admin-common.css to avoid duplication */
