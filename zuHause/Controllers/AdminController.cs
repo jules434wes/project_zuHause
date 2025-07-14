@@ -37,5 +37,10 @@ namespace zuHause.Controllers
             return View();
         }
 
+        public IActionResult admin_systemMessageList()
+        {
+            return View();
+        }
+
     }
 }

@@ -1,0 +1,33 @@
+@{
+    ViewData["Title"] = "系統訊息管理";
+}
+
+<!-- Bootstrap Icons CDN -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+<!-- Admin Common Styles -->
+<link href="~/css/admin-common.css" rel="stylesheet" />
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3">系統訊息管理</h1>
+                <a href="#" class="btn btn-primary">
+                    <i class="bi bi-plus-circle-fill"></i> 新增訊息
+                </a>
+            </div>
+            
+            <!-- Filter and Search Section -->
+            <partial name="_AdminPartial/_SystemMessage/_FilterSection" />
+            
+            <!-- System Message List -->
+            <partial name="_AdminPartial/_SystemMessage/_MessageTable" />
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_AdminPartial/_SystemMessage/_SystemMessageScripts" />
+}
+
+<partial name="_AdminPartial/_SystemMessage/_SystemMessageModals" />
