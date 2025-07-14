@@ -9,7 +9,7 @@ namespace zuHause.Models;
 public partial class Approval
 {
     /// <summary>
-    /// 審核ID
+    /// 審核ID (自動遞增，從701開始)
     /// </summary>
     public int ApprovalId { get; set; }
 
@@ -48,6 +48,9 @@ public partial class Approval
     /// </summary>
     public DateTime UpdatedAt { get; set; }
 
+    /// <summary>
+    /// 狀態類別 (計算欄位)
+    /// </summary>
     public string? StatusCategory { get; set; }
 
     public virtual Member ApplicantMember { get; set; } = null!;

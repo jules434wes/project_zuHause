@@ -9,7 +9,7 @@ namespace zuHause.Models;
 public partial class CustomerServiceTicket
 {
     /// <summary>
-    /// 客服單ID
+    /// 客服單ID (自動遞增，從201開始)
     /// </summary>
     public int TicketId { get; set; }
 

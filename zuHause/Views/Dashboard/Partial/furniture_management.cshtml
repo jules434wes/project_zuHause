@@ -42,6 +42,7 @@
                             <div class="card h-100" >
                                 <div class="card-body">
                                     <p class="mb-1">家具編號: @item.FurnitureID</p>
+                                    <img src="@item.ImageUrl" class="img-fluid" style="max-height: 150px;" />
                                     <p class="mb-1">類別: @item.Type</p>
                                     <p class="mb-1">名稱: @item.Name</p>
                                     <p class="mb-1">狀態: @item.Status</p>
@@ -104,6 +105,14 @@
                 <div class="mb-3">
                     <label class="form-label">家具介紹</label>
                     <textarea class="form-control" id="furnitureDesc"></textarea>
+                </div>
+                <!-- 家具圖片上傳 -->
+                <div class="mb-3">
+                    <label class="form-label">家具圖片</label>
+                    <input type="file" class="form-control" id="imageUpload" name="ImageFile" accept="image/*" />
+                    <div class="mt-2">
+                        <img id="imagePreview" src="" style="max-height: 150px; display: none;" class="img-thumbnail" />
+                    </div>
                 </div>
 
                 <!-- 價格 -->

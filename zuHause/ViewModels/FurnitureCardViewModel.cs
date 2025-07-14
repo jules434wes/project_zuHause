@@ -21,6 +21,8 @@
         public DateTime? CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public DateTime? DeletedAt { get; set; }  // 軟刪除判斷用
+                                                  
+        public string? ImageUrl { get; set; }
 
     }
 }

@@ -1,5 +1,18 @@
 ﻿(() => {
-   
+    
+    document.getElementById("imageUpload").addEventListener("change", function () {
+        const file = this.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const preview = document.getElementById("imagePreview");
+                preview.src = e.target.result;
+                preview.style.display = "block";
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
 
     window.editFurniture = function (furnitureId) {
         fetch(`/Dashboard/GetFurnitureById?id=${furnitureId}`)
@@ -166,59 +179,50 @@
             .catch(err => alert("❌ 發生錯誤：" + err.message));
     };
     // 提交家具資料
-    window.submitFurniture = function () {
-        showToast("你有觸發 submitFurniture！");
+  window.submitFurniture = function () {
+    const formData = new FormData();
+    formData.append("Name", $("#furnitureName").val().trim());
+    formData.append("Description", $("#furnitureDesc").val().trim());
+    formData.append("Type", $("#furnitureType").val());
+    formData.append("OriginalPrice", $("#originalPrice").val());
+    formData.append("RentPerDay", $("#rentPerDay").val());
+    formData.append("Stock", $("#furnitureStock").val());
+    formData.append("SafetyStock", $("#furnitureSafeStock").val());
+    formData.append("StartDate", $("#listDate").val());
+    formData.append("EndDate", $("#delistDate").val());
+    formData.append("Status", $("#productStatus").val() === "true");
 
-        const data = {
-            Name: $("#furnitureName").val().trim(),
-            Description: $("#furnitureDesc").val().trim(),
-            Type: $("#furnitureType").val(),
-            OriginalPrice: parseFloat($("#originalPrice").val()),
-            RentPerDay: parseFloat($("#rentPerDay").val()),
-            Stock: parseInt($("#furnitureStock").val()),
-            safetyStock: parseInt($("#furnitureSafeStock").val()),
-            StartDate: $("#listDate").val(),
-            EndDate: $("#delistDate").val(),
-            Status: $("#productStatus").val() === "true"
-        };
+    const imageInput = document.getElementById("imageUpload");
+    if (imageInput.files.length > 0) {
+        formData.append("ImageFile", imageInput.files[0]);
+    }
 
-
-        console.log("送出的資料：", data);
-
-        if (!data.Name || isNaN(data.OriginalPrice) || isNaN(data.RentPerDay) || isNaN(data.Stock)) {
-            alert("❌ 請確認所有欄位都有正確填寫！");
-            return;
-        }
-
-
-        fetch('/Dashboard/UploadFurniture', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
-            },
-            body: JSON.stringify(data)
-        })
+    fetch("/Dashboard/UploadFurniture", {
+        method: "POST",
+        headers: {
+            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
+        },
+        body: formData
+    })
+    .then(res => res.text())
+    .then(msg => {
+        alert(msg);
+        resetForm();
+        fetch('/Dashboard/furniture_management')
             .then(res => res.text())
-            .then(msg => {
-                alert(msg);
-                resetForm();
+            .then(html => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const newList = doc.querySelector('.furniture-list-scroll');
+                if (newList) {
+                    document.querySelector('.furniture-list-scroll').replaceWith(newList);
+                    showToast("✅ 家具已上傳並即時刷新！");
+                }
+            });
+    })
+    .catch(err => alert("❌ 錯誤：" + err.message));
+};
 
-                // 部分重新載入家具卡片區域
-                fetch('/Dashboard/furniture_management')
-                    .then(res => res.text())
-                    .then(html => {
-                        const parser = new DOMParser();
-                        const doc = parser.parseFromString(html, 'text/html');
-                        const newList = doc.querySelector('.furniture-list-scroll');
-                        if (newList) {
-                            document.querySelector('.furniture-list-scroll').replaceWith(newList);
-                            showToast("✅ 家具已上傳並即時刷新！");
-                        }
-                    });
-            })
-            .catch(err => alert("❌ 錯誤：" + err.message));
-    };
     //家具庫存歷史紀錄表
     window.loadAllInventoryEvents = function () {
         console.log("查詢庫存歷史");
