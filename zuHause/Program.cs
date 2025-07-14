@@ -1,13 +1,11 @@
 using Microsoft.EntityFrameworkCore;
-<<<<<<< HEAD
+
 using zuHause.Models; // ½T«O³o¬O ZuHauseContext ¥¿½Tªº©R¦WªÅ¶¡
-=======
-using zuHause.Models;
->>>>>>> 833e7adfff67098b362873df560cf979c9de7330
+
 
 var builder = WebApplication.CreateBuilder(args);
 
-// æœƒå“¡
+// ?ƒå“¡
 builder.Services.AddAuthentication("MemberCookieAuth").AddCookie("MemberCookieAuth", options =>
 {
     options.LoginPath = "/Member/Login";
@@ -46,9 +44,7 @@ app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
-    //pattern: "{controller=Tenant}/{action=Index}/{id?}");
-    //pattern: "{controller=Tenant}/{action=Index}/{id?}");
-    //pattern: "{controller=Tenant}/{action=Index}/{id?}");
+    //pattern: "{controller=Home}/{action=Index}/{id?}");
     pattern: "{controller=Tenant}/{action=Announcement}/{id?}");
 
 
