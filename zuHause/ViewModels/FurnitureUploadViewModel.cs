@@ -15,7 +15,8 @@
         public int SafetyStock { get; set; }
         public bool Status { get; set; } // 是否上架
 
-        public IFormFile? ImageFile { get; set; }  // 新增的欄位
+        //public string? ImageUrl { get; set; }
+        public IFormFile? ImageFile { get; set; } // ✅ 圖片欄位
     }
 
 }

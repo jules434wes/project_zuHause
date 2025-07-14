@@ -53,31 +53,32 @@
             .catch(err => alert("❌ 讀取資料失敗：" + err.message));
     };
     function updateFurniture(furnitureId) {
-        const data = {
-            FurnitureProductId: furnitureId,
-            Name: document.getElementById("furnitureName").value.trim(),
-            Description: document.getElementById("furnitureDesc").value.trim(),
-            Type: document.getElementById("furnitureType").value,
-            OriginalPrice: parseFloat(document.getElementById("originalPrice").value),
-            RentPerDay: parseFloat(document.getElementById("rentPerDay").value),
-            safetyStock: parseInt(document.getElementById("furnitureSafeStock").value),
-            StartDate: document.getElementById("listDate").value,
-            EndDate: document.getElementById("delistDate").value,
-            Status: document.getElementById("productStatus").value === "true"
-        };
+        const formData = new FormData();
+        formData.append("FurnitureProductId", furnitureId);
+        formData.append("Name", $("#furnitureName").val().trim());
+        formData.append("Description", $("#furnitureDesc").val().trim());
+        formData.append("Type", $("#furnitureType").val());
+        formData.append("OriginalPrice", $("#originalPrice").val());
+        formData.append("RentPerDay", $("#rentPerDay").val());
+        formData.append("SafetyStock", $("#furnitureSafeStock").val());
+        formData.append("StartDate", $("#listDate").val());
+        formData.append("EndDate", $("#delistDate").val());
+        formData.append("Status", $("#productStatus").val() === "true");
+
+        const imageInput = document.getElementById("imageUpload");
+        if (imageInput.files.length > 0) {
+            formData.append("ImageFile", imageInput.files[0]);
+        }
 
         fetch("/Dashboard/UpdateFurniture", {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(data)
+            body: formData
         })
             .then(res => res.text())
             .then(msg => {
                 alert(msg);
                 resetForm();
-                openTab("furniture_management"); // 重新整理卡片
+                openTab("furniture_management");
                 fetch('/Dashboard/furniture_management')
                     .then(res => res.text())
                     .then(html => {
@@ -86,13 +87,12 @@
                         const newList = doc.querySelector('.furniture-list-scroll');
                         if (newList) {
                             document.querySelector('.furniture-list-scroll').replaceWith(newList);
-
                         }
                     });
             })
-        
             .catch(err => alert("❌ 更新失敗：" + err.message));
     }
+
 
 
 

@@ -248,7 +248,7 @@ namespace zuHause.Controllers
         }
 
         [HttpPost("UpdateFurniture")]
-        public IActionResult UpdateFurniture([FromBody] FurnitureUploadViewModel vm)
+        public async Task<IActionResult> UpdateFurniture([FromForm] FurnitureUploadViewModel vm)
         {
             if (vm == null || string.IsNullOrWhiteSpace(vm.FurnitureProductId))
                 return BadRequest("❌ 家具資料不完整");
@@ -265,7 +265,7 @@ namespace zuHause.Controllers
             if (!_context.FurnitureCategories.Any(c => c.FurnitureCategoriesId == vm.Type))
                 return BadRequest("❌ 所選分類不存在，請重新選擇");
 
-            // 更新資料
+            // ✅ 更新欄位
             product.ProductName = vm.Name;
             product.Description = vm.Description;
             product.CategoryId = vm.Type;
@@ -279,9 +279,35 @@ namespace zuHause.Controllers
             inventory.SafetyStock = vm.SafetyStock;
             inventory.UpdatedAt = DateTime.UtcNow;
 
+            // ✅ 圖片處理
+            if (vm.ImageFile != null && vm.ImageFile.Length > 0)
+            {
+                // 刪除舊圖片
+                if (!string.IsNullOrEmpty(product.ImageUrl))
+                {
+                    var oldPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", product.ImageUrl.TrimStart('/'));
+                    if (System.IO.File.Exists(oldPath))
+                    {
+                        System.IO.File.Delete(oldPath);
+                    }
+                }
+
+                // 上傳新圖片
+                var ext = Path.GetExtension(vm.ImageFile.FileName);
+                var newFileName = $"{vm.FurnitureProductId}_{Guid.NewGuid().ToString("N").Substring(0, 6)}{ext}";
+                var savePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", newFileName);
+
+                using (var stream = new FileStream(savePath, FileMode.Create))
+                {
+                    await vm.ImageFile.CopyToAsync(stream);
+                }
+
+                product.ImageUrl = $"/images/{newFileName}";
+            }
+
             try
             {
-                _context.SaveChanges();
+                await _context.SaveChangesAsync();
                 return Ok("✅ 家具資料已更新！");
             }
             catch (Exception ex)
@@ -289,6 +315,7 @@ namespace zuHause.Controllers
                 return StatusCode(500, $"❌ 更新失敗：{ex.Message}");
             }
         }
+
 
         [HttpGet("AllInventoryEvents")]
         public IActionResult AllInventoryEvents()
