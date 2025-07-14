@@ -2,6 +2,8 @@
 {
     public class FurnitureUploadViewModel
     {
+        public string FurnitureProductId { get; set; } = null!;
+       
         public string Name { get; set; }
         public string Description { get; set; }
         public string Type { get; set; } // CategoryId

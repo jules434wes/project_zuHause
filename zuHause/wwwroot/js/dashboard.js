@@ -249,4 +249,21 @@ function closeTab(tabId) {
         }
     }
 }
-    
+// 引入 bootstrap toast 物件控制
+function showToast(message, type = 'success') {
+    const toastEl = document.getElementById('customToast');
+    const toastBody = document.getElementById('toastBody');
+
+    toastBody.innerText = message;
+
+    // 根據 type 設定背景色
+    toastEl.className = 'toast align-items-center text-white border-0'; // 清空 class
+    if (type === 'success') toastEl.classList.add('bg-success');
+    else if (type === 'error') toastEl.classList.add('bg-danger');
+    else if (type === 'info') toastEl.classList.add('bg-info');
+    else toastEl.classList.add('bg-secondary');
+
+    // 顯示 Toast
+    const toast = new bootstrap.Toast(toastEl);
+    toast.show();
+}

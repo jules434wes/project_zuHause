@@ -103,6 +103,36 @@ namespace zuHause.Controllers
             _context.SaveChanges();
             return Content("✅ 家具已軟刪除！");
         }
+        [HttpGet("GetFurnitureById")]
+        public IActionResult GetFurnitureById(string id)
+        {
+            var product = (from p in _context.FurnitureProducts
+                           join i in _context.FurnitureInventories on p.FurnitureProductId equals i.ProductId
+                           where p.FurnitureProductId == id
+                           select new
+                           {
+                               p.FurnitureProductId,
+                               p.ProductName,
+                               p.Description,
+                               p.CategoryId,
+                               p.ListPrice,
+                               p.DailyRental,
+                               p.Status,
+                               p.ListedAt,
+                               p.DelistedAt,
+                               i.TotalQuantity,
+                               i.AvailableQuantity,
+                               i.RentedQuantity,
+                               i.SafetyStock,
+                               p.CreatedAt,
+                               p.UpdatedAt
+                           }).FirstOrDefault();
+
+            if (product == null)
+                return NotFound("❌ 查無此家具");
+
+            return Json(product);
+        }
 
         // 提前下架
         public class FurnitureOfflineRequest
@@ -202,6 +232,48 @@ namespace zuHause.Controllers
             {
                 transaction.Rollback();
                 return StatusCode(500, $"❌ 上傳失敗：{ex.Message}");
+            }
+        }
+        [HttpPost("UpdateFurniture")]
+        public IActionResult UpdateFurniture([FromBody] FurnitureUploadViewModel vm)
+        {
+            if (vm == null || string.IsNullOrWhiteSpace(vm.FurnitureProductId))
+                return BadRequest("❌ 家具資料不完整");
+
+            var product = _context.FurnitureProducts
+                .FirstOrDefault(p => p.FurnitureProductId == vm.FurnitureProductId);
+
+            var inventory = _context.FurnitureInventories
+                .FirstOrDefault(i => i.ProductId == vm.FurnitureProductId);
+
+            if (product == null || inventory == null)
+                return NotFound("❌ 找不到對應的家具或庫存資料");
+
+            if (!_context.FurnitureCategories.Any(c => c.FurnitureCategoriesId == vm.Type))
+                return BadRequest("❌ 所選分類不存在，請重新選擇");
+
+            // 更新資料
+            product.ProductName = vm.Name;
+            product.Description = vm.Description;
+            product.CategoryId = vm.Type;
+            product.ListPrice = vm.OriginalPrice;
+            product.DailyRental = vm.RentPerDay;
+            product.Status = vm.Status;
+            product.ListedAt = vm.StartDate.HasValue ? DateOnly.FromDateTime(vm.StartDate.Value) : product.ListedAt;
+            product.DelistedAt = vm.EndDate.HasValue ? DateOnly.FromDateTime(vm.EndDate.Value) : product.DelistedAt;
+            product.UpdatedAt = DateTime.UtcNow;
+
+            inventory.SafetyStock = vm.SafetyStock;
+            inventory.UpdatedAt = DateTime.UtcNow;
+
+            try
+            {
+                _context.SaveChanges();
+                return Ok("✅ 家具資料已更新！");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"❌ 更新失敗：{ex.Message}");
             }
         }
 
