@@ -32,5 +32,10 @@ namespace zuHause.Controllers
             return View();
         }
 
+        public IActionResult admin_customerServiceDetails()
+        {
+            return View();
+        }
+
     }
 }
