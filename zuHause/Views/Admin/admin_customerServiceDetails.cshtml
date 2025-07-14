@@ -1,0 +1,31 @@
+@{
+    ViewData["Title"] = "客服案件詳情";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="h3 mb-4">客服案件詳情</h1>
+            
+            <div class="row">
+                <!-- 左欄：對話內容區 -->
+                <div class="col-lg-8">
+                    <partial name="_AdminPartial/_CustomerServiceDetails/_UserRequestCard" />
+                    <partial name="_AdminPartial/_CustomerServiceDetails/_ReplyCard" />
+                </div>
+                
+                <!-- 右欄：案件資訊與管理區 -->
+                <div class="col-lg-4">
+                    <partial name="_AdminPartial/_CustomerServiceDetails/_CaseInfoCard" />
+                    <partial name="_AdminPartial/_CustomerServiceDetails/_ManagementCard" />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 引入JS檔案 -->
+<partial name="_AdminPartial/_CustomerServiceDetails/_CustomerServiceDetailsScripts" />
+
+<link rel="stylesheet" href="~/css/admin-common.css">

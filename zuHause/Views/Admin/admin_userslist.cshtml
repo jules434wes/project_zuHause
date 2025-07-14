@@ -39,7 +39,7 @@
                         ViewData["HasIdUpload"] = false;
                         ViewData["HasApplyDate"] = false;
                     }
-                    @await Html.PartialAsync("_UserManagement/_FilterSection")
+                    @await Html.PartialAsync("_AdminPartial/_UserManagement/_FilterSection")
                     
                     @{
                         ViewData["TableType"] = "all";
@@ -48,7 +48,7 @@
                         ViewData["SelectAllId"] = "selectAllUsers";
                         ViewData["PaginationLabel"] = "會員分頁";
                     }
-                    @await Html.PartialAsync("_UserManagement/_UserTable")
+                    @await Html.PartialAsync("_AdminPartial/_UserManagement/_UserTable")
                 </div>
 
                 <!-- 等待身分證驗證分頁 -->
@@ -61,7 +61,7 @@
                         ViewData["HasAccountStatus"] = false;
                         ViewData["HasVerificationStatus"] = false;
                     }
-                    @await Html.PartialAsync("_UserManagement/_FilterSection")
+                    @await Html.PartialAsync("_AdminPartial/_UserManagement/_FilterSection")
                     
                     @{
                         ViewData["TableType"] = "pending";
@@ -70,7 +70,7 @@
                         ViewData["SelectAllId"] = "selectAllUsersPending";
                         ViewData["PaginationLabel"] = "待驗證會員分頁";
                     }
-                    @await Html.PartialAsync("_UserManagement/_UserTable")
+                    @await Html.PartialAsync("_AdminPartial/_UserManagement/_UserTable")
                 </div>
 
                 <!-- 申請成為房東分頁 -->
@@ -84,7 +84,7 @@
                         ViewData["HasVerificationStatus"] = true;
                         ViewData["VerificationStatusOptions"] = "limited";
                     }
-                    @await Html.PartialAsync("_UserManagement/_FilterSection")
+                    @await Html.PartialAsync("_AdminPartial/_UserManagement/_FilterSection")
                     
                     @{
                         ViewData["TableType"] = "landlord";
@@ -93,7 +93,7 @@
                         ViewData["SelectAllId"] = "selectAllUsersLandlord";
                         ViewData["PaginationLabel"] = "申請房東分頁";
                     }
-                    @await Html.PartialAsync("_UserManagement/_UserTable")
+                    @await Html.PartialAsync("_AdminPartial/_UserManagement/_UserTable")
                 </div>
             </div>
         </div>
@@ -101,7 +101,7 @@
 </div>
 
 @section Scripts {
-    @await Html.PartialAsync("_UserManagement/_UserScripts")
+    @await Html.PartialAsync("_AdminPartial/_UserManagement/_UserScripts")
 }
 
-@await Html.PartialAsync("_UserManagement/_UserModals")
+@await Html.PartialAsync("_AdminPartial/_UserManagement/_UserModals")

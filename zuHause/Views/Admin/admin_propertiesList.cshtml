@@ -35,7 +35,7 @@
                         ViewData["HasPropertyStatus"] = true;
                         ViewData["HasPaymentStatus"] = true;
                     }
-                    @await Html.PartialAsync("_PropertyManagement/_FilterSection")
+                    @await Html.PartialAsync("_AdminPartial/_PropertyManagement/_FilterSection")
                     
                     @{
                         ViewData["TableType"] = "all";
@@ -44,7 +44,7 @@
                         ViewData["SelectAllId"] = "selectAllProperties";
                         ViewData["PaginationLabel"] = "屋源分頁";
                     }
-                    @await Html.PartialAsync("_PropertyManagement/_PropertyTable")
+                    @await Html.PartialAsync("_AdminPartial/_PropertyManagement/_PropertyTable")
                 </div>
 
                 <!-- 待審核分頁 -->
@@ -57,7 +57,7 @@
                         ViewData["HasPaymentStatus"] = false;
                         ViewData["PropertyStatusOptions"] = "limited";
                     }
-                    @await Html.PartialAsync("_PropertyManagement/_FilterSection")
+                    @await Html.PartialAsync("_AdminPartial/_PropertyManagement/_FilterSection")
                     
                     @{
                         ViewData["TableType"] = "pending";
@@ -66,7 +66,7 @@
                         ViewData["SelectAllId"] = "selectAllPropertiesPending";
                         ViewData["PaginationLabel"] = "待審核屋源分頁";
                     }
-                    @await Html.PartialAsync("_PropertyManagement/_PropertyTable")
+                    @await Html.PartialAsync("_AdminPartial/_PropertyManagement/_PropertyTable")
                 </div>
             </div>
         </div>
@@ -74,7 +74,7 @@
 </div>
 
 @section Scripts {
-    @await Html.PartialAsync("_PropertyManagement/_PropertyScripts")
+    @await Html.PartialAsync("_AdminPartial/_PropertyManagement/_PropertyScripts")
 }
 
-@await Html.PartialAsync("_PropertyManagement/_PropertyModals")
+@await Html.PartialAsync("_AdminPartial/_PropertyManagement/_PropertyModals")

@@ -4,7 +4,7 @@
     var memberData = new {
         MemberId = "M001",
         MemberName = "王大明",
-        IsLandlord = false, // 控制是否顯示房東活動頁籤 - 改為 false 測試非房東狀態
+        IsLandlord = true, // 控制是否顯示房東活動頁籤 - 改為 false 測試非房東狀態
         IsActive = true,
         IsIdentityVerified = true,
         RegisterDate = "2024-01-15 10:30:00"
@@ -18,14 +18,14 @@
 <link href="~/css/admin-userdetails.css" rel="stylesheet" />
 
 <div class="container-fluid">
-    @await Html.PartialAsync("_UserDetails/_HeaderSection")
-    @await Html.PartialAsync("_UserDetails/_TabNavigation")
+    @await Html.PartialAsync("_AdminPartial/_UserDetails/_HeaderSection")
+    @await Html.PartialAsync("_AdminPartial/_UserDetails/_TabNavigation")
 
-    @await Html.PartialAsync("_UserDetails/_TabContent")
+    @await Html.PartialAsync("_AdminPartial/_UserDetails/_TabContent")
 </div>
 
 @section Scripts {
-    @await Html.PartialAsync("_UserDetails/_UserDetailsScripts")
+    @await Html.PartialAsync("_AdminPartial/_UserDetails/_UserDetailsScripts")
 }
 
-@await Html.PartialAsync("_UserDetails/_UserDetailsModals")
+@await Html.PartialAsync("_AdminPartial/_UserDetails/_UserDetailsModals")
