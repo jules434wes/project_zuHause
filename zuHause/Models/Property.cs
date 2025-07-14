@@ -218,6 +218,8 @@ public partial class Property
     /// </summary>
     public DateTime? DeletedAt { get; set; }
 
+    public virtual ICollection<Approval> Approvals { get; set; } = new List<Approval>();
+
     public virtual ICollection<Chatroom> Chatrooms { get; set; } = new List<Chatroom>();
 
     public virtual ICollection<CustomerServiceTicket> CustomerServiceTickets { get; set; } = new List<CustomerServiceTicket>();

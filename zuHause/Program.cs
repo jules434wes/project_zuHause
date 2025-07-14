@@ -1,17 +1,28 @@
 using Microsoft.EntityFrameworkCore;
-using zuHause.Models; // ¡ö Scaffold ¥X¨Óªº DbContext ©R¦WªÅ¶¡
+using zuHause.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ? µù¥U Scaffold ¥X¨Óªº¸ê®Æ®w³s½u
-builder.Services.AddDbContext<ZuHauseContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("ZuhauseDb")));
+// æœƒå“¡
+builder.Services.AddAuthentication("MemberCookieAuth").AddCookie("MemberCookieAuth", options =>
+{
+    options.LoginPath = "/Member/Login";
+    options.AccessDeniedPath = "/Member/AccessDenied";
+});
 
+
+builder.Services.AddDbContext<ZuHauseContext>(
+            options => options.UseSqlServer(builder.Configuration.GetConnectionString("zuHauseDBConnstring")));
+
+
+builder.Services.AddMemoryCache();
+
+// Add services to the container.
 builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
 
-// ¤¤¤¶¼h³]©w
+// ä¸­ä»‹å±¤è¨­å®š
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
@@ -20,12 +31,11 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-
 app.UseRouting();
-
+app.UseAuthentication();
 app.UseAuthorization();
 
-// ? ¹w³]­º­¶¸ô¥Ñ¡G¾É¦V FurnitureController ªº FurnitureHomePage
+// ? é è¨­é¦–é è·¯ç”±ï¼šå°å‘ FurnitureController çš„ FurnitureHomePage
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Furniture}/{action=FurnitureHomePage}/{id?}");

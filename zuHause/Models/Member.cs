@@ -140,6 +140,10 @@ public partial class Member
 
     public virtual ICollection<MemberVerification> MemberVerifications { get; set; } = new List<MemberVerification>();
 
+    public virtual City? PrimaryRentalCity { get; set; }
+
+    public virtual District? PrimaryRentalDistrict { get; set; }
+
     public virtual ICollection<Property> Properties { get; set; } = new List<Property>();
 
     public virtual ICollection<PropertyComplaint> PropertyComplaintComplainants { get; set; } = new List<PropertyComplaint>();
@@ -151,6 +155,10 @@ public partial class Member
     public virtual ICollection<RenterPostReply> RenterPostReplies { get; set; } = new List<RenterPostReply>();
 
     public virtual ICollection<RenterPost> RenterPosts { get; set; } = new List<RenterPost>();
+
+    public virtual City? ResidenceCity { get; set; }
+
+    public virtual District? ResidenceDistrict { get; set; }
 
     public virtual ICollection<SearchHistory> SearchHistories { get; set; } = new List<SearchHistory>();
 

@@ -43,5 +43,9 @@ public partial class ApprovalItem
     /// </summary>
     public DateTime CreatedAt { get; set; }
 
+    public string? ActionCategory { get; set; }
+
     public virtual Approval Approval { get; set; } = null!;
+
+    public virtual SystemCode? SystemCode { get; set; }
 }

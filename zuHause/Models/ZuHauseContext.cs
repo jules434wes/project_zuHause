@@ -330,6 +330,11 @@ public partial class ZuHauseContext : DbContext
             entity.Property(e => e.SourceId)
                 .HasComment("來源ID")
                 .HasColumnName("sourceID");
+            entity.Property(e => e.StatusCategory)
+                .HasMaxLength(20)
+                .HasComputedColumnSql("(CONVERT([nvarchar](20),N'ApprovalStatus'))", true)
+                .HasComment("審核狀態分類")
+                .HasColumnName("statusCategory");
             entity.Property(e => e.StatusCode)
                 .HasMaxLength(20)
                 .HasComment("審核狀態碼")
@@ -344,6 +349,15 @@ public partial class ZuHauseContext : DbContext
                 .HasForeignKey(d => d.ApplicantMemberId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_approvals_applicant");
+
+            entity.HasOne(d => d.Source).WithMany(p => p.Approvals)
+                .HasForeignKey(d => d.SourceId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_approvals_Property");
+
+            entity.HasOne(d => d.SystemCode).WithMany(p => p.Approvals)
+                .HasForeignKey(d => new { d.StatusCategory, d.StatusCode })
+                .HasConstraintName("FK_approvals_status");
         });
 
         modelBuilder.Entity<ApprovalItem>(entity =>
@@ -357,6 +371,10 @@ public partial class ZuHauseContext : DbContext
             entity.Property(e => e.ActionBy)
                 .HasComment("操作者ID")
                 .HasColumnName("actionBy");
+            entity.Property(e => e.ActionCategory)
+                .HasMaxLength(20)
+                .HasComputedColumnSql("(CONVERT([nvarchar](20),N'ApprovalAction'))", true)
+                .HasColumnName("actionCategory");
             entity.Property(e => e.ActionNote)
                 .HasComment("操作備註")
                 .HasColumnName("actionNote");
@@ -380,6 +398,10 @@ public partial class ZuHauseContext : DbContext
                 .HasForeignKey(d => d.ApprovalId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_approvalItems_approval");
+
+            entity.HasOne(d => d.SystemCode).WithMany(p => p.ApprovalItems)
+                .HasForeignKey(d => new { d.ActionCategory, d.ActionType })
+                .HasConstraintName("FK_approvalItems_action");
         });
 
         modelBuilder.Entity<CarouselImage>(entity =>
@@ -544,6 +566,9 @@ public partial class ZuHauseContext : DbContext
 
             entity.ToTable("cities", tb => tb.HasComment("縣市代碼表"));
 
+            entity.HasIndex(e => e.CityCode, "UQ_cities_cityCode").IsUnique();
+
+            entity.Property(e => e.CityId).HasColumnName("cityId");
             entity.Property(e => e.CityCode)
                 .HasMaxLength(10)
                 .IsUnicode(false)
@@ -967,16 +992,14 @@ public partial class ZuHauseContext : DbContext
 
             entity.ToTable("districts", tb => tb.HasComment("鄉鎮區代碼表"));
 
-            entity.Property(e => e.DistrictCode)
-                .HasMaxLength(10)
-                .IsUnicode(false)
-                .HasComment("區代碼")
-                .HasColumnName("districtCode");
             entity.Property(e => e.CityCode)
                 .HasMaxLength(10)
                 .IsUnicode(false)
                 .HasComment("縣市代碼")
                 .HasColumnName("cityCode");
+            entity.Property(e => e.CityId)
+                .HasComment("縣市ID")
+                .HasColumnName("cityId");
             entity.Property(e => e.CreatedAt)
                 .HasPrecision(0)
                 .HasDefaultValueSql("(CONVERT([datetime2](0),sysdatetime()))")
@@ -985,6 +1008,11 @@ public partial class ZuHauseContext : DbContext
             entity.Property(e => e.DisplayOrder)
                 .HasComment("排序")
                 .HasColumnName("displayOrder");
+            entity.Property(e => e.DistrictCode)
+                .HasMaxLength(10)
+                .IsUnicode(false)
+                .HasComment("區代碼")
+                .HasColumnName("districtCode");
             entity.Property(e => e.DistrictName)
                 .HasMaxLength(50)
                 .HasComment("區名稱")
@@ -1004,10 +1032,7 @@ public partial class ZuHauseContext : DbContext
                 .HasComment("郵遞區號")
                 .HasColumnName("zipCode");
 
-            entity.HasOne(d => d.CityCodeNavigation).WithMany(p => p.Districts)
-                .HasForeignKey(d => d.CityCode)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_districts_city");
         });
 
         modelBuilder.Entity<Favorite>(entity =>
@@ -1782,6 +1807,22 @@ public partial class ZuHauseContext : DbContext
             entity.HasOne(d => d.MemberType).WithMany(p => p.Members)
                 .HasForeignKey(d => d.MemberTypeId)
                 .HasConstraintName("FK_members_memberType");
+
+            entity.HasOne(d => d.PrimaryRentalCity).WithMany(p => p.MemberPrimaryRentalCities)
+                .HasForeignKey(d => d.PrimaryRentalCityId)
+                .HasConstraintName("FK_members_primaryCity");
+
+            entity.HasOne(d => d.PrimaryRentalDistrict).WithMany(p => p.MemberPrimaryRentalDistricts)
+                .HasForeignKey(d => d.PrimaryRentalDistrictId)
+                .HasConstraintName("FK_members_primaryDistrict");
+
+            entity.HasOne(d => d.ResidenceCity).WithMany(p => p.MemberResidenceCities)
+                .HasForeignKey(d => d.ResidenceCityId)
+                .HasConstraintName("FK_members_resCity");
+
+            entity.HasOne(d => d.ResidenceDistrict).WithMany(p => p.MemberResidenceDistricts)
+                .HasForeignKey(d => d.ResidenceDistrictId)
+                .HasConstraintName("FK_members_resDistrict");
         });
 
         modelBuilder.Entity<MemberType>(entity =>
@@ -1820,7 +1861,6 @@ public partial class ZuHauseContext : DbContext
         {
             entity.HasKey(e => e.VerificationId);
 
-            entity.ToTable("memberVerifications", tb => tb.HasComment("會員Verifications"));
 
             entity.Property(e => e.VerificationId)
                 .ValueGeneratedNever()

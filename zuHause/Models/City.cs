@@ -39,4 +39,8 @@ public partial class City
     public DateTime UpdatedAt { get; set; }
 
     public virtual ICollection<District> Districts { get; set; } = new List<District>();
+
+    public virtual ICollection<Member> MemberPrimaryRentalCities { get; set; } = new List<Member>();
+
+    public virtual ICollection<Member> MemberResidenceCities { get; set; } = new List<Member>();
 }
