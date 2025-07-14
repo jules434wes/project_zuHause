@@ -1,0 +1,530 @@
+/* 房源詳細頁面 - 錨點導航模式 */
+
+/* 基礎佈局 */
+body {
+    background-color: #f8f9fa;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* 次要導覽列 - Quick Navigation Tabs */
+.quick-navigation-tabs {
+    position: fixed;
+    top: 72px;
+    left: 0;
+    right: 0;
+    background: white;
+    border-bottom: 1px solid #e0e0e0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    z-index: 40;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-100%);
+    transition: all 0.3s ease;
+    height: 60px;
+    display: flex;
+    align-items: center;
+}
+
+.quick-navigation-tabs.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+/* Sentinel element for intersection observer */
+.sentinel-element {
+    position: absolute;
+    top: 300px;
+    height: 1px;
+    width: 100%;
+    pointer-events: none;
+}
+
+/* Quick navigation container */
+.quick-navigation-tabs .container-fluid {
+    height: 100%;
+    display: flex;
+    align-items: center;
+}
+
+.quick-navigation-tabs .nav-tabs {
+    border-bottom: none;
+    margin-bottom: 0;
+    display: flex;
+    align-items: center;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    white-space: nowrap;
+}
+
+.quick-navigation-tabs .nav-tabs::-webkit-scrollbar {
+    display: none;
+}
+
+/* Quick Navigation Tab 按鈕樣式 */
+.quick-navigation-tabs .nav-link {
+    background: none;
+    border: none;
+    color: #6c757d;
+    font-size: 0.875rem;
+    font-weight: 500;
+    padding: 0.75rem 1.25rem;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    text-decoration: none;
+    cursor: pointer;
+    position: relative;
+    min-width: fit-content;
+    margin-right: 0.5rem;
+}
+
+.quick-navigation-tabs .nav-link:hover {
+    color: #495057;
+    background-color: rgba(0, 0, 0, 0.05);
+    border-color: transparent;
+}
+
+.quick-navigation-tabs .nav-link.active,
+.quick-navigation-tabs .nav-link[aria-selected="true"] {
+    color: #212529;
+    background-color: #f8f9fa;
+    font-weight: 600;
+    border: 1px solid #dee2e6;
+    border-bottom-color: transparent;
+}
+
+.quick-navigation-tabs .nav-link:focus {
+    outline: 2px solid var(--zh-primary, #1a7482);
+    outline-offset: 2px;
+}
+
+/* 房屋標題區域 */
+.property-header .property-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #212529;
+    margin: 0;
+    line-height: 1.3;
+}
+
+.property-actions .action-btn-v2 {
+    background: white;
+    border: 1px solid #dee2e6;
+    color: #6c757d;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    border-radius: 4px;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+}
+
+.property-actions .action-btn-v2:hover {
+    border-color: var(--zh-primary, #1a7482);
+    color: var(--zh-primary, #1a7482);
+}
+
+.property-actions .action-btn-v2.active {
+    color: #e95d54;
+    border-color: #e95d54;
+}
+
+/* 圖片展示區域 */
+.main-image-container {
+    aspect-ratio: 16/9;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.main-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.main-image:hover {
+    transform: scale(1.02);
+}
+
+.thumbnail-container {
+    aspect-ratio: 4/3;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.thumbnail-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.thumbnail-image:hover {
+    transform: scale(1.1);
+}
+
+/* 詳細資訊區塊 */
+.detail-section {
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.section-header {
+    background-color: #eff9f6;
+    padding: 1rem 1.5rem;
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #212529;
+    border: none;
+}
+
+.section-content {
+    padding: 1.5rem;
+}
+
+/* 房屋資訊樣式 */
+.info-grid .info-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #f1f3f4;
+}
+
+.info-grid .info-item:last-child {
+    border-bottom: none;
+}
+
+.info-label {
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.info-value {
+    color: #212529;
+    font-weight: 500;
+}
+
+/* 費用樣式 */
+.cost-items .cost-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #f1f3f4;
+}
+
+.cost-items .cost-item:last-child {
+    border-bottom: none;
+}
+
+.cost-label {
+    color: #212529;
+    font-size: 0.875rem;
+}
+
+.cost-value {
+    text-align: right;
+}
+
+/* 設備與服務樣式 */
+.amenity-category {
+    margin-bottom: 1.5rem;
+}
+
+.amenity-category:last-child {
+    margin-bottom: 0;
+}
+
+.amenity-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #212529;
+    margin-bottom: 0.75rem;
+}
+
+.amenity-divider {
+    border-color: #e9ecef;
+    margin: 1.5rem 0;
+}
+
+.other-group {
+    margin-bottom: 1rem;
+}
+
+/* 交通資訊樣式 */
+.transport-info .transport-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    font-size: 0.875rem;
+}
+
+.transport-label {
+    color: #6c757d;
+}
+
+.transport-value {
+    color: #212529;
+    font-weight: 500;
+}
+
+/* 右側資訊面板 */
+.property-info-sidebar {
+    position: sticky;
+    top: 20px; /* 頁面頂部時的初始位置 */
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
+    transition: top 0.3s ease;
+}
+
+.property-info-sidebar.scrolled {
+    top: 140px; /* 次導覽列出現後，緊貼在次導覽列下方 */
+    max-height: calc(100vh - 160px);
+}
+
+.info-card {
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* 價格顯示 */
+.price-display .price-amount {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--zh-primary, #1a7482);
+}
+
+.property-quick-info .quick-info-item {
+    color: #6c757d;
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
+}
+
+.quick-detail {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.25rem 0;
+    font-size: 0.875rem;
+}
+
+.quick-label {
+    color: #6c757d;
+}
+
+.quick-value {
+    color: #212529;
+    font-weight: 500;
+}
+
+/* 房東資訊 */
+.landlord-avatar {
+    width: 48px;
+    height: 48px;
+}
+
+.landlord-label {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+.landlord-name {
+    color: #212529;
+}
+
+/* 操作按鈕樣式 - 遵照設計規範 */
+
+/* 立即申租按鈕 (特殊按鈕) */
+.btn-apply-rent {
+    background: linear-gradient(135deg, #e95d54, #ff7066);
+    color: #ffffff;
+    border: none;
+    padding: 0.875rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 700;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    transform: perspective(1px) translateZ(0);
+    box-shadow: 0 4px 15px rgba(233, 93, 84, 0.3);
+}
+
+.btn-apply-rent:hover {
+    background: linear-gradient(135deg, #d54e45, #e95d54);
+    color: #ffffff;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(233, 93, 84, 0.4);
+}
+
+.btn-apply-rent:active {
+    transform: translateY(0);
+}
+
+/* 預約看房按鈕 (主要按鈕) */
+.btn-schedule-visit {
+    background-color: #1a7482;
+    color: #ffffff;
+    border: 1px solid #1a7482;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.btn-schedule-visit:hover {
+    background-color: #155f6a;
+    border-color: #155f6a;
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(26, 116, 130, 0.3);
+}
+
+/* 立即聯絡按鈕 (最次要按鈕) */
+.btn-contact {
+    background-color: #ffffff;
+    color: #67bfa3;
+    border: 1px solid #67bfa3;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.btn-contact:hover {
+    background-color: #67bfa3;
+    border-color: #67bfa3;
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(103, 191, 163, 0.3);
+}
+
+/* 響應式設計 */
+@media (max-width: 991.98px) {
+    .property-info-sidebar {
+        position: static;
+        top: auto;
+        max-height: none;
+        margin-top: 2rem;
+    }
+    
+    .property-info-sidebar.scrolled {
+        position: static;
+        top: auto;
+        max-height: none;
+    }
+    
+    .secondary-nav {
+        top: 70px;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .property-header .property-title {
+        font-size: 1.5rem;
+    }
+    
+    .property-actions {
+        flex-direction: column;
+        gap: 0.5rem !important;
+    }
+    
+    .property-actions .action-btn-v2 {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .quick-navigation-tabs .container-fluid {
+        padding: 0.5rem 1rem;
+    }
+    
+    .quick-navigation-tabs .nav-link {
+        font-size: 0.8rem;
+        padding: 0.5rem 0.875rem;
+        min-width: auto;
+    }
+    
+    .section-content {
+        padding: 1rem;
+    }
+    
+    .info-card {
+        padding: 1rem;
+    }
+    
+    .price-display .price-amount {
+        font-size: 1.75rem;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .container-fluid {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    
+    .row.g-2 > * {
+        padding-left: 0.25rem;
+        padding-right: 0.25rem;
+    }
+    
+    .thumbnail-container {
+        aspect-ratio: 1;
+    }
+}
+
+/* Content sections - all visible */
+.detail-section {
+    width: 100%;
+    display: block;
+}
+
+/* 滾動行為優化 */
+.detail-section {
+    scroll-margin-top: 140px;
+}
+
+/* 模態框樣式調整 */
+.modal-content {
+    border-radius: 12px;
+}
+
+.modal-header {
+    border-bottom: 1px solid #e9ecef;
+}
+
+.modal-footer {
+    border-top: 1px solid #e9ecef;
+}
+
+/* 載入動畫 */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.detail-section {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+.info-card {
+    animation: fadeInUp 0.6s ease-out;
+    animation-delay: 0.1s;
+    animation-fill-mode: both;
+}

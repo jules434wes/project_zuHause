@@ -1,0 +1,130 @@
+﻿<header class="position-sticky w-100 top-0 z-3">
+    <nav class="navbar navbar-expand-lg position-relative py-0" data-bs-theme="aqua">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <img src="~/images/logo.png" alt="">
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarTogglerDemo02"
+                    aria-controls="navbarTogglerDemo02" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse justify-content-end" id="navbarTogglerDemo02">
+                <ul class="navbar-nav mb-2 mb-lg-0 align-items-center">
+                    <li class="nav-item mx-3">
+                        <a class="nav-link active" aria-current="page" href="#">首頁</a>
+                    </li>
+                    <li class="nav-item mx-3">
+                        <a class="nav-link" href="#">前往尋租</a>
+                    </li>
+                    <li class="nav-item mx-3">
+                        <a class="nav-link" href="#">傢俱租賃</a>
+                    </li>
+                    <li class="nav-item mx-3">
+                        <a class="nav-link" href="#">成為房東</a>
+                    </li>
+                    <li class="nav-item mx-3">
+                        <div class="btn-group">
+                            <button type="button" class="btn dropdown-toggle d-flex align-items-center gap-2 ps-0 position-relative"
+                                    data-bs-toggle="dropdown" aria-expanded="false">
+                                通知總覽
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                    99+
+                                    <span class="visually-hidden">通知總覽</span>
+                                </span>
+                            </button>
+                            <ul class="dropdown-menu dropdown-msg left-50 p-0 rounded-0">
+                                <li class="py-1 px-2">
+                                    通知總覽
+                                </li>
+                                <li>
+                                    <hr class="dropdown-divider m-0">
+                                </li>
+                                <li>
+                                    <ul class="dropdown-sub-list p-0">
+                                        <li class="border-bottom">
+                                            <a class="dropdown-item" href="#">
+                                                <div class="d-flex w-100 justify-content-between">
+                                                    <p class="mb-1">系統公告</p>
+                                                    <small>2025-06-25</small>
+                                                </div>
+                                                <small class="mb-0 text-start">您申請的房源已通過審核...</small>
+                                            </a>
+                                        </li>
+                                        <li class="border-bottom">
+                                            <a class="dropdown-item" href="#">
+                                                <div class="d-flex w-100 justify-content-between">
+                                                    <p class="mb-1">系統公告</p>
+                                                    <small>2025-06-25</small>
+                                                </div>
+                                                <small class="mb-0 text-start">您申請的房源已通過審核...</small>
+                                            </a>
+                                        </li>
+                                        <li class="border-bottom">
+                                            <a class="dropdown-item" href="#">
+                                                <div class="d-flex w-100 justify-content-between lis">
+                                                    <p class="mb-1">系統公告</p>
+                                                    <small>2025-06-25</small>
+                                                </div>
+                                                <small class="mb-0 text-start">您申請的房源已通過審核...</small>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </li>
+                                <li class="d-flex justify-content-center p-0">
+                                    <a class="dropdown-item text-center btn btn-outline-aqua rounded-0">我的通知</a>
+                                    <a class="dropdown-item text-center btn btn-outline-aqua rounded-0">我的訊息</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+                    @if (User.Identity?.IsAuthenticated == true)
+                    {
+                        <li class="nav-item ms-3">
+                            <!-- Example single danger button -->
+                            <div class="btn-group">
+                                <button type="button" class="btn dropdown-toggle d-flex align-items-center gap-2 ps-0"
+                                        data-bs-toggle="dropdown" aria-expanded="false">
+                                    <div class="user-img rounded-circle">
+                                        <img src="@Url.Content(Model)" alt="" class="rounded-circle">
+                                    </div>
+                                </button>
+                                <ul class="dropdown-menu right-0">
+                                    <li>
+                                        <a class="dropdown-item text-center" href="#">個人檔案</a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item text-center" href="#">申請紀錄</a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item text-center" href="#">我的合約</a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item text-center" href="#">我的收藏</a>
+                                    </li>
+                                    <li>
+                                        <hr class="dropdown-divider">
+                                    </li>
+                                    <li>
+                                        <div class="text-center p-0">
+                                            <form asp-controller="Member" asp-action="Logout" method="post" class="w-100">
+                                                <button type="submit" class="btn w-100 dropdown-item ">登出</button>
+                                            </form>
+                                        </div>
+                                    </li>
+                                </ul>
+                            </div>
+                        </li>
+                    }
+                    else
+                    {
+                        <li class="nav-item mx-3 d-flex align-items-center">
+                            <a class="nav-link" href="#">註冊</a>
+                            <div class="nav-separator"></div>
+                            <a class="nav-link" href="#">登入</a>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </nav>
+</header>

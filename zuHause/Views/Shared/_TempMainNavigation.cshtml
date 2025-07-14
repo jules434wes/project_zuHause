@@ -1,0 +1,70 @@
+@*
+    臨時主導覽列 - 用於展示次導覽列效果
+    待後續團隊成員開發完成後再行替換
+*@
+
+<header class="temp-main-nav border-b bg-white sticky top-0 z-50">
+    <div class="container-fluid px-4 py-3">
+        <nav class="d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center">
+                <div class="temp-logo text-primary fs-3 fw-bold me-4">zuHause</div>
+                <div class="d-none d-md-flex gap-4">
+                    <a href="/" class="nav-link text-sm">首頁</a>
+                    <a href="/properties" class="nav-link text-sm">前往尋租</a>
+                    <a href="#" class="nav-link text-sm">傢俱租賃</a>
+                    <a href="#" class="nav-link text-sm">成為房東</a>
+                </div>
+            </div>
+            <div class="d-flex align-items-center gap-3">
+                <button class="btn btn-outline-primary btn-sm">登入</button>
+                <button class="btn btn-primary btn-sm">註冊</button>
+            </div>
+        </nav>
+    </div>
+</header>
+
+<style>
+.temp-main-nav {
+    height: 72px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(26, 116, 130, 0.1);
+    box-shadow: 0 2px 15px rgba(26, 116, 130, 0.05);
+}
+
+.temp-logo {
+    color: var(--zh-primary) !important;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+}
+
+.temp-main-nav .nav-link {
+    color: var(--zh-gray-600);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s ease;
+    font-size: 0.9rem;
+}
+
+.temp-main-nav .nav-link:hover {
+    color: var(--zh-primary);
+}
+
+.temp-main-nav .btn-outline-primary {
+    border-color: var(--zh-primary);
+    color: var(--zh-primary);
+    font-weight: 500;
+}
+
+.temp-main-nav .btn-outline-primary:hover {
+    background-color: var(--zh-primary);
+    border-color: var(--zh-primary);
+    color: white;
+}
+
+.temp-main-nav .btn-primary {
+    background-color: var(--zh-primary);
+    border-color: var(--zh-primary);
+    font-weight: 500;
+}
+</style>
