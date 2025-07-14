@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace zuHause.Models;
 
 /// <summary>
-/// 會員Verifications
+/// 通訊相關驗證表
 /// </summary>
 public partial class MemberVerification
 {
