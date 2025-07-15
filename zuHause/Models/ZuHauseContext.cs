@@ -830,6 +830,7 @@ public partial class ZuHauseContext : DbContext
                 .IsUnicode(false)
                 .HasComment("簽署人身份")
                 .HasColumnName("signerRole");
+            entity.Property(e => e.UploadId).HasColumnName("uploadId");
 
             entity.HasOne(d => d.Contract).WithMany(p => p.ContractSignatures)
                 .HasForeignKey(d => d.ContractId)

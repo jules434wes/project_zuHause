@@ -13,19 +13,19 @@ namespace zuHause.Controllers
 
         public IActionResult admin_usersList()
         {
-            var viewModel = new UserListViewModel();
+            var viewModel = new AdminUserListViewModel();
             return View(viewModel);
         }
 
         public IActionResult admin_propertiesList()
         {
-            var viewModel = new PropertyListViewModel();
+            var viewModel = new AdminPropertyListViewModel();
             return View(viewModel);
         }
         
         public IActionResult admin_userDetails(string id = "M001")
         {
-            var viewModel = new UserDetailsViewModel(id);
+            var viewModel = new AdminUserDetailsViewModel(id);
             return View(viewModel);
         }
 
@@ -41,19 +41,19 @@ namespace zuHause.Controllers
 
         public IActionResult admin_customerServiceDetails(string id = "CS001")
         {
-            var viewModel = new CustomerServiceDetailsViewModel(id);
+            var viewModel = new AdminCustomerServiceDetailsViewModel(id);
             return View(viewModel);
         }
 
         public IActionResult admin_systemMessageList()
         {
-            var viewModel = new SystemMessageListViewModel();
+            var viewModel = new AdminSystemMessageListViewModel();
             return View(viewModel);
         }
 
         public IActionResult admin_systemMessageNew()
         {
-            var viewModel = new SystemMessageNewViewModel();
+            var viewModel = new AdminSystemMessageNewViewModel();
             return View(viewModel);
         }
 
