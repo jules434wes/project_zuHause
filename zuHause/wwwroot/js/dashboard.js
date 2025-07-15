@@ -133,21 +133,21 @@ function openTab(tabKey) {
         .then(r => r.text())
         .then(html => {
             tabContent.innerHTML = html;
-
+            const timestamp = new Date().getTime();
             const scriptMap = {
-                overview: '/js/overview.js?v=1',
-                monitor: '/js/monitor.js?v=1',
-                behavior: '/js/behavior.js?v=1',
-                orders: '/js/orders.js?v=1',
-                system: '/js/system.js?v=1',
-                roles: '/js/roles.js?v=1',
-                Backend_user_list: '/js/Backend_user_list.js?v=1',
-                contract_template: '/js/contract_template.js?v=1',
-                platform_fee: '/js/platform_fee.js?v=1',
-                imgup: '/js/imgup.js?v=1',
-                furniture_fee: '/js/furniture_fee.js?v=1',
-                Marquee_edit: '/js/Marquee_edit.js?v=1',
-                furniture_management: '/js/furniture_management.js?v=1'
+                overview: `/js/overview.js?v=${timestamp}`,
+                monitor: `/js/monitor.js?v=${timestamp}`,
+                behavior: `/js/behavior.js?v=${timestamp}`,
+                orders: `/js/orders.js?v=${timestamp}`,
+                system: `/js/system.js?v=${timestamp}`,
+                roles: `/js/roles.js?v=${timestamp}`,
+                Backend_user_list: `/js/Backend_user_list.js?v=${timestamp}`,
+                contract_template: `/js/contract_template.js?v=${timestamp}`,
+                platform_fee: `/js/platform_fee.js?v=${timestamp}`,
+                imgup: `/js/imgup.js?v=${timestamp}`,
+                furniture_fee: `/js/furniture_fee.js?v=${timestamp}`,
+                Marquee_edit: `/js/Marquee_edit.js?v=${timestamp}`,
+                furniture_management: `/js/furniture_management.js?v=${timestamp}`
             };
 
             if (scriptMap[tabKey]) {
@@ -171,6 +171,9 @@ function openTab(tabKey) {
                     }
                     if (tabKey === "platform_fee") {
                         if (typeof initPlatformFee === "function") initPlatformFee();
+                        if (typeof renderListingPlans === "function") renderListingPlans();
+                        
+                      
                     }
                     if (tabKey === "furniture_fee") {
                         if (typeof initShipFee === "function") initShipFee();

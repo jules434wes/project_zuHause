@@ -373,7 +373,25 @@ namespace zuHause.Controllers
             return Content("✅ 手動庫存異動已紀錄並同步更新快照！");
         }
 
+        [HttpGet("GetAllListingPlans")]
+        public IActionResult GetAllListingPlans()
+        {
+            var plans = _context.ListingPlans
+                .OrderBy(p => p.PlanId)
+                .Select(p => new
+                {
+                    p.PlanId,
+                    p.PlanName,
+                    p.PricePerDay,
+                    p.MinListingDays,
+                    p.StartAt,
+                    p.EndAt,
+                    p.IsActive
+                })
+                .ToList();
 
+            return Json(plans);
+        }
 
 
 

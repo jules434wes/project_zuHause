@@ -4,6 +4,30 @@
 @{
 }
 <div class="container mt-4">
+    <div class="card mb-4">
+        <div class="card-header">
+            📋 刊登費方案清單
+        </div>
+        <div class="card-body p-2">
+            <table class="table table-bordered table-sm text-center" id="listingPlansTable">
+                <thead class="table-light">
+                    <tr>
+                        <th>方案ID</th>
+                        <th>方案名稱</th>
+                        <th>每日刊登費</th>
+                        <th>最小天數</th>
+                       
+                        <th>生效期間</th>
+                        <th>狀態</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- 由 JS 動態載入 -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
     <!-- 上方狀態區 -->
     <div class="container bg-light p-3 rounded border mb-4">
         <h5 class="mb-3 fw-bold">目前費用設定</h5>
@@ -64,17 +88,10 @@
     </div>
     <hr class="my-4 border border-dark border-2 opacity-50">
 
-    <!-- 設定檔選單 -->
-    <div class="d-flex gap-3 mb-4">
-        <button class="btn btn-outline-secondary" onclick="loadProfileData(1)">設定檔1（檔期用）</button>
-
-        <button class="btn btn-outline-secondary" onclick="loadProfileData(2)">設定檔2（平日用）</button>
-        <button class="btn btn-outline-secondary" onclick="loadProfileData(3)">設定檔3（周年用）</button>
-        <button class="btn btn-success">執行選中的設定檔</button>
-    </div>
 
     <!-- ✅ 設定表單（可編輯） -->
     <div class="bg-primary bg-opacity-10 p-3 rounded border">
+        <h6 id="formMode" class="text-info">📝 請選擇方案進行編輯</h6>
         <h5 class="fw-bold">服務費與最低上架天數設定</h5>
 
         <div class="row g-3">
