@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace zuHause.Models.Admin
+namespace zuHause.AdminViewModels
 {
     /// <summary>
     /// Admin Modal 元件 ViewModel
