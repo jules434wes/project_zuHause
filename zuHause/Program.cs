@@ -1,11 +1,11 @@
 using Microsoft.EntityFrameworkCore;
-
-using zuHause.Models; // ½T«O³o¬O ZuHauseContext ¥¿½Tªº©R¦WªÅ¶¡
+using zuHause.Models;
+using zuHause.Data;
 
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ?ƒå“¡
+// ?ï¿½å“¡
 builder.Services.AddAuthentication("MemberCookieAuth").AddCookie("MemberCookieAuth", options =>
 {
     options.LoginPath = "/Member/Login";
@@ -19,14 +19,35 @@ builder.Services.AddDbContext<ZuHauseContext>(
 
 builder.Services.AddMemoryCache();
 
+// è¨»å†Š RealDataSeeder
+builder.Services.AddScoped<RealDataSeeder>();
+
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
 builder.Services.AddDbContext<ZuHauseContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("zuhause"))); // ©Î®Ú¾Ú±z¹ê»Úªº¸ê®Æ®w´£¨ÑªÌ¨Ï¥Î UseSqlite, UsePostgreSQL µ¥
+    options.UseSqlServer(builder.Configuration.GetConnectionString("zuhause"))); // ï¿½Î®Ú¾Ú±zï¿½ï¿½Úªï¿½ï¿½ï¿½Æ®wï¿½ï¿½ï¿½ÑªÌ¨Ï¥ï¿½ UseSqlite, UsePostgreSQL ï¿½ï¿½
 
 
 var app = builder.Build();
+
+// åœ¨é–‹ç™¼ç’°å¢ƒè‡ªå‹•åŸ·è¡Œè³‡æ–™é‡ç½®å’Œæ’­ç¨®
+if (app.Environment.IsDevelopment())
+{
+    using (var scope = app.Services.CreateScope())
+    {
+        var seeder = scope.ServiceProvider.GetRequiredService<RealDataSeeder>();
+        try
+        {
+            await seeder.ResetTestDataAsync();
+        }
+        catch (Exception ex)
+        {
+            var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+            logger.LogError(ex, "è³‡æ–™æ’­ç¨®å¤±æ•—");
+        }
+    }
+}
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

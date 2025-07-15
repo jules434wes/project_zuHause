@@ -32,7 +32,14 @@ docs/
 # Third-party libraries
 wwwroot/lib/
 
+# NuGet related files
+packages/
+*.nuget.props
+*.nuget.targets
+project.assets.json
+project.nuget.cache
+
 # MCP and temporary files
 .claude/
 wsl-dotnet-setup.sh
-~/
+~/.nuget/
