@@ -24,3 +24,4 @@ project.assets.json
 *.vshost.*
 *.log
 node_modules/
+/.claude
