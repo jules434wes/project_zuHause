@@ -1,0 +1,112 @@
+@{
+    // 模擬系統代碼資料 - 訊息分類
+    var messageCategories = new[] {
+        new { Value = "announcement", Text = "系統公告" },
+        new { Value = "promotion", Text = "優惠活動" },
+        new { Value = "maintenance", Text = "維護通知" }
+    };
+    
+    // 模擬用戶搜尋資料 - 個別用戶選擇器會用到
+    var availableUsers = new[] {
+        new { MemberId = "M000001", MemberName = "王大明", Email = "wang.daming@email.com", NationalNo = "A123456789" },
+        new { MemberId = "M000002", MemberName = "李小華", Email = "li.xiaohua@email.com", NationalNo = "B987654321" },
+        new { MemberId = "M000789", MemberName = "林小美", Email = "lin.xiaomei@email.com", NationalNo = "C456789123" }
+    };
+    
+    ViewData["MessageCategories"] = messageCategories;
+    ViewData["AvailableUsers"] = availableUsers;
+}
+
+<!-- Main Form Section -->
+<div class="card">
+    <div class="card-header">
+        撰寫新訊息
+        <p class="small text-danger mb-0 mt-1">注意：訊息一旦發送，即不可修改、刪除或撤回。</p>
+    </div>
+    <div class="card-body">
+        <form id="newMessageForm">
+            <div class="row g-3">
+                <!-- 發送對象 -->
+                <div class="col-12">
+                    <label class="form-label">發送對象 <span class="text-danger">*</span></label>
+                    <div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="audienceType" id="audienceAllMembers" value="all_members" checked>
+                            <label class="form-check-label" for="audienceAllMembers">全體會員</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="audienceType" id="audienceAllLandlords" value="all_landlords">
+                            <label class="form-check-label" for="audienceAllLandlords">全體房東</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="audienceType" id="audienceIndividual" value="individual">
+                            <label class="form-check-label" for="audienceIndividual">個別用戶</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 個別用戶選擇器 -->
+                <div class="col-md-6" id="individualUserSelector" style="display: none;">
+                    <label for="userSearch" class="form-label">個別用戶選擇器 <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="userSearch" placeholder="搜尋關鍵字...">
+                        <select class="form-select" id="userSearchField" style="max-width: 150px;">
+                            <option value="memberName">會員姓名</option>
+                            <option value="memberID">會員ID</option>
+                            <option value="email">電子郵件</option>
+                            <option value="nationalNo">身分證字號</option>
+                        </select>
+                    </div>
+                    <div id="userSearchResults" class="dropdown-menu w-100" style="max-height: 200px; overflow-y: auto;"></div>
+                    <input type="hidden" id="selectedUserId" name="selectedUserId">
+                </div>
+
+                <!-- 訊息分類 -->
+                <div class="col-md-6">
+                    <label for="messageCategory" class="form-label">訊息分類 <span class="text-danger">*</span></label>
+                    <select id="messageCategory" class="form-select" name="messageCategory" required>
+                        <option value="" disabled selected>請選擇分類...</option>
+                        @foreach (var category in messageCategories)
+                        {
+                            <option value="@category.Value">@category.Text</option>
+                        }
+                    </select>
+                </div>
+
+                <!-- 訊息標題 -->
+                <div class="col-12">
+                    <label for="messageTitle" class="form-label">訊息標題 <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="messageTitle" name="messageTitle" required maxlength="100">
+                    <div class="form-text">最多100個字元</div>
+                </div>
+
+                <!-- 訊息內容 -->
+                <div class="col-12">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <label for="messageContent" class="form-label mb-0">訊息內容 <span class="text-danger">*</span></label>
+                        <button type="button" class="btn btn-sm btn-outline-info" onclick="openTemplateModal()">
+                            <i class="bi bi-journal-plus"></i> 插入模板
+                        </button>
+                    </div>
+                    <textarea class="form-control" id="messageContent" name="messageContent" rows="10" required maxlength="2000"></textarea>
+                    <div class="form-text">最多2000個字元。實際開發時將整合富文本編輯器。</div>
+                </div>
+
+                <!-- 附件 -->
+                <div class="col-12">
+                    <label for="attachment" class="form-label">附件 (選填)</label>
+                    <input class="form-control" type="file" id="attachment" name="attachment" accept="image/*,.pdf,.doc,.docx">
+                    <div class="form-text">支援圖片、PDF、Word文件，檔案大小不超過10MB</div>
+                </div>
+
+                <!-- 操作按鈕 -->
+                <div class="col-12 d-flex justify-content-end gap-2 mt-4">
+                    <a href="~/Admin/admin_systemMessageList" class="btn btn-secondary">取消</a>
+                    <button type="button" class="btn btn-primary" onclick="showConfirmSendModal()">
+                        <i class="bi bi-send-fill"></i> 發送訊息
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

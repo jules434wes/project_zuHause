@@ -1,0 +1,305 @@
+@{
+    dynamic propertyData = ViewData["PropertyData"];
+}
+
+<!-- 內容顯示區 -->
+<div class="tab-content pt-3" id="propertyDetailsTabsContent">
+    <!-- 主要資訊頁籤 -->
+    <div class="tab-pane fade show active" id="main-info" role="tabpanel" aria-labelledby="main-info-tab">
+        <div class="row">
+            <div class="col-lg-8">
+                <!-- 屋源詳細資料卡片 -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">屋源詳細資料</h5>
+                    </div>
+                    <div class="card-body">
+                        <dl class="row key-value-list">
+                            <dt class="col-sm-3">地址</dt>
+                            <dd class="col-sm-9">@propertyData.Address</dd>
+                            <dt class="col-sm-3">租金與押金</dt>
+                            <dd class="col-sm-9">NT$ @propertyData.MonthlyRent.ToString("N0") / 月，押金 NT$ @propertyData.Deposit.ToString("N0")</dd>
+                            <dt class="col-sm-3">格局與坪數</dt>
+                            <dd class="col-sm-9">@propertyData.Layout，@propertyData.Size 坪</dd>
+                            <dt class="col-sm-3">樓層</dt>
+                            <dd class="col-sm-9">@propertyData.Floor / 總樓層 @propertyData.TotalFloors</dd>
+                            <dt class="col-sm-3">詳細描述</dt>
+                            <dd class="col-sm-9">@propertyData.Description</dd>
+                            <dt class="col-sm-3">特殊守則</dt>
+                            <dd class="col-sm-9">@propertyData.Rules</dd>
+                        </dl>
+                    </div>
+                </div>
+
+                <!-- 刊登資訊卡片 -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">刊登資訊</h5>
+                    </div>
+                    <div class="card-body">
+                        <dl class="row key-value-list mb-0">
+                            <dt class="col-sm-3">刊登方案</dt>
+                            <dd class="col-sm-9">@propertyData.ListingPlan</dd>
+                            <dt class="col-sm-3">刊登費用</dt>
+                            <dd class="col-sm-9">NT$ @propertyData.ListingFee</dd>
+                            <dt class="col-sm-3">刊登天數</dt>
+                            <dd class="col-sm-9">@propertyData.ListingDays 天</dd>
+                            <dt class="col-sm-3">上架日期</dt>
+                            <dd class="col-sm-9">@(propertyData.PublishDate ?? "-")</dd>
+                            <dt class="col-sm-3">到期日期</dt>
+                            <dd class="col-sm-9">@(propertyData.ExpiryDate ?? "-")</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <!-- 審核與狀態管理卡片 -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">審核與狀態管理</h5>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>審核狀態:</strong> <span class="fw-bold">@propertyData.ApprovalStatus</span></p>
+                        <p><strong>付款狀態:</strong> <span class="fw-bold">@propertyData.PaymentStatus</span></p>
+                        
+                        <hr>
+                        
+                        <div class="d-grid gap-2">
+                            <a href="#" class="btn btn-info" target="_blank">
+                                <i class="bi bi-download me-1"></i>查看產權證明
+                            </a>
+                            
+                            @if (propertyData.ApprovalStatus == "待審核")
+                            {
+                                <button class="btn btn-success" onclick="openApproveModal()">
+                                    <i class="bi bi-check2-circle me-1"></i>通過審核
+                                </button>
+                                <button class="btn btn-danger" onclick="openRejectModal()">
+                                    <i class="bi bi-x-lg me-1"></i>駁回申請
+                                </button>
+                            }
+                            
+                            @if (propertyData.PaymentStatus == "未付款" && propertyData.ApprovalStatus == "審核通過")
+                            {
+                                <button class="btn btn-primary" onclick="openMarkAsPaidModal()">
+                                    <i class="bi bi-credit-card me-1"></i>手動標記已付款
+                                </button>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 照片與設備頁籤 -->
+    <div class="tab-pane fade" id="media-equipment" role="tabpanel" aria-labelledby="media-equipment-tab">
+        <div class="row">
+            <div class="col-12">
+                <!-- 屋源照片卡片 -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">屋源照片</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-lg-3 col-md-4 col-sm-6">
+                                <div class="border rounded p-3 text-center bg-light">
+                                    <i class="bi bi-image fa-2x text-muted mb-2"></i>
+                                    <p class="small text-muted mb-0">客廳照片</p>
+                                </div>
+                            </div>
+                            <div class="col-lg-3 col-md-4 col-sm-6">
+                                <div class="border rounded p-3 text-center bg-light">
+                                    <i class="bi bi-image fa-2x text-muted mb-2"></i>
+                                    <p class="small text-muted mb-0">主臥室</p>
+                                </div>
+                            </div>
+                            <div class="col-lg-3 col-md-4 col-sm-6">
+                                <div class="border rounded p-3 text-center bg-light">
+                                    <i class="bi bi-image fa-2x text-muted mb-2"></i>
+                                    <p class="small text-muted mb-0">次臥室</p>
+                                </div>
+                            </div>
+                            <div class="col-lg-3 col-md-4 col-sm-6">
+                                <div class="border rounded p-3 text-center bg-light">
+                                    <i class="bi bi-image fa-2x text-muted mb-2"></i>
+                                    <p class="small text-muted mb-0">浴室</p>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="small text-muted mt-3">（實際應用中這裡會顯示上傳的屋源照片）</p>
+                    </div>
+                </div>
+
+                <!-- 設備與費用卡片 -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">設備與費用</h5>
+                    </div>
+                    <div class="card-body">
+                        <h6>設備清單</h6>
+                        <p>
+                            <span class="badge text-bg-light border fs-6 me-1">冷氣</span>
+                            <span class="badge text-bg-light border fs-6 me-1">冰箱</span>
+                            <span class="badge text-bg-light border fs-6 me-1">洗衣機</span>
+                            <span class="badge text-bg-light border fs-6 me-1">網路</span>
+                            <span class="badge text-bg-light border fs-6 me-1">有線電視</span>
+                            <span class="badge text-bg-light border fs-6 me-1">床組</span>
+                            <span class="badge text-bg-light border fs-6 me-1">書桌</span>
+                            <span class="badge text-bg-light border fs-6 me-1">衣櫃</span>
+                        </p>
+                        
+                        <hr>
+                        
+                        <h6>費用說明</h6>
+                        <dl class="row key-value-list">
+                            <dt class="col-sm-3">水電費</dt>
+                            <dd class="col-sm-9">依台電、台水帳單</dd>
+                            <dt class="col-sm-3">管理費</dt>
+                            <dd class="col-sm-9">NT$ 2,000 / 月</dd>
+                            <dt class="col-sm-3">停車費</dt>
+                            <dd class="col-sm-9">無</dd>
+                            <dt class="col-sm-3">網路費</dt>
+                            <dd class="col-sm-9">包含在租金內</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 歷史租約頁籤 -->
+    <div class="tab-pane fade" id="lease-history" role="tabpanel" aria-labelledby="lease-history-tab">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">歷史租約記錄</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>合約ID</th>
+                                <th>租客姓名</th>
+                                <th class="sortable" data-sort="rentPeriod">
+                                    租期 
+                                    <i class="bi bi-sort-up-alt sort-icon" data-direction="none"></i>
+                                </th>
+                                <th>合約狀態</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>C001</td>
+                                <td><a href="#" class="text-decoration-none">張三</a></td>
+                                <td>2023-01-01 ~ 2023-12-31</td>
+                                <td><span class="badge bg-secondary">已結束</span></td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye me-1"></i>查看詳情
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>C015</td>
+                                <td><a href="#" class="text-decoration-none">李四</a></td>
+                                <td>2024-02-01 ~ 2025-01-31</td>
+                                <td><span class="badge bg-success">生效中</span></td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye me-1"></i>查看詳情
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 收到的檢舉頁籤 -->
+    <div class="tab-pane fade" id="complaints" role="tabpanel" aria-labelledby="complaints-tab">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">收到的檢舉記錄</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>投訴單號</th>
+                                <th>投訴人</th>
+                                <th>投訴內容摘要</th>
+                                <th class="sortable" data-sort="complaintDate">
+                                    投訴時間 
+                                    <i class="bi bi-sort-down sort-icon active" data-direction="desc"></i>
+                                </th>
+                                <th>處理狀態</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>CMPL-0123</td>
+                                <td><a href="#" class="text-decoration-none">李四</a></td>
+                                <td>照片與實際屋況不符，房間比圖片小很多...</td>
+                                <td>2024-06-10 15:20:00</td>
+                                <td><span class="badge bg-warning">處理中</span></td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-arrow-right me-1"></i>前往處理
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 審核記錄頁籤 -->
+    <div class="tab-pane fade" id="approval-history" role="tabpanel" aria-labelledby="approval-history-tab">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">審核歷史記錄</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th class="sortable" data-sort="operationTime">
+                                    操作時間 
+                                    <i class="bi bi-sort-down sort-icon active" data-direction="desc"></i>
+                                </th>
+                                <th>操作類型</th>
+                                <th>操作管理員</th>
+                                <th>備註/原因</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>2024-07-12 10:00:00</td>
+                                <td><span class="badge bg-info">提交申請</span></td>
+                                <td>房東 (@propertyData.LandlordName)</td>
+                                <td>-</td>
+                            </tr>
+                            <tr>
+                                <td>2024-07-12 10:05:00</td>
+                                <td><span class="badge bg-primary">系統檢查</span></td>
+                                <td>系統自動</td>
+                                <td>資料完整性檢查通過</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

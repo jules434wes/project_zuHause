@@ -1,0 +1,19 @@
+<div class="tab-content" id="ticketTabsContent">
+    <!-- 全部案件頁籤 -->
+    <div class="tab-pane fade show active" id="all-tickets" role="tabpanel" aria-labelledby="all-tab">
+        <!-- 篩選與搜尋區 -->
+        <partial name="_AdminPartial/_CustomerService/_FilterSection" />
+        <hr />
+        <!-- 案件列表區 -->
+        <partial name="_AdminPartial/_CustomerService/_TicketTable" />
+    </div>
+    
+    <!-- 未結案頁籤 -->
+    <div class="tab-pane fade" id="unresolved-tickets" role="tabpanel" aria-labelledby="unresolved-tab">
+        <!-- 篩選與搜尋區 -->
+        <partial name="_AdminPartial/_CustomerService/_FilterSection" view-data='@(new ViewDataDictionary(ViewData) { { "TabType", "unresolved" } })' />
+        
+        <!-- 未結案列表區 -->
+        <partial name="_AdminPartial/_CustomerService/_TicketTable" view-data='@(new ViewDataDictionary(ViewData) { { "TabType", "unresolved" } })' />
+    </div>
+</div>
