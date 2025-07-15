@@ -23,8 +23,9 @@ project.assets.json
 *.db-shm
 *.vshost.*
 *.log
-node_modules/
 /Reference
 /CLAUDE.md
 /.claude
+node_modules/
+
 /~/.nuget/packages
