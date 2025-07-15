@@ -1,8 +1,21 @@
-ÿþ.vs/
+.vs/
 *.user
 
 bin/
 obj/
+
+*.nupkg
+project.lock.json
+project.assets.json
+*.nuget.cache
+*.nuget.dgspec.json
+*.nuget.g.props
+*.nuget.targets
+
+**/CopilotIndices/
+**/SemanticSymbols.*
+
+# Others
 *.suo
 *.cache
 *.db
@@ -11,14 +24,4 @@ obj/
 *.vshost.*
 *.log
 node_modules/
-
-# Documentation folder (should not be committed)
-docs/
-
-# Third-party libraries
-wwwroot/lib/
-
-# MCP and temporary files
-.claude/
-wsl-dotnet-setup.sh
-~/
+/.claude
