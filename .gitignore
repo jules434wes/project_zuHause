@@ -25,3 +25,4 @@ project.assets.json
 *.log
 node_modules/
 /.claude
+/~/.nuget/packages
