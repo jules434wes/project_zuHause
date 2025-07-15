@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace zuHause.Models.Admin
+namespace zuHause.AdminViewModels
 {
     /// <summary>
     /// 用戶管理 ViewModel

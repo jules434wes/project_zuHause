@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
-namespace zuHause.Models.Admin
+namespace zuHause.AdminViewModels
 {
     // 使用者管理相關 ViewModels
     public class UserListViewModel : BaseListViewModel<MemberData>

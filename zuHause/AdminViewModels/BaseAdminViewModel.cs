@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace zuHause.Models.Admin
+namespace zuHause.AdminViewModels
 {
     /// <summary>
     /// Admin 後台 ViewModel 基底類別

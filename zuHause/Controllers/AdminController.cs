@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using zuHause.Models.Admin;
+using zuHause.AdminViewModels;
 using System.Linq;
 
 namespace zuHause.Controllers
