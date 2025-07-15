@@ -9,7 +9,7 @@ namespace zuHause.Models;
 public partial class ApprovalItem
 {
     /// <summary>
-    /// 審核明細ID
+    /// 審核明細ID (自動遞增，從801開始)
     /// </summary>
     public int ApprovalItemId { get; set; }
 
@@ -43,6 +43,9 @@ public partial class ApprovalItem
     /// </summary>
     public DateTime CreatedAt { get; set; }
 
+    /// <summary>
+    /// 操作類別 (計算欄位)
+    /// </summary>
     public string? ActionCategory { get; set; }
 
     public virtual Approval Approval { get; set; } = null!;

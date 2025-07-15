@@ -1,11 +1,9 @@
 using Microsoft.EntityFrameworkCore;
-
-using zuHause.Models; // ½T«O³o¬O ZuHauseContext ¥¿½Tªº©R¦WªÅ¶¡
-
+using zuHause.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ?ƒå“¡
+// ç™»å…¥é©—è­‰
 builder.Services.AddAuthentication("MemberCookieAuth").AddCookie("MemberCookieAuth", options =>
 {
     options.LoginPath = "/Member/Login";
@@ -14,7 +12,7 @@ builder.Services.AddAuthentication("MemberCookieAuth").AddCookie("MemberCookieAu
 
 
 builder.Services.AddDbContext<ZuHauseContext>(
-            options => options.UseSqlServer(builder.Configuration.GetConnectionString("zuHauseDBConnstring")));
+            options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 
 builder.Services.AddMemoryCache();
@@ -22,8 +20,6 @@ builder.Services.AddMemoryCache();
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
-builder.Services.AddDbContext<ZuHauseContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("zuhause"))); // ©Î®Ú¾Ú±z¹ê»Úªº¸ê®Æ®w´£¨ÑªÌ¨Ï¥Î UseSqlite, UsePostgreSQL µ¥
 
 
 var app = builder.Build();
@@ -32,7 +28,6 @@ var app = builder.Build();
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
@@ -42,10 +37,15 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
+// äº‚ç¢¼è«‹ä¿®æ­£ FurnitureController ï¿½ï¿½ FurnitureHomePage
 app.MapControllerRoute(
     name: "default",
+
+    //    pattern: "{controller=Furniture}/{action=FurnitureHomePage}/{id?}");
+
     //pattern: "{controller=Home}/{action=Index}/{id?}");
     pattern: "{controller=Tenant}/{action=Announcement}/{id?}");
+
 
 
 app.Run();
