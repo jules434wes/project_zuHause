@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
 using zuHause.Models; // EF Core 的資料模型
@@ -9,6 +10,9 @@ namespace zuHause.Controllers
     {
         private readonly ZuHauseContext _context;
 
+        // 模擬登入中的會員 ID（目前固定為 2 號會員）
+        private readonly int _currentMemberId = 2;
+
         public FurnitureController(ZuHauseContext context)
         {
             _context = context;
@@ -17,6 +21,7 @@ namespace zuHause.Controllers
         // 家具首頁
         public IActionResult FurnitureHomePage()
         {
+            SetCurrentMemberInfo();
             // 左側分類清單
             ViewBag.categories = GetAllCategories();
 
@@ -39,10 +44,16 @@ namespace zuHause.Controllers
 
             return View();
         }
+        //會員登入資料
+        private void SetCurrentMemberInfo()
+        {
+            ViewBag.CurrentMember = _context.Members.FirstOrDefault(m => m.MemberId == _currentMemberId);
+        }
 
         // 家具分類頁面
         public IActionResult ClassificationItems(string categoryId)
         {
+            SetCurrentMemberInfo();
             // 取得分類名稱
             var category = _context.FurnitureCategories.FirstOrDefault(c => c.FurnitureCategoriesId == categoryId);
             if (category == null)
@@ -63,72 +74,194 @@ namespace zuHause.Controllers
         // 家具商品購買頁面
         public IActionResult ProductPurchasePage(string id)
         {
-            var product = _context.FurnitureProducts
-     .FirstOrDefault(p => p.FurnitureProductId == id && p.Status);
+            SetCurrentMemberInfo();
+            int memberId = _currentMemberId;
 
-            if (product == null)
-                return NotFound();
+            var product = _context.FurnitureProducts.FirstOrDefault(p => p.FurnitureProductId == id);
+            if (product == null) return NotFound();
 
-            ViewBag.categories = GetAllCategories(); // 左側分類清單
+            // 取得該會員的房源清單（使用 Property 原始資料模型）
+            var propertyList = _context.Properties
+                .Where(p => p.LandlordMemberId == memberId)
+                .ToList();
+           
+            ViewBag.PropertyList = propertyList;
 
-            // 模擬從登入會員取出房源清單（之後改成實際查詢）
-            var properties = _context.Properties
-            .Where(p => p.LandlordMemberId == 1) // 先假設固定會員ID
-            .ToList();
+            // 找到綁定的房源
+            var currentProperty = _context.Properties
+                .FirstOrDefault(p => p.LandlordMemberId == memberId);
 
-            ViewBag.BoundProperties = properties;
-            ViewBag.SelectedProperty = properties.FirstOrDefault();
-            return View(product);
+            var contract = currentProperty != null
+                ? _context.Contracts.FirstOrDefault(c =>
+                    c.RentalApplicationId == currentProperty.PropertyId &&
+                    c.Status == "active")
+                : null;
+
+            ViewBag.CurrentProperty = currentProperty;
+            ViewBag.ContractEndDate = contract?.EndDate?.ToString("yyyy-MM-dd") ?? "無合約";
+            ViewBag.RentalDays = contract?.EndDate != null
+                ? (contract.EndDate.Value.ToDateTime(TimeOnly.MinValue) - DateTime.Now).Days
+                : 0;
+
+            // 左側分類清單
+            ViewBag.categories = GetAllCategories();
+
+            return View(product); // 使用 FurnitureProduct 模型
         }
+
+        //購物車頁面
+        public IActionResult RentalCart()
+        {
+            SetCurrentMemberInfo();
+            int memberId = _currentMemberId;
+
+            // 查詢綁定房源（有 active 合約）
+            var propertyList = _context.Properties
+              .Where(p => p.LandlordMemberId == memberId)
+              .Select(p => new
+                {
+                    p.PropertyId,
+                    p.Title,
+                    ContractEndDate = _context.Contracts
+                        .Where(c => c.RentalApplicationId == p.PropertyId && c.Status == "active")
+                        .Select(c => (DateOnly?)c.EndDate)
+                        .FirstOrDefault()
+                })
+               .ToList();
+
+            ViewBag.PropertyList = propertyList;
+
+            var selectedPropertyId = propertyList.FirstOrDefault()?.PropertyId;
+
+            var contractEnd = _context.Contracts
+                .Where(c => c.RentalApplicationId == selectedPropertyId && c.Status == "active")
+                .Select(c => c.EndDate)
+                .FirstOrDefault();
+
+            ViewBag.RentalEndDate = contractEnd;
+            ViewBag.RentalDaysLeft = contractEnd.HasValue ? (contractEnd.Value.ToDateTime(new TimeOnly(0)) - DateTime.Now).Days : 0;
+
+            var cart = _context.FurnitureCarts
+                .Include(c => c.FurnitureCartItems)
+                    .ThenInclude(i => i.Product)
+                .Include(c => c.Property)
+                .FirstOrDefault(c => c.MemberId == memberId && c.DeletedAt == null && c.Status == "active");
+
+
+            return View("RentalCart", cart);
+        }
+        //加入商品到購物車清單add
+        [HttpPost]
+        public IActionResult AddToCart(string productId, int propertyId)
+        {
+            
+            int memberId = _currentMemberId;
+
+            var product = _context.FurnitureProducts.FirstOrDefault(p => p.FurnitureProductId == productId);
+            if (product == null)
+            {
+                return NotFound();
+            }
+
+            var contract = _context.Contracts
+                .FirstOrDefault(c => c.RentalApplicationId == propertyId && c.Status == "active");
+
+            if (contract == null || contract.EndDate == null)
+            {
+                return BadRequest("此房源無有效合約");
+            }
+
+            int rentalDays = (contract.EndDate.Value.ToDateTime(new TimeOnly(0)) - DateTime.Now).Days;
+
+            // 找到或建立購物車
+            var cart = _context.FurnitureCarts
+                .Include(c => c.FurnitureCartItems)
+                .FirstOrDefault(c => c.MemberId == memberId && c.PropertyId == propertyId && c.Status == "active" && c.DeletedAt == null);
+
+            if (cart == null)
+            {
+                cart = new FurnitureCart
+                {
+                    FurnitureCartId = Guid.NewGuid().ToString(),
+                    MemberId = memberId,
+                    PropertyId = propertyId,
+                    Status = "active",
+                    CreatedAt = DateTime.Now,
+                    UpdatedAt = DateTime.Now
+                };
+                _context.FurnitureCarts.Add(cart);
+            }
+
+            // 新增或更新明細
+            var item = cart.FurnitureCartItems.FirstOrDefault(i => i.ProductId == productId);
+            if (item == null)
+            {
+                cart.FurnitureCartItems.Add(new FurnitureCartItem
+                {
+                    CartItemId = Guid.NewGuid().ToString(),
+                    CartId = cart.FurnitureCartId,
+                    ProductId = productId,
+                    Quantity = 1,
+                    RentalDays = rentalDays,
+                    UnitPriceSnapshot = product.DailyRental,
+                    SubTotal = product.DailyRental * rentalDays,
+                    CreatedAt = DateTime.Now
+                });
+            }
+            else
+            {
+                item.Quantity += 1;
+                item.SubTotal = item.Quantity * item.RentalDays * product.DailyRental;
+            }
+
+            _context.SaveChanges();
+
+            return RedirectToAction("RentalCart");
+        }
+
 
         // 租借說明頁面
         public IActionResult InstructionsForUse()
         {
+            SetCurrentMemberInfo();
             return View();
         }
 
         // 資料庫撈分類資料
         private List<FurnitureCategory> GetAllCategories()
         {
-            return _context.FurnitureCategories.ToList();
-        }
-
-        //上架商品頁面 //目前無法使用
-        public IActionResult Create()
-        {
+            // 取得所有最上層分類（ParentId 為 null）
             var categories = _context.FurnitureCategories
-                             .OrderBy(c => c.DisplayOrder)
-                             .ToList();
-            ViewBag.Categories = categories;
-
-            return View();
-        }
-
-        //上架商品頁面 //目前無法使用
-        [HttpPost]
-        public async Task<IActionResult> Create(FurnitureProduct model, IFormFile ImageFile)
-        {
-            if (ModelState.IsValid)
+            .Where(c => c.ParentId == null)
+            .OrderBy(c => c.DisplayOrder)
+            .Select(parent => new FurnitureCategory
             {
-                model.FurnitureProductId = Guid.NewGuid().ToString(); // 產生主鍵
-                model.CreatedAt = DateTime.Now;
+                FurnitureCategoriesId = parent.FurnitureCategoriesId,
+                Name = parent.Name,
+                ParentId = parent.ParentId,
+                Depth = parent.Depth,
+                DisplayOrder = parent.DisplayOrder,
+                CreatedAt = parent.CreatedAt,
+                UpdatedAt = parent.UpdatedAt,
+                // 子分類清單放進 InverseParent（因為你模型裡 InverseParent 是 ICollection<FurnitureCategory>）
+                InverseParent = _context.FurnitureCategories
+                    .Where(child => child.ParentId == parent.FurnitureCategoriesId)
+                    .OrderBy(c => c.DisplayOrder)
+                    .ToList()
+            }).ToList();
 
-                // 儲存圖片（略）
+            ViewBag.categories = categories;
 
-                _context.Add(model);
-                await _context.SaveChangesAsync();
-                TempData["success"] = "新增成功！";
-                return RedirectToAction("FurnitureHomePage");
-            }
 
-            ViewBag.Categories = _context.FurnitureCategories.ToList(); // 若驗證失敗要重綁
-            return View(model);
+            return categories;
         }
 
+       
         //歷史訂單紀錄
         public IActionResult OrderHistory()
         {
-            int memberId = 1; // TODO: 之後從登入會員資訊取得
+            SetCurrentMemberInfo();
+            int memberId = _currentMemberId;
 
             // 進行中訂單（來源：FurnitureOrderItem）
             var ongoingOrders = _context.FurnitureOrderItems
@@ -176,7 +309,8 @@ namespace zuHause.Controllers
         // 客服聯繫頁面
         public IActionResult ContactRecords()
         {
-            int memberId = 1; // 假設為登入者ID，實際應由登入系統取得
+            SetCurrentMemberInfo();
+            int memberId = _currentMemberId;
 
             var tickets = _context.CustomerServiceTickets
                 .Include(t => t.Member)
@@ -193,7 +327,8 @@ namespace zuHause.Controllers
        //客服表單畫面
         public IActionResult ContactUsForm(string orderId)
         {
-            int memberId = 1; // 這裡請改成實際登入的會員 ID（從 Session 或 Claims 取得）
+            SetCurrentMemberInfo();
+            int memberId = _currentMemberId;
 
             var member = _context.Members.FirstOrDefault(m => m.MemberId == memberId);
             var properties = _context.Properties
@@ -202,8 +337,8 @@ namespace zuHause.Controllers
 
             var subjects = new List<string>
     {
-        "產品詢價", "產品尺寸", "產品訂製", "運費問題", "訂單問題", "查詢庫存",
-        "服務問題", "異業合作", "其他服務", "退換貨服務"
+          "產品訂製", "運費問題", "訂單問題",
+        "服務問題",  "其他服務", "退換貨服務","其他問題"
     };
 
             ViewBag.Member = member;
@@ -217,8 +352,8 @@ namespace zuHause.Controllers
         [HttpPost]
         public IActionResult SubmitContactForm(string Subject, string TicketContent, int? PropertyId)
         {
-            int memberId = 1; // 實務上從登入取得
-
+          
+            int memberId = _currentMemberId;
             var ticket = new CustomerServiceTicket
             {
                 MemberId = memberId,
