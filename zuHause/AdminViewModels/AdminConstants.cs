@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace zuHause.Models.Admin
+namespace zuHause.AdminViewModels
 {
     /// <summary>
     /// Admin 後台常數定義 - 集中管理設定值，避免硬編碼

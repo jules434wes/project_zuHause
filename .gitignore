@@ -24,5 +24,7 @@ project.assets.json
 *.vshost.*
 *.log
 node_modules/
+/Reference
+/CLAUDE.md
 /.claude
 /~/.nuget/packages
