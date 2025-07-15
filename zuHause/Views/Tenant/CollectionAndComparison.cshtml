@@ -1,0 +1,369 @@
+﻿@{
+    ViewData["Title"] = "我的收藏與比較";
+}
+
+<div class="d-flex flex-column flex-grow-1 tab-content-container">
+
+    <ul class="nav nav-tabs nav-tabs-custom mb-3" id="collectionTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="collection-tab" data-bs-toggle="tab" data-bs-target="#collection-content" type="button" role="tab" aria-controls="collection-content" aria-selected="true">
+                收藏
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            @* 比較1 Tab *@
+            <button class="nav-link" id="compare1-tab" data-bs-toggle="tab" data-bs-target="#compare1-content" type="button" role="tab" aria-controls="compare1-content" aria-selected="false">
+                比較1
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            @* 比較2 Tab *@
+            <button class="nav-link" id="compare2-tab" data-bs-toggle="tab" data-bs-target="#compare2-content" type="button" role="tab" aria-controls="compare2-content" aria-selected="false">
+                比較2
+            </button>
+        </li>
+        <li class="nav-item add-new-compare-tab-item" role="presentation">
+            @* 新增比較按鈕 Tab *@
+            <button class="nav-link" id="addNewCompareTabButton" type="button" role="button">
+                @* 不再是 data-bs-toggle="tab" *@
+                點選新增...
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content flex-grow-1 d-flex flex-column" id="collectionTabContent">
+        @* 收藏內容 Tab Pane *@
+        <div class="tab-pane fade show active flex-grow-1 d-flex flex-column p-3" id="collection-content" role="tabpanel" aria-labelledby="collection-tab">
+            <div class="tab-pane-content-wrapper flex-grow-1 d-flex flex-column">
+                <div class="d-flex justify-content-end align-items-center mb-3">
+                    <div class="btn-group me-2" role="group" aria-label="View Toggle">
+                        <button type="button" class="btn btn-outline-secondary btn-sm active" data-bs-toggle="button" aria-pressed="true" data-target-view="grid">
+                            <i class="bi bi-grid-fill"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="button" data-target-view="list">
+                            <i class="bi bi-list"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4 house-card-grid active" data-view-type="grid">
+                    @for (int i = 1; i <= 8; i++)
+                    {
+                        <div class="col">
+                            <div class="house-card" data-item-id="@i">
+                                <div class="card-img-top position-relative">
+                                    <img src="https://via.placeholder.com/300x200/cccccc/808080?text=Property+Image+@i" alt="房源圖片 @i">
+                                    <button class="close-btn position-absolute top-0 end-0 m-1"><i class="bi bi-x-circle-fill fs-5 text-danger"></i></button>
+                                </div>
+                                <div class="card-body d-flex flex-column">
+                                    <h5 class="card-title text-truncate mb-1">北市信義區忠孝東路三段XX號 @i</h5>
+                                    <p class="card-text text-muted small mb-2">可養寵物</p>
+                                    <p class="card-text fw-bold mt-auto">NT$ 25,000 / 月</p>
+                                    <div class="dropdown mt-2">
+                                        <button class="btn btn-outline-primary btn-sm dropdown-toggle w-100" type="button" id="compareDropdown_@i" data-bs-toggle="dropdown" aria-expanded="false">
+                                            比較
+                                        </button>
+                                        <ul class="dropdown-menu" aria-labelledby="compareDropdown_@i">
+                                            <li><h6 class="dropdown-header">新增至比較</h6></li>
+                                            <li><a class="dropdown-item add-to-compare-btn" href="#" data-compare-target="1" data-item-id="@i">比較1</a></li>
+                                            <li><a class="dropdown-item add-to-compare-btn" href="#" data-compare-target="2" data-item-id="@i">比較2</a></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <div class="list-group house-card-grid" data-view-type="list" style="display: none;">
+                    @for (int i = 1; i <= 6; i++)
+                    {
+                        <div class="list-group-item list-group-item-action py-3 d-flex align-items-center" data-item-id="@i">
+                            <img src="https://via.placeholder.com/120x90/cccccc/808080?text=P@i" class="flex-shrink-0 me-3 rounded" alt="房源圖片 @i" style="width: 120px; height: 90px; object-fit: cover;">
+                            <div class="flex-grow-1">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h5 class="mb-1 text-truncate">北市信義區忠孝東路三段XX號 @i</h5>
+                                    <small class="text-muted">可養寵物</small>
+                                </div>
+                                <p class="mb-1 fw-bold">NT$ 25,000 / 月</p>
+                            </div>
+                            <div class="ms-3 text-end d-flex flex-column align-items-end flex-shrink-0">
+                                <button class="close-btn mb-2"><i class="bi bi-x-circle-fill fs-5 text-danger"></i></button>
+                                <div class="dropdown">
+                                    <button class="btn btn-outline-primary btn-sm dropdown-toggle" type="button" id="compareListDropdown_@i" data-bs-toggle="dropdown" aria-expanded="false">
+                                        比較
+                                    </button>
+                                    <ul class="dropdown-menu" aria-labelledby="compareListDropdown_@i">
+                                        <li><h6 class="dropdown-header">新增至比較</h6></li>
+                                        <li><a class="dropdown-item add-to-compare-btn" href="#" data-compare-target="1" data-item-id="@i">比較1</a></li>
+                                        <li><a class="dropdown-item add-to-compare-btn" href="#" data-compare-target="2" data-item-id="@i">比較2</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <nav aria-label="Page navigation" class="pagination-custom mt-auto">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item disabled">
+                            <a class="page-link" href="#" aria-label="Previous">
+                                <span aria-hidden="true">&laquo;</span>
+                            </a>
+                        </li>
+                        <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                        <li class="page-item"><a class="page-link" href="#">2</a></li>
+                        <li class="page-item"><a class="page-link" href="#">3</a></li>
+                        <li class="page-item">
+                            <a class="page-link" href="#" aria-label="Next">
+                                <span aria-hidden="true">&raquo;</span>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+
+        @* 比較1 Tab Pane *@
+        <div class="tab-pane fade flex-grow-1 d-flex flex-column p-3" id="compare1-content" role="tabpanel" aria-labelledby="compare1-tab">
+            <div class="tab-pane-content-wrapper flex-grow-1 d-flex flex-column">
+                <h3 class="mb-4">比較1</h3>
+                <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 compare-items-grid">
+                    <div class="col">
+                        <div class="compare-card" data-item-id="A">
+                            <button class="close-btn position-absolute top-0 end-0 m-1"><i class="bi bi-x-circle-fill fs-5 text-danger"></i></button>
+                            <div class="text-center mb-3">
+                                <img src="https://via.placeholder.com/250x180/ff9999/333333?text=Compare+Item+A" class="img-fluid rounded" alt="比較項目A">
+                                <h5 class="mt-2 text-truncate">房屋標題 A</h5>
+                            </div>
+                            <ul class="list-group list-group-flush border-top border-bottom mb-3">
+                                <li class="list-group-item d-flex justify-content-between align-items-center small py-1">
+                                    <span>地址:</span> <span class="fw-bold">台中市南屯區公益路二段51號</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center small py-1">
+                                    <span>租金:</span> <span class="fw-bold">10000/月</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center small py-1">
+                                    <span>坪數:</span> <span class="fw-bold">??坪</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center small py-1">
+                                    <span>類型:</span> <span class="fw-bold">整層</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center small py-1">
+                                    <span>單位:</span> <span class="fw-bold">有機車位</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center small py-1">
+                                    <span>樓層:</span> <span class="fw-bold">18f</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center small py-1">
+                                    <span>最短租期:</span> <span class="fw-bold">12個月</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center small py-1">
+                                    <span>租金包括:</span> <span class="fw-bold">水、電、瓦斯、網路</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center small py-1">
+                                    <span>備註:</span> <span class="fw-bold text-wrap">租客可帶備註很長很長很長很長很長很長</span>
+                                </li>
+                            </ul>
+                            <p class="text-muted small">可養寵物</p>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="compare-card" data-item-id="B">
+                            <button class="close-btn position-absolute top-0 end-0 m-1"><i class="bi bi-x-circle-fill fs-5 text-danger"></i></button>
+                            <div class="text-center mb-3">
+                                <img src="https://via.placeholder.com/250x180/99ff99/333333?text=Compare+Item+B" class="img-fluid rounded" alt="比較項目B">
+                                <h5 class="mt-2 text-truncate">房屋標題 B</h5>
+                            </div>
+                            <ul class="list-group list-group-flush border-top border-bottom mb-3">
+                                <li class="list-group-item d-flex justify-content-between align-items-center small py-1">
+                                    <span>地址:</span> <span class="fw-bold">台中市南區復興路二段XX號</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center small py-1">
+                                    <span>租金:</span> <span class="fw-bold">12000/月</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center small py-1">
+                                    <span>坪數:</span> <span class="fw-bold">30坪</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center small py-1">
+                                    <span>類型:</span> <span class="fw-bold">雅房</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center small py-1">
+                                    <span>單位:</span> <span class="fw-bold">有機械車位</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center small py-1">
+                                    <span>樓層:</span> <span class="fw-bold">5f</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center small py-1">
+                                    <span>最短租期:</span> <span class="fw-bold">6個月</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center small py-1">
+                                    <span>租金包括:</span> <span class="fw-bold">水費</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center small py-1">
+                                    <span>備註:</span> <span class="fw-bold text-wrap">無</span>
+                                </li>
+                            </ul>
+                            <p class="text-muted small">不可養寵物</p>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="compare-card" data-item-id="C">
+                            <button class="close-btn position-absolute top-0 end-0 m-1"><i class="bi bi-x-circle-fill fs-5 text-danger"></i></button>
+                            <div class="text-center mb-3">
+                                <img src="https://via.placeholder.com/250x180/9999ff/333333?text=Compare+Item+C" class="img-fluid rounded" alt="比較項目C">
+                                <h5 class="mt-2 text-truncate">房屋標題 C</h5>
+                            </div>
+                            <ul class="list-group list-group-flush border-top border-bottom mb-3">
+                                <li class="list-group-item d-flex justify-content-between align-items-center small py-1">
+                                    <span>地址:</span> <span class="fw-bold">台北市大安區新生南路一段XX號</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center small py-1">
+                                    <span>租金:</span> <span class="fw-bold">18000/月</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center small py-1">
+                                    <span>坪數:</span> <span class="fw-bold">15坪</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center small py-1">
+                                    <span>類型:</span> <span class="fw-bold">套房</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center small py-1">
+                                    <span>單位:</span> <span class="fw-bold">無車位</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center small py-1">
+                                    <span>樓層:</span> <span class="fw-bold">3f</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center small py-1">
+                                    <span>最短租期:</span> <span class="fw-bold">12個月</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center small py-1">
+                                    <span>租金包括:</span> <span class="fw-bold">水費、網路</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center small py-1">
+                                    <span>備註:</span> <span class="fw-bold text-wrap">近公園</span>
+                                </li>
+                            </ul>
+                            <p class="text-muted small">可養寵物</p>
+                        </div>
+                    </div>
+                </div>
+                <nav aria-label="Page navigation for compare1" class="pagination-custom mt-auto">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item disabled">
+                            <a class="page-link" href="#" aria-label="Previous">
+                                <span aria-hidden="true">&laquo;</span>
+                            </a>
+                        </li>
+                        <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                        <li class="page-item"><a class="page-link" href="#">2</a></li>
+                        <li class="page-item"><a class="page-link" href="#">3</a></li>
+                        <li class="page-item">
+                            <a class="page-link" href="#" aria-label="Next">
+                                <span aria-hidden="true">&raquo;</span>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+
+        @* 比較2 Tab Pane *@
+        <div class="tab-pane fade flex-grow-1 d-flex flex-column p-3" id="compare2-content" role="tabpanel" aria-labelledby="compare2-tab">
+            <div class="tab-pane-content-wrapper flex-grow-1 d-flex flex-column">
+                <h3 class="mb-4">比較2</h3>
+                <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 compare-items-grid">
+                    <div class="col">
+                        <div class="compare-card" data-item-id="X">
+                            <button class="close-btn position-absolute top-0 end-0 m-1"><i class="bi bi-x-circle-fill fs-5 text-danger"></i></button>
+                            <div class="text-center mb-3">
+                                <img src="https://via.placeholder.com/250x180/aaddaa/333333?text=Compare+Item+X" class="img-fluid rounded" alt="比較項目X">
+                                <h5 class="mt-2 text-truncate">房屋標題 X</h5>
+                            </div>
+                            <ul class="list-group list-group-flush border-top border-bottom mb-3">
+                                <li class="list-group-item d-flex justify-content-between align-items-center small py-1">
+                                    <span>地址:</span> <span class="fw-bold">高雄市苓雅區光華一路XX號</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center small py-1">
+                                    <span>租金:</span> <span class="fw-bold">8000/月</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center small py-1">
+                                    <span>坪數:</span> <span class="fw-bold">10坪</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center small py-1">
+                                    <span>類型:</span> <span class="fw-bold">獨立套房</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center small py-1">
+                                    <span>單位:</span> <span class="fw-bold">無車位</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center small py-1">
+                                    <span>樓層:</span> <span class="fw-bold">2f</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center small py-1">
+                                    <span>最短租期:</span> <span class="fw-bold">3個月</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center small py-1">
+                                    <span>租金包括:</span> <span class="fw-bold">水費、網路</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center small py-1">
+                                    <span>備註:</span> <span class="fw-bold text-wrap">採光佳</span>
+                                </li>
+                            </ul>
+                            <p class="text-muted small">不可養寵物</p>
+                        </div>
+                    </div>
+                </div>
+                <nav aria-label="Page navigation for compare2" class="pagination-custom mt-auto">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item disabled">
+                            <a class="page-link" href="#" aria-label="Previous">
+                                <span aria-hidden="true">&laquo;</span>
+                            </a>
+                        </li>
+                        <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                        <li class="page-item"><a class="page-link" href="#">2</a></li>
+                        <li class="page-item"><a class="page-link" href="#">3</a></li>
+                        <li class="page-item">
+                            <a class="page-link" href="#" aria-label="Next">
+                                <span aria-hidden="true">&raquo;</span>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // 這個腳本必須在 collectionAndComparison.js 之前執行
+        // 用來從頁面上已存在的元素中獲取 CSS Scope ID
+        var cssScopeIdElement = document.querySelector('.nav-link[id="collection-tab"]');
+        if (!cssScopeIdElement) {
+            // Fallback: 如果 collection-tab 不存在或沒有 ID，嘗試從 compare1-tab 獲取
+            cssScopeIdElement = document.querySelector('.nav-link[id="compare1-tab"]');
+        }
+
+        if (cssScopeIdElement) {
+            // 找到所有以 'b-' 開頭的屬性，這就是 CSS Isolation ID
+            var scopeId = Array.from(cssScopeIdElement.attributes)
+                                .map(attr => attr.name)
+                                .find(name => name.startsWith('b-'));
+
+            if (scopeId) {
+                window.CollectionAndComparisonCssScopeId = scopeId;
+                console.log('CSS Scope ID found:', scopeId);
+            } else {
+                window.CollectionAndComparisonCssScopeId = null;
+                console.warn('CSS Scope ID (b-xxxx) not found on static elements. Dynamic tabs might not be styled correctly.');
+            }
+        } else {
+            window.CollectionAndComparisonCssScopeId = null;
+            console.warn('Could not find a static element (e.g., collection-tab) to retrieve CSS Scope ID. Dynamic tabs might not be styled correctly.');
+        }
+    </script>
+    <script src="~/js/collectionAndComparison.js" asp-append-version="true"></script>
+    @Html.PartialAsync("_ToastMessages").Result
+}

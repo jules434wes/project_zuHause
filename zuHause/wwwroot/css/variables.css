@@ -1,0 +1,71 @@
+/* zuHause 自訂色彩變數 */
+:root {
+  /* 主要色彩 */
+  --zh-primary: #1a7482;
+  --zh-primary-light: #2a8491;
+  --zh-primary-dark: #0f5c68;
+  
+  /* 次要色彩 */
+  --zh-secondary: #67bfa3;
+  --zh-secondary-light: #7bc9ad;
+  --zh-secondary-dark: #5aaa94;
+  
+  /* 強調色彩 */
+  --zh-accent: #e95d54;
+  --zh-accent-light: #ed6f67;
+  --zh-accent-dark: #e54a40;
+  
+  /* 中性色彩 */
+  --zh-gray-50: #f8fafc;
+  --zh-gray-100: #f1f5f9;
+  --zh-gray-200: #e2e8f0;
+  --zh-gray-300: #cbd5e1;
+  --zh-gray-400: #94a3b8;
+  --zh-gray-500: #64748b;
+  --zh-gray-600: #475569;
+  --zh-gray-700: #334155;
+  --zh-gray-800: #1e293b;
+  --zh-gray-900: #0f172a;
+  
+  /* 語義色彩 */
+  --zh-success: #22c55e;
+  --zh-warning: #f59e0b;
+  --zh-error: #ef4444;
+  --zh-info: #3b82f6;
+  
+  /* 背景色彩 */
+  --zh-bg-primary: #ffffff;
+  --zh-bg-secondary: #f8fafc;
+  --zh-bg-accent: #eff9f6;
+  
+  /* 陰影 */
+  --zh-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --zh-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --zh-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --zh-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  
+  /* 圓角 */
+  --zh-rounded-sm: 0.125rem;
+  --zh-rounded: 0.25rem;
+  --zh-rounded-md: 0.375rem;
+  --zh-rounded-lg: 0.5rem;
+  --zh-rounded-xl: 0.75rem;
+  
+  /* 間距 */
+  --zh-spacing-xs: 0.25rem;
+  --zh-spacing-sm: 0.5rem;
+  --zh-spacing-md: 1rem;
+  --zh-spacing-lg: 1.5rem;
+  --zh-spacing-xl: 2rem;
+  --zh-spacing-2xl: 3rem;
+}
+
+/* Bootstrap 色彩變數覆蓋 */
+:root {
+  --bs-primary: var(--zh-primary);
+  --bs-secondary: var(--zh-secondary);
+  --bs-success: var(--zh-success);
+  --bs-info: var(--zh-info);
+  --bs-warning: var(--zh-warning);
+  --bs-danger: var(--zh-error);
+}
