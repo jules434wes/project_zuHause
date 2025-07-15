@@ -1,0 +1,223 @@
+<!-- 重構後的 UserScripts - 展示如何使用共用模組 -->
+<script src="~/js/admin-common.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 使用共用模組初始化頁面基本功能
+    initializeAdminPage({
+        tabContainerId: 'userTabs',
+        bulkSelections: [
+            {
+                selectAllId: 'selectAllUsers',
+                checkboxClass: 'user-checkbox',
+                bulkBtnId: 'bulkMessageBtn'
+            },
+            {
+                selectAllId: 'selectAllUsersPending',
+                checkboxClass: 'user-checkbox-pending',
+                bulkBtnId: 'bulkMessageBtnPending'
+            },
+            {
+                selectAllId: 'selectAllUsersLandlord',
+                checkboxClass: 'user-checkbox-landlord',
+                bulkBtnId: 'bulkMessageBtnLandlord'
+            }
+        ],
+        sortableColumns: true
+    });
+
+    // 監聽排序事件 (由共用模組觸發)
+    document.addEventListener('adminTableSort', function(e) {
+        const { column, tableType, direction } = e.detail;
+        console.log(`排序用戶列表: ${column} ${direction} (表格類型: ${tableType})`);
+        // 這裡將來會調用 API 重新載入資料
+    });
+
+    // 初始化用戶管理特定功能
+    initializeUserManagementFeatures();
+});
+
+/**
+ * 用戶管理特定功能 - 保留業務邏輯的獨特性
+ */
+function initializeUserManagementFeatures() {
+    // 身分驗證操作
+    const verificationApproveBtn = document.getElementById('verificationApproveBtn');
+    const verificationRejectBtn = document.getElementById('verificationRejectBtn');
+    
+    if (verificationApproveBtn) {
+        verificationApproveBtn.addEventListener('click', function() {
+            showDoubleCheckConfirm(
+                '確定要審核通過此會員的身分驗證嗎？',
+                function() {
+                    handleUserVerification('approve');
+                },
+                {
+                    title: '身分驗證審核',
+                    confirmText: '確認通過',
+                    checkboxText: '我已確認驗證資料無誤'
+                }
+            );
+        });
+    }
+
+    if (verificationRejectBtn) {
+        verificationRejectBtn.addEventListener('click', function() {
+            showDoubleCheckConfirm(
+                '確定要拒絕此會員的身分驗證嗎？',
+                function() {
+                    handleUserVerification('reject');
+                },
+                {
+                    title: '身分驗證審核',
+                    confirmText: '確認拒絕',
+                    confirmButtonStyle: 'btn-warning'
+                }
+            );
+        });
+    }
+
+    // 房東申請操作
+    const landlordApproveBtn = document.getElementById('landlordApproveBtn');
+    const landlordRejectBtn = document.getElementById('landlordRejectBtn');
+    
+    if (landlordApproveBtn) {
+        landlordApproveBtn.addEventListener('click', function() {
+            showDoubleCheckConfirm(
+                '確定要審核通過此會員申請並設為房東嗎？',
+                function() {
+                    handleLandlordApplication('approve');
+                },
+                {
+                    title: '房東申請審核',
+                    confirmText: '確認通過',
+                    checkboxText: '我已確認申請資料無誤'
+                }
+            );
+        });
+    }
+
+    if (landlordRejectBtn) {
+        landlordRejectBtn.addEventListener('click', function() {
+            showDoubleCheckConfirm(
+                '確定要拒絕此會員的房東申請嗎？',
+                function() {
+                    handleLandlordApplication('reject');
+                },
+                {
+                    title: '房東申請審核',
+                    confirmText: '確認拒絕',
+                    confirmButtonStyle: 'btn-warning'
+                }
+            );
+        });
+    }
+
+    // 批量操作功能
+    initializeBulkUserActions();
+}
+
+/**
+ * 處理身分驗證操作
+ */
+function handleUserVerification(action) {
+    // 這裡將來會調用後端API
+    console.log(`執行身分驗證操作: ${action}`);
+    
+    // 模擬API調用
+    setTimeout(() => {
+        alert(`身分驗證${action === 'approve' ? '通過' : '拒絕'}成功！`);
+        // 重新載入頁面或更新表格
+        location.reload();
+    }, 1000);
+}
+
+/**
+ * 處理房東申請操作
+ */
+function handleLandlordApplication(action) {
+    console.log(`執行房東申請操作: ${action}`);
+    
+    setTimeout(() => {
+        alert(`房東申請${action === 'approve' ? '通過' : '拒絕'}成功！`);
+        location.reload();
+    }, 1000);
+}
+
+/**
+ * 初始化批量用戶操作
+ */
+function initializeBulkUserActions() {
+    // 批量發送訊息
+    document.addEventListener('click', function(e) {
+        if (e.target.id.includes('bulkMessageBtn')) {
+            const checkedUsers = document.querySelectorAll('.user-checkbox:checked, .user-checkbox-pending:checked, .user-checkbox-landlord:checked');
+            
+            if (checkedUsers.length === 0) {
+                alert('請至少選擇一個用戶');
+                return;
+            }
+
+            const userIds = Array.from(checkedUsers).map(cb => cb.value);
+            showDoubleCheckConfirm(
+                `確定要向 ${userIds.length} 位用戶發送系統訊息嗎？`,
+                function() {
+                    handleBulkMessage(userIds);
+                },
+                {
+                    title: '批量發送訊息',
+                    confirmText: '確認發送',
+                    checkboxText: '我確認要發送訊息給所選用戶'
+                }
+            );
+        }
+    });
+}
+
+/**
+ * 處理批量發送訊息
+ */
+function handleBulkMessage(userIds) {
+    console.log('批量發送訊息給用戶:', userIds);
+    
+    // 這裡可以導向到系統訊息新增頁面，並預填接收者資訊
+    const params = new URLSearchParams({
+        audienceType: 'bulk',
+        userIds: userIds.join(',')
+    });
+    
+    window.location.href = `/Admin/admin_systemMessageNew?${params.toString()}`;
+}
+
+/**
+ * 全域函數 - 開啟身分驗證Modal (保留原有的HTML onclick支援)
+ */
+function openVerificationModal(userId) {
+    console.log('開啟身分驗證Modal:', userId);
+    const modal = createSecureModal('verificationModal');
+    if (modal) {
+        // 設定當前處理的用戶ID
+        window.currentUserId = userId;
+        modal.show();
+    }
+}
+
+/**
+ * 全域函數 - 開啟房東申請Modal
+ */
+function openLandlordModal(userId) {
+    console.log('開啟房東申請Modal:', userId);
+    const modal = createSecureModal('landlordVerificationModal');
+    if (modal) {
+        window.currentUserId = userId;
+        modal.show();
+    }
+}
+
+/**
+ * 全域函數 - 重置篩選表單
+ */
+function resetUserFilters() {
+    resetAdminForm('.card-body form');
+    console.log('用戶篩選條件已重置');
+}
+</script>

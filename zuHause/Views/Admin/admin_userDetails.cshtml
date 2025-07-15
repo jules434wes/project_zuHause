@@ -1,15 +1,7 @@
+@model UserDetailsViewModel
 @{
-    ViewData["Title"] = "會員個人詳情";
-    // 模擬會員資料 - 實際開發時這些資料會從 Controller 傳入
-    var memberData = new {
-        MemberId = "M001",
-        MemberName = "王大明",
-        IsLandlord = true, // 控制是否顯示房東活動頁籤 - 改為 false 測試非房東狀態
-        IsActive = true,
-        IsIdentityVerified = true,
-        RegisterDate = "2024-01-15 10:30:00"
-    };
-    ViewData["MemberData"] = memberData;
+    ViewData["Title"] = Model.PageTitle;
+    ViewData["MemberData"] = Model.Data;
 }
 
 <!-- Bootstrap Icons CDN -->

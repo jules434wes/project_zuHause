@@ -8,6 +8,7 @@
     var selectAllId = ViewData["SelectAllId"] as string ?? "selectAllUsers";
     var tableTitle = ViewData["TableTitle"] as string ?? "會員列表";
     var paginationLabel = ViewData["PaginationLabel"] as string ?? "會員分頁";
+    var users = ViewData["Users"] as IEnumerable<zuHause.Models.Admin.MemberData> ?? new List<zuHause.Models.Admin.MemberData>();
 }
 
 <div class="card mt-3">
