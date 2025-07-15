@@ -22,10 +22,15 @@
                     <li class="nav-item"><a class="nav-link" href="@Url.Action("InstructionsForUse", "Furniture")">租借說明</a></li>
                 </ul>
                 <!-- 會員資訊區（點擊整塊可跳轉） -->
+                @{
+                    var member = ViewBag.CurrentMember as zuHause.Models.Member;
+                    var displayName = member != null ? $"{member.MemberName}，歡迎使用" : "訪客";
+                }
+
                 <div class="d-flex align-items-center">
                     <a href="@Url.Action("OrderHistory", "Furniture")" class="text-decoration-none text-dark">
                         <i class="bi bi-person-fill text-purple me-1"></i>
-                        <span class="me-3">OO先生/小姐，歡迎使用</span>
+                        <span class="me-3">@displayName</span>
                     </a>
                 </div>
 
