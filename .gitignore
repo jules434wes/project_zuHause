@@ -3,6 +3,7 @@
 
 bin/
 obj/
+.github/workflows/
 
 *.nupkg
 project.lock.json
