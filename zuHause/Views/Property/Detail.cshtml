@@ -23,8 +23,10 @@
 </head>
 <body>
     <div class="min-vh-100 bg-light">
-        <!-- 臨時主導覽列 -->
-        @await Html.PartialAsync("_TempMainNavigation")
+        <!-- 主導覽列 -->
+        <div class="position-relative">
+            @await Component.InvokeAsync("NavbarMember")
+        </div>
 
         <!-- 偵測點元素 - 用於觸發次導覽列顯示 -->
         <div class="sentinel-element" id="sentinelElement"></div>
