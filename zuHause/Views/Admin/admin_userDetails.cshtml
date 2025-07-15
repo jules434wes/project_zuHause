@@ -1,0 +1,23 @@
+@model AdminUserDetailsViewModel
+@{
+    ViewData["Title"] = Model.PageTitle;
+    ViewData["MemberData"] = Model.Data;
+}
+
+<!-- Bootstrap Icons CDN -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+<!-- User Details Specific Styles -->
+<link href="~/css/admin-userdetails.css" rel="stylesheet" />
+
+<div class="container-fluid">
+    @await Html.PartialAsync("_AdminPartial/_UserDetails/_HeaderSection")
+    @await Html.PartialAsync("_AdminPartial/_UserDetails/_TabNavigation")
+
+    @await Html.PartialAsync("_AdminPartial/_UserDetails/_TabContent")
+</div>
+
+@section Scripts {
+    @await Html.PartialAsync("_AdminPartial/_UserDetails/_UserDetailsScripts")
+}
+
+@await Html.PartialAsync("_AdminPartial/_UserDetails/_UserDetailsModals")

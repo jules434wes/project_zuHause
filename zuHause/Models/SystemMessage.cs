@@ -9,7 +9,7 @@ namespace zuHause.Models;
 public partial class SystemMessage
 {
     /// <summary>
-    /// 系統訊息ID
+    /// 系統訊息ID (自動遞增，從401開始)
     /// </summary>
     public int MessageId { get; set; }
 
