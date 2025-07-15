@@ -19,4 +19,12 @@
     </PackageReference>
   </ItemGroup>
 
+ <ItemGroup>
+    <Content Remove="wwwroot\css\site.css" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="wwwroot\css\site.css" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
