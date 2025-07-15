@@ -1,3 +1,17 @@
 ﻿@{
-    Layout = "_NavigationBar";
-}
+
+    Layout = "_Layout";
+    if(ViewContext.RouteData.Values["Controller"]?.ToString() == "Member")
+    {
+        Layout = "_LoginLayout";
+    }
+    else if(ViewContext.RouteData.Values["Controller"]?.ToString() == "Tenant")
+    {
+        Layout = "_LayoutTenant";
+    }
+    else if(ViewContext.RouteData.Values["Controller"]?.ToString() == "Furniture")
+    {
+        Layout = "_NavigationBar";
+    }
+
+  }
