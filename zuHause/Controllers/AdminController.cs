@@ -1,11 +1,19 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using zuHause.AdminViewModels;
+using zuHause.Models;
+using Microsoft.EntityFrameworkCore;
 using System.Linq;
 
 namespace zuHause.Controllers
 {
     public class AdminController : Controller
     {
+        private readonly ZuHauseContext _context;
+
+        public AdminController(ZuHauseContext context)
+        {
+            _context = context;
+        }
         public IActionResult Index()
         {
             return View();
@@ -23,9 +31,14 @@ namespace zuHause.Controllers
             return View(viewModel);
         }
         
-        public IActionResult admin_userDetails(string id = "M001")
+        public IActionResult admin_userDetails(int? id)
         {
-            var viewModel = new AdminUserDetailsViewModel(id);
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var viewModel = new AdminUserDetailsViewModel(_context, id.Value);
             return View(viewModel);
         }
 

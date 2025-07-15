@@ -1,5 +1,9 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using zuHause.Models;
+using Microsoft.EntityFrameworkCore;
+using System.Linq;
+using System;
 
 namespace zuHause.AdminViewModels
 {
@@ -35,35 +39,62 @@ namespace zuHause.AdminViewModels
 
     public class AdminUserDetailsViewModel : BaseDetailsViewModel<MemberData>
     {
-        public AdminUserDetailsViewModel(string memberId = "M001")
+        public AdminUserDetailsViewModel(ZuHauseContext context, int memberId)
         {
             PageTitle = "會員詳情";
-            Data = GenerateMockUser(memberId);
+            Data = LoadMemberFromDatabase(context, memberId);
             
             Tabs = new List<TabConfig>
             {
                 new TabConfig { TabId = "basicInfo", Title = "基本資料", IsDefault = true },
-                new TabConfig { TabId = "renterActivity", Title = "租客活動", BadgeCount = 5 },
-                new TabConfig { TabId = "landlordActivity", Title = "房東活動", BadgeCount = Data.IsLandlord ? 3 : null },
-                new TabConfig { TabId = "orderHistory", Title = "訂單記錄", BadgeCount = 8 },
-                new TabConfig { TabId = "supportHistory", Title = "溝通與支援", BadgeCount = 2 }
+                new TabConfig { TabId = "renterActivity", Title = "租客活動", BadgeCount = GetRenterActivityCount(context, memberId) },
+                new TabConfig { TabId = "landlordActivity", Title = "房東活動", BadgeCount = Data.IsLandlord ? GetLandlordActivityCount(context, memberId) : null },
+                new TabConfig { TabId = "orderHistory", Title = "訂單記錄", BadgeCount = GetOrderHistoryCount(context, memberId) },
+                new TabConfig { TabId = "supportHistory", Title = "溝通與支援", BadgeCount = GetSupportHistoryCount(context, memberId) }
             };
         }
 
-        private MemberData GenerateMockUser(string memberId)
+        private MemberData LoadMemberFromDatabase(ZuHauseContext context, int memberId)
         {
+            var member = context.Members.FirstOrDefault(m => m.MemberId == memberId);
+            
+            if (member == null)
+            {
+                throw new ArgumentException($"找不到會員ID: {memberId}");
+            }
+
             return new MemberData 
             { 
-                MemberID = memberId, 
-                MemberName = "王小明", 
-                Email = "wang@example.com", 
-                NationalNo = "A123456789", 
-                PhoneNumber = "0912345678", 
-                AccountStatus = "active", 
-                VerificationStatus = "verified", 
-                IsLandlord = true, 
-                RegistrationDate = "2024-01-15" 
+                MemberID = member.MemberId.ToString(), 
+                MemberName = member.MemberName, 
+                Email = member.Email, 
+                NationalNo = member.NationalIdNo ?? "", 
+                PhoneNumber = member.PhoneNumber, 
+                AccountStatus = member.IsActive ? "active" : "inactive", 
+                VerificationStatus = member.IdentityVerifiedAt.HasValue ? "verified" : "pending", 
+                IsLandlord = member.IsLandlord, 
+                RegistrationDate = member.CreatedAt.ToString("yyyy-MM-dd") 
             };
+        }
+
+        private int GetRenterActivityCount(ZuHauseContext context, int memberId)
+        {
+            return context.RentalApplications.Count(ra => ra.MemberId == memberId);
+        }
+
+        private int GetLandlordActivityCount(ZuHauseContext context, int memberId)
+        {
+            return context.Properties.Count(p => p.LandlordMemberId == memberId);
+        }
+
+        private int GetOrderHistoryCount(ZuHauseContext context, int memberId)
+        {
+            return context.FurnitureOrders.Count(fo => fo.MemberId == memberId);
+        }
+
+        private int GetSupportHistoryCount(ZuHauseContext context, int memberId)
+        {
+            return context.CustomerServiceTickets.Count(cst => cst.MemberId == memberId);
         }
     }
 
