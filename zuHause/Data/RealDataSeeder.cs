@@ -191,8 +191,78 @@ namespace zuHause.Data
         /// <returns>建立的房東會員</returns>
         public async Task<Member> CreateTestLandlordWithPropertyAsync(bool isDraft = false)
         {
-            // 此方法將在階段 A2 和 A3 中實作
-            throw new NotImplementedException("將在後續階段實作");
+            await EnsureReferenceDataAsync();
+
+            // 建立房東會員
+            var landlord = new Member
+            {
+                MemberName = "張房東",
+                Gender = 1, // 男性
+                BirthDate = new DateOnly(1980, 5, 15),
+                Password = "Test123!",
+                PhoneNumber = "0912345678",
+                Email = $"landlord_{DateTime.Now:yyyyMMddHHmmss}@test.com",
+                MemberTypeId = 2, // 房東
+                IsLandlord = true,
+                IsActive = true,
+                NationalIdNo = $"A12345678{DateTime.Now.Millisecond % 10}",
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now
+            };
+
+            _context.Members.Add(landlord);
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation($"建立測試房東: {landlord.MemberName} (ID: {landlord.MemberId})");
+
+            // 建立房源 (將在階段 A3 實作)
+            if (!isDraft)
+            {
+                await CreateTestPropertyForLandlordAsync(landlord);
+            }
+
+            return landlord;
+        }
+
+        /// <summary>
+        /// 為房東建立測試房源
+        /// </summary>
+        private async Task CreateTestPropertyForLandlordAsync(Member landlord)
+        {
+            var property = new Property
+            {
+                LandlordMemberId = landlord.MemberId,
+                Title = "溫馨套房出租",
+                Description = "鄰近捷運站，交通便利，室內空間寬敞明亮，附近有便利商店、餐廳等生活機能完善。",
+                MonthlyRent = 15000,
+                DepositAmount = 30000,
+                DepositMonths = 2,
+                CityId = 1, // 台北市
+                DistrictId = 1, // 中正區
+                AddressLine = "台北市中正區中山南路1號",
+                RoomCount = 1,
+                LivingRoomCount = 0,
+                BathroomCount = 1,
+                CurrentFloor = 3,
+                TotalFloors = 5,
+                Area = 12.5m,
+                MinimumRentalMonths = 6,
+                WaterFeeType = "按度計算",
+                ElectricityFeeType = "按度計算",
+                ManagementFeeIncluded = true,
+                ParkingAvailable = false,
+                ParkingFeeRequired = false,
+                CleaningFeeRequired = false,
+                StatusCode = "PUBLISHED",
+                PublishedAt = DateTime.Now,
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now
+            };
+
+            _context.Properties.Add(property);
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation($"為房東 {landlord.MemberName} 建立測試房源: {property.Title} (ID: {property.PropertyId})");
         }
 
         /// <summary>
@@ -201,8 +271,33 @@ namespace zuHause.Data
         /// <returns>建立的租客會員</returns>
         public async Task<Member> CreateTestTenantAsync()
         {
-            // 此方法將在階段 A4 中實作
-            throw new NotImplementedException("將在後續階段實作");
+            await EnsureReferenceDataAsync();
+
+            // 建立租客會員
+            var tenant = new Member
+            {
+                MemberName = "李租客",
+                Gender = 2, // 女性
+                BirthDate = new DateOnly(1990, 8, 25),
+                Password = "Test123!",
+                PhoneNumber = "0987654321",
+                Email = $"tenant_{DateTime.Now:yyyyMMddHHmmss}@test.com",
+                MemberTypeId = 1, // 租客
+                IsLandlord = false,
+                IsActive = true,
+                PrimaryRentalCityId = 1, // 台北市
+                PrimaryRentalDistrictId = 1, // 中正區
+                NationalIdNo = $"B98765432{DateTime.Now.Millisecond % 10}",
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now
+            };
+
+            _context.Members.Add(tenant);
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation($"建立測試租客: {tenant.MemberName} (ID: {tenant.MemberId})");
+
+            return tenant;
         }
 
         /// <summary>
