@@ -9,7 +9,7 @@ namespace zuHause.Models;
 public partial class PropertyComplaint
 {
     /// <summary>
-    /// 投訴ID
+    /// 投訴ID (自動遞增，從301開始)
     /// </summary>
     public int ComplaintId { get; set; }
 
