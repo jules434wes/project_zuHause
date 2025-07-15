@@ -1,5 +1,6 @@
+@model PropertyListViewModel
 @{
-    ViewData["Title"] = "屋源管理";
+    ViewData["Title"] = Model.PageTitle;
 }
 
 <!-- Bootstrap Icons CDN -->
@@ -10,12 +11,12 @@
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
-            <h2 class="mb-4">屋源管理</h2>
+            <h2 class="mb-4">@Model.PageTitle</h2>
             
             <ul class="nav nav-tabs" id="propertyTabs" role="tablist">
                 <li class="nav-item" role="presentation">
                     <button class="nav-link active" id="all-properties-tab" data-bs-toggle="tab" data-bs-target="#all-properties" type="button" role="tab" aria-controls="all-properties" aria-selected="true">
-                        全部屋源 <span class="badge bg-primary ms-2">5</span>
+                        全部屋源 <span class="badge bg-primary ms-2">@Model.TotalCount</span>
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
