@@ -4,9 +4,9 @@ using System.ComponentModel.DataAnnotations;
 namespace zuHause.AdminViewModels
 {
     // 使用者管理相關 ViewModels
-    public class UserListViewModel : BaseListViewModel<MemberData>
+    public class AdminUserListViewModel : BaseListViewModel<MemberData>
     {
-        public UserListViewModel()
+        public AdminUserListViewModel()
         {
             PageTitle = "使用者管理";
             Items = GenerateMockUsers();
@@ -33,9 +33,9 @@ namespace zuHause.AdminViewModels
         }
     }
 
-    public class UserDetailsViewModel : BaseDetailsViewModel<MemberData>
+    public class AdminUserDetailsViewModel : BaseDetailsViewModel<MemberData>
     {
-        public UserDetailsViewModel(string memberId = "M001")
+        public AdminUserDetailsViewModel(string memberId = "M001")
         {
             PageTitle = "會員詳情";
             Data = GenerateMockUser(memberId);
@@ -68,9 +68,9 @@ namespace zuHause.AdminViewModels
     }
 
     // 物業管理相關 ViewModels
-    public class PropertyListViewModel : BaseListViewModel<PropertyData>
+    public class AdminPropertyListViewModel : BaseListViewModel<PropertyData>
     {
-        public PropertyListViewModel()
+        public AdminPropertyListViewModel()
         {
             PageTitle = "物業管理";
             Items = GenerateMockProperties();
@@ -97,9 +97,9 @@ namespace zuHause.AdminViewModels
     }
 
     // 客服管理相關 ViewModels
-    public class CustomerServiceDetailsViewModel : BaseDetailsViewModel<CustomerServiceCase>
+    public class AdminCustomerServiceDetailsViewModel : BaseDetailsViewModel<CustomerServiceCase>
     {
-        public CustomerServiceDetailsViewModel(string caseId = "CS001")
+        public AdminCustomerServiceDetailsViewModel(string caseId = "CS001")
         {
             PageTitle = "客服案件詳情";
             Data = GenerateMockCase(caseId);
@@ -123,9 +123,9 @@ namespace zuHause.AdminViewModels
     }
 
     // 系統訊息相關 ViewModels
-    public class SystemMessageListViewModel : BaseListViewModel<SystemMessageData>
+    public class AdminSystemMessageListViewModel : BaseListViewModel<SystemMessageData>
     {
-        public SystemMessageListViewModel()
+        public AdminSystemMessageListViewModel()
         {
             PageTitle = "系統訊息管理";
             Items = GenerateMockMessages();
@@ -144,9 +144,9 @@ namespace zuHause.AdminViewModels
         }
     }
 
-    public class SystemMessageNewViewModel : BaseAdminViewModel
+    public class AdminSystemMessageNewViewModel : BaseAdminViewModel
     {
-        public SystemMessageNewViewModel()
+        public AdminSystemMessageNewViewModel()
         {
             PageTitle = "新增系統訊息";
         }

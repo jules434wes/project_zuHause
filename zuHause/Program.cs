@@ -1,11 +1,9 @@
 using Microsoft.EntityFrameworkCore;
-
-using zuHause.Models; // 確保這是 ZuHauseContext 正確的命名空間
-
+using zuHause.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ?
+// 登入驗證
 builder.Services.AddAuthentication("MemberCookieAuth").AddCookie("MemberCookieAuth", options =>
 {
     options.LoginPath = "/Member/Login";
@@ -14,7 +12,7 @@ builder.Services.AddAuthentication("MemberCookieAuth").AddCookie("MemberCookieAu
 
 
 builder.Services.AddDbContext<ZuHauseContext>(
-            options => options.UseSqlServer(builder.Configuration.GetConnectionString("zuHauseDBConnstring")));
+            options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 
 builder.Services.AddMemoryCache();
@@ -22,13 +20,11 @@ builder.Services.AddMemoryCache();
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
-builder.Services.AddDbContext<ZuHauseContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("zuhause"))); // 或根據您實際的資料庫提供者使用 UseSqlite, UsePostgreSQL 等
 
 
 var app = builder.Build();
 
-// 銝凋�撅方身摰�
+// Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
@@ -41,11 +37,11 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// ? �身擐�頝舐嚗��� FurnitureController �� FurnitureHomePage
+// 亂碼請修正 FurnitureController �� FurnitureHomePage
 app.MapControllerRoute(
     name: "default",
- 
-//    pattern: "{controller=Furniture}/{action=FurnitureHomePage}/{id?}");
+
+    //    pattern: "{controller=Furniture}/{action=FurnitureHomePage}/{id?}");
 
     //pattern: "{controller=Home}/{action=Index}/{id?}");
     pattern: "{controller=Tenant}/{action=Announcement}/{id?}");
