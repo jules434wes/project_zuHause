@@ -1,4 +1,11 @@
+using Microsoft.EntityFrameworkCore;
+using zuHause.Models;
+
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddDbContext<ZuHauseContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("zuHauseConnstring")));
+
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
