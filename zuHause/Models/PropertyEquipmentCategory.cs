@@ -9,11 +9,6 @@ namespace zuHause.Models;
 public partial class PropertyEquipmentCategory
 {
     /// <summary>
-    /// 設備分類ID
-    /// </summary>
-    public int CategoryId { get; set; }
-
-    /// <summary>
     /// 上層分類ID
     /// </summary>
     public int? ParentCategoryId { get; set; }
@@ -37,6 +32,8 @@ public partial class PropertyEquipmentCategory
     /// 更新時間
     /// </summary>
     public DateTime UpdatedAt { get; set; }
+
+    public int CategoryId { get; set; }
 
     public virtual ICollection<PropertyEquipmentCategory> InverseParentCategory { get; set; } = new List<PropertyEquipmentCategory>();
 

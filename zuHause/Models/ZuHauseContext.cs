@@ -201,8 +201,7 @@ public partial class ZuHauseContext : DbContext
             entity.ToTable("adminMessageTemplates", tb => tb.HasComment("後台訊息模板表"));
 
             entity.Property(e => e.TemplateId)
-                .ValueGeneratedNever()
-                .HasComment("模板ID")
+                .HasComment("模板ID(自動遞增)")
                 .HasColumnName("templateID");
             entity.Property(e => e.CategoryCode)
                 .HasMaxLength(20)
@@ -273,7 +272,6 @@ public partial class ZuHauseContext : DbContext
             entity.ToTable("applicationStatusLogs", tb => tb.HasComment("申請狀態歷程表"));
 
             entity.Property(e => e.StatusLogId)
-                .ValueGeneratedNever()
                 .HasComment("狀態歷程ID")
                 .HasColumnName("statusLogID");
             entity.Property(e => e.ApplicationId)
@@ -306,11 +304,24 @@ public partial class ZuHauseContext : DbContext
         {
             entity.ToTable("approvals", tb => tb.HasComment("審核主檔"));
 
-            entity.HasIndex(e => new { e.ModuleCode, e.SourceId }, "UQ_approvals_module_source").IsUnique();
+            entity.HasIndex(e => e.ApplicantMemberId, "IX_approvals_applicantMemberID");
+
+            entity.HasIndex(e => e.CreatedAt, "IX_approvals_createdAt");
+
+            entity.HasIndex(e => e.CurrentApproverId, "IX_approvals_currentApproverID");
+
+            entity.HasIndex(e => e.ModuleCode, "IX_approvals_moduleCode");
+
+            entity.HasIndex(e => e.StatusCode, "IX_approvals_statusCode");
+
+            entity.HasIndex(e => new { e.StatusCategory, e.StatusCode }, "IX_approvals_status_category");
+
+            entity.HasIndex(e => new { e.ModuleCode, e.SourceId }, "UQ_approvals_module_source")
+                .IsUnique()
+                .HasFillFactor(100);
 
             entity.Property(e => e.ApprovalId)
-                .ValueGeneratedNever()
-                .HasComment("審核ID")
+                .HasComment("審核ID (自動遞增，從701開始)")
                 .HasColumnName("approvalID");
             entity.Property(e => e.ApplicantMemberId)
                 .HasComment("申請會員ID")
@@ -332,8 +343,8 @@ public partial class ZuHauseContext : DbContext
                 .HasColumnName("sourceID");
             entity.Property(e => e.StatusCategory)
                 .HasMaxLength(20)
-                .HasComputedColumnSql("(CONVERT([nvarchar](20),N'ApprovalStatus'))", true)
-                .HasComment("審核狀態分類")
+                .HasComputedColumnSql("(CONVERT([nvarchar](20),N'APPROVAL_STATUS'))", true)
+                .HasComment("狀態類別 (計算欄位)")
                 .HasColumnName("statusCategory");
             entity.Property(e => e.StatusCode)
                 .HasMaxLength(20)
@@ -364,16 +375,26 @@ public partial class ZuHauseContext : DbContext
         {
             entity.ToTable("approvalItems", tb => tb.HasComment("審核明細"));
 
+            entity.HasIndex(e => e.ActionBy, "IX_approvalItems_actionBy");
+
+            entity.HasIndex(e => e.ActionType, "IX_approvalItems_actionType");
+
+            entity.HasIndex(e => new { e.ActionCategory, e.ActionType }, "IX_approvalItems_action_category");
+
+            entity.HasIndex(e => e.ApprovalId, "IX_approvalItems_approvalID");
+
+            entity.HasIndex(e => e.CreatedAt, "IX_approvalItems_createdAt");
+
             entity.Property(e => e.ApprovalItemId)
-                .ValueGeneratedNever()
-                .HasComment("審核明細ID")
+                .HasComment("審核明細ID (自動遞增，從801開始)")
                 .HasColumnName("approvalItemID");
             entity.Property(e => e.ActionBy)
                 .HasComment("操作者ID")
                 .HasColumnName("actionBy");
             entity.Property(e => e.ActionCategory)
                 .HasMaxLength(20)
-                .HasComputedColumnSql("(CONVERT([nvarchar](20),N'ApprovalAction'))", true)
+                .HasComputedColumnSql("(CONVERT([nvarchar](20),N'APPROVAL_ACTION'))", true)
+                .HasComment("操作類別 (計算欄位)")
                 .HasColumnName("actionCategory");
             entity.Property(e => e.ActionNote)
                 .HasComment("操作備註")
@@ -562,8 +583,6 @@ public partial class ZuHauseContext : DbContext
 
         modelBuilder.Entity<City>(entity =>
         {
-            entity.HasKey(e => e.CityCode);
-
             entity.ToTable("cities", tb => tb.HasComment("縣市代碼表"));
 
             entity.HasIndex(e => e.CityCode, "UQ_cities_cityCode").IsUnique();
@@ -604,7 +623,6 @@ public partial class ZuHauseContext : DbContext
             entity.HasIndex(e => new { e.Status, e.StartDate, e.EndDate }, "IX_contracts_status_dates");
 
             entity.Property(e => e.ContractId)
-                .ValueGeneratedNever()
                 .HasComment("合約ID")
                 .HasColumnName("contractId");
             entity.Property(e => e.CleaningFee)
@@ -675,7 +693,6 @@ public partial class ZuHauseContext : DbContext
             entity.ToTable("contractComments", tb => tb.HasComment("合約備註表"));
 
             entity.Property(e => e.ContractCommentId)
-                .ValueGeneratedNever()
                 .HasComment("合約備註ID")
                 .HasColumnName("contractCommentId");
             entity.Property(e => e.CommentText)
@@ -709,7 +726,6 @@ public partial class ZuHauseContext : DbContext
             entity.ToTable("contractCustomFields", tb => tb.HasComment("合約附表(動態欄位)"));
 
             entity.Property(e => e.ContractCustomFieldId)
-                .ValueGeneratedNever()
                 .HasComment("動態欄位ID")
                 .HasColumnName("contractCustomFieldId");
             entity.Property(e => e.ContractId)
@@ -742,7 +758,6 @@ public partial class ZuHauseContext : DbContext
             entity.ToTable("contractFurnitureItems", tb => tb.HasComment("合約內容家具表"));
 
             entity.Property(e => e.ContractFurnitureItemId)
-                .ValueGeneratedNever()
                 .HasComment("家具清單ID")
                 .HasColumnName("contractFurnitureItemId");
             entity.Property(e => e.Amount)
@@ -786,7 +801,6 @@ public partial class ZuHauseContext : DbContext
             entity.ToTable("contractSignatures", tb => tb.HasComment("電子簽名儲存表"));
 
             entity.Property(e => e.IdcontractSignatureId)
-                .ValueGeneratedNever()
                 .HasComment("電子簽名ID")
                 .HasColumnName("idcontractSignatureId");
             entity.Property(e => e.ContractId)
@@ -854,9 +868,22 @@ public partial class ZuHauseContext : DbContext
 
             entity.ToTable("customerServiceTickets", tb => tb.HasComment("客服聯繫表"));
 
+            entity.HasIndex(e => e.CategoryCode, "IX_customerServiceTickets_categoryCode");
+
+            entity.HasIndex(e => e.ContractId, "IX_customerServiceTickets_contractId");
+
+            entity.HasIndex(e => e.CreatedAt, "IX_customerServiceTickets_createdAt");
+
+            entity.HasIndex(e => e.IsResolved, "IX_customerServiceTickets_isResolved");
+
+            entity.HasIndex(e => e.MemberId, "IX_customerServiceTickets_memberId");
+
+            entity.HasIndex(e => e.PropertyId, "IX_customerServiceTickets_propertyId");
+
+            entity.HasIndex(e => e.StatusCode, "IX_customerServiceTickets_statusCode");
+
             entity.Property(e => e.TicketId)
-                .ValueGeneratedNever()
-                .HasComment("客服單ID")
+                .HasComment("客服單ID (自動遞增，從201開始)")
                 .HasColumnName("ticketId");
             entity.Property(e => e.CategoryCode)
                 .HasMaxLength(20)
@@ -988,10 +1015,13 @@ public partial class ZuHauseContext : DbContext
 
         modelBuilder.Entity<District>(entity =>
         {
-            entity.HasKey(e => e.DistrictCode);
-
             entity.ToTable("districts", tb => tb.HasComment("鄉鎮區代碼表"));
 
+            entity.HasIndex(e => new { e.CityId, e.DistrictCode }, "UQ_districts_city_districtCode").IsUnique();
+
+            entity.Property(e => e.DistrictId)
+                .HasComment("鄉鎮區ID")
+                .HasColumnName("districtId");
             entity.Property(e => e.CityCode)
                 .HasMaxLength(10)
                 .IsUnicode(false)
@@ -1032,7 +1062,10 @@ public partial class ZuHauseContext : DbContext
                 .HasComment("郵遞區號")
                 .HasColumnName("zipCode");
 
+            entity.HasOne(d => d.City).WithMany(p => p.Districts)
+                .HasForeignKey(d => d.CityId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_districts_cities");
         });
 
         modelBuilder.Entity<Favorite>(entity =>
@@ -1830,7 +1863,6 @@ public partial class ZuHauseContext : DbContext
             entity.ToTable("memberTypes", tb => tb.HasComment("會員身分表"));
 
             entity.Property(e => e.MemberTypeId)
-                .ValueGeneratedNever()
                 .HasComment("身份ID")
                 .HasColumnName("memberTypeID");
             entity.Property(e => e.CreatedAt)
@@ -1861,9 +1893,9 @@ public partial class ZuHauseContext : DbContext
         {
             entity.HasKey(e => e.VerificationId);
 
+            entity.ToTable("memberVerifications", tb => tb.HasComment("通訊相關驗證表"));
 
             entity.Property(e => e.VerificationId)
-                .ValueGeneratedNever()
                 .HasComment("驗證ID")
                 .HasColumnName("verificationID");
             entity.Property(e => e.IsSuccessful)
@@ -2025,7 +2057,11 @@ public partial class ZuHauseContext : DbContext
 
         modelBuilder.Entity<Property>(entity =>
         {
-            entity.ToTable("properties", tb => tb.HasComment("房源資料表"));
+            entity.ToTable("properties", tb =>
+                {
+                    tb.HasComment("房源資料表");
+                    tb.HasTrigger("trg_properties_validate_landlord");
+                });
 
             entity.HasIndex(e => new { e.CityId, e.DistrictId }, "IX_properties_location");
 
@@ -2199,9 +2235,22 @@ public partial class ZuHauseContext : DbContext
 
             entity.ToTable("propertyComplaints", tb => tb.HasComment("房源投訴表"));
 
+            entity.HasIndex(e => e.ComplainantId, "IX_propertyComplaints_complainantId");
+
+            entity.HasIndex(e => e.CreatedAt, "IX_propertyComplaints_createdAt");
+
+            entity.HasIndex(e => e.HandledBy, "IX_propertyComplaints_handledBy");
+
+            entity.HasIndex(e => e.LandlordId, "IX_propertyComplaints_landlordId");
+
+            entity.HasIndex(e => e.PropertyId, "IX_propertyComplaints_propertyId");
+
+            entity.HasIndex(e => e.ResolvedAt, "IX_propertyComplaints_resolvedAt");
+
+            entity.HasIndex(e => e.StatusCode, "IX_propertyComplaints_statusCode");
+
             entity.Property(e => e.ComplaintId)
-                .ValueGeneratedNever()
-                .HasComment("投訴ID")
+                .HasComment("投訴ID (自動遞增，從301開始)")
                 .HasColumnName("complaintId");
             entity.Property(e => e.ComplainantId)
                 .HasComment("投訴人ID")
@@ -2263,10 +2312,7 @@ public partial class ZuHauseContext : DbContext
 
             entity.ToTable("propertyEquipmentCategories", tb => tb.HasComment("房源設備分類資料表"));
 
-            entity.Property(e => e.CategoryId)
-                .ValueGeneratedNever()
-                .HasComment("設備分類ID")
-                .HasColumnName("categoryID");
+            entity.Property(e => e.CategoryId).HasColumnName("categoryID");
             entity.Property(e => e.CategoryName)
                 .HasMaxLength(50)
                 .HasComment("設備名稱")
@@ -2375,7 +2421,6 @@ public partial class ZuHauseContext : DbContext
             entity.ToTable("rentalApplications", tb => tb.HasComment("租賃/看房申請資料表"));
 
             entity.Property(e => e.ApplicationId)
-                .ValueGeneratedNever()
                 .HasComment("申請ID")
                 .HasColumnName("applicationID");
             entity.Property(e => e.ApplicationType)
@@ -2724,12 +2769,10 @@ public partial class ZuHauseContext : DbContext
 
             entity.Property(e => e.CodeCategory)
                 .HasMaxLength(20)
-                .IsUnicode(false)
                 .HasComment("代碼類別")
                 .HasColumnName("codeCategory");
             entity.Property(e => e.Code)
                 .HasMaxLength(20)
-                .IsUnicode(false)
                 .HasComment("代碼")
                 .HasColumnName("code");
             entity.Property(e => e.CodeName)
@@ -2768,7 +2811,6 @@ public partial class ZuHauseContext : DbContext
 
             entity.Property(e => e.CodeCategory)
                 .HasMaxLength(20)
-                .IsUnicode(false)
                 .HasComment("代碼類別")
                 .HasColumnName("codeCategory");
             entity.Property(e => e.CategoryName)
@@ -2801,11 +2843,20 @@ public partial class ZuHauseContext : DbContext
 
             entity.ToTable("systemMessages", tb => tb.HasComment("系統訊息表"));
 
-            entity.HasIndex(e => new { e.IsActive, e.CategoryCode }, "IX_systemMessages_active_category");
+            entity.HasIndex(e => new { e.IsActive, e.CategoryCode }, "IX_systemMessages_active_category").HasFillFactor(100);
+
+            entity.HasIndex(e => e.AdminId, "IX_systemMessages_adminID");
+
+            entity.HasIndex(e => e.AudienceTypeCode, "IX_systemMessages_audienceTypeCode");
+
+            entity.HasIndex(e => e.DeletedAt, "IX_systemMessages_deletedAt");
+
+            entity.HasIndex(e => e.ReceiverId, "IX_systemMessages_receiverID");
+
+            entity.HasIndex(e => e.SentAt, "IX_systemMessages_sentAt");
 
             entity.Property(e => e.MessageId)
-                .ValueGeneratedNever()
-                .HasComment("系統訊息ID")
+                .HasComment("系統訊息ID (自動遞增，從401開始)")
                 .HasColumnName("messageID");
             entity.Property(e => e.AdminId)
                 .HasComment("發送管理員ID")
@@ -2877,7 +2928,6 @@ public partial class ZuHauseContext : DbContext
             entity.HasIndex(e => new { e.ReceiverId, e.IsRead }, "IX_userNotifications_receiver_isRead");
 
             entity.Property(e => e.NotificationId)
-                .ValueGeneratedNever()
                 .HasComment("通知ID")
                 .HasColumnName("notificationID");
             entity.Property(e => e.CreatedAt)
@@ -2955,7 +3005,6 @@ public partial class ZuHauseContext : DbContext
             entity.ToTable("userUploads", tb => tb.HasComment("會員上傳資料紀錄表"));
 
             entity.Property(e => e.UploadId)
-                .ValueGeneratedNever()
                 .HasComment("上傳ID")
                 .HasColumnName("uploadID");
             entity.Property(e => e.ApprovalId)

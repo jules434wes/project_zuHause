@@ -9,7 +9,7 @@ namespace zuHause.Models;
 public partial class AdminMessageTemplate
 {
     /// <summary>
-    /// 模板ID
+    /// 模板ID(自動遞增)
     /// </summary>
     public int TemplateId { get; set; }
 
