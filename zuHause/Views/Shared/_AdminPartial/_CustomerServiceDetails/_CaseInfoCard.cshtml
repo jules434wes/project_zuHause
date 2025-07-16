@@ -1,0 +1,48 @@
+@{
+    var caseInfo = new {
+        TicketId = "CS-20240713-001",
+        Status = "處理中",
+        StatusBadge = "text-bg-warning",
+        MemberName = "王大明",
+        MemberId = "M000123",
+        RelatedItem = "房源ID: P12345",
+        RelatedItemLink = "/Admin/admin_propertyDetails?propertyId=P12345",
+        CreatedAt = "2024-07-13 10:30",
+        ReplyAt = "-"
+    };
+}
+
+<!-- 案件資訊卡片 -->
+<div class="card mb-4">
+    <div class="card-header">
+        案件資訊
+    </div>
+    <div class="card-body">
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                客服單號
+                <span>@caseInfo.TicketId</span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                案件狀態
+                <span class="badge @caseInfo.StatusBadge">@caseInfo.Status</span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                申請會員
+                <a href="/Admin/admin_userDetails?userId=@caseInfo.MemberId">@caseInfo.MemberName (@caseInfo.MemberId)</a>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                關聯項目
+                <a href="@caseInfo.RelatedItemLink">@caseInfo.RelatedItem</a>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                申請時間
+                <span>@caseInfo.CreatedAt</span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                最後回覆時間
+                <span>@caseInfo.ReplyAt</span>
+            </li>
+        </ul>
+    </div>
+</div>

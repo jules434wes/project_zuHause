@@ -1,0 +1,96 @@
+﻿@model zuHause.Models.FurnitureCart
+@{
+    Layout = "~/Views/Shared/_NavigationBar.cshtml";
+    ViewBag.Title = "租借清單";
+    var rentalEndDate = ViewBag.RentalEndDate as DateOnly?;
+    var rentalDaysLeft = ViewBag.RentalDaysLeft as int? ?? 0;
+    var propertySelectList = ViewBag.PropertySelectList as SelectList;
+    decimal total = 0;
+}
+<div class="row">
+        <!-- 左側功能列 -->
+        <div class="col-md-2">
+            <h5>會員功能</h5>
+            <ul class="list-group">
+                <li class="list-group-item">
+                    <a href="/Furniture/OrderHistory" class="text-decoration-none">租借 / 購買付款查詢</a>
+                </li>
+                <li class="list-group-item">
+                    <a href="/Furniture/ContactRecords" class="text-decoration-none">聯繫紀錄</a>
+                </li>
+                <li class="list-group-item active">
+                    <a href="/Furniture/RentalCart" class="text-white text-decoration-none">購物車</a>
+                </li>
+                <li class="list-group-item">
+                    <a href="/Member/Logout" class="text-decoration-none">登出</a>
+                </li>
+            </ul>
+        </div>
+<!-- 右側內容區 -->
+        <div class="col-md-9">
+
+    <h2 class="mt-4">租借清單</h2>
+    @if (Model != null && Model.FurnitureCartItems.Any())
+    {
+        <div class="card p-3 mb-3">
+            <h5>目前綁定房屋：</h5>
+            <div class="mb-2">
+                <label>選擇房源：</label>
+                @Html.DropDownList("PropertyId", propertySelectList, "請選擇房源", new { @class = "form-select w-50" })
+            </div>
+            @if (Model.Property != null)
+            {
+                <div class="border rounded p-3 bg-light">
+                    <p><strong>房屋標題：</strong> @Model.Property.Title</p>
+                    <p><strong>到期日：</strong> @rentalEndDate?.ToString("yyyy-MM-dd")</p>
+                    <p><strong>剩餘可租天數：</strong> @rentalDaysLeft 天</p>
+                </div>
+            }
+        </div>
+
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr>
+                    <th>項目</th>
+                    <th>數量</th>
+                    <th>原價</th>
+                    <th>租金/天</th>
+                    <th>天數</th>
+                    <th>總租金</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.FurnitureCartItems)
+                {
+                    var subTotal = item.RentalDays * item.Product.DailyRental * item.Quantity;
+                    total += subTotal;
+                    <tr>
+                        <td>@item.Product.ProductName</td>
+                        <td>@item.Quantity</td>
+                        <td>NT$@item.Product.ListPrice</td>
+                        <td>NT$@item.Product.DailyRental</td>
+                        <td>@item.RentalDays</td>
+                        <td>NT$@subTotal</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <div class="text-end">
+            <p>總租金：<strong>NT$@total</strong></p>
+            <p>搬運費：<strong>NT$3,000</strong></p>
+            <h5 class="text-danger">合計金額：NT$@(total + 3000)</h5>
+        </div>
+
+        <div class="text-end">
+            <button class="btn btn-success">✅ 確定租借</button>
+            <a href="/Furniture/FurnitureHomePage" class="btn btn-secondary">回到租借首頁</a>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info">購物車目前沒有商品。</div>
+    }
+</div>
+</div>
+</div>
