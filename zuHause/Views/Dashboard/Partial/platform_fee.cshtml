@@ -8,6 +8,7 @@
         <div class="card-header">
             📋 刊登費方案清單
         </div>
+
         <div class="card-body p-2">
             <table class="table table-bordered table-sm text-center" id="listingPlansTable">
                 <thead class="table-light">
@@ -16,7 +17,8 @@
                         <th>方案名稱</th>
                         <th>每日刊登費</th>
                         <th>最小天數</th>
-                       
+                        <th>觸發折扣天數</th>
+                        <th>折扣單位</th>
                         <th>生效期間</th>
                         <th>狀態</th>
                     </tr>
@@ -87,6 +89,50 @@
         </div>
     </div>
     <hr class="my-4 border border-dark border-2 opacity-50">
+    <div class="card mt-4">
+        <div class="card-header bg-success text-white">
+            🧾 新增 / 編輯刊登費方案
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label for="planName" class="form-label">方案名稱</label>
+                    <input type="text" class="form-control" id="planName" />
+                </div>
+                <div class="col-md-4">
+                    <label for="pricePerDay" class="form-label">每日刊登費</label>
+                    <input type="number" class="form-control" id="pricePerDay" />
+                </div>
+                <div class="col-md-4">
+                    <label for="minListingDays" class="form-label">最小天數</label>
+                    <input type="number" class="form-control" id="minListingDays" />
+                </div>
+                <div class="col-md-4">
+                    <label for="discountTrigger" class="form-label">觸發折扣天數</label>
+                    <input type="number" class="form-control" id="discountTrigger" />
+                </div>
+                <div class="col-md-4">
+                    <label for="discountUnit" class="form-label">折扣金額（元/天）</label>
+                    <input type="number" class="form-control" id="discountUnit" />
+                </div>
+                <div class="col-md-4">
+                    <label for="currencyCode" class="form-label">幣別</label>
+                    <input type="text" class="form-control" id="currencyCode" value="TWD" />
+                </div>
+                <div class="col-md-4">
+                    <label for="startAt" class="form-label">開始日期</label>
+                    <input type="datetime-local" class="form-control" id="startAt" />
+                </div>
+                <div class="col-md-4">
+                    <label for="endAt" class="form-label">結束日期（可空）</label>
+                    <input type="datetime-local" class="form-control" id="endAt" />
+                </div>
+            </div>
+            <div class="mt-3">
+                <button class="btn btn-success" onclick="submitListingPlan()">💾 儲存方案</button>
+            </div>
+        </div>
+    </div>
 
 
     <!-- ✅ 設定表單（可編輯） -->

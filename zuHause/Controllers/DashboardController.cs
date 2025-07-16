@@ -386,11 +386,41 @@ namespace zuHause.Controllers
                     p.MinListingDays,
                     p.StartAt,
                     p.EndAt,
-                    p.IsActive
+                    p.IsActive,
+                    p.DiscountTrigger,
+                    p.DiscountUnit
                 })
                 .ToList();
 
             return Json(plans);
+        }
+        [HttpPost("CreateListingPlan")]
+        public IActionResult CreateListingPlan([FromBody] ListingPlan model)
+        {
+            if (model == null || string.IsNullOrWhiteSpace(model.PlanName))
+                return BadRequest("❌ 資料不完整");
+
+            model.CreatedAt = DateTime.Now;
+            model.UpdatedAt = DateTime.Now;
+            model.IsActive = false;
+
+            if (model.StartAt == default)
+                model.StartAt = DateTime.Now;
+
+            // ✅ 直接找出上一筆（依 planId 最大），強制結束時間設為新方案開始時間 -1 秒
+            var lastPlan = _context.ListingPlans
+                .OrderByDescending(p => p.PlanId)
+                .FirstOrDefault();
+
+            if (lastPlan != null && lastPlan.EndAt == null)
+            {
+                lastPlan.EndAt = model.StartAt.AddSeconds(-1);
+            }
+
+            _context.ListingPlans.Add(model);
+            _context.SaveChanges();
+
+            return Ok(new { success = true, planId = model.PlanId });
         }
 
 

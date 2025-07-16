@@ -18,8 +18,10 @@
                 tr.innerHTML = `
                 <td>${plan.planId}</td>
                 <td>${plan.planName}</td>
-                <td>${plan.pricePerDay}</td>
+                <td>NT$${plan.pricePerDay}</td>
                 <td>${plan.minListingDays}</td>
+                <td>${plan.discountTrigger}</td>
+                <td>${plan.discountUnit}</td>
                 <td>${plan.startAt} ~ ${plan.endAt ?? '無期限'}</td>
                 <td>${plan.isActive ? '✅ 啟用中' : '❌ 已停用'}</td>
                 <td><button class="btn btn-sm btn-outline-primary" onclick="editPlan(${plan.planId})">✏️ 編輯</button></td>
@@ -32,14 +34,70 @@
             tbody.innerHTML = `<tr><td colspan="7" class="text-danger text-center">${err.message}</td></tr>`;
         }
     }
+    //方案上傳
+    window.submitListingPlan = submitListingPlan;
+    async function submitListingPlan() {
+        const plan = {
+            planName: document.getElementById('planName').value.trim(),
+            pricePerDay: parseFloat(document.getElementById('pricePerDay').value),
+            minListingDays: parseInt(document.getElementById('minListingDays').value),
+            discountTrigger: document.getElementById('discountTrigger').value || null,
+            discountUnit: document.getElementById('discountUnit').value || null,
+            currencyCode: document.getElementById('currencyCode').value.trim(),
+            startAt: document.getElementById('startAt').value,
+            endAt: document.getElementById('endAt').value || null
+        };
 
+        // 轉換成數值或 null
+        plan.discountTrigger = plan.discountTrigger !== null ? parseInt(plan.discountTrigger) : null;
+        plan.discountUnit = plan.discountUnit !== null ? parseInt(plan.discountUnit) : null;
+
+        // 驗證必要欄位
+        if (!plan.planName || isNaN(plan.pricePerDay) || isNaN(plan.minListingDays)) {
+            alert("❌ 資料不完整或格式錯誤");
+            return;
+        }
+
+        try {
+            const res = await fetch('/Dashboard/CreateListingPlan', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(plan)
+            });
+
+            if (!res.ok) throw new Error("❌ 儲存失敗");
+
+            const result = await res.json();
+            alert("✅ 新增成功！");
+            renderListingPlans(); // 重新渲染表格
+            clearListingPlanForm();
+        } catch (err) {
+            alert(err.message);
+        }
+    }
+    function clearListingPlanForm() {
+        const fields = [
+            'planName',
+            'pricePerDay',
+            'minListingDays',
+            'discountTrigger',
+            'discountUnit',
+            'currencyCode',
+            'startAt',
+            'endAt'
+        ];
+
+        fields.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = '';
+        });
+
+        // 重設幣別為 TWD
+        const currency = document.getElementById('currencyCode');
+        if (currency) currency.value = 'TWD';
+    }
     
 
-    // 頁面載入時執行
-   
-    // 提供外部呼叫用
-
-    //服務費設定
     
     
     

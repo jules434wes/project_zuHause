@@ -192,7 +192,7 @@ function openTab(tabKey) {
                                 btn.addEventListener("click", submitFurniture);
                             }
                         }
-
+                       
                         // 🔧 綁定「提前下架」按鈕
                         if (typeof setProductOffline === "function") {
                             const offlineBtns = document.querySelectorAll(".btn-warning");

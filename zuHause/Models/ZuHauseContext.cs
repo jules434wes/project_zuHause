@@ -316,7 +316,7 @@ public partial class ZuHauseContext : DbContext
 
             entity.HasIndex(e => new { e.StatusCategory, e.StatusCode }, "IX_approvals_status_category");
 
-            entity.HasIndex(e => new { e.ModuleCode, e.SourceId }, "UQ_approvals_module_source")
+            entity.HasIndex(e => new { e.ModuleCode, e.SourcePropertyId }, "UQ_approvals_module_source")
                 .IsUnique()
                 .HasFillFactor(100);
 
@@ -338,9 +338,9 @@ public partial class ZuHauseContext : DbContext
                 .HasMaxLength(20)
                 .HasComment("模組代碼")
                 .HasColumnName("moduleCode");
-            entity.Property(e => e.SourceId)
-                .HasComment("來源ID")
-                .HasColumnName("sourceID");
+            entity.Property(e => e.SourcePropertyId)
+                .HasComment("審核房源ID")
+                .HasColumnName("sourcePropertyID");
             entity.Property(e => e.StatusCategory)
                 .HasMaxLength(20)
                 .HasComputedColumnSql("(CONVERT([nvarchar](20),N'APPROVAL_STATUS'))", true)
@@ -361,9 +361,8 @@ public partial class ZuHauseContext : DbContext
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_approvals_applicant");
 
-            entity.HasOne(d => d.Source).WithMany(p => p.Approvals)
-                .HasForeignKey(d => d.SourceId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
+            entity.HasOne(d => d.SourceProperty).WithMany(p => p.Approvals)
+                .HasForeignKey(d => d.SourcePropertyId)
                 .HasConstraintName("FK_approvals_Property");
 
             entity.HasOne(d => d.SystemCode).WithMany(p => p.Approvals)
@@ -830,6 +829,7 @@ public partial class ZuHauseContext : DbContext
                 .IsUnicode(false)
                 .HasComment("簽署人身份")
                 .HasColumnName("signerRole");
+            entity.Property(e => e.UploadId).HasColumnName("uploadId");
 
             entity.HasOne(d => d.Contract).WithMany(p => p.ContractSignatures)
                 .HasForeignKey(d => d.ContractId)
@@ -1699,8 +1699,7 @@ public partial class ZuHauseContext : DbContext
             entity.ToTable("listingPlans", tb => tb.HasComment("刊登費方案表"));
 
             entity.Property(e => e.PlanId)
-                .ValueGeneratedNever()
-                .HasComment("方案ID")
+                .HasComment("刊登費方案ID")
                 .HasColumnName("planId");
             entity.Property(e => e.CreatedAt)
                 .HasPrecision(0)
@@ -1712,6 +1711,12 @@ public partial class ZuHauseContext : DbContext
                 .IsUnicode(false)
                 .HasComment("幣別")
                 .HasColumnName("currencyCode");
+            entity.Property(e => e.DiscountTrigger)
+                .HasComment("折扣觸發天數")
+                .HasColumnName("discountTrigger");
+            entity.Property(e => e.DiscountUnit)
+                .HasComment("折扣單位")
+                .HasColumnName("discountUnit");
             entity.Property(e => e.EndAt)
                 .HasPrecision(0)
                 .HasComment("結束時間")
@@ -1747,8 +1752,6 @@ public partial class ZuHauseContext : DbContext
             entity.ToTable("members", tb => tb.HasComment("會員資料表"));
 
             entity.HasIndex(e => e.Email, "IX_members_email");
-
-            entity.HasIndex(e => e.NationalIdNo, "IX_members_nationalIdNo").IsUnique();
 
             entity.HasIndex(e => e.PhoneNumber, "IX_members_phone");
 
