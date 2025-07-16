@@ -2,10 +2,9 @@ using Microsoft.EntityFrameworkCore;
 using zuHause.Models;
 using zuHause.Data;
 
-
 var builder = WebApplication.CreateBuilder(args);
 
-// ?�員
+// 登入驗證
 builder.Services.AddAuthentication("MemberCookieAuth").AddCookie("MemberCookieAuth", options =>
 {
     options.LoginPath = "/Member/Login";
@@ -14,7 +13,7 @@ builder.Services.AddAuthentication("MemberCookieAuth").AddCookie("MemberCookieAu
 
 
 builder.Services.AddDbContext<ZuHauseContext>(
-            options => options.UseSqlServer(builder.Configuration.GetConnectionString("zuHauseDBConnstring")));
+            options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 
 builder.Services.AddMemoryCache();
@@ -22,11 +21,12 @@ builder.Services.AddMemoryCache();
 // 註冊 RealDataSeeder
 builder.Services.AddScoped<RealDataSeeder>();
 
+// 註冊圖片處理服務
+builder.Services.AddScoped<zuHause.Interfaces.IImageProcessor, zuHause.Services.ImageSharpProcessor>();
+
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
-builder.Services.AddDbContext<ZuHauseContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("zuhause"))); // �ήھڱz��ڪ���Ʈw���Ѫ̨ϥ� UseSqlite, UsePostgreSQL ��
 
 
 var app = builder.Build();
@@ -53,7 +53,6 @@ if (app.Environment.IsDevelopment())
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
@@ -63,10 +62,15 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
+// 亂碼請修正 FurnitureController �� FurnitureHomePage
 app.MapControllerRoute(
     name: "default",
+
+    //    pattern: "{controller=Furniture}/{action=FurnitureHomePage}/{id?}");
+
     //pattern: "{controller=Home}/{action=Index}/{id?}");
     pattern: "{controller=Tenant}/{action=Announcement}/{id?}");
+
 
 
 app.Run();

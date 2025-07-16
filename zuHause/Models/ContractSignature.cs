@@ -48,6 +48,8 @@ public partial class ContractSignature
     /// </summary>
     public DateTime? SignedAt { get; set; }
 
+    public int? UploadId { get; set; }
+
     public virtual Contract Contract { get; set; } = null!;
 
     public virtual Member Signer { get; set; } = null!;

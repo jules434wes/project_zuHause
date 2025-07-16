@@ -1,203 +1,229 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace zuHause.DTOs
 {
-    /// <summary>
-    /// 房源搜尋請求 DTO
-    /// </summary>
+    public class PropertySearchResultDto
+    {
+        public List<PropertyDto> Properties { get; set; } = new List<PropertyDto>();
+        public int TotalCount { get; set; }
+        public int PageNumber { get; set; }
+        public int PageSize { get; set; }
+        public int TotalPages { get; set; }
+    }
+
+    public class PropertyDto
+    {
+        public int Id { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public string Location { get; set; } = string.Empty;
+        public string Address { get; set; } = string.Empty;
+        public decimal Price { get; set; }
+        public string PropertyType { get; set; } = string.Empty;
+        public string MainImageUrl { get; set; } = string.Empty;
+        public int? Bedrooms { get; set; }
+        public int? Bathrooms { get; set; }
+        public decimal? Area { get; set; }
+        public bool IsFeatured { get; set; }
+        public DateTime CreateTime { get; set; }
+    }
+
+    public class CreateApplicationDto
+    {
+        public string? Message { get; set; }
+    }
+
+    public class ApplicationDto
+    {
+        public int ApplicationId { get; set; }
+        public int PropertyId { get; set; }
+        public int ApplicantId { get; set; }
+        public DateTime ApplicationDate { get; set; }
+        public string Status { get; set; } = string.Empty;
+        public string? Message { get; set; }
+    }
+
+    public class ImageDto
+    {
+        public int ImageId { get; set; }
+        public string ImageUrl { get; set; } = string.Empty;
+        public bool IsMainImage { get; set; }
+        public DateTime UploadTime { get; set; }
+    }
+
+    // Additional DTOs for existing PropertySearchController
     public class PropertySearchRequestDto
     {
-        /// <summary>
-        /// 搜尋關鍵字 (房源標題、地址)
-        /// </summary>
         public string? Keyword { get; set; }
+        public int? CityId { get; set; }
+        public int? DistrictId { get; set; }
+        public decimal? MinPrice { get; set; }
+        public decimal? MaxPrice { get; set; }
+        public string? PropertyType { get; set; }
+        public int PageNumber { get; set; } = 1;
+        public int PageSize { get; set; } = 10;
+        public string SortBy { get; set; } = "newest";
+    }
+
+    public class PropertySearchResponseDto
+    {
+        public List<PropertySummaryDto> Properties { get; set; } = new List<PropertySummaryDto>();
+        public PaginationDto Pagination { get; set; } = new PaginationDto();
+        public bool Success { get; set; }
+        public string? Message { get; set; }
+        public int SearchTime { get; set; }
+    }
+
+    public class PropertySummaryDto
+    {
+        public int PropertyId { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public string PropertyType { get; set; } = string.Empty;
+        public decimal Rent { get; set; }
+        public string Address { get; set; } = string.Empty;
+        public string CityName { get; set; } = string.Empty;
+        public string DistrictName { get; set; } = string.Empty;
+        public decimal? Area { get; set; }
+        public int? RoomCount { get; set; }
+        public int? BathroomCount { get; set; }
+        public string? MainImageUrl { get; set; }
+        public bool IsFeatured { get; set; }
+        public DateTime CreateTime { get; set; }
+    }
+
+    public class PaginationDto
+    {
+        public int CurrentPage { get; set; }
+        public int PageSize { get; set; }
+        public int TotalCount { get; set; }
+        public int TotalPages { get; set; }
+        public bool HasPrevious => CurrentPage > 1;
+        public bool HasNext => CurrentPage < TotalPages;
+    }
+
+    // 房源基本資訊建立 DTO - 用於房東提交房源基本資訊
+    public class PropertyBasicInfoCreateDto
+    {
+        /// <summary>
+        /// 房源標題，最多30字
+        /// </summary>
+        [Required(ErrorMessage = "房源標題為必填項目")]
+        [StringLength(30, ErrorMessage = "房源標題最多30個字元")]
+        [JsonPropertyName("title")]
+        public string Title { get; set; } = string.Empty;
 
         /// <summary>
-        /// 縣市ID
+        /// 月租金，必須為正數
         /// </summary>
-        public int? CityId { get; set; }
+        [Required(ErrorMessage = "月租金為必填項目")]
+        [Range(1.0, double.MaxValue, ErrorMessage = "月租金必須大於0")]
+        [JsonPropertyName("monthlyRent")]
+        public decimal MonthlyRent { get; set; }
+
+        /// <summary>
+        /// 城市ID
+        /// </summary>
+        [Required(ErrorMessage = "城市為必填項目")]
+        [Range(1, int.MaxValue, ErrorMessage = "請選擇有效的城市")]
+        [JsonPropertyName("cityId")]
+        public int CityId { get; set; }
 
         /// <summary>
         /// 區域ID
         /// </summary>
-        public int? DistrictId { get; set; }
+        [Required(ErrorMessage = "區域為必填項目")]
+        [Range(1, int.MaxValue, ErrorMessage = "請選擇有效的區域")]
+        [JsonPropertyName("districtId")]
+        public int DistrictId { get; set; }
 
         /// <summary>
-        /// 最低租金
+        /// 詳細地址
         /// </summary>
-        [Range(0, int.MaxValue, ErrorMessage = "最低租金必須大於等於0")]
-        public decimal? MinRent { get; set; }
+        [Required(ErrorMessage = "詳細地址為必填項目")]
+        [StringLength(255, ErrorMessage = "詳細地址最多255個字元")]
+        [JsonPropertyName("addressLine")]
+        public string AddressLine { get; set; } = string.Empty;
 
         /// <summary>
-        /// 最高租金
+        /// 房數，必須為正數
         /// </summary>
-        [Range(0, int.MaxValue, ErrorMessage = "最高租金必須大於等於0")]
-        public decimal? MaxRent { get; set; }
+        [Required(ErrorMessage = "房數為必填項目")]
+        [Range(1, 20, ErrorMessage = "房數必須在1-20之間")]
+        [JsonPropertyName("roomCount")]
+        public int RoomCount { get; set; }
 
         /// <summary>
-        /// 房間數
+        /// 廳數，必須為正數
         /// </summary>
-        public int? RoomCount { get; set; }
+        [Required(ErrorMessage = "廳數為必填項目")]
+        [Range(1, 10, ErrorMessage = "廳數必須在1-10之間")]
+        [JsonPropertyName("livingRoomCount")]
+        public int LivingRoomCount { get; set; }
 
         /// <summary>
-        /// 排序方式 (rent_asc, rent_desc, area_asc, area_desc, newest, oldest)
+        /// 衛數，必須為正數
         /// </summary>
-        public string SortBy { get; set; } = "newest";
+        [Required(ErrorMessage = "衛數為必填項目")]
+        [Range(1, 10, ErrorMessage = "衛數必須在1-10之間")]
+        [JsonPropertyName("bathroomCount")]
+        public int BathroomCount { get; set; }
 
         /// <summary>
-        /// 頁碼 (從1開始)
+        /// 坪數，必須為正數
         /// </summary>
-        [Range(1, int.MaxValue, ErrorMessage = "頁碼必須大於0")]
-        public int Page { get; set; } = 1;
+        [Required(ErrorMessage = "坪數為必填項目")]
+        [Range(0.1, 1000.0, ErrorMessage = "坪數必須在0.1-1000之間")]
+        [JsonPropertyName("area")]
+        public decimal Area { get; set; }
 
         /// <summary>
-        /// 每頁筆數
+        /// 所在樓層
         /// </summary>
-        [Range(1, 100, ErrorMessage = "每頁筆數必須在1-100之間")]
-        public int PageSize { get; set; } = 20;
+        [Required(ErrorMessage = "所在樓層為必填項目")]
+        [Range(1, 200, ErrorMessage = "所在樓層必須在1-200之間")]
+        [JsonPropertyName("currentFloor")]
+        public int CurrentFloor { get; set; }
+
+        /// <summary>
+        /// 總樓層數
+        /// </summary>
+        [Required(ErrorMessage = "總樓層數為必填項目")]
+        [Range(1, 200, ErrorMessage = "總樓層數必須在1-200之間")]
+        [JsonPropertyName("totalFloors")]
+        public int TotalFloors { get; set; }
     }
 
-    /// <summary>
-    /// 房源搜尋回應 DTO
-    /// </summary>
-    public class PropertySearchResponseDto
+    // 房源基本資訊回應 DTO - 用於回傳建立成功的房源資訊
+    public class PropertyBasicInfoResponseDto
     {
         /// <summary>
-        /// 房源清單
+        /// 新建立的房源ID
         /// </summary>
-        public List<PropertySummaryDto> Properties { get; set; } = new();
-
-        /// <summary>
-        /// 分頁資訊
-        /// </summary>
-        public PaginationDto Pagination { get; set; } = new();
-
-        /// <summary>
-        /// 搜尋統計
-        /// </summary>
-        public SearchStatsDto Stats { get; set; } = new();
-    }
-
-    /// <summary>
-    /// 房源摘要 DTO (用於列表顯示)
-    /// </summary>
-    public class PropertySummaryDto
-    {
-        /// <summary>
-        /// 房源ID
-        /// </summary>
+        [JsonPropertyName("propertyId")]
         public int PropertyId { get; set; }
+
+        /// <summary>
+        /// 房源狀態 (預設為 DRAFT)
+        /// </summary>
+        [JsonPropertyName("status")]
+        public string Status { get; set; } = "DRAFT";
+
+        /// <summary>
+        /// 建立時間
+        /// </summary>
+        [JsonPropertyName("createdAt")]
+        public DateTime CreatedAt { get; set; }
 
         /// <summary>
         /// 房源標題
         /// </summary>
+        [JsonPropertyName("title")]
         public string Title { get; set; } = string.Empty;
 
         /// <summary>
-        /// 月租金
+        /// 房東會員ID
         /// </summary>
-        public decimal MonthlyRent { get; set; }
-
-        /// <summary>
-        /// 坪數
-        /// </summary>
-        public decimal Area { get; set; }
-
-        /// <summary>
-        /// 房間配置 (ex: "1房1廳1衛")
-        /// </summary>
-        public string RoomLayout { get; set; } = string.Empty;
-
-        /// <summary>
-        /// 縣市名稱
-        /// </summary>
-        public string CityName { get; set; } = string.Empty;
-
-        /// <summary>
-        /// 區域名稱
-        /// </summary>
-        public string DistrictName { get; set; } = string.Empty;
-
-        /// <summary>
-        /// 預覽圖片URL
-        /// </summary>
-        public string? PreviewImageUrl { get; set; }
-
-        /// <summary>
-        /// 房東名稱
-        /// </summary>
-        public string LandlordName { get; set; } = string.Empty;
-
-        /// <summary>
-        /// 發布時間
-        /// </summary>
-        public DateTime? PublishedAt { get; set; }
-    }
-
-    /// <summary>
-    /// 分頁資訊 DTO
-    /// </summary>
-    public class PaginationDto
-    {
-        /// <summary>
-        /// 目前頁碼
-        /// </summary>
-        public int CurrentPage { get; set; }
-
-        /// <summary>
-        /// 每頁筆數
-        /// </summary>
-        public int PageSize { get; set; }
-
-        /// <summary>
-        /// 總筆數
-        /// </summary>
-        public int TotalItems { get; set; }
-
-        /// <summary>
-        /// 總頁數
-        /// </summary>
-        public int TotalPages { get; set; }
-
-        /// <summary>
-        /// 是否有上一頁
-        /// </summary>
-        public bool HasPreviousPage { get; set; }
-
-        /// <summary>
-        /// 是否有下一頁
-        /// </summary>
-        public bool HasNextPage { get; set; }
-    }
-
-    /// <summary>
-    /// 搜尋統計 DTO
-    /// </summary>
-    public class SearchStatsDto
-    {
-        /// <summary>
-        /// 搜尋結果總數
-        /// </summary>
-        public int TotalResults { get; set; }
-
-        /// <summary>
-        /// 搜尋執行時間(毫秒)
-        /// </summary>
-        public long SearchTimeMs { get; set; }
-
-        /// <summary>
-        /// 平均租金
-        /// </summary>
-        public decimal? AverageRent { get; set; }
-
-        /// <summary>
-        /// 最低租金
-        /// </summary>
-        public decimal? MinRent { get; set; }
-
-        /// <summary>
-        /// 最高租金
-        /// </summary>
-        public decimal? MaxRent { get; set; }
+        [JsonPropertyName("landlordMemberId")]
+        public int LandlordMemberId { get; set; }
     }
 }
