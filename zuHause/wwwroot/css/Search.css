@@ -13,84 +13,130 @@ body {
     padding-right: 15px; /* 根據需要調整 */
 }
 
-
-/* Search Panel Styling (保持不變) */
-.search-panel {
+/* --- 篩選器面板的通用樣式 --- */
+/* 注意：我將 `search-panel` 和 `filters-container` 視為篩選器區塊 */
+/* 如果您的 .cshtml 中 `filters-container` 是在 `search-panel` 之外，請告知 */
+.filters-container { /* 這個是您篩選器最外層的容器 */
     background-color: #fff;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     padding: 20px;
-    margin-bottom: 20px;
+    margin-bottom: 40px; /* 給下方內容留出空間 */
 }
 
-    .search-panel h5 {
+    .filters-container h5 { /* 如果您的篩選器有 H5 標題 */
         margin-bottom: 15px;
         font-weight: bold;
         color: #343a40;
     }
 
-.form-check-inline {
-    margin-right: 1rem;
-    margin-bottom: 0.5rem; /* 讓多選框之間有間距 */
-}
-
-.form-check-label {
-    user-select: none; /* 防止選中文字時出現藍色背景 */
-}
-
-.filter-group {
-    margin-bottom: 15px;
-    padding-top: 10px;
-    border-top: 1px solid #eee;
-}
-
-    .filter-group:first-child {
-        border-top: none;
-        padding-top: 0;
+    /* 對於篩選器內的 `form-check-inline`，我們可能會移除其 `margin-right` 和 `margin-bottom`，
+   轉而使用 flexbox 的 `gap` 來統一控制，以避免衝突。
+   如果您在其他地方仍使用此類別並需要其預設間距，請不要移除此處註釋。
+*/
+    .filters-container .form-check-inline {
+        /* margin-right: 1rem; */
+        /* margin-bottom: 0.5rem; */
     }
 
-    .filter-group .form-check-label {
-        font-weight: normal;
+    .filters-container .form-check-label {
+        user-select: none;
     }
 
-.expand-collapse-btn {
-    width: 100%;
-    text-align: center;
-    margin-top: 15px;
-    background-color: #f0f2f5;
-    border: 1px solid #ddd;
-    color: #555;
+    /* === 核心修正區域：.filter-group 的樣式 (只影響篩選器部分) === */
+    .filters-container .filter-group { /* 確保選擇器特異性，只影響 filters-container 內的 filter-group */
+        display: flex; /* 啟用 Flexbox */
+        align-items: baseline; /* 關鍵：確保文字基準線對齊，解決標籤和內容錯位 */
+        flex-wrap: wrap; /* 允許項目換行 */
+        gap: 10px 15px; /* 垂直 (row-gap) 和水平 (column-gap) 間距 */
+
+        margin-bottom: 15px; /* 篩選器組之間的底部間距 */
+        padding-top: 10px; /* 每個組頂部間距 */
+        border-top: 1px solid #eee; /* 組之間的分隔線 */
+    }
+
+        .filters-container .filter-group:first-child {
+            border-top: none;
+            padding-top: 0;
+        }
+
+        .filters-container .filter-group .form-label {
+            flex-shrink: 0; /* 防止標籤被壓縮 */
+            min-width: 60px; /* 給標籤一個最小寬度，幫助垂直對齊 */
+            text-align: right; /* 讓標籤文字靠右對齊 */
+            margin-bottom: 0; /* 移除標籤自身的底部間距，由 flex gap 控制 */
+        }
+
+    /* 針對 btn-check + label 的共同樣式調整 */
+    /* 這些是每個選項按鈕的樣式 */
+    .filters-container .btn-check + .btn-outline-secondary {
+        margin-right: 5px; /* 每個按鈕之間的水平間距 */
+        margin-bottom: 5px; /* 每個按鈕換行時的垂直間距 */
+    }
+
+    /* 確保動態生成的行政區按鈕也能正確應用間距 */
+    .filters-container #districtCheckboxes .btn-outline-secondary {
+        margin-right: 5px; /* 行政區按鈕之間的水平間距 */
+        margin-bottom: 5px; /* 行政區按鈕換行時的垂直間距 */
+    }
+
+    /* 調整數字輸入框的寬度 */
+    .filters-container .filter-group input[type="number"] {
+        width: 85px !important; /* 確保寬度適合內容，可以調整 */
+        text-align: center; /* 讓數字居中顯示 */
+        padding: .25rem .5rem; /* Bootstrap 的 form-control-sm 預設 padding */
+        font-size: .875rem; /* Bootstrap 的 form-control-sm 預設字體大小 */
+        line-height: 1.5; /* Bootstrap 的 form-control-sm 預設行高 */
+    }
+
+    /* 確保輸入框旁邊的 "至" 和 "元/坪" 也正確對齊 */
+    .filters-container .filter-group .d-flex.align-items-center span {
+        white-space: nowrap; /* 防止文字換行 */
+    }
+
+    /* --- 展開/收合按鈕樣式 (保持您原有的，只增加 .filters-container 前綴確保範圍) --- */
+    .filters-container .expand-collapse-btn {
+        width: 100%;
+        text-align: center;
+        margin-top: 15px;
+        background-color: #f0f2f5;
+        border: 1px solid #ddd;
+        color: #555;
+        /* 新增 padding，確保按鈕有視覺上的高度 */
+        padding: 8px 15px;
+        border-radius: 5px; /* 輕微圓角 */
+        display: block; /* 讓其佔據整行 */
+    }
+
+        .filters-container .expand-collapse-btn .collapsed-text,
+        .filters-container .expand-collapse-btn .expanded-text {
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        .filters-container .expand-collapse-btn .bi {
+            vertical-align: middle;
+            margin-left: 5px;
+        }
+
+/* --- 頂部搜索欄樣式 (如果您的搜索欄在 `filters-container` 外部，需要單獨定義) --- */
+/* 我假設您的 HTML 結構類似：
+   <div class="container-fluid main-content">
+       <div class="search-bar-container">...</div> // 這裡可能需要一些通用樣式
+       <div class="filters-container">...</div> // 這裡會應用上面的篩選器樣式
+       <hr class="my-4">
+       <div id="searchResultsContainer">...</div> // 下半部分開始
+   </div>
+*/
+.search-bar-container { /* 這是頂部城市選擇和關鍵字輸入框的容器 */
+    margin-bottom: 20px; /* 給篩選器容器一些間距 */
+    padding: 15px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
-    .expand-collapse-btn .collapsed-text,
-    .expand-collapse-btn .expanded-text {
-        display: inline-block; /* 確保文字和圖示在同一行 */
-        vertical-align: middle; /* 垂直對齊 */
-    }
-
-    .expand-collapse-btn .bi {
-        vertical-align: middle; /* 垂直對齊 */
-        margin-left: 5px; /* 圖示與文字的間距 */
-    }
-
-/* === 針對新的頂部佈局樣式 (取代舊的 .search-results-summary) === */
-
-/* 第一行區塊：獨立的「全部」按鈕 */
-.top-section-all-button {
-    margin-bottom: 15px; /* 給下一行提供一些間距 */
-    padding-top: 20px; /* 給頁面頂部一些空間，如果 .main-page-wrapper 沒有設定的話 */
-}
-
-/* 頂部類別標籤的樣式 (包含 active 狀態) */
-.top-category-tabs .nav-link {
-    font-weight: bold;
-    color: #6c757d;
-}
-
-    .top-category-tabs .nav-link.active {
-        color: #007bff;
-        border-bottom: 2px solid #007bff;
-    }
+/* --- 下半部分樣式：保持原有，不進行修改或添加 .filters-container 前綴 --- */
 
 /* 第二行區塊：結果數量和排序按鈕 */
 .summary-and-sort-section {
@@ -98,91 +144,84 @@ body {
 }
 
     .summary-and-sort-section .result-count-text {
-        flex-shrink: 0; /* 防止此文字被壓縮 */
-        white-space: nowrap; /* 確保不換行 */
-        font-size: 1rem; /* 確保字體大小正常 */
-        color: #343a40; /* 調整文字顏色 */
+        flex-shrink: 0;
+        white-space: nowrap;
+        font-size: 1rem;
+        color: #343a40;
     }
 
 /* 排序按鈕樣式 */
 .sort-btn {
-    color: #212529; /* 預設文字顏色 */
-    border-color: #6c757d; /* 預設邊框顏色 */
-    background-color: transparent; /* 預設背景透明 */
-    transition: all 0.3s ease; /* 添加過渡效果，讓顏色變化更平滑 */
+    color: #212529;
+    border-color: #6c757d;
+    background-color: transparent;
+    transition: all 0.3s ease;
 }
 
-    /* 選中狀態的排序按鈕樣式 */
     .sort-btn.active {
-        background-color: #007bff; /* 藍色背景 */
-        color: white; /* 白色文字 */
-        border-color: #007bff; /* 藍色邊框 */
+        background-color: #007bff;
+        color: white;
+        border-color: #007bff;
     }
 
-    /* 調整按鈕內圖標的間距 */
     .sort-btn i {
         margin-left: 5px;
     }
 
 /* 主內容區域 (篩選面板、結果列表、廣告) */
 .main-content-area {
-    /* 這裡可以放整體內容區域的樣式，例如 padding 或 background */
-    padding-bottom: 30px; /* 給頁面底部一些空間 */
+    padding-bottom: 30px;
 }
 
-/* === Result Card Styling (根據 image_790f80.png 調整和你的現有 CSS) === */
+/* === Result Card Styling (保持您原有的) === */
 .result-card {
     background-color: #fff;
-    border: 1px solid #e9ecef; /* 輕微邊框 */
-    border-radius: 8px; /* 圓角 */
-    padding: 15px; /* 內部間距 */
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); /* 輕微陰影 */
-    margin-bottom: 15px; /* 卡片之間的間距 */
-    display: flex; /* 確保卡片內部 Flex 佈局 */
-    align-items: center; /* 垂直居中對齊 */
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
 }
 
     .result-card .img-placeholder {
-        width: 150px; /* 固定圖片佔位符寬度 */
-        height: 150px; /* 固定圖片佔位符高度 */
-        min-width: 150px; /* 防止在 flex 佈局中被縮小 */
-        background-color: #e9ecef; /* 佔位符背景色 */
+        width: 150px;
+        height: 150px;
+        min-width: 150px;
+        background-color: #e9ecef;
         display: flex;
         justify-content: center;
         align-items: center;
-        color: #adb5bd; /* 佔位符文字顏色 */
+        color: #adb5bd;
         font-size: 0.9rem;
-        border-radius: 4px; /* 輕微圓角 */
-        flex-shrink: 0; /* 防止圖片壓縮 */
-        overflow: hidden; /* 確保內部圖片不超出圓角 */
+        border-radius: 4px;
+        flex-shrink: 0;
+        overflow: hidden;
     }
 
         .result-card .img-placeholder img {
             width: 100%;
             height: 100%;
-            object-fit: cover; /* 確保圖片填充容器並裁剪，而不是變形 */
+            object-fit: cover;
         }
 
     .result-card .card-body {
-        padding: 0 15px; /* 調整為只左右有 padding，避免與 d-flex 衝突 */
-        flex-grow: 1; /* 讓內容區塊佔據剩餘空間 */
+        padding: 0 15px;
+        flex-grow: 1;
     }
 
     .result-card .card-title {
-        font-size: 1.15rem; /* 標題字體大小 */
+        font-size: 1.15rem;
         font-weight: bold;
-        margin-bottom: 5px; /* 標題下方間距 */
-        display: flex; /* 讓標題和收藏圖示並排 */
-        align-items: center;
+        margin-bottom: 0.5rem;
     }
 
         .result-card .card-title a {
-            flex-grow: 1; /* 讓標題文字盡可能佔據空間 */
-            margin-right: 10px; /* 與收藏圖示的間距 */
-            white-space: nowrap; /* 不換行 */
-            overflow: hidden; /* 隱藏超出部分 */
-            text-overflow: ellipsis; /* 超出顯示省略號 */
-            color: #343a40; /* 確保連結文字顏色 */
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: #343a40;
             text-decoration: none;
         }
 
@@ -190,24 +229,31 @@ body {
                 text-decoration: underline;
             }
 
+    .result-card .d-flex.flex-column.align-items-end {
+        padding-top: 5px;
+        padding-bottom: 5px;
+        position: relative;
+    }
+
     .result-card .favorite-icon {
         font-size: 1.2rem;
         cursor: pointer;
-        color: #6c757d; /* 預設顏色 */
+        color: #6c757d;
         transition: color 0.2s;
+        margin-bottom: 8px;
+        align-self: flex-end;
     }
 
-        .result-card .favorite-icon.bi-heart-fill { /* JavaScript 會添加這個 class */
-            color: red; /* 收藏後的顏色 */
+        .result-card .favorite-icon.bi-heart-fill {
+            color: red;
         }
-
 
     .result-card .location-info,
     .result-card .details-info {
         font-size: 0.9rem;
         color: #6c757d;
         margin-bottom: 3px;
-        white-space: nowrap; /* 防止換行 */
+        white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
     }
@@ -217,22 +263,22 @@ body {
         }
 
     .result-card .tags .badge {
-        background-color: #e2f0fb; /* 標籤背景色 */
-        color: #007bff; /* 標籤文字顏色 */
+        background-color: #e2f0fb;
+        color: #007bff;
         padding: .35em .65em;
         font-size: .75em;
         font-weight: normal;
         border-radius: .25rem;
         margin-right: 5px;
-        margin-bottom: 5px; /* 確保多行標籤有間距 */
+        margin-bottom: 5px;
         border: 1px solid #b3d9ff;
     }
 
     .result-card .price {
         font-size: 1.5rem;
         font-weight: bold;
-        color: #dc3545; /* 租金醒目顯示 */
-        white-space: nowrap; /* 防止價格換行 */
+        color: #dc3545;
+        white-space: nowrap;
     }
 
     .result-card .last-updated {
@@ -249,15 +295,15 @@ body {
     padding: 15px;
     text-align: center;
     color: #6c757d;
-    min-height: 150px; /* 示例最小高度 */
+    min-height: 150px;
     display: flex;
     justify-content: center;
     align-items: center;
     font-size: 0.9rem;
-    margin-bottom: 15px; /* 廣告之間的間距 */
+    margin-bottom: 15px;
 }
 
-/* No Filter Selection Text (保持不變) */
+/* No Filter Selection Text */
 .no-filter-selection {
     font-size: 0.85rem;
     color: #6c757d;
@@ -271,66 +317,84 @@ body {
     /* 確保頂部兩個區塊在小螢幕下保持垂直堆疊，這是它們的預設行為 */
     .top-section-all-button,
     .summary-and-sort-section {
-        padding-left: 0; /* 移除左右 padding，讓內容佔滿 */
+        padding-left: 0;
         padding-right: 0;
     }
 
         .summary-and-sort-section .d-flex {
-            flex-direction: column; /* 讓數量文字和排序按鈕垂直堆疊 */
-            align-items: flex-start; /* 左對齊 */
-            justify-content: flex-start; /* 左對齊 */
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: flex-start;
         }
 
         .summary-and-sort-section .result-count-text {
-            margin-bottom: 10px; /* 文字和按鈕組之間增加間距 */
+            margin-bottom: 10px;
         }
 
         .summary-and-sort-section .btn-group {
-            width: 100%; /* 讓按鈕組佔滿寬度 */
-            justify-content: flex-start; /* 按鈕組內部靠左對齊 */
+            width: 100%;
+            justify-content: flex-start;
         }
 
     /* 搜尋結果卡片在小螢幕下變為垂直佈局 */
     .result-card {
-        flex-direction: column; /* 卡片內容垂直堆疊 */
-        align-items: flex-start; /* 左對齊 */
-        padding: 0; /* 移除整體 padding，讓內部元素控制 */
-        border-radius: 8px; /* 保持圓角 */
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 0;
+        border-radius: 8px;
     }
 
         .result-card .img-placeholder {
-            width: 100%; /* 圖片佔滿寬度 */
-            height: 180px; /* 調整高度 */
-            min-width: unset; /* 移除最小寬度限制 */
-            border-radius: 8px 8px 0 0; /* 頂部圓角 */
-            margin-bottom: 0; /* 移除與卡片body的間距，由body的padding控制 */
+            width: 100%;
+            height: 180px;
+            min-width: unset;
+            border-radius: 8px 8px 0 0;
+            margin-bottom: 0;
         }
 
         .result-card .card-body {
-            width: 100%; /* 內容佔滿寬度 */
-            padding: 15px !important; /* 確保內部有 padding */
-            padding-bottom: 0 !important; /* 底部 padding 移到價格區塊 */
+            width: 100%;
+            padding: 15px !important;
+            padding-bottom: 0 !important;
         }
 
         .result-card .card-title {
-            margin-bottom: 10px; /* 調整標題下方間距 */
+            margin-bottom: 10px;
         }
 
         .result-card .location-info,
         .result-card .details-info {
-            margin-bottom: 8px; /* 調整資訊下方間距 */
+            margin-bottom: 8px;
         }
 
         .result-card .tags {
-            margin-top: 10px; /* 標籤上方間距 */
-            justify-content: flex-start; /* 標籤靠左對齊 */
+            margin-top: 10px;
+            justify-content: flex-start;
         }
 
-        .result-card .d-flex.flex-column.align-items-end { /* 價格和時間區塊 */
+        .result-card .d-flex.flex-column.align-items-end {
             width: 100%;
-            align-items: flex-start !important; /* 在小螢幕下價格和時間靠左對齊 */
-            margin-left: 0 !important; /* 移除左側 margin */
-            padding: 15px !important; /* 提供內部 padding */
-            border-top: 1px solid #e9ecef; /* 分隔線 */
+            align-items: flex-start !important;
+            margin-left: 0 !important;
+            padding: 15px !important;
+            border-top: 1px solid #e9ecef;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: flex-start !important;
         }
+
+            .result-card .d-flex.flex-column.align-items-end .favorite-icon {
+                order: 1;
+                margin-bottom: 0;
+                margin-right: auto;
+            }
+
+            .result-card .d-flex.flex-column.align-items-end .price {
+                order: 2;
+            }
+
+            .result-card .d-flex.flex-column.align-items-end .last-updated {
+                order: 3;
+                margin-left: 10px;
+            }
 }

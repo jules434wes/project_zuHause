@@ -413,7 +413,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 為側邊欄導航項目添加點擊事件監聽器
     navItems.forEach(item => {
-        item.addEventListener('click', () => {
+        item.addEventListener('click', (event) => {
+            event.preventDefault(); // 阻止默認行為
             const targetId = item.dataset.target; // 從 data-target 屬性獲取目標 ID
             if (targetId) {
                 switchContent(targetId); // 切換內容

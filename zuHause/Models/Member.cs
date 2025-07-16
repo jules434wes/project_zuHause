@@ -116,7 +116,7 @@ public partial class Member
     /// <summary>
     /// 身分證號
     /// </summary>
-    public string NationalIdNo { get; set; } = null!;
+    public string? NationalIdNo { get; set; }
 
     public virtual ICollection<Approval> Approvals { get; set; } = new List<Approval>();
 

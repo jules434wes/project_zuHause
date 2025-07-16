@@ -22,10 +22,6 @@ builder.Services.AddMemoryCache();
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
-builder.Services.AddDbContext<ZuHauseContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("zuhause"))); // 或根據您實際的資料庫提供者使用 UseSqlite, UsePostgreSQL 等
-
-
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -41,11 +37,12 @@ app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
+app.MapControllers();
 
 app.MapControllerRoute(
     name: "default",
     //pattern: "{controller=Home}/{action=Index}/{id?}");
-    pattern: "{controller=Tenant}/{action=Announcement}/{id?}");
+    pattern: "{controller=Search}/{action=Search}/{id?}");
 
 
 app.Run();
