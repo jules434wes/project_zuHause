@@ -33,12 +33,17 @@ builder.Services.AddMemoryCache();
 // 註冊 RealDataSeeder
 builder.Services.AddScoped<RealDataSeeder>();
 
+// 註冊圖片處理服務
+builder.Services.AddScoped<zuHause.Interfaces.IImageProcessor, zuHause.Services.ImageSharpProcessor>();
+
+// 註冊房源圖片服務
+builder.Services.AddScoped<zuHause.Services.PropertyImageService>();
+
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
 builder.Services.AddScoped<IPasswordHasher<Member>, PasswordHasher<Member>>();
 builder.Services.AddScoped<MemberService>();
-
 
 
 var app = builder.Build();
@@ -81,7 +86,8 @@ app.MapControllerRoute(
     //    pattern: "{controller=Furniture}/{action=FurnitureHomePage}/{id?}");
 
     //pattern: "{controller=Home}/{action=Index}/{id?}");
-    pattern: "{controller=Tenant}/{action=Announcement}/{id?}");
+    pattern: "{controller=Home}/{action=Index}/{id?}");
+
 
 
 

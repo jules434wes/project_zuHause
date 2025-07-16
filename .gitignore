@@ -42,8 +42,15 @@ packages/
 project.assets.json
 project.nuget.cache
 
-# MCP and temporary files
+# AI and development tools - DO NOT COMMIT
 .claude/
+.gitmessage
+.vscode/claude-settings.json
+
+# Backup files
+*.backup
+
+# MCP and temporary files
 wsl-dotnet-setup.sh
 ~/.nuget/
 /~/.nuget/packages
