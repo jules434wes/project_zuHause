@@ -33,6 +33,9 @@ builder.Services.AddMemoryCache();
 // 註冊 RealDataSeeder
 builder.Services.AddScoped<RealDataSeeder>();
 
+// Add services to the container.
+builder.Services.AddControllersWithViews();
+
 builder.Services.AddScoped<IPasswordHasher<Member>, PasswordHasher<Member>>();
 builder.Services.AddScoped<MemberService>();
 
