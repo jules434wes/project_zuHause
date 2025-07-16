@@ -21,6 +21,9 @@ builder.Services.AddMemoryCache();
 // 註冊 RealDataSeeder
 builder.Services.AddScoped<RealDataSeeder>();
 
+// 註冊圖片處理服務
+builder.Services.AddScoped<zuHause.Interfaces.IImageProcessor, zuHause.Services.ImageSharpProcessor>();
+
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
