@@ -36,7 +36,14 @@ namespace zuHause.Controllers
         public IActionResult LoadTab(string id)
         {
             if (string.IsNullOrWhiteSpace(id)) return NotFound();
+            if (id == "platform_fee")
+            {
+                var plans = _context.ListingPlans
+                    .OrderBy(p => p.PlanId)
+                    .ToList();
 
+                return PartialView("~/Views/Dashboard/Partial/platform_fee.cshtml", plans);
+            }
             if (id == "furniture_management")
             {
                 var categories = _context.FurnitureCategories

@@ -10,17 +10,17 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
-    options.JsonSerializerOptions.PropertyNamingPolicy = null;
-    options.JsonSerializerOptions.Encoder = JavaScriptEncoder.Create(UnicodeRanges.BasicLatin, UnicodeRanges.Cyrillic,
-                UnicodeRanges.CjkUnifiedIdeographs);
-    options.JsonSerializerOptions.WriteIndented = true;
+options.JsonSerializerOptions.PropertyNamingPolicy = null;
+options.JsonSerializerOptions.Encoder = JavaScriptEncoder.Create(UnicodeRanges.BasicLatin, UnicodeRanges.Cyrillic,
+            UnicodeRanges.CjkUnifiedIdeographs);
+options.JsonSerializerOptions.WriteIndented = true;
 });
 
 // 會員
 builder.Services.AddAuthentication("MemberCookieAuth").AddCookie("MemberCookieAuth", options =>
 {
-    options.LoginPath = "/Member/Login";
-    options.AccessDeniedPath = "/Member/AccessDenied";
+options.LoginPath = "/Member/Login";
+options.AccessDeniedPath = "/Member/AccessDenied";
 });
 
 
@@ -30,13 +30,13 @@ builder.Services.AddDbContext<ZuHauseContext>(
 
 builder.Services.AddMemoryCache();
 
-// 閮餃? RealDataSeeder
+// 註冊 RealDataSeeder
 builder.Services.AddScoped<RealDataSeeder>();
 
-// 閮餃???????
+// 註冊圖片處理服務
 builder.Services.AddScoped<zuHause.Interfaces.IImageProcessor, zuHause.Services.ImageSharpProcessor>();
 
-// 閮餃??踵?????
+// 註冊房源圖片服務
 builder.Services.AddScoped<zuHause.Services.PropertyImageService>();
 
 // Add services to the container.
@@ -48,29 +48,29 @@ builder.Services.AddScoped<MemberService>();
 
 var app = builder.Build();
 
-// ?券??潛憓?銵???蝵桀??剔車
+// 在開發環境自動執行資料重置和播種
 if (app.Environment.IsDevelopment())
 {
-    using (var scope = app.Services.CreateScope())
-    {
-        var seeder = scope.ServiceProvider.GetRequiredService<RealDataSeeder>();
-        try
-        {
-            await seeder.ResetTestDataAsync();
-        }
-        catch (Exception ex)
-        {
-            var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-            logger.LogError(ex, "鞈??剔車憭望?");
-        }
-    }
+using (var scope = app.Services.CreateScope())
+{
+var seeder = scope.ServiceProvider.GetRequiredService<RealDataSeeder>();
+try
+{
+await seeder.ResetTestDataAsync();
+}
+catch (Exception ex)
+{
+var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+logger.LogError(ex, "資料播種失敗");
+}
+}
 }
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Home/Error");
-    app.UseHsts();
+app.UseExceptionHandler("/Home/Error");
+app.UseHsts();
 }
 
 app.UseHttpsRedirection();
@@ -82,6 +82,14 @@ app.UseAuthorization();
 // 亂碼請修正 FurnitureController �� FurnitureHomePage
 app.MapControllerRoute(
     name: "default",
+
+    //    pattern: "{controller=Furniture}/{action=FurnitureHomePage}/{id?}");
+
+    //pattern: "{controller=Home}/{action=Index}/{id?}");
     pattern: "{controller=Dashboard}/{action=Index}/{id?}");
 
+
+
+
 app.Run();
+

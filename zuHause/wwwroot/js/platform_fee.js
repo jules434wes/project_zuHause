@@ -16,14 +16,13 @@
             listingPlans.forEach(plan => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                <td>${plan.planId}</td>
-                <td>${plan.planName}</td>
-                <td>NT$${plan.pricePerDay}</td>
-                <td>${plan.minListingDays}</td>
-                
-                <td>${plan.startAt} ~ ${plan.endAt ?? '無期限'}</td>
-                <td>${plan.isActive ? '✅ 啟用中' : '❌ 已停用'}</td>
-                <td><button class="btn btn-sm btn-outline-primary" onclick="editPlan(${plan.planId})">✏️ 編輯</button></td>
+                <td>${plan.PlanId}</td>
+                <td>${plan.PlanName}</td>
+                <td>NT$${plan.PricePerDay}</td>
+                <td>${plan.MinListingDays}</td>
+                <td>${plan.StartAt} ~ ${plan.EndAt ?? '無期限'}</td>
+                <td>${plan.IsActive ? '✅ 啟用中' : '❌ 已停用'}</td>
+                <td><button class="btn btn-sm btn-outline-primary" onclick="editPlan(${plan.PlanId})">✏️ 編輯</button></td>
             `;
                 tbody.appendChild(tr);
             });
@@ -106,7 +105,7 @@
     }
     window.editPlan = editPlan;
     function editPlan(planId) {
-        const plan = listingPlans.find(p => p.planId === planId);
+        const plan = listingPlans.find(p => p.PlanId === planId);
         if (!plan) {
             alert("❌ 找不到該方案");
             return;
