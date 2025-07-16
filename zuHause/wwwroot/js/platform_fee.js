@@ -40,7 +40,6 @@
             planName: document.getElementById('planName').value.trim(),
             pricePerDay: parseFloat(document.getElementById('pricePerDay').value),
             minListingDays: parseInt(document.getElementById('minListingDays').value),
-          
             currencyCode: document.getElementById('currencyCode').value.trim(),
             startAt: document.getElementById('startAt').value,
             endAt: document.getElementById('endAt').value || null
