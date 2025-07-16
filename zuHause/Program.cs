@@ -85,8 +85,8 @@ app.MapControllerRoute(
 
     //    pattern: "{controller=Furniture}/{action=FurnitureHomePage}/{id?}");
 
-    //pattern: "{controller=Home}/{action=Index}/{id?}");
-    pattern: "{controller=Dashboard}/{action=Index}/{id?}");
+    pattern: "{controller=Home}/{action=Index}/{id?}");
+//pattern: "{controller=Dashboard}/{action=Index}/{id?}");
 
 
 
