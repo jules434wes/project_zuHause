@@ -1,22 +1,11 @@
-ï»¿using Microsoft.EntityFrameworkCore;
-using zuHause.Models;
-using zuHause.Data;
-using Microsoft.AspNetCore.Identity;
-using System.Text.Encodings.Web;
-using System.Text.Unicode;
-using zuHause.Services;
+using Microsoft.EntityFrameworkCore;
+
+using zuHause.Models; // ½T«O³o¬O ZuHauseContext ¥¿½Tªº©R¦WªÅ¶¡
+
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers().AddJsonOptions(options =>
-{
-    options.JsonSerializerOptions.PropertyNamingPolicy = null;
-    options.JsonSerializerOptions.Encoder = JavaScriptEncoder.Create(UnicodeRanges.BasicLatin, UnicodeRanges.Cyrillic,
-                UnicodeRanges.CjkUnifiedIdeographs);
-    options.JsonSerializerOptions.WriteIndented = true;
-});
-
-// æœƒå“¡
+// ?ƒå“¡
 builder.Services.AddAuthentication("MemberCookieAuth").AddCookie("MemberCookieAuth", options =>
 {
     options.LoginPath = "/Member/Login";
@@ -25,51 +14,25 @@ builder.Services.AddAuthentication("MemberCookieAuth").AddCookie("MemberCookieAu
 
 
 builder.Services.AddDbContext<ZuHauseContext>(
-            options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+            options => options.UseSqlServer(builder.Configuration.GetConnectionString("zuHauseDBConnstring")));
 
 
 builder.Services.AddMemoryCache();
 
-// é–®é¤ƒ? RealDataSeeder
-builder.Services.AddScoped<RealDataSeeder>();
-
-// é–®é¤ƒ??î¡¾??îŸ¡??ïš—?
-builder.Services.AddScoped<zuHause.Interfaces.IImageProcessor, zuHause.Services.ImageSharpProcessor>();
-
-// é–®é¤ƒ??è¸µ??î¡¾??ïš—?
-builder.Services.AddScoped<zuHause.Services.PropertyImageService>();
-
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
-builder.Services.AddScoped<IPasswordHasher<Member>, PasswordHasher<Member>>();
-builder.Services.AddScoped<MemberService>();
+builder.Services.AddDbContext<ZuHauseContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("zuhause"))); // ©Î®Ú¾Ú±z¹ê»Úªº¸ê®Æ®w´£¨ÑªÌ¨Ï¥Î UseSqlite, UsePostgreSQL µ¥
 
 
 var app = builder.Build();
-
-// ?åˆ¸??æ½›î—“æ†“ï¸ïŠ®?îŸŸî·“éŠµï—½??î©—?èµæ¡€??å‰”è»Š
-if (app.Environment.IsDevelopment())
-{
-    using (var scope = app.Services.CreateScope())
-    {
-        var seeder = scope.ServiceProvider.GetRequiredService<RealDataSeeder>();
-        try
-        {
-            await seeder.ResetTestDataAsync();
-        }
-        catch (Exception ex)
-        {
-            var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-            logger.LogError(ex, "éˆï‹ª??å‰”è»Šæ†­æœ›?");
-        }
-    }
-}
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
+    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
@@ -79,7 +42,6 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// äº‚ç¢¼è«‹ä¿®æ­£ FurnitureController ï¿½ï¿½ FurnitureHomePage
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Dashboard}/{action=Index}/{id?}");

@@ -1,8 +1,7 @@
 ﻿@{
     ViewData["Title"] = "會員註冊 - 驗證手機號碼";
-    var activePage = TempData["activePage"]?.ToString();
 }
-@await Html.PartialAsync("_PartialRegisterActiveProgress", activePage)
+@await Html.PartialAsync("_PartialRegisterActiveProgress")
 
 
 <form action="" method="post" class="w-100 text-light position-absolute top-50 translate-middle-y">
@@ -23,13 +22,12 @@
             </div>
             <div class="row mx-auto w-100 gx-3">
                 <div class="col-6">
-                    <a asp-action="MemberProfile" class="btn btn-aqua-sub w-100 py-1">立即驗證身分</a>
+                    <a class="btn btn-aqua-sub w-100 py-1">立即驗證身分</a>
                 </div>
                 <div class="col-6">
-                    <a asp-action="Index" class="btn btn-aqua-sub w-100 py-1">回到首頁</a>
+                    <a class="btn btn-aqua-sub w-100 py-1">回到首頁</a>
                 </div>
             </div>
         </div>
     </div>
 </form>
-

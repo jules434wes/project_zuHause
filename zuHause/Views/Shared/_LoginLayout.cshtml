@@ -1,8 +1,5 @@
 ﻿@{
     bool needCenter = ViewData["CenterBody"] as bool? ?? false;
-
-    var toastTitle = TempData["SuccessMessageTitle"] as string ?? null;
-    var toastContent = TempData["SuccessMessageContent"] as string ?? null;
 }
 <!DOCTYPE html>
 <html lang="en">
@@ -16,14 +13,12 @@
     <link rel="stylesheet" href="~/css/_LoginPartialShared.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/zuHause.styles.css" asp-append-version="true" />
 </head>
-<body class="position-relative d-flex flex-column min-vh-100">
+<body class="position-relativen d-flex flex-column min-vh-100">
 
     @await Component.InvokeAsync("NavbarMember")
     <main role="main" class="d-flex justify-content-center flex-fill">
         <div class="container d-flex flex-column @(needCenter?"justify-content-center":"justify-content-start") align-items-center mx-auto my-5 position-relative">
             @RenderBody()
-
-            @(await Html.PartialAsync("_PartialMemberToast"))
         </div>
     </main>
 
@@ -35,15 +30,7 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
-    <script src="~/js/showMemberToast.js"></script>
 
     @await RenderSectionAsync("Scripts", required: false)
-
-    @if (!string.IsNullOrEmpty(toastTitle) && !string.IsNullOrEmpty(toastContent))
-    {
-        <script>
-            callToast('@Html.Raw(toastTitle)','@Html.Raw(toastContent)');
-        </script>
-    }
 </body>
 </html>

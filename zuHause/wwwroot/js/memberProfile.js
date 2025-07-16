@@ -101,7 +101,6 @@
                 body: userImageFormData, // 整包FormData傳到後端
             }).then(result => {
                 console.log("上傳成功", result);
-                callToast("完成上傳", "照片上傳成功");
 
                 uploadButton.classList.add("d-none");
                 if (navUserImg) {
@@ -159,9 +158,7 @@
         frontReviewStatus.textContent = "完成上傳";
             } else if (UploadTypeCode === "USER_ID_BACK") {
         backReviewStatus.textContent = "完成上傳";
-        }
-
-        callToast("完成上傳", UploadTypeCode === "USER_ID_FRONT" ? "身分證正面上傳成功" : "身分證背面上傳成功");
+            }
           }
     return UploadTypeCode;
         });

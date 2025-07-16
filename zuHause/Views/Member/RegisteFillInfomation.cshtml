@@ -1,89 +1,67 @@
-﻿@using zuHause.ViewModels.MemberViewModel
-@model RegisterViewModel
-
-@{
+﻿@{
     ViewData["Title"] = "會員註冊 - 填寫會員資料";
-    var activePage = TempData["activePage"]?.ToString();
 }
 
 
-@await Html.PartialAsync("_PartialRegisterActiveProgress", activePage)
+@await Html.PartialAsync("_PartialRegisterActiveProgress")
 
 
 
-<form asp-controller="Member" asp-action="Registe" method="post" class="w-100 text-light">
+<form action="" method="post" class="w-100 text-light">
     <div class="row">
         <div class="col-9 mx-auto d-flex flex-column gap-3 p-5 shadow-lg bg-white-aqua">
             <h1 class="text-start title-text mb-3">填寫會員資料</h1>
             <div class="row mx-auto w-100 mb-4">
+
+
+
                 <div class="col-12 d-flex flex-column gap-2 p-0">
                     <div class="row">
-                        <label asp-for="PhoneNumber" class="col-2 col-form-label text-end"></label>
+                        <label for="inputPhone" class="col-2 col-form-label text-end">手機號碼</label>
                         <div class="col-auto d-flex align-items-center gap-3">
-                            <input type="hidden" readonly class="form-control-plaintext" asp-for="PhoneNumber">
-                            <p class="m-0">@Model.PhoneNumber</p>
+                            <input type="hidden" readonly class="form-control-plaintext" id="inputPhone" value="0912345678">
+                            <p class="m-0">0912345678</p>
                             <i class="bi bi-check-circle-fill"></i>
                         </div>
                     </div>
-
-
-
-                    <div class="row align-items-start password-area pwd-hidden">
-                        <label asp-for="UserPassword" class="col-2 col-form-label text-end"></label>
-                        <div class="col-6 pe-0">
-                            <input type="password" class="form-control"
-                                   placeholder="Password" asp-for="UserPassword" data-type="pwd" value="123455678">
-                            <span class="invalid-feedback d-block opacity-100" asp-validation-for="UserPassword">
-
-                            </span>
-                        </div>
-                        <div class="col-auto">
-                            <span class="input-group-text  rounded-0 p-0 bg-transparent border-0 pt-1">
-                                <button type="button" class="btn btn-aqua-color toggle-pwd p-0">
-                                    <i class="bi bi-eye"></i>
-                                    <i class="bi bi-eye-slash"></i>
-                                </button>
-                            </span>
-                        </div>
-                    </div>
-
-                    <div class="row align-items-start password-area pwd-hidden">
-                        <label asp-for="ConfirmPassword" class="col-2 col-form-label text-end"></label>
-                        <div class="col-6 pe-0">
-                            <input type="password" class="form-control"
-                                   placeholder="Password" asp-for="ConfirmPassword" data-type="pwd" value="123455678">
-                            <span class="invalid-feedback d-block opacity-100" asp-validation-for="ConfirmPassword">
-
-                            </span>
-                        </div>
-                        <div class="col-auto">
-                            <span class="input-group-text  rounded-0 p-0 bg-transparent border-0 pt-1">
-                                <button type="button" class="btn btn-aqua-color toggle-pwd p-0">
-                                    <i class="bi bi-eye"></i>
-                                    <i class="bi bi-eye-slash"></i>
-                                </button>
-                            </span>
-                        </div>
-                    </div>
-
                     <div class="row align-items-start">
-                        <label asp-for="UserName" class="col-2 col-form-label text-end">姓名</label>
+                        <label for="inputPassword" class="col-2 col-form-label text-end">密碼</label>
                         <div class="col-6 pe-0">
-                            <input type="text" asp-for="UserName" class="form-control" aria-describedby="inputNameHelpInline"
-                                   placeholder="請輸入真實姓名" required>
-                            <span asp-validation-for="UserName" class="invalid-feedback d-block opacity-100">
-
-                            </span>
+                            <input type="password" id="inputPassword" class="form-control is-invalid" aria-describedby="inputPasswordFeedback"
+                                   placeholder="請輸入密碼">
+                            <div id="inputPasswordFeedback" class="invalid-feedback">
+                                密碼需為八位數
+                            </div>
                         </div>
                     </div>
                     <div class="row align-items-start">
-                        <label asp-for="Email" class="col-2 col-form-label text-end">電子信箱</label>
+                        <label for="inputPasswordAgain" class="col-form-label col-2 text-end">確認密碼</label>
+                        <div class="col-6 pe-0">
+                            <input type="password" id="inputPasswordAgain" class="form-control is-invalid"
+                                   aria-describedby="inputPasswordAgainFeedback" placeholder="請再次輸入密碼">
+                            <div id="inputPasswordAgainFeedback" class="invalid-feedback">
+                                密碼需為八位數
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row align-items-start">
+                        <label for="inputName" class="col-2 col-form-label text-end">姓名</label>
+                        <div class="col-6 pe-0">
+                            <input type="text" id="inputName" class="form-control is-invalid" aria-describedby="inputNameHelpInline"
+                                   placeholder="請輸入真實姓名">
+                            <div id="inputNameFeedback" class="invalid-feedback">
+                                密碼需為八位數
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row align-items-start">
+                        <label for="inputEmail" class="col-2 col-form-label text-end">電子信箱</label>
                         <div class="col-5 pe-0">
-                            <input type="email" asp-for="Email" class="form-control" aria-describedby="inputEmailHelpInline"
-                                   placeholder="請輸入電子信箱" required>
-                            <span asp-validation-for="Email" class="invalid-feedback d-block opacity-100">
-
-                            </span>
+                            <input type="email" id="inputEmail" class="form-control is-invalid" aria-describedby="inputEmailHelpInline"
+                                   placeholder="請輸入電子信箱">
+                            <div id="inputEmailFeedback" class="invalid-feedback">
+                                密碼需為八位數
+                            </div>
                         </div>
                         <div class="col-auto">
                             <!-- Button trigger modal -->
@@ -93,16 +71,16 @@
                         </div>
                     </div>
                     <div class="row align-items-center">
-                        <label asp-for="Gender" class="col-2 col-form-label text-end">性別</label>
+                        <label for="inputName" class="col-2 col-form-label text-end">性別</label>
                         <div class="col-6 d-flex align-items-center gap-4">
                             <div class="form-check">
-                                <input class="form-check-input" type="radio" asp-for="Gender" id="changeGenderMale" value="1" required>
+                                <input class="form-check-input" type="radio" name="changeGender" id="changeGenderMale">
                                 <label class="form-check-label" for="changeGenderMale">
                                     男性
                                 </label>
                             </div>
                             <div class="form-check">
-                                <input class="form-check-input" type="radio" asp-for="Gender" id="changeGenderFemale" value="2" required>
+                                <input class="form-check-input" type="radio" name="changeGender" id="changeGenderFemale" checked>
                                 <label class="form-check-label" for="changeGenderFemale">
                                     女性
                                 </label>
@@ -110,58 +88,62 @@
                         </div>
                     </div>
                     <div class="row align-items-start">
-                        <label asp-for="Birthday" class="col-2 col-form-label text-end">生日</label>
+                        <label for="inputBirthday" class="col-2 col-form-label text-end">生日</label>
                         <div class="col-6 pe-0">
-                            <input type="date" asp-for="Birthday" value="2018-07-22"
-                                   class="w-100 rounded-2 border-1" style="padding: 0.375rem .75rem; border-color: #dee2e6;" />
-                            <span asp-validation-for="Birthday" class="invalid-feedback d-block opacity-100">
-
-                            </span>
+                            <input type="date" id="inputBirthday" name="inputBirthday" value="2018-07-22"
+                                   class="w-100 rounded-2 border-1 is-invalid" style="padding: 0.375rem .75rem; border-color: #dee2e6;" />
+                            <div id="inputBirthdayFeedback" class="invalid-feedback">
+                                密碼需為八位數
+                            </div>
                         </div>
                     </div>
-                    <div class="row align-items-center address-area">
+                    <div class="row align-items-center">
                         <label for="inputBirthday" class="col-2 col-form-label text-end">聯絡地址</label>
-
-                        @* asp-items會自動處理options *@
-                        <div class="col-2 pe-1 address-area-city">
-                            <label class="visually-hidden" asp-for="ResidenceCity"></label>
-                            <select class="form-select" asp-for="ResidenceCity" asp-items="Model.CityOptions" required>
-                                <option selected value="0">縣市</option>
+                        <div class="col-2 pe-1">
+                            <label class="visually-hidden" for="inputLiveCity">居住縣市</label>
+                            <select class="form-select" id="inputLiveCity">
+                                <option selected>縣市</option>
+                                <option value="1">One</option>
+                                <option value="2">Two</option>
+                                <option value="3">Three</option>
                             </select>
                         </div>
-                        <div class="col-2 px-1 address-area-district">
-                            <label class="visually-hidden" asp-for="ResidenceDistrictID"></label>
-                            <select class="form-select" asp-for="ResidenceDistrictID" required>
-                                <option selected value="0">區域</option>
+                        <div class="col-2 px-1">
+                            <label class="visually-hidden" for="inputLiveDistrict">居住區域</label>
+                            <select class="form-select" id="inputLiveDistrict">
+                                <option selected>區域</option>
+                                <option value="1">One</option>
+                                <option value="2">Two</option>
+                                <option value="3">Three</option>
                             </select>
                         </div>
                         <div class="col-5 px-1">
-                            <label class="visually-hidden" asp-for="AddressLine"></label>
-                            <input type="text" class="form-control" asp-for="AddressLine" placeholder="請輸入地址" required>
+                            <label class="visually-hidden" for="inputAddress">詳細地址</label>
+                            <input type="text" class="form-control" id="inputAddress" placeholder="請輸入地址">
                         </div>
                     </div>
-                    <div class="row align-items-center address-area">
+                    <div class="row align-items-center">
                         <label for="inputBirthday" class="col-2 col-form-label text-end">主要承租區域</label>
-                        <div class="col-3 pe-1 address-area-city">
-                            <label class="visually-hidden" asp-for="PrimaryRentalCityID">主要承租縣市</label>
-                            <select class="form-select" asp-for="PrimaryRentalCityID" asp-items="Model.CityOptions" required>
-                                <option selected value="0">縣市</option>
+                        <div class="col-3 pe-1">
+                            <label class="visually-hidden" for="inputPerferredCity">主要承租縣市</label>
+                            <select class="form-select" id="inputPerferredCity">
+                                <option selected>縣市</option>
+                                <option value="1">One</option>
+                                <option value="2">Two</option>
+                                <option value="3">Three</option>
                             </select>
                         </div>
-                        <div class="col-3 px-1 pe-0 address-area-district">
-                            <label class="visually-hidden" asp-for="PrimaryRentalDistrictID">主要承租區域</label>
-                            <select class="form-select" asp-for="PrimaryRentalDistrictID" required>
-                                <option selected value="0">區域</option>
+                        <div class="col-3 px-1 pe-0">
+                            <label class="visually-hidden" for="inputPerferredDistrict">主要承租區域</label>
+                            <select class="form-select" id="inputPerferredDistrict">
+                                <option selected>區域</option>
+                                <option value="1">One</option>
+                                <option value="2">Two</option>
+                                <option value="3">Three</option>
                             </select>
                         </div>
                     </div>
                 </div>
-            </div>
-            <div class="row">
-                <span class="invalid-feedback opacity-100 text-center" asp-validation-for="ResidenceCity"></span>
-                <span class="invalid-feedback opacity-100 text-center" asp-validation-for="ResidenceDistrictID"></span>
-                <span class="invalid-feedback opacity-100 text-center" asp-validation-for="PrimaryRentalCityID"></span>
-                <span class="invalid-feedback opacity-100 text-center" asp-validation-for="PrimaryRentalDistrictID"></span>
             </div>
             <div class="row">
                 <div class="col-4 mx-auto d-flex flex-column align-items-center gap-2 p-0">
@@ -182,32 +164,32 @@
             </div>
             <div class="modal-body p-3">
                 <form action="" method="post" class="w-100">
-                    <div class="row mx-auto w-100 gap-3 mb-2">
-                        <div class="col-12 px-0 pb-2">
-                            <small>已發送驗證碼至example@gmail.com</small>
-                        </div>
-                        <div class="col-12 mx-auto p-0 d-flex flex-column gap-2">
-                            <div class="input-group has-validation">
-                                <span class="input-group-text rounded-0 px-3 bg-white">
-                                    <i class="text-aqua bi bi-send-fill"></i>
-                                </span>
-                                <div class="form-floating">
-                                    <!-- -->
-                                    <input type="text" class=" form-control rounded-0 pe-5" id="floatingInputGroup2"
-                                           placeholder="Username" required>
-                                    <label for="floatingInputGroup2">請輸入驗證碼</label>
+                            <div class="row mx-auto w-100 gap-3 mb-2">
+                                <div class="col-12 px-0 pb-2">
+                                    <small>已發送驗證碼至example@gmail.com</small>
                                 </div>
-                                <span class="invalid-feedback d-block opacity-100">
-                                    Please choose a username.
-                                </span>
+                                <div class="col-12 mx-auto p-0 d-flex flex-column gap-2">
+                                    <div class="input-group has-validation">
+                                        <span class="input-group-text rounded-0 px-3 bg-white">
+                                            <i class="text-aqua bi bi-send-fill"></i>
+                                        </span>
+                                        <div class="form-floating is-invalid">
+                                            <!-- is-invalid -->
+                                            <input type="text" class=" is-invalid form-control rounded-0 pe-5" id="floatingInputGroup2"
+                                                   placeholder="Username" required>
+                                            <label for="floatingInputGroup2">請輸入驗證碼</label>
+                                        </div>
+                                        <div class="invalid-feedback">
+                                            Please choose a username.
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                    </div>
-                    <div class="row mx-auto w-100">
-                        <div class="col-6 mx-auto">
-                            <button type="button" class="btn btn-aqua-sub btn-sm w-100 rounded-0">重新發送(60)</button>
-                        </div>
-                    </div>
+                            <div class="row mx-auto w-100">
+                                <div class="col-6 mx-auto">
+                                    <button type="button" class="btn btn-aqua-sub btn-sm w-100 rounded-0">重新發送(60)</button>
+                                </div>
+                            </div>
                 </form>
             </div>
             <div class="modal-footer">
@@ -217,9 +199,3 @@
         </div>
     </div>
 </div>
-
-
-@section Scripts {
-    <script src="~/js/hiddenPassword.js"></script>
-    <script src="~/js/selectDistrict.js"></script>
-}

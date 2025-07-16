@@ -126,13 +126,8 @@ public partial class ZuHauseContext : DbContext
     public virtual DbSet<UserUpload> UserUploads { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    {
-        if (!optionsBuilder.IsConfigured)
-        {
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-            optionsBuilder.UseSqlServer("Server=tcp:zuhause.database.windows.net,1433;Initial Catalog=zuHause;Persist Security Info=False;User ID=zuhause;Password=DB$MSIT67;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;");
-        }
-    }
+        => optionsBuilder.UseSqlServer("Server=tcp:zuhause.database.windows.net,1433;Initial Catalog=zuHause;Persist Security Info=False;User ID=zuhause;Password=DB$MSIT67;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -325,13 +320,7 @@ public partial class ZuHauseContext : DbContext
 
             entity.HasIndex(e => new { e.StatusCategory, e.StatusCode }, "IX_approvals_status_category");
 
-<<<<<<< HEAD
-            entity.HasIndex(e => new { e.ModuleCode, e.SourceId }, "UQ_approvals_module_source")
-                .IsUnique()
-                .HasFillFactor(100);
-=======
             entity.HasIndex(e => new { e.ModuleCode, e.ApplicantMemberId, e.SourcePropertyId }, "UQ_approvals_member_module").IsUnique();
->>>>>>> main
 
             entity.Property(e => e.ApprovalId)
                 .HasComment("審核ID (自動遞增，從701開始)")
@@ -2070,10 +2059,7 @@ public partial class ZuHauseContext : DbContext
             entity.ToTable("properties", tb =>
                 {
                     tb.HasComment("房源資料表");
-<<<<<<< HEAD
-=======
                     tb.HasTrigger("trg_properties_status_protection");
->>>>>>> main
                     tb.HasTrigger("trg_properties_validate_landlord");
                 });
 
