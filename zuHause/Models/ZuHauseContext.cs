@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
+using zuHause.Data.Configurations;
 
 namespace zuHause.Models;
 
@@ -124,6 +125,8 @@ public partial class ZuHauseContext : DbContext
     public virtual DbSet<UserNotification> UserNotifications { get; set; }
 
     public virtual DbSet<UserUpload> UserUploads { get; set; }
+
+    public virtual DbSet<Image> Images { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -325,13 +328,7 @@ public partial class ZuHauseContext : DbContext
 
             entity.HasIndex(e => new { e.StatusCategory, e.StatusCode }, "IX_approvals_status_category");
 
-<<<<<<< HEAD
-            entity.HasIndex(e => new { e.ModuleCode, e.SourceId }, "UQ_approvals_module_source")
-                .IsUnique()
-                .HasFillFactor(100);
-=======
             entity.HasIndex(e => new { e.ModuleCode, e.ApplicantMemberId, e.SourcePropertyId }, "UQ_approvals_member_module").IsUnique();
->>>>>>> main
 
             entity.Property(e => e.ApprovalId)
                 .HasComment("審核ID (自動遞增，從701開始)")
@@ -2070,10 +2067,7 @@ public partial class ZuHauseContext : DbContext
             entity.ToTable("properties", tb =>
                 {
                     tb.HasComment("房源資料表");
-<<<<<<< HEAD
-=======
                     tb.HasTrigger("trg_properties_status_protection");
->>>>>>> main
                     tb.HasTrigger("trg_properties_validate_landlord");
                 });
 
@@ -3101,6 +3095,9 @@ public partial class ZuHauseContext : DbContext
                 .HasConstraintName("FK_userUploads_member");
         });
         modelBuilder.HasSequence<int>("seq_memberID");
+
+        // 套用 ImageConfiguration
+        modelBuilder.ApplyConfiguration(new ImageConfiguration());
 
         OnModelCreatingPartial(modelBuilder);
     }
