@@ -386,9 +386,8 @@ namespace zuHause.Controllers
                     p.MinListingDays,
                     p.StartAt,
                     p.EndAt,
-                    p.IsActive,
-                    p.DiscountTrigger,
-                    p.DiscountUnit
+                    p.IsActive
+                   
                 })
                 .ToList();
 
@@ -407,14 +406,21 @@ namespace zuHause.Controllers
             if (model.StartAt == default)
                 model.StartAt = DateTime.Now;
 
-            // ✅ 直接找出上一筆（依 planId 最大），強制結束時間設為新方案開始時間 -1 秒
-            var lastPlan = _context.ListingPlans
-                .OrderByDescending(p => p.PlanId)
+            // ✅ 找出「相同天數」且尚未結束的未來方案（僅限時間區間重疊）
+            var previous = _context.ListingPlans
+                .Where(p => p.MinListingDays == model.MinListingDays
+                         && p.StartAt < model.StartAt
+                         && (p.EndAt == null || p.EndAt >= model.StartAt))
+                .OrderByDescending(p => p.StartAt)
                 .FirstOrDefault();
 
-            if (lastPlan != null && lastPlan.EndAt == null)
+            if (previous != null)
             {
-                lastPlan.EndAt = model.StartAt.AddSeconds(-1);
+                // 防止時間倒退
+                if (model.StartAt <= previous.StartAt)
+                    return BadRequest("❌ 新方案時間不可早於現有相同天數方案");
+
+                previous.EndAt = model.StartAt.AddSeconds(-1);
             }
 
             _context.ListingPlans.Add(model);

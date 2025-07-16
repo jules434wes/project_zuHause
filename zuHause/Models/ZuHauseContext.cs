@@ -302,7 +302,11 @@ public partial class ZuHauseContext : DbContext
 
         modelBuilder.Entity<Approval>(entity =>
         {
-            entity.ToTable("approvals", tb => tb.HasComment("審核主檔"));
+            entity.ToTable("approvals", tb =>
+                {
+                    tb.HasComment("審核主檔");
+                    tb.HasTrigger("trg_approvals_status_sync");
+                });
 
             entity.HasIndex(e => e.ApplicantMemberId, "IX_approvals_applicantMemberID");
 
@@ -316,9 +320,7 @@ public partial class ZuHauseContext : DbContext
 
             entity.HasIndex(e => new { e.StatusCategory, e.StatusCode }, "IX_approvals_status_category");
 
-            entity.HasIndex(e => new { e.ModuleCode, e.SourcePropertyId }, "UQ_approvals_module_source")
-                .IsUnique()
-                .HasFillFactor(100);
+            entity.HasIndex(e => new { e.ModuleCode, e.ApplicantMemberId, e.SourcePropertyId }, "UQ_approvals_member_module").IsUnique();
 
             entity.Property(e => e.ApprovalId)
                 .HasComment("審核ID (自動遞增，從701開始)")
@@ -396,7 +398,7 @@ public partial class ZuHauseContext : DbContext
                 .HasComment("操作類別 (計算欄位)")
                 .HasColumnName("actionCategory");
             entity.Property(e => e.ActionNote)
-                .HasComment("操作備註")
+                .HasComment("內部操作備註")
                 .HasColumnName("actionNote");
             entity.Property(e => e.ActionType)
                 .HasMaxLength(20)
@@ -1711,12 +1713,6 @@ public partial class ZuHauseContext : DbContext
                 .IsUnicode(false)
                 .HasComment("幣別")
                 .HasColumnName("currencyCode");
-            entity.Property(e => e.DiscountTrigger)
-                .HasComment("折扣觸發天數")
-                .HasColumnName("discountTrigger");
-            entity.Property(e => e.DiscountUnit)
-                .HasComment("折扣單位")
-                .HasColumnName("discountUnit");
             entity.Property(e => e.EndAt)
                 .HasPrecision(0)
                 .HasComment("結束時間")
@@ -2063,6 +2059,7 @@ public partial class ZuHauseContext : DbContext
             entity.ToTable("properties", tb =>
                 {
                     tb.HasComment("房源資料表");
+                    tb.HasTrigger("trg_properties_status_protection");
                     tb.HasTrigger("trg_properties_validate_landlord");
                 });
 

@@ -54,16 +54,6 @@ public partial class ListingPlan
     public DateTime UpdatedAt { get; set; }
 
     /// <summary>
-    /// 折扣觸發天數
-    /// </summary>
-    public int? DiscountTrigger { get; set; }
-
-    /// <summary>
-    /// 折扣單位
-    /// </summary>
-    public int? DiscountUnit { get; set; }
-
-    /// <summary>
     /// 刊登費方案ID
     /// </summary>
     public int PlanId { get; set; }
