@@ -398,7 +398,7 @@ namespace zuHause.Controllers
         {
             if (model == null || string.IsNullOrWhiteSpace(model.PlanName))
                 return BadRequest("❌ 資料不完整");
-
+            
             model.CreatedAt = DateTime.Now;
             model.UpdatedAt = DateTime.Now;
             model.IsActive = false;

@@ -75,6 +75,8 @@ public partial class ZuHauseContext : DbContext
 
     public virtual DbSet<FurnitureRentalContract> FurnitureRentalContracts { get; set; }
 
+    public virtual DbSet<Image> Images { get; set; }
+
     public virtual DbSet<InventoryEvent> InventoryEvents { get; set; }
 
     public virtual DbSet<ListingPlan> ListingPlans { get; set; }
@@ -1646,6 +1648,33 @@ public partial class ZuHauseContext : DbContext
                 .HasConstraintName("FK_furnitureRentalContracts_order");
         });
 
+        modelBuilder.Entity<Image>(entity =>
+        {
+            entity.HasKey(e => e.ImageId).HasName("PK__Images__7516F70C0063CFAC");
+
+            entity.ToTable(tb => tb.HasComment("圖片表"));
+
+            entity.HasIndex(e => new { e.EntityType, e.EntityId, e.Category, e.DisplayOrder, e.IsActive }, "IX_Images_EntityType_EntityId_Covering");
+
+            entity.HasIndex(e => new { e.EntityType, e.EntityId, e.Category, e.DisplayOrder }, "IX_Images_UQ_DisplayOrder")
+                .IsUnique()
+                .HasFilter("([DisplayOrder] IS NOT NULL)");
+
+            entity.HasIndex(e => e.ImageGuid, "UQ_Images_ImageGuid").IsUnique();
+
+            entity.Property(e => e.Category).HasMaxLength(50);
+            entity.Property(e => e.EntityType).HasMaxLength(50);
+            entity.Property(e => e.ImageGuid).HasDefaultValueSql("(newsequentialid())");
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.MimeType).HasMaxLength(50);
+            entity.Property(e => e.OriginalFileName).HasMaxLength(255);
+            entity.Property(e => e.StoredFileName)
+                .HasMaxLength(41)
+                .IsUnicode(false)
+                .HasComputedColumnSql("(lower(CONVERT([char](36),[ImageGuid]))+case [MimeType] when 'image/webp' then '.webp' when 'image/jpeg' then '.jpg' when 'image/png' then '.png' else '.bin' end)", true);
+            entity.Property(e => e.UploadedAt).HasDefaultValueSql("(getutcdate())");
+        });
+
         modelBuilder.Entity<InventoryEvent>(entity =>
         {
             entity.HasKey(e => e.FurnitureInventoryId);
@@ -2059,7 +2088,6 @@ public partial class ZuHauseContext : DbContext
             entity.ToTable("properties", tb =>
                 {
                     tb.HasComment("房源資料表");
-                    tb.HasTrigger("trg_properties_status_protection");
                     tb.HasTrigger("trg_properties_validate_landlord");
                 });
 
