@@ -1,10 +1,22 @@
 using Microsoft.EntityFrameworkCore;
 using zuHause.Models;
 using zuHause.Data;
+using Microsoft.AspNetCore.Identity;
+using System.Text.Encodings.Web;
+using System.Text.Unicode;
+using zuHause.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 登入驗證
+builder.Services.AddControllers().AddJsonOptions(options =>
+{
+    options.JsonSerializerOptions.PropertyNamingPolicy = null;
+    options.JsonSerializerOptions.Encoder = JavaScriptEncoder.Create(UnicodeRanges.BasicLatin, UnicodeRanges.Cyrillic,
+                UnicodeRanges.CjkUnifiedIdeographs);
+    options.JsonSerializerOptions.WriteIndented = true;
+});
+
+// 會員
 builder.Services.AddAuthentication("MemberCookieAuth").AddCookie("MemberCookieAuth", options =>
 {
     options.LoginPath = "/Member/Login";
@@ -30,6 +42,8 @@ builder.Services.AddScoped<zuHause.Services.PropertyImageService>();
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
+builder.Services.AddScoped<IPasswordHasher<Member>, PasswordHasher<Member>>();
+builder.Services.AddScoped<MemberService>();
 
 
 var app = builder.Build();
@@ -73,6 +87,7 @@ app.MapControllerRoute(
 
     //pattern: "{controller=Home}/{action=Index}/{id?}");
     pattern: "{controller=Home}/{action=Index}/{id?}");
+
 
 
 
