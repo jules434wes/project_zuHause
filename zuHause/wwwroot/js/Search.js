@@ -139,6 +139,14 @@ document.addEventListener('DOMContentLoaded', function () {
             params.append('features', selectedFeatures.join(',')); // 假設後端接收逗號分隔的字符串
         }
 
+        // 設施 (多選)
+        const selectedFacilities = Array.from(document.querySelectorAll('.filter-group input[name="Facilities"]:checked'))
+            .filter(checkbox => checkbox.id !== 'facilities')
+            .map(checkbox => checkbox.value);
+        if (selectedFacilities.length > 0) {
+            params.append('facilities', selectedFacilities.join(',')); // 假設後端接收逗號分隔的字符串
+        }
+
         // 設備 (多選)
         const selectedEquipments = Array.from(document.querySelectorAll('.filter-group input[name="equipment"]:checked'))
             .filter(checkbox => checkbox.id !== 'equipmentNoLimit')
@@ -301,7 +309,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
             districts.forEach(district => {
-                const isNantun = district.districtName === '南屯區' &&
+                const isNantun = district.districtName === '北屯區' &&
                     cityCode === (allCities.find(c => c.cityName === '台中市')?.cityCode || '');
 
                 const checkboxHtml = `
@@ -316,7 +324,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             });
 
-            // 根據是否有行政區被預選（南屯區）來設置「不限」的狀態
+            // 根據是否有行政區被預選（北屯區）來設置「不限」的狀態
             if (nantunFoundAndSelected) {
                 districtNoLimitRadio.checked = false;
                 districtNoLimitLabel.classList.remove('active');

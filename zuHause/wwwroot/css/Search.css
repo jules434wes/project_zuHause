@@ -52,13 +52,22 @@ body {
 
         margin-bottom: 15px; /* 篩選器組之間的底部間距 */
         padding-top: 10px; /* 每個組頂部間距 */
-        border-top: 1px solid #eee; /* 組之間的分隔線 */
+
+        padding-bottom: 15px; /* 內容下方留白 */
+        border-bottom: 1px solid #eee; /* 組之間的分隔線 */
+        margin-bottom: 15px; /* 組與組之間（包括線下方的）底部間距 */
     }
 
-        .filters-container .filter-group:first-child {
-            border-top: none;
-            padding-top: 0;
+        .filters-container .filter-group:last-child {
+            border-bottom: none;
+            margin-bottom: 0; /* 移除最後一個的底部間距，防止與展開按鈕的間距重複 */
+            padding-bottom: 0;
         }
+#moreFilters .filter-group:last-child {
+    border-bottom: none; /* collapse 裡面的最後一個也不要有線 */
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
 
         .filters-container .filter-group .form-label {
             flex-shrink: 0; /* 防止標籤被壓縮 */
