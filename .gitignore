@@ -69,9 +69,12 @@ desktop.ini
 # AI 工具或助手檔案
 # ========================
 .claude/
+.claude
+.claude-credentials
 .gitmessage
 .vscode/claude-settings.json
 CLAUDE.md
+~/.nuget/
 
 # ========================
 # 備份與暫存
