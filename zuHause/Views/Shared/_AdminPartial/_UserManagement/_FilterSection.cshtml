@@ -21,11 +21,8 @@
         <form>
             <!-- 基本搜尋列 -->
             <div class="row g-3 mb-3">
-                @{
-                    var hasAnyStatusFilter = hasIdUpload || hasAccountStatus || hasVerificationStatus;
-                    var searchFieldWidth = hasAnyStatusFilter ? "col-md-6" : "col-md-8";
-                }
-                <div class="@searchFieldWidth">
+                <!-- 關鍵字搜尋 6/12 -->
+                <div class="col-md-6">
                     <label for="searchInput@(tabId)" class="form-label">關鍵字搜尋</label>
                     <div class="input-group">
                         <input type="text" class="form-control" placeholder="搜尋關鍵字..." id="searchInput@(tabId)">
@@ -40,6 +37,7 @@
                     </div>
                 </div>
                 
+                <!-- 身分證驗證 2/12 -->
                 @if (hasIdUpload)
                 {
                     <div class="col-md-2">
@@ -69,7 +67,14 @@
                         </select>
                     </div>
                 }
+                else
+                {
+                    <div class="col-md-2">
+                        <!-- 空白欄位保持佈局 -->
+                    </div>
+                }
                 
+                <!-- 帳戶狀態 2/12 -->
                 @if (hasAccountStatus)
                 {
                     <div class="col-md-2">
@@ -82,18 +87,24 @@
                         </select>
                     </div>
                 }
-                
-                @{
-                    var buttonFieldWidth = hasAnyStatusFilter ? "col-md-4" : "col-md-4";
+                else
+                {
+                    <div class="col-md-2">
+                        <!-- 空白欄位保持佈局 -->
+                    </div>
                 }
-                <div class="@buttonFieldWidth">
+                
+                <!-- 按鈕區域 2/12 -->
+                <div class="col-md-2">
                     <label class="form-label d-block">&nbsp;</label>
-                    <button type="button" class="btn btn-primary me-2" id="searchBtn@(tabId)">
-                        <i class="fas fa-search"></i> 搜尋
-                    </button>
-                    <button type="button" class="btn btn-outline-secondary" id="resetBtn@(tabId)">
-                        <i class="fas fa-redo"></i> 重置
-                    </button>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-primary" id="searchBtn@(tabId)">
+                            <i class="bi bi-search"></i> 搜尋
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" id="resetBtn@(tabId)">
+                            <i class="bi bi-arrow-clockwise"></i> 重置
+                        </button>
+                    </div>
                 </div>
             </div>
             
