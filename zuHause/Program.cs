@@ -1,14 +1,26 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using zuHause.Models;
 using zuHause.Data;
+using Microsoft.AspNetCore.Identity;
+using System.Text.Encodings.Web;
+using System.Text.Unicode;
+using zuHause.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 登入驗證
+builder.Services.AddControllers().AddJsonOptions(options =>
+{
+options.JsonSerializerOptions.PropertyNamingPolicy = null;
+options.JsonSerializerOptions.Encoder = JavaScriptEncoder.Create(UnicodeRanges.BasicLatin, UnicodeRanges.Cyrillic,
+            UnicodeRanges.CjkUnifiedIdeographs);
+options.JsonSerializerOptions.WriteIndented = true;
+});
+
+// 會員
 builder.Services.AddAuthentication("MemberCookieAuth").AddCookie("MemberCookieAuth", options =>
 {
-    options.LoginPath = "/Member/Login";
-    options.AccessDeniedPath = "/Member/AccessDenied";
+options.LoginPath = "/Member/Login";
+options.AccessDeniedPath = "/Member/AccessDenied";
 });
 
 
@@ -24,9 +36,24 @@ builder.Services.AddScoped<RealDataSeeder>();
 // 註冊圖片處理服務
 builder.Services.AddScoped<zuHause.Interfaces.IImageProcessor, zuHause.Services.ImageSharpProcessor>();
 
+// 註冊房源圖片服務
+builder.Services.AddScoped<zuHause.Services.PropertyImageService>();
+
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
+// === 新增 Session 服務配置 ===
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(30); // 設定 Session 超時時間，例如 30 分鐘
+    options.Cookie.HttpOnly = true; // 設定 Session Cookie 只能透過 HTTP 訪問，增加安全性
+    options.Cookie.IsEssential = true; // 設定 Session Cookie 為必要的，以便 Session 能夠工作
+});
+// =============================
+
+
+builder.Services.AddScoped<IPasswordHasher<Member>, PasswordHasher<Member>>();
+builder.Services.AddScoped<MemberService>();
 
 
 var app = builder.Build();
@@ -34,31 +61,32 @@ var app = builder.Build();
 // 在開發環境自動執行資料重置和播種
 if (app.Environment.IsDevelopment())
 {
-    using (var scope = app.Services.CreateScope())
-    {
-        var seeder = scope.ServiceProvider.GetRequiredService<RealDataSeeder>();
-        try
-        {
-            await seeder.ResetTestDataAsync();
-        }
-        catch (Exception ex)
-        {
-            var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-            logger.LogError(ex, "資料播種失敗");
-        }
-    }
+using (var scope = app.Services.CreateScope())
+{
+var seeder = scope.ServiceProvider.GetRequiredService<RealDataSeeder>();
+try
+{
+await seeder.ResetTestDataAsync();
+}
+catch (Exception ex)
+{
+var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+logger.LogError(ex, "資料播種失敗");
+}
+}
 }
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Home/Error");
-    app.UseHsts();
+app.UseExceptionHandler("/Home/Error");
+app.UseHsts();
 }
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
+app.UseSession(); // 啟用 Session 中間件
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -68,9 +96,11 @@ app.MapControllerRoute(
 
     //    pattern: "{controller=Furniture}/{action=FurnitureHomePage}/{id?}");
 
-    //pattern: "{controller=Home}/{action=Index}/{id?}");
-    pattern: "{controller=Tenant}/{action=Announcement}/{id?}");
+    pattern: "{controller=Home}/{action=Index}/{id?}");
+//pattern: "{controller=Dashboard}/{action=Index}/{id?}");
+
 
 
 
 app.Run();
+

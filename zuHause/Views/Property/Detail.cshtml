@@ -20,13 +20,14 @@
     <link rel="stylesheet" href="~/css/variables.css" />
     <!-- Property Detail CSS -->
     <link rel="stylesheet" href="~/css/property-detail.css" />
+
+     <link rel="stylesheet" href="~/css/_LoginPartialShared.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/zuHause.styles.css" asp-append-version="true" />
 </head>
 <body>
-    <div class="min-vh-100 bg-light">
+    <div class="min-vh-100 bg-light position-relative">
         <!-- 主導覽列 -->
-        <div class="position-relative">
             @await Component.InvokeAsync("NavbarMember")
-        </div>
 
         <!-- 偵測點元素 - 用於觸發次導覽列顯示 -->
         <div class="sentinel-element" id="sentinelElement"></div>

@@ -1,10 +1,13 @@
-﻿@{
+﻿@using zuHause.ViewModels.MemberViewModel
+@model VerifyPhoneViewModel
+@{
     ViewData["Title"] = "會員註冊 - 驗證手機號碼";
+    var activePage = TempData["activePage"]?.ToString();
 }
 
-@await Html.PartialAsync("_PartialRegisterActiveProgress")
+@await Html.PartialAsync("_PartialRegisterActiveProgress",activePage)
 
-<form action="" method="post" class="w-100 text-light position-absolute top-50 translate-middle-y">
+<form asp-action="RegisterVerifyPhone" method="post" class="w-100 text-light position-absolute top-50 translate-middle-y">
     <div class="row">
         <div class="col-4 mx-auto d-flex flex-column gap-3 p-5 shadow-lg bg-white-aqua">
             <h1 class="text-start title-text  mb-3">會員註冊 - 驗證手機號碼</h1>
@@ -16,13 +19,12 @@
                         </span>
                         <div class="form-floating is-invalid">
                             <!-- is-invalid -->
-                            <input type="text" class=" is-invalid form-control rounded-0 pe-5" id="floatingInputGroup2"
+                            <input type="tel" class="form-control rounded-0 pe-5"  asp-for="PhoneNumber"
                                    placeholder="Username" required>
-                            <label for="floatingInputGroup2">請輸入手機號碼</label>
+                            <label asp-for="PhoneNumber">請輸入手機號碼</label>
                         </div>
-                        <div class="invalid-feedback">
-                            Please choose a username.
-                        </div>
+                        <span class="invalid-feedback d-block opacity-100" asp-validation-for="PhoneNumber">
+                        </span>
                     </div>
                 </div>
             </div>

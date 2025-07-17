@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
+using zuHause.Data.Configurations;
 
 namespace zuHause.Models;
 
@@ -75,6 +76,8 @@ public partial class ZuHauseContext : DbContext
 
     public virtual DbSet<FurnitureRentalContract> FurnitureRentalContracts { get; set; }
 
+    public virtual DbSet<Image> Images { get; set; }
+
     public virtual DbSet<InventoryEvent> InventoryEvents { get; set; }
 
     public virtual DbSet<ListingPlan> ListingPlans { get; set; }
@@ -126,8 +129,13 @@ public partial class ZuHauseContext : DbContext
     public virtual DbSet<UserUpload> UserUploads { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        if (!optionsBuilder.IsConfigured)
+        {
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer("Server=tcp:zuhause.database.windows.net,1433;Initial Catalog=zuHause;Persist Security Info=False;User ID=zuhause;Password=DB$MSIT67;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;");
+            optionsBuilder.UseSqlServer("Server=tcp:zuhause.database.windows.net,1433;Initial Catalog=zuHause;Persist Security Info=False;User ID=zuhause;Password=DB$MSIT67;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;");
+        }
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -302,7 +310,11 @@ public partial class ZuHauseContext : DbContext
 
         modelBuilder.Entity<Approval>(entity =>
         {
-            entity.ToTable("approvals", tb => tb.HasComment("審核主檔"));
+            entity.ToTable("approvals", tb =>
+                {
+                    tb.HasComment("審核主檔");
+                    tb.HasTrigger("trg_approvals_status_sync");
+                });
 
             entity.HasIndex(e => e.ApplicantMemberId, "IX_approvals_applicantMemberID");
 
@@ -316,9 +328,21 @@ public partial class ZuHauseContext : DbContext
 
             entity.HasIndex(e => new { e.StatusCategory, e.StatusCode }, "IX_approvals_status_category");
 
-            entity.HasIndex(e => new { e.ModuleCode, e.SourceId }, "UQ_approvals_module_source")
+            entity.HasIndex(e => new { e.ModuleCode, e.SourcePropertyId }, "UQ_approvals_module_source")
                 .IsUnique()
                 .HasFillFactor(100);
+
+            entity.HasIndex(e => e.CreatedAt, "IX_approvals_createdAt");
+
+            entity.HasIndex(e => e.CurrentApproverId, "IX_approvals_currentApproverID");
+
+            entity.HasIndex(e => e.ModuleCode, "IX_approvals_moduleCode");
+
+            entity.HasIndex(e => e.StatusCode, "IX_approvals_statusCode");
+
+            entity.HasIndex(e => new { e.StatusCategory, e.StatusCode }, "IX_approvals_status_category");
+
+            entity.HasIndex(e => new { e.ModuleCode, e.ApplicantMemberId, e.SourcePropertyId }, "UQ_approvals_member_module").IsUnique();
 
             entity.Property(e => e.ApprovalId)
                 .HasComment("審核ID (自動遞增，從701開始)")
@@ -338,9 +362,9 @@ public partial class ZuHauseContext : DbContext
                 .HasMaxLength(20)
                 .HasComment("模組代碼")
                 .HasColumnName("moduleCode");
-            entity.Property(e => e.SourceId)
-                .HasComment("來源ID")
-                .HasColumnName("sourceID");
+            entity.Property(e => e.SourcePropertyId)
+                .HasComment("審核房源ID")
+                .HasColumnName("sourcePropertyID");
             entity.Property(e => e.StatusCategory)
                 .HasMaxLength(20)
                 .HasComputedColumnSql("(CONVERT([nvarchar](20),N'APPROVAL_STATUS'))", true)
@@ -361,9 +385,8 @@ public partial class ZuHauseContext : DbContext
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_approvals_applicant");
 
-            entity.HasOne(d => d.Source).WithMany(p => p.Approvals)
-                .HasForeignKey(d => d.SourceId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
+            entity.HasOne(d => d.SourceProperty).WithMany(p => p.Approvals)
+                .HasForeignKey(d => d.SourcePropertyId)
                 .HasConstraintName("FK_approvals_Property");
 
             entity.HasOne(d => d.SystemCode).WithMany(p => p.Approvals)
@@ -397,7 +420,7 @@ public partial class ZuHauseContext : DbContext
                 .HasComment("操作類別 (計算欄位)")
                 .HasColumnName("actionCategory");
             entity.Property(e => e.ActionNote)
-                .HasComment("操作備註")
+                .HasComment("內部操作備註")
                 .HasColumnName("actionNote");
             entity.Property(e => e.ActionType)
                 .HasMaxLength(20)
@@ -1645,6 +1668,33 @@ public partial class ZuHauseContext : DbContext
                 .HasConstraintName("FK_furnitureRentalContracts_order");
         });
 
+        modelBuilder.Entity<Image>(entity =>
+        {
+            entity.HasKey(e => e.ImageId).HasName("PK__Images__7516F70C0063CFAC");
+
+            entity.ToTable(tb => tb.HasComment("圖片表"));
+
+            entity.HasIndex(e => new { e.EntityType, e.EntityId, e.Category, e.DisplayOrder, e.IsActive }, "IX_Images_EntityType_EntityId_Covering");
+
+            entity.HasIndex(e => new { e.EntityType, e.EntityId, e.Category, e.DisplayOrder }, "IX_Images_UQ_DisplayOrder")
+                .IsUnique()
+                .HasFilter("([DisplayOrder] IS NOT NULL)");
+
+            entity.HasIndex(e => e.ImageGuid, "UQ_Images_ImageGuid").IsUnique();
+
+            entity.Property(e => e.Category).HasMaxLength(50);
+            entity.Property(e => e.EntityType).HasMaxLength(50);
+            entity.Property(e => e.ImageGuid).HasDefaultValueSql("(newsequentialid())");
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.MimeType).HasMaxLength(50);
+            entity.Property(e => e.OriginalFileName).HasMaxLength(255);
+            entity.Property(e => e.StoredFileName)
+                .HasMaxLength(41)
+                .IsUnicode(false)
+                .HasComputedColumnSql("(lower(CONVERT([char](36),[ImageGuid]))+case [MimeType] when 'image/webp' then '.webp' when 'image/jpeg' then '.jpg' when 'image/png' then '.png' else '.bin' end)", true);
+            entity.Property(e => e.UploadedAt).HasDefaultValueSql("(getutcdate())");
+        });
+
         modelBuilder.Entity<InventoryEvent>(entity =>
         {
             entity.HasKey(e => e.FurnitureInventoryId);
@@ -1700,8 +1750,7 @@ public partial class ZuHauseContext : DbContext
             entity.ToTable("listingPlans", tb => tb.HasComment("刊登費方案表"));
 
             entity.Property(e => e.PlanId)
-                .ValueGeneratedNever()
-                .HasComment("方案ID")
+                .HasComment("刊登費方案ID")
                 .HasColumnName("planId");
             entity.Property(e => e.CreatedAt)
                 .HasPrecision(0)
@@ -1748,8 +1797,6 @@ public partial class ZuHauseContext : DbContext
             entity.ToTable("members", tb => tb.HasComment("會員資料表"));
 
             entity.HasIndex(e => e.Email, "IX_members_email");
-
-            entity.HasIndex(e => e.NationalIdNo, "IX_members_nationalIdNo").IsUnique();
 
             entity.HasIndex(e => e.PhoneNumber, "IX_members_phone");
 
@@ -2061,6 +2108,7 @@ public partial class ZuHauseContext : DbContext
             entity.ToTable("properties", tb =>
                 {
                     tb.HasComment("房源資料表");
+                    tb.HasTrigger("trg_properties_status_protection");
                     tb.HasTrigger("trg_properties_validate_landlord");
                 });
 
@@ -3088,6 +3136,9 @@ public partial class ZuHauseContext : DbContext
                 .HasConstraintName("FK_userUploads_member");
         });
         modelBuilder.HasSequence<int>("seq_memberID");
+
+        // 套用 ImageConfiguration
+        modelBuilder.ApplyConfiguration(new ImageConfiguration());
 
         OnModelCreatingPartial(modelBuilder);
     }
