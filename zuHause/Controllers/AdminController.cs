@@ -21,7 +21,7 @@ namespace zuHause.Controllers
 
         public IActionResult admin_usersList()
         {
-            var viewModel = new AdminUserListViewModel();
+            var viewModel = new AdminUserListViewModel(_context);
             return View(viewModel);
         }
 

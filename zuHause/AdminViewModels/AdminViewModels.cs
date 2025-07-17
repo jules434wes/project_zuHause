@@ -26,6 +26,125 @@ namespace zuHause.AdminViewModels
             };
         }
 
+        public AdminUserListViewModel(ZuHauseContext context)
+        {
+            PageTitle = "會員管理";
+            Items = LoadUsersFromDatabase(context);
+            TotalCount = Items.Count;
+            PendingVerificationUsers = LoadPendingVerificationUsers(context);
+            PendingLandlordUsers = LoadPendingLandlordUsers(context);
+            
+            // 批量操作設定
+            BulkConfig = new BulkActionConfig
+            {
+                SelectAllId = "selectAllUsers",
+                CheckboxClass = "user-checkbox",
+                BulkButtonId = "bulkMessageBtn",
+                BulkButtonText = "批量發送訊息"
+            };
+        }
+
+        public List<MemberData> PendingVerificationUsers { get; set; } = new List<MemberData>();
+        public List<MemberData> PendingLandlordUsers { get; set; } = new List<MemberData>();
+
+        private static string TruncateText(string text, int maxLength)
+        {
+            if (string.IsNullOrEmpty(text) || text.Length <= maxLength)
+                return text;
+            
+            return text.Substring(0, maxLength) + "...";
+        }
+
+        private List<MemberData> LoadUsersFromDatabase(ZuHauseContext context)
+        {
+            var members = context.Members
+                .OrderByDescending(m => m.CreatedAt)
+                .Select(m => new MemberData
+                {
+                    MemberID = m.MemberId.ToString(),
+                    MemberName = m.MemberName,
+                    Email = m.Email,
+                    NationalNo = m.NationalIdNo ?? "",
+                    PhoneNumber = m.PhoneNumber,
+                    AccountStatus = m.IsActive ? "active" : "inactive",
+                    VerificationStatus = m.IdentityVerifiedAt.HasValue ? "verified" : "pending",
+                    IsLandlord = m.IsLandlord,
+                    RegistrationDate = m.CreatedAt.ToString("yyyy-MM-dd"),
+                    LastLoginTime = m.LastLoginAt.HasValue ? m.LastLoginAt.Value.ToString("yyyy-MM-dd") : "--"
+                })
+                .ToList();
+
+            return members;
+        }
+
+        private List<MemberData> LoadPendingVerificationUsers(ZuHauseContext context)
+        {
+            var pendingUsers = context.Members
+                .Join(context.Approvals,
+                      m => m.MemberId,
+                      a => a.ApplicantMemberId,
+                      (m, a) => new { Member = m, Approval = a })
+                .Where(x => x.Member.IsActive && 
+                           x.Approval.ModuleCode == "IDENTITY" && 
+                           x.Approval.StatusCode == "PENDING")
+                .OrderBy(x => x.Approval.CreatedAt)
+                .Select(x => new MemberData
+                {
+                    MemberID = x.Member.MemberId.ToString(),
+                    MemberName = x.Member.MemberName,
+                    Email = x.Member.Email,
+                    NationalNo = x.Member.NationalIdNo ?? "",
+                    PhoneNumber = x.Member.PhoneNumber,
+                    AccountStatus = x.Member.IsActive ? "active" : "inactive",
+                    VerificationStatus = "pending",
+                    IsLandlord = x.Member.IsLandlord,
+                    RegistrationDate = x.Member.CreatedAt.ToString("yyyy-MM-dd"),
+                    LastLoginTime = x.Member.LastLoginAt.HasValue ? x.Member.LastLoginAt.Value.ToString("yyyy-MM-dd") : "--",
+                    ApplyTime = x.Approval.CreatedAt.ToString("yyyy-MM-dd"),
+                    HasIdentityUploads = context.UserUploads.Any(u => u.MemberId == x.Member.MemberId && 
+                                                                     u.ModuleCode == "MemberInfo" && 
+                                                                     u.IsActive &&
+                                                                     (u.UploadTypeCode == "USER_ID_FRONT" || u.UploadTypeCode == "USER_ID_BACK"))
+                })
+                .ToList();
+
+            return pendingUsers;
+        }
+
+        private List<MemberData> LoadPendingLandlordUsers(ZuHauseContext context)
+        {
+            var pendingLandlords = context.Members
+                .Join(context.Approvals,
+                      m => m.MemberId,
+                      a => a.ApplicantMemberId,
+                      (m, a) => new { Member = m, Approval = a })
+                .Where(x => x.Member.IsActive && 
+                           x.Approval.ModuleCode == "LANDLORD" && 
+                           x.Approval.StatusCode == "PENDING")
+                .OrderBy(x => x.Approval.CreatedAt)
+                .Select(x => new MemberData
+                {
+                    MemberID = x.Member.MemberId.ToString(),
+                    MemberName = x.Member.MemberName,
+                    Email = x.Member.Email,
+                    NationalNo = x.Member.NationalIdNo ?? "",
+                    PhoneNumber = x.Member.PhoneNumber,
+                    AccountStatus = x.Member.IsActive ? "active" : "inactive",
+                    VerificationStatus = "pending",
+                    IsLandlord = x.Member.IsLandlord,
+                    RegistrationDate = x.Member.CreatedAt.ToString("yyyy-MM-dd"),
+                    LastLoginTime = x.Member.LastLoginAt.HasValue ? x.Member.LastLoginAt.Value.ToString("yyyy-MM-dd") : "--",
+                    ApplyTime = x.Approval.CreatedAt.ToString("yyyy-MM-dd"),
+                    HasIdentityUploads = context.UserUploads.Any(u => u.MemberId == x.Member.MemberId && 
+                                                                     u.ModuleCode == "MemberInfo" && 
+                                                                     u.IsActive &&
+                                                                     (u.UploadTypeCode == "USER_ID_FRONT" || u.UploadTypeCode == "USER_ID_BACK"))
+                })
+                .ToList();
+
+            return pendingLandlords;
+        }
+
         private List<MemberData> GenerateMockUsers()
         {
             return new List<MemberData>
@@ -211,6 +330,9 @@ namespace zuHause.AdminViewModels
         public string VerificationStatus { get; set; } = string.Empty;
         public bool IsLandlord { get; set; }
         public string RegistrationDate { get; set; } = string.Empty;
+        public string LastLoginTime { get; set; } = string.Empty;
+        public string ApplyTime { get; set; } = string.Empty;
+        public bool HasIdentityUploads { get; set; } = false;
         
         // 額外屬性用於UI顯示
         public bool IsActive => AccountStatus == "active";

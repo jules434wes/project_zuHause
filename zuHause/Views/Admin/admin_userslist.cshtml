@@ -21,12 +21,12 @@
                 </li>
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="pending-verification-tab" data-bs-toggle="tab" data-bs-target="#pending-verification" type="button" role="tab" aria-controls="pending-verification" aria-selected="false">
-                        等待身分證驗證 <span class="badge bg-warning ms-2">2</span>
+                        等待身分證驗證 <span class="badge bg-warning ms-2">@Model.PendingVerificationUsers.Count</span>
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="pending-landlord-tab" data-bs-toggle="tab" data-bs-target="#pending-landlord" type="button" role="tab" aria-controls="pending-landlord" aria-selected="false">
-                        申請成為房東 <span class="badge bg-warning ms-2">2</span>
+                        申請成為房東 <span class="badge bg-warning ms-2">@Model.PendingLandlordUsers.Count</span>
                     </button>
                 </li>
             </ul>
@@ -71,6 +71,7 @@
                         ViewData["BulkBtnId"] = "bulkMessageBtnPending";
                         ViewData["SelectAllId"] = "selectAllUsersPending";
                         ViewData["PaginationLabel"] = "待驗證會員分頁";
+                        ViewData["Users"] = Model.PendingVerificationUsers;
                     }
                     @await Html.PartialAsync("_AdminPartial/_UserManagement/_UserTable")
                 </div>
@@ -94,6 +95,7 @@
                         ViewData["BulkBtnId"] = "bulkMessageBtnLandlord";
                         ViewData["SelectAllId"] = "selectAllUsersLandlord";
                         ViewData["PaginationLabel"] = "申請房東分頁";
+                        ViewData["Users"] = Model.PendingLandlordUsers;
                     }
                     @await Html.PartialAsync("_AdminPartial/_UserManagement/_UserTable")
                 </div>

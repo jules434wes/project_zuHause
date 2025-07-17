@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>個別屋源詳情頁 Demo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; }
+        .card-header, .modal-header { background-color: #e9ecef; }
+        .key-value-list dt { font-weight: 600; }
+        .table-hover tbody tr:hover { background-color: rgba(0, 0, 0, 0.05); cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <div class="container-fluid p-4">
+        <!-- 1. 頂部標題區 & 快速操作區 -->
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center flex-wrap">
+                    <div>
+                        <h2 class="mb-1">市府捷運站溫馨兩房</h2>
+                        <p class="text-muted mb-1">屋源ID: P001</p>
+                        <div class="d-flex align-items-center mb-1">
+                            <p class="text-muted mb-0 me-2">房東: 王大明 (ID: 12345)</p>
+                            <a href="#" class="btn btn-outline-secondary btn-sm"><i class="bi bi-person-circle me-1"></i>查看房東</a>
+                        </div>
+                        <div>
+                            <span class="badge fs-6 text-bg-warning">待審核</span>
+                            <span class="badge fs-6 text-bg-secondary">未上架</span>
+                        </div>
+                    </div>
+                    <div class="text-end mt-2 mt-md-0">
+                        <button class="btn btn-outline-danger"><i class="bi bi-trash me-1"></i>強制下架</button>
+                        <button class="btn btn-outline-primary"><i class="bi bi-pencil-square me-1"></i>編輯屋源</button>
+                        <a href="#" class="btn btn-outline-info" target="_blank"><i class="bi bi-arrows-angle-expand me-1"></i>查看前台頁面</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. 主頁籤導航區 -->
+        <ul class="nav nav-tabs" id="propertyDetailsTabs" role="tablist">
+            <li class="nav-item" role="presentation"><button class="nav-link active" id="info-tab" data-bs-toggle="tab" data-bs-target="#info-panel" type="button">主要資訊</button></li>
+            <li class="nav-item" role="presentation"><button class="nav-link" id="media-tab" data-bs-toggle="tab" data-bs-target="#media-panel" type="button">照片與設備</button></li>
+            <li class="nav-item" role="presentation"><button class="nav-link" id="lease-history-tab" data-bs-toggle="tab" data-bs-target="#lease-history-panel" type="button">歷史租約</button></li>
+            <li class="nav-item" role="presentation"><button class="nav-link" id="complaint-history-tab" data-bs-toggle="tab" data-bs-target="#complaint-history-panel" type="button">收到的檢舉 <span class="badge rounded-pill text-bg-danger">1</span></button></li>
+            <li class="nav-item" role="presentation"><button class="nav-link" id="approval-history-tab" data-bs-toggle="tab" data-bs-target="#approval-history-panel" type="button">審核記錄</button></li>
+        </ul>
+
+        <!-- 3. 頁籤內容顯示區 -->
+        <div class="tab-content pt-3" id="propertyDetailsTabsContent">
+            <!-- 主要資訊頁籤 -->
+            <div class="tab-pane fade show active" id="info-panel" role="tabpanel">
+                <div class="row">
+                    <div class="col-lg-8">
+                        <div class="card mb-4">
+                            <div class="card-header"><h5 class="mb-0">屋源詳細資料</h5></div>
+                            <div class="card-body"><dl class="row">
+                                <dt class="col-sm-3">地址</dt><dd class="col-sm-9">台北市信義區信義路五段7號</dd>
+                                <dt class="col-sm-3">租金與押金</dt><dd class="col-sm-9">NT$ 35,000 / 月，押金 2 個月</dd>
+                                <dt class="col-sm-3">格局與坪數</dt><dd class="col-sm-9">2 房 1 廳 1 衛，25 坪</dd>
+                                <dt class="col-sm-3">樓層</dt><dd class="col-sm-9">15樓 / 總樓層 30樓</dd>
+                                <dt class="col-sm-3">詳細描述</dt><dd class="col-sm-9">高樓層景觀佳，採光通風良好，附基本傢俱。</dd>
+                                <dt class="col-sm-3">特殊守則</dt><dd class="col-sm-9">禁菸、禁寵物。</dd>
+                            </dl></div>
+                        </div>
+                        <div class="card mb-4">
+                            <div class="card-header"><h5 class="mb-0">刊登資訊</h5></div>
+                            <div class="card-body"><dl class="row mb-0">
+                                <dt class="col-sm-3">刊登方案</dt><dd class="col-sm-9">標準方案</dd>
+                                <dt class="col-sm-3">刊登費用</dt><dd class="col-sm-9">NT$ 900</dd>
+                                <dt class="col-sm-3">刊登天數</dt><dd class="col-sm-9">30 天</dd>
+                                <dt class="col-sm-3">上架日期</dt><dd class="col-sm-9">-</dd>
+                                <dt class="col-sm-3">到期日期</dt><dd class="col-sm-9">-</dd>
+                            </dl></div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="card mb-4">
+                            <div class="card-header"><h5 class="mb-0">審核與狀態管理</h5></div>
+                            <div class="card-body"><p><strong>審核狀態:</strong> <span class="fw-bold">待審核</span></p><p><strong>付款狀態:</strong> <span class="fw-bold">未付款</span></p><div class="d-grid gap-2">
+                                <a href="#" class="btn btn-info" target="_blank"><i class="bi bi-download me-1"></i>查看產權證明</a>
+                                <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#approveModal"><i class="bi bi-check2-circle me-1"></i>通過審核</button>
+                                <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#rejectModal"><i class="bi bi-x-lg me-1"></i>駁回申請</button>
+                                
+                            </div></div>
+                        </div>
+                        
+                    </div>
+                </div>
+            </div>
+
+            <!-- 照片與設備頁籤 -->
+            <div class="tab-pane fade" id="media-panel" role="tabpanel">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card mb-4">
+                            <div class="card-header"><h5 class="mb-0">屋源照片</h5></div>
+                            <div class="card-body"><div class="row g-2">
+                                <div class="col-3"><img src="../wwwroot/uploads/example.png" class="img-fluid rounded" alt="照片1"></div>
+                                <div class="col-3"><img src="../wwwroot/uploads/example.png" class="img-fluid rounded" alt="照片2"></div>
+                                <div class="col-3"><img src="../wwwroot/uploads/example.png" class="img-fluid rounded" alt="照片3"></div>
+                                <div class="col-3"><img src="../wwwroot/uploads/example.png" class="img-fluid rounded" alt="照片4"></div>
+                            </div></div>
+                        </div>
+                        <div class="card mb-4">
+                            <div class="card-header"><h5 class="mb-0">設備與費用</h5></div>
+                            <div class="card-body">                        <h6>設備清單</h6>
+                        <p>
+                            <span class="badge text-bg-light border fs-6 me-1">冷氣</span>
+                            <span class="badge text-bg-light border fs-6 me-1">冰箱</span>
+                            <span class="badge text-bg-light border fs-6 me-1">洗衣機</span>
+                            <span class="badge text-bg-light border fs-6 me-1">網路</span>
+                        </p><hr><h6>費用說明</h6><dl class="row">
+                                <dt class="col-sm-3">水電費</dt><dd class="col-sm-9">依台電、台水帳單</dd>
+                                <dt class="col-sm-3">管理費</dt><dd class="col-sm-9">NT$ 2,000 / 月</dd>
+                                <dt class="col-sm-3">停車費</dt><dd class="col-sm-9">無</dd>
+                            </dl></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 歷史租約頁籤 -->
+            <div class="tab-pane fade" id="lease-history-panel" role="tabpanel">
+                <div class="card card-body table-responsive"><table class="table table-hover"><thead><tr><th>合約ID</th><th>租客姓名</th><th>租期</th><th>合約狀態</th></tr></thead><tbody><tr><td>C001</td><td>張三</td><td>2023-01-01 ~ 2023-12-31</td><td><span class="badge text-bg-secondary">已結束</span></td></tr></tbody></table></div>
+            </div>
+            <!-- 收到的檢舉頁籤 -->
+            <div class="tab-pane fade" id="complaint-history-panel" role="tabpanel">
+                <div class="card card-body table-responsive"><table class="table table-hover"><thead><tr><th>投訴單號</th><th>投訴人</th><th>投訴內容摘要</th><th>投訴時間</th><th>處理狀態</th><th>操作</th></tr></thead><tbody><tr><td>CMPL-0123</td><td>李四</td><td>照片與實際屋況不符...</td><td>2024-06-10 15:20:00</td><td><span class="badge text-bg-success">已回覆</span></td><td><button class="btn btn-sm btn-outline-primary">前往處理</button></td></tr></tbody></table></div>
+            </div>
+            <!-- 審核記錄頁籤 -->
+            <div class="tab-pane fade" id="approval-history-panel" role="tabpanel">
+                <div class="card card-body table-responsive"><table class="table table-hover"><thead><tr><th>操作時間</th><th>操作類型</th><th>操作管理員</th><th>備註/原因</th></tr></thead><tbody><tr><td>2024-07-12 10:00:00</td><td>提交申請</td><td>房東 (王大明)</td><td>-</td></tr></tbody></table></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div class="modal fade" id="approveModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">確認通過審核</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><p>您確定要通過此屋源的審核嗎？</p><p class="text-muted">通過後，系統將會通知房東進行付款。</p></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button><button type="button" class="btn btn-success">確定通過</button></div></div></div></div>
+    <div class="modal fade" id="rejectModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">駁回申請</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><p>您將駁回此屋源的申請。</p><div class="mb-3"><label for="rejectionReason" class="form-label">駁回原因 (將會通知房東)</label><textarea class="form-control" id="rejectionReason" rows="3"></textarea></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button><button type="button" class="btn btn-danger">確定駁回</button></div></div></div></div>
+    <div class="modal fade" id="markAsPaidModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">手動標記為已付款</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><p>您確定要手動將此屋源標記為「已付款」嗎？</p><p class="text-danger">請僅在確認收到款項後執行此操作。</p></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button><button type="button" class="btn btn-primary">確定已付款</button></div></div></div></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
