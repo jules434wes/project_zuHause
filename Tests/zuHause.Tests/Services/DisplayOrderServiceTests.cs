@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Xunit;
 using zuHause.Models;
 using zuHause.Enums;
@@ -16,6 +17,7 @@ namespace zuHause.Tests.Services
         {
             var options = new DbContextOptionsBuilder<ZuHauseContext>()
                 .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+                .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))
                 .Options;
 
             _context = new ZuHauseContext(options);
