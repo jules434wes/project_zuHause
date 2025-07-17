@@ -197,7 +197,7 @@ namespace zuHause.Controllers
         public IActionResult RentalCart()
         {
             SetCurrentMemberInfo();
-            int memberId = _currentMemberId;
+            // int memberId = _currentMemberId;
 
             if (ViewBag.CurrentMemberId == null)
             {
@@ -356,7 +356,7 @@ namespace zuHause.Controllers
                 return RedirectToAction("ProductPurchasePage", new { id = productId });
             }
 
-            int rentalDays = (contract.EndDate.Value.ToDateTime(new TimeOnly(0)) - DateTime.Now).Days;
+            // int rentalDays = (contract.EndDate.Value.ToDateTime(new TimeOnly(0)) - DateTime.Now).Days;
 
             // 找到或建立購物車
             var cart = _context.FurnitureCarts
@@ -370,7 +370,7 @@ namespace zuHause.Controllers
                 {
                     FurnitureCartId = Guid.NewGuid().ToString(), 
                     MemberId = memberId,
-                    PropertyId = propertyId,
+                    PropertyId = selectedPropertyId,
                     Status = "active",
                     CreatedAt = DateTime.Now,
 

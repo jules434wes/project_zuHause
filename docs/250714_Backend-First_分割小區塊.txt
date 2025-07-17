@@ -1,0 +1,173 @@
+請幫我建立一個**房源搜尋 API**，使用真實資料庫而非 Mock/Fake 資料。
+
+---
+### 【開發原則】
+- 使用真實的 Entity Framework Core 資料庫。
+- 避免任何 Mock、Fake 或假資料。
+- 按照真實用戶操作流程建立測試資料。
+- 資料必須符合實際業務邏輯和關聯性。
+- 切小區塊完成，團隊開發作業，須一個區塊完成就可以快速 PUSH，避免開發過久造成衝突過多。
+
+---
+### 【資料建立策略】
+請建立一個資料播種機制 (`RealDataSeeder` 類別)，包含：
+1.  **真實的房東註冊流程資料：** 確保房東帳戶是活躍且已驗證的。
+2.  **真實的房源建立流程資料：** 包含多筆不同特徵（地區、價格、房型、設備、狀態）的房源數據，且與房東正確關聯，並設定為「已發布」狀態。
+3.  **真實的用戶互動資料：** (請具體化，例如：部分房源的點擊記錄、收藏記錄等，這些數據將與特定用戶和房源關聯)。
+4.  所有關聯資料都要正確建立，確保外鍵約束。
+5.  資料時間戳記要符合邏輯順序，模擬真實世界中的發佈和更新時間。
+
+---
+### 【具體需求】
+1.  建立 `RealDataSeeder` 類別，並實作上述資料建立策略。
+2.  在開發環境啟動時自動執行資料重置 (`DatabaseTestHelper.ResetTestDataAsync`) 和播種，確保每次開發啟動時都有乾淨且一致的測試資料集。
+3.  **房源搜尋 API 端點：**
+    * **GET /api/properties/search**
+    * **請求參數 (Query Parameters)：**
+        * `location`: 字串，按地區或城市搜尋。
+        * `minPrice`, `maxPrice`: 數值，價格範圍。
+        * `propertyType`: 字串，房源類型（例如：公寓、別墅）。
+        * `amenities`: 字串陣列 (例如：`amenities=Wifi&amenities=Parking`)，按設備篩選。
+        * `keywords`: 字串，在標題或描述中進行模糊搜尋。
+        * `sortBy`: 字串，排序字段（例如：`priceAsc`, `priceDesc`, `newest`）。
+        * `pageNumber`: 數值，分頁頁碼，預設為 1。
+        * `pageSize`: 數值，每頁項目數，預設為 10。
+    * **回應格式：** 返回一個包含 `List<PropertySearchResultDto>` 和總頁數/總記錄數的 JSON 物件。
+    * **`PropertySearchResultDto` 應包含：** `Id`, `Title`, `Location`, `Price`, `PropertyType`, `MainImageUrl` (首張圖片URL), `Bedrooms`, `Bathrooms`, `Area`。
+4.  **驗證邏輯：** 對所有輸入參數進行基本驗證（例如，價格範圍的數值有效性，`pageNumber`/`pageSize` 為正整數等）。
+
+---
+### 【技術規格】
+- .NET 8 + ASP.NET Core Web API (作為服務提供)
+- Entity Framework Core (真實資料庫，例如 SQL Server 或 PostgreSQL)
+- 不使用 InMemory 或 SQLite。
+- 使用 Repository Pattern 或直接在 Service Layer 中使用 `DbContext`。
+
+---
+### 【測試方式】
+建立簡單的 ASP.NET Core MVC 測試頁面，透過 JavaScript (Fetch API 或 Axios) 直接呼叫 `/api/properties/search` 端點，並在頁面上展示搜尋結果。確保資料的真實性和一致性。
+
+---
+
+請建立**房源申請 API**，需要真實的資料流程。
+
+---
+### 【前置資料需求】
+在建立 API 前，請先確保資料庫中有：
+1.  **真實的房東資料 (已驗證身份，且至少擁有一筆已發布房源)。**
+2.  **真實的房源資料 (已發布狀態，且尚未被申請或租用)。**
+3.  **真實的租客資料 (已註冊且未禁用)。**
+
+---
+### 【API 實作需求】
+1.  **API 端點：**
+    * **POST /api/properties/{propertyId}/applications**
+    * **請求體 (Request Body)：**
+        ```json
+        {
+          // 如果申請需要額外資料 (例如：預計入住日期、留言等)，請在此定義
+          // "applicationMessage": "我對此房源非常感興趣，希望預約看房。"
+        }
+        ```
+    * **URL 參數：** `propertyId` (數值)，代表要申請的房源 ID。
+2.  **業務邏輯與驗證：**
+    * **驗證房源存在：** 確保 `propertyId` 對應的房源存在於資料庫中。
+    * **驗證房源狀態：** 確保房源處於「可申請」狀態（例如：`IsPublished = true` 且 `IsRented = false`）。
+    * **驗證申請者身份：** 假設請求來自一個已驗證的租客用戶。請利用 ASP.NET Core 的身份驗證機制（例如 `[Authorize]` 屬性），獲取當前用戶的 ID 作為申請者。
+    * **檢查重複申請：** 確保同一個租客不能對同一個房源重複提交活躍的申請。
+    * **建立真實的申請記錄：** 在 `RentalApplications` 表中插入一條新的申請記錄，包含租客 ID、房源 ID、申請時間、初始狀態（例如 `Pending`）。
+    * **更新相關的狀態：** (請具體化，例如：) 房源的 `PendingApplicationsCount` 增加，或租客的 `TotalApplicationsCount` 增加。
+
+3.  **API 回應：**
+    * **成功：** 返回 `201 Created` 狀態碼，並在回應體中包含新建立的申請記錄的簡要 DTO (例如：`ApplicationId`, `Status`, `ApplicationDate`)。
+    * **失敗：** 返回適當的 HTTP 狀態碼和帶有清晰錯誤訊息的 JSON 物件。例如：
+        * `400 Bad Request`: 輸入驗證失敗或重複申請。
+        * `404 Not Found`: 房源不存在。
+        * `403 Forbidden`: 用戶未經授權或非租客角色嘗試申請。
+
+---
+### 【資料播種需求】
+請提供建立前置資料的公共方法，供測試和開發使用：
+-   `RealDataSeeder.CreateTestLandlordWithProperty()`：建立一個活躍房東及其一個已發布且可申請的房源。
+-   `RealDataSeeder.CreateTestTenant()`：建立一個活躍租客。
+-   確保所有關聯資料（如房東與房源、租客與申請）正確建立。
+
+---
+### 【避免事項】
+- 不要使用 Mock Repository。
+- 不要使用假的資料驗證，而是使用真實的 ASP.NET Core 模型驗證和業務邏輯驗證。
+- 不要跳過任何業務邏輯檢查（如房源狀態、重複申請）。
+- 確保所有資料庫約束（外鍵、唯一約束等）都能正確執行。
+
+---
+
+請建立**房源圖片上傳 API**，需要完整的真實流程。
+
+---
+### 【業務流程與驗證】
+1.  **身份驗證：** 請求用戶必須是已驗證的房東。
+2.  **所有權驗證：** 用戶必須是該房源的擁有者。
+3.  **房源存在與狀態驗證：** 房源必須存在，且處於可編輯狀態（例如：草稿或已發布但尚未租用）。
+4.  **圖片檔案驗證：**
+    * 必須真實存在且是有效的圖片格式（例如：JPG, PNG）。
+    * 限制檔案大小（例如：最大 5MB）。
+    * 限制圖片數量（例如：每個房源最多 10 張圖片）。
+5.  **圖片順序和主圖設定：** 考慮如何更新圖片顯示順序和設定某張圖片為該房源的主圖。
+
+---
+### 【API 實作需求】
+1.  **API 端點：**
+    * **POST /api/properties/{propertyId}/images**
+    * **請求類型：** `multipart/form-data`
+    * **請求體：** 接受多個 `IFormFile` 作為圖片檔案。
+2.  **真實檔案處理：**
+    * 接收上傳的圖片檔案。
+    * **建立真實的圖片縮圖：** 對每張上傳圖片產生至少兩種尺寸的縮圖（例如：`Thumbnail` 150x100px, `Medium` 800x600px）。
+    * **檔案儲存：** 將原始圖片和縮圖儲存到專案的**本地檔案系統**的指定路徑中（例如：`wwwroot/images/properties/{propertyId}/`）。確保路徑正確，且會自動創建不存在的目錄。
+    * **更新資料庫記錄：** 在 `PropertyImages` 表中，為每張新上傳的圖片建立記錄，包含檔案路徑、URL、尺寸、上傳時間等資訊，並與 `propertyId` 關聯。
+    * **圖片順序設定：** 在資料庫中包含一個 `Order` 字段，以便前端可以控制圖片顯示順序。
+    * **主圖設定：** 在資料庫中包含一個 `IsMainImage` 字段，標記哪張圖片是主圖。上傳時，如果這是第一張圖片，則自動設為主圖；如果已有多張，則讓 API 預留更新主圖的邏輯（或單獨的 PUT API）。
+3.  **API 回應：**
+    * **成功：** 返回 `200 OK` 或 `201 Created`，並包含上傳成功的圖片的簡要 DTO 列表 (例如：`ImageId`, `ImageUrl`, `IsMainImage`)。
+    * **失敗：** 返回適當的 HTTP 狀態碼和清晰錯誤訊息的 JSON 物件。例如：`400 Bad Request` (檔案驗證失敗), `403 Forbidden` (非擁有者), `404 Not Found` (房源不存在)。
+
+---
+### 【資料準備】
+請提供必要的測試資料建立方法，集成到 `RealDataSeeder` 或單獨的測試 Helper 中：
+-   `RealDataSeeder.CreateTestLandlordWithProperty(bool isDraft = true)`：建立一個已驗證的房東帳戶，以及其擁有的一個**草稿狀態或已發布**的房源（方便測試編輯）。
+-   建立**測試用的圖片檔案**，並設定正確的檔案路徑，以便程式碼能實際讀取和上傳這些檔案。請在專案中預留一個 `TestImages` 資料夾並提供幾個佔位圖。
+
+---
+### 【測試驗證】
+1.  **檔案系統驗證：** 上傳完成後，確保圖片檔案（包括縮圖）真的存在於指定的檔案系統路徑中。
+2.  **資料庫記錄驗證：** 確保 `PropertyImages` 資料表中新增了正確的記錄，`IsMainImage` 和 `Order` 字段符合預期。
+3.  **圖片顯示驗證：** 確保透過生成的 URL 可以正常存取和顯示上傳的圖片。
+
+---
+
+實際的開發流程：針對每個 API 開發時，請遵循以下步驟：
+
+1.  **業務流程分析與 API 契約確認：**
+    * 深入理解該 API 涉及的業務邏輯和前後置條件。
+    * 明確定義 API 的輸入 (Request DTO/Parameters) 和輸出 (Response DTO/Status Codes)，形成 API 契約。
+    * 定義所有業務規則和資料驗證邏輯。
+
+2.  **資料庫模型與關聯定義 (如果尚未定義)：**
+    * 根據 API 需求，定義或更新 Entity Framework Core 的實體模型 (`DbSet`) 和其之間的關聯（例如：`PropertyImage` 實體）。
+    * 透過 Code First Migrations 更新資料庫結構。
+
+3.  **資料播種方法開發 (Seed Data Helpers)：**
+    * 根據 API 的「前置資料需求」，在 `RealDataSeeder` 類別中編寫或擴展相應的 helper 方法（例如 `CreateTestLandlordWithProperty()`, `CreateTestImageFile()`）。
+    * 確保這些方法能建立具備所有必要關聯和狀態的真實測試資料。
+
+4.  **API 核心邏輯實作：**
+    * 在 ASP.NET Core `Controller` 中建立 API 端點。
+    * 實作業務邏輯層 (Service Layer) 的核心邏輯，包含資料讀取、寫入、更新和所有業務規則驗證。
+    * 確保所有資料庫操作都透過 Entity Framework Core 執行，且遵守資料庫約束。
+    * 處理檔案系統互動（如果適用，例如圖片上傳）。
+
+5.  **API 測試與驗證：**
+    * 利用上述步驟建立的播種方法，自動化地在測試前重置並建立乾淨的測試資料。
+    * 開發簡單的測試頁面或使用 Postman/Swagger UI，直接呼叫真實的 API 端點。
+    * 驗證 API 的成功回應和各種錯誤情境（例如：無效輸入、權限不足、資料不存在等）。
+    * 檢查資料庫狀態和檔案系統（如果適用），確保資料的真實性和一致性。

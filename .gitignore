@@ -33,6 +33,19 @@ project.fragment.lock.json
 project.nuget.cache
 artifacts/
 
+# AI and development tools - DO NOT COMMIT
+.claude/
+.claude-*
+.claude.md
+.gitmessage
+.vscode/claude-settings.json
+
+# Backup files
+*.backup
+
+# MCP and temporary files
+wsl-dotnet-setup.sh
+
 # ========================
 # ASP.NET Core 專案
 # ========================
