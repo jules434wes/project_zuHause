@@ -8,6 +8,14 @@
 
   <ItemGroup>
     <Folder Include="wwwroot\uploads\userPhoto\" />
+    <Compile Remove="Helpers\**" />
+    <Compile Remove="OldModels\**" />
+    <Content Remove="Helpers\**" />
+    <Content Remove="OldModels\**" />
+    <EmbeddedResource Remove="Helpers\**" />
+    <EmbeddedResource Remove="OldModels\**" />
+    <None Remove="Helpers\**" />
+    <None Remove="OldModels\**" />
   </ItemGroup>
 
   <ItemGroup>
