@@ -1,56 +1,88 @@
+﻿# ========================
+# Visual Studio 快取與暫存
+# ========================
 .vs/
 *.user
+*.suo
+*.psess
+*.vsp
+*.vsmdi
+*.Designer.cs
 
+# ========================
+# 編譯產物
+# ========================
 bin/
 obj/
-.github/workflows/
+build/
+out/
+TestResults/
+publish/
 
-*.nupkg
-project.lock.json
-project.assets.json
-*.nuget.cache
-*.nuget.dgspec.json
-*.nuget.g.props
-*.nuget.targets
-
-**/CopilotIndices/
-**/SemanticSymbols.*
-
-# Others
-*.suo
-*.cache
-*.db
-*.db-wal
-*.db-shm
-*.vshost.*
-*.log
-/Reference
-/CLAUDE.md
-/.claude
-node_modules/
-
-# Documentation folder (should not be committed)
-docs/
-
-# Third-party libraries
-wwwroot/lib/
-
-# NuGet related files
+# ========================
+# NuGet
+# ========================
+.nuget/
 packages/
+*.nupkg
 *.nuget.props
 *.nuget.targets
 project.assets.json
+project.lock.json
+project.fragment.lock.json
 project.nuget.cache
+artifacts/
 
-# AI and development tools - DO NOT COMMIT
+# ========================
+# ASP.NET Core 專案
+# ========================
+wwwroot/lib/
+*.db
+*.db-shm
+*.db-wal
+secrets.json
+
+# ========================
+# 設定檔 & 本機環境變數
+# ========================
+*.log
+*.env
+*.local.json
+appsettings.Development.json
+
+# ========================
+# IDE 類快取
+# ========================
+.idea/
+.vscode/
+*.DotSettings.user
+*.iml
+
+# ========================
+# 作業系統快取
+# ========================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ========================
+# AI 工具或助手檔案
+# ========================
 .claude/
+.claude
+.claude-credentials
 .gitmessage
 .vscode/claude-settings.json
+CLAUDE.md
+~/.nuget/
 
-# Backup files
+# ========================
+# 備份與暫存
+# ========================
+*.tmp
 *.backup
 
-# MCP and temporary files
-wsl-dotnet-setup.sh
-~/.nuget/
-/~/.nuget/packages
+# ========================
+# NodeJS（如果使用）
+# ========================
+node_modules/
