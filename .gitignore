@@ -44,6 +44,8 @@ project.nuget.cache
 
 # AI and development tools - DO NOT COMMIT
 .claude/
+.claude-*
+.claude.md
 .gitmessage
 .vscode/claude-settings.json
 
