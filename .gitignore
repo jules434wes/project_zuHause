@@ -88,6 +88,9 @@ desktop.ini
 .vscode/claude-settings.json
 CLAUDE.md
 ~/.nuget/
+docs/
+CLAUDE.schema.json
+CLAUDE.yaml
 
 # ========================
 # 備份與暫存
