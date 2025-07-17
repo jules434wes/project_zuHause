@@ -43,14 +43,14 @@ namespace zuHause.Tests.Services
 
             // 新增測試家具
             _context.FurnitureProducts.AddRange(
-                new FurnitureProduct { FurnitureProductId = "1", ProductName = "Test Furniture 1", SupplierId = 1 },
-                new FurnitureProduct { FurnitureProductId = "2", ProductName = "Test Furniture 2", SupplierId = 2 }
+                new FurnitureProduct { FurnitureProductId = "1", ProductName = "Test Furniture 1" },
+                new FurnitureProduct { FurnitureProductId = "2", ProductName = "Test Furniture 2" }
             );
 
             // 新增測試公告
             _context.SystemMessages.AddRange(
-                new SystemMessage { MessageId = 1, Title = "Test Message 1", CreatedBy = 1 },
-                new SystemMessage { MessageId = 2, Title = "Test Message 2", CreatedBy = 2 }
+                new SystemMessage { MessageId = 1, Title = "Test Message 1", CategoryCode = "TEST", AudienceTypeCode = "ALL", MessageContent = "Test Content", AdminId = 1 },
+                new SystemMessage { MessageId = 2, Title = "Test Message 2", CategoryCode = "TEST", AudienceTypeCode = "ALL", MessageContent = "Test Content", AdminId = 1 }
             );
 
             _context.SaveChanges();
