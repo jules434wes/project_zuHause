@@ -39,6 +39,11 @@ builder.Services.AddScoped<zuHause.Interfaces.IImageProcessor, zuHause.Services.
 // 註冊房源圖片服務
 builder.Services.AddScoped<zuHause.Services.PropertyImageService>();
 
+// 註冊統一圖片管理系統服務
+builder.Services.AddScoped<zuHause.Interfaces.IEntityExistenceChecker, zuHause.Services.EntityExistenceChecker>();
+builder.Services.AddScoped<zuHause.Interfaces.IDisplayOrderManager, zuHause.Services.DisplayOrderManager>();
+builder.Services.AddScoped<zuHause.Interfaces.IImageQueryService, zuHause.Services.ImageQueryService>();
+
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
