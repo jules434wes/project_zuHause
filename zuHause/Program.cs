@@ -42,6 +42,16 @@ builder.Services.AddScoped<zuHause.Services.PropertyImageService>();
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
+// === 新增 Session 服務配置 ===
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(30); // 設定 Session 超時時間，例如 30 分鐘
+    options.Cookie.HttpOnly = true; // 設定 Session Cookie 只能透過 HTTP 訪問，增加安全性
+    options.Cookie.IsEssential = true; // 設定 Session Cookie 為必要的，以便 Session 能夠工作
+});
+// =============================
+
+
 builder.Services.AddScoped<IPasswordHasher<Member>, PasswordHasher<Member>>();
 builder.Services.AddScoped<MemberService>();
 
@@ -76,6 +86,7 @@ app.UseHsts();
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
+app.UseSession(); // 啟用 Session 中間件
 app.UseAuthentication();
 app.UseAuthorization();
 

@@ -328,6 +328,20 @@ public partial class ZuHauseContext : DbContext
 
             entity.HasIndex(e => new { e.StatusCategory, e.StatusCode }, "IX_approvals_status_category");
 
+            entity.HasIndex(e => new { e.ModuleCode, e.SourceId }, "UQ_approvals_module_source")
+                .IsUnique()
+                .HasFillFactor(100);
+
+            entity.HasIndex(e => e.CreatedAt, "IX_approvals_createdAt");
+
+            entity.HasIndex(e => e.CurrentApproverId, "IX_approvals_currentApproverID");
+
+            entity.HasIndex(e => e.ModuleCode, "IX_approvals_moduleCode");
+
+            entity.HasIndex(e => e.StatusCode, "IX_approvals_statusCode");
+
+            entity.HasIndex(e => new { e.StatusCategory, e.StatusCode }, "IX_approvals_status_category");
+
             entity.HasIndex(e => new { e.ModuleCode, e.ApplicantMemberId, e.SourcePropertyId }, "UQ_approvals_member_module").IsUnique();
 
             entity.Property(e => e.ApprovalId)
