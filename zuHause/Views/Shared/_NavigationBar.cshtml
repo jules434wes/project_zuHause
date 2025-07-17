@@ -1,5 +1,9 @@
-﻿@{
+﻿@* Views/Shared/_NavigationBar.cshtml *@
+@{
     var categories = ViewBag.categories as List<zuHause.Models.FurnitureCategory>;
+    // 這裡從 ViewBag 獲取 member 物件，它會是資料庫中的實際會員資料
+    var member = ViewBag.CurrentMember as zuHause.Models.Member;
+    var displayName = member != null ? $"{member.MemberName}，歡迎使用" : "訪客";
 }
 <!DOCTYPE html>
 <html lang="zh-Hant">
@@ -9,6 +13,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/furniture.css" />
     <link rel="icon" href="~/img/icon.png" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 </head>
 <body>
     <header>
@@ -21,17 +26,25 @@
                     <li class="nav-item"><a class="nav-link" href="@Url.Action("FurnitureHomePage", "Furniture")">租屋首頁</a></li>
                     <li class="nav-item"><a class="nav-link" href="@Url.Action("InstructionsForUse", "Furniture")">租借說明</a></li>
                 </ul>
-                <!-- 會員資訊區（點擊整塊可跳轉） -->
-                @{
-                    var member = ViewBag.CurrentMember as zuHause.Models.Member;
-                    var displayName = member != null ? $"{member.MemberName}，歡迎使用" : "訪客";
-                }
-
                 <div class="d-flex align-items-center">
-                    <a href="@Url.Action("OrderHistory", "Furniture")" class="text-decoration-none text-dark">
-                        <i class="bi bi-person-fill text-purple me-1"></i>
-                        <span class="me-3">@displayName</span>
-                    </a>
+                    @if (member != null)
+                    {
+                        <a href="@Url.Action("OrderHistory", "Furniture")" class="text-decoration-none text-dark d-flex align-items-center">
+                            <i class="bi bi-person-fill text-purple me-1"></i> @* 確保有 Bootstrap Icons *@
+                            <span class="me-3">@displayName</span>
+                        </a>
+                        <a href="@Url.Action("Logout", "Member")" class="btn btn-outline-secondary btn-sm me-2">登出</a>
+                        <a href="@Url.Action("RentalCart", "Furniture")" class="btn btn-outline-primary btn-sm">購物車</a>
+                    }
+                    else
+                    {
+                        <a href="@Url.Action("Login", "Member")" class="text-decoration-none text-dark d-flex align-items-center">
+                            <i class="bi bi-person-fill text-muted me-1"></i>
+                            <span class="me-3">訪客</span>
+                        </a>
+                        <a href="@Url.Action("Login", "Member")" class="btn btn-outline-secondary btn-sm me-2">登入</a>
+                        <a href="@Url.Action("Register", "Member")" class="btn btn-outline-primary btn-sm">註冊</a>
+                    }
                 </div>
 
             </div>
@@ -41,7 +54,7 @@
     <main class="container-fluid mt-3">
         @RenderBody()
     </main>
-    
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     @RenderSection("Scripts", required: false)
