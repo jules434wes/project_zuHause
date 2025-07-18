@@ -1,4 +1,8 @@
-﻿<div class="row w-100 gx-5 justify-content-center position-relative h-100">
+﻿@{
+    ViewData["activePage"] = "MemberApplications";
+}
+
+<div class="row w-100 gx-5 justify-content-center position-relative h-100">
     @await Html.PartialAsync("_PartialMemberSideBar")
     <div class="col-10 d-flex justify-content-start flex-column
         align-items-center">

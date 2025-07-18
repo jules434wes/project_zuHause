@@ -1,0 +1,108 @@
+﻿<button type="button" class="btn btn-aqua py-0 col-auto" data-bs-toggle="modal"
+        data-bs-target="#landlordViewRentalApplication">
+    (房東)查看申請租賃
+</button>
+
+<div class="modal fade" id="tenantSignContract" data-bs-backdrop="static"
+     data-bs-keyboard="false" tabindex="-1"
+     aria-labelledby="tenantSignContractLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg modal-fullscreen-lg-down">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="tenantSignContractLabel">查看申請</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-3">
+                <form action="" method="post" class="w-100 d-flex flex-column gap-2">
+                    <div class="row w-100 m-0">
+                        @await Html.PartialAsync("_PartialPropertyCard")
+                    </div>
+                    <hr>
+                    <div class="row g-0 align-items-center gap-2">
+                        <h5>申租資訊</h5>
+                        <h6 class="col-12 m-0 me-2">
+                            <div class="row m-0">
+                                <div class="col-3">房源編號：</div>
+                                <div class="col">B01</div>
+                            </div>
+                        </h6>
+                        <h6 class="col-12 m-0 me-2">
+                            <div class="row m-0">
+                                <div class="col-3">地址：</div>
+                                <div class="col">台中市西屯XX里...</div>
+                            </div>
+                        </h6>
+                        <h6 class="col-12 m-0 me-2">
+                            <div class="row m-0">
+                                <div class="col-3">承租人(乙方)：</div>
+                                <div class="col">金大明</div>
+                            </div>
+                        </h6>
+                        <!-- <h6 class="col-12 m-0 me-2">
+                          <div class="row m-0">
+                            <div class="col-3">乙方身分證字號：</div>
+                            <div class="col">L123456789</div>
+                          </div>
+                        </h6> -->
+                        <h6 class="col-12 m-0 me-2">
+                            <div class="row m-0">
+                                <div class="col-3">乙方出生日期：</div>
+                                <div class="col">1990-08-06</div>
+                            </div>
+                        </h6>
+                        <h6 class="col-12 m-0 me-2">
+                            <div class="row m-0">
+                                <div class="col-3">租金：</div>
+                                <div class="col">10000元 / 月</div>
+                            </div>
+                        </h6>
+                        <h6 class="col-12 m-0 me-2">
+
+                            <div class="row m-0">
+                                <div class="col-3 d-flex">租賃期間：</div>
+                                <div class="col d-flex flex-column gap-2">
+                                    2025-07-02 至 2026-07-02，共1年0月0日
+                                </div>
+                            </div>
+                        </h6>
+                    </div>
+                    <hr>
+                    <style>
+                        input::file-selector-button {
+                            display: none;
+                        }
+                    </style>
+                    <div class="row g-0 align-items-center gap-2">
+                        <h5 class="col-12">其餘資料</h5>
+                        <div class="col-12">
+                            <div class="row m-0 align-items-center">
+                                <h6 class="col-auto mb-0 px-0 py-2">檔案一：</h6>
+                                <div class="col-auto">
+                                    <a href="#" class="text-black">學生證.jpg</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row g-0 align-items-center gap-2">
+                        <h5 class="col-12">房客訊息</h5>
+                        <div class="col-12">
+                            <div class="form-floating">
+                                <p class="border p-3">
+                                    Lorem ipsum dolor, sit amet consectetur adipisicing elit. Error consequatur distinctio laborum nam aut laboriosam earum dolorum perferendis! Maxime vero dolores aliquid soluta nihil. Eos ex nihil ullam aperiam sunt?
+                                    Vel facere asperiores quo autem placeat culpa sit accusamus consequatur enim, nemo nobis quam harum eius dignissimos quis quisquam explicabo totam dolorum ea reiciendis ratione eos soluta fugit qui? Maxime!
+                                    Ex corrupti voluptatibus aliquam, at veritatis voluptas illo, pariatur reiciendis, facere nobis officia velit quaerat enim aperiam quo? Voluptate ipsum quos provident doloremque vero itaque incidunt neque repudiandae ea esse.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">拒絕申請</button>
+                <button type="button" class="btn btn-aqua">聯絡房客</button>
+                <button type="button" class="btn btn-aqua">同意申請</button>
+            </div>
+        </div>
+    </div>
+</div>

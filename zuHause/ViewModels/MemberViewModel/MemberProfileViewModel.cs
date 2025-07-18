@@ -44,6 +44,7 @@ namespace zuHause.ViewModels.MemberViewModel
 
         [Required(ErrorMessage = "請輸入生日")]
         [Display(Name = "生日")]
+        [DataType(DataType.Date,ErrorMessage ="請輸入正確日期")]
         public DateOnly BirthDate { get; set; }
 
         // 電子信箱認證後會改
