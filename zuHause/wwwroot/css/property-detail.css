@@ -78,6 +78,8 @@ body {
     position: relative;
     min-width: fit-content;
     margin-right: 0.5rem;
+    /* 移除 Bootstrap 預設負值，避免外框被遮蓋 */
+    margin-bottom: 0;
 }
 
 .quick-navigation-tabs .nav-link:hover {
@@ -92,7 +94,9 @@ body {
     background-color: #f8f9fa;
     font-weight: 600;
     border: 1px solid #dee2e6;
-    border-bottom-color: transparent;
+    /* 保留完整外框 */
+    border-bottom-color: #dee2e6;
+    margin-bottom: 0; /* 同上，確保高度足夠 */
 }
 
 .quick-navigation-tabs .nav-link:focus {
