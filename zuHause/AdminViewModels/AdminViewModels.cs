@@ -59,18 +59,26 @@ namespace zuHause.AdminViewModels
         {
             var members = context.Members
                 .OrderByDescending(m => m.CreatedAt)
-                .Select(m => new MemberData
+                .Select(m => new 
                 {
-                    MemberID = m.MemberId.ToString(),
-                    MemberName = m.MemberName,
-                    Email = m.Email,
-                    NationalNo = m.NationalIdNo ?? "",
-                    PhoneNumber = m.PhoneNumber,
-                    AccountStatus = m.IsActive ? "active" : "inactive",
-                    VerificationStatus = m.IdentityVerifiedAt.HasValue ? "verified" : "pending",
-                    IsLandlord = m.IsLandlord,
-                    RegistrationDate = m.CreatedAt.ToString("yyyy-MM-dd"),
-                    LastLoginTime = m.LastLoginAt.HasValue ? m.LastLoginAt.Value.ToString("yyyy-MM-dd") : "--"
+                    Member = m,
+                    HasPendingApproval = context.Approvals.Any(a => a.ApplicantMemberId == m.MemberId && 
+                                                                   a.ModuleCode == "IDENTITY" && 
+                                                                   a.StatusCode == "PENDING")
+                })
+                .Select(x => new MemberData
+                {
+                    MemberID = x.Member.MemberId.ToString(),
+                    MemberName = x.Member.MemberName,
+                    Email = x.Member.Email,
+                    NationalNo = x.Member.NationalIdNo ?? "",
+                    PhoneNumber = x.Member.PhoneNumber,
+                    AccountStatus = x.Member.IsActive ? "active" : "inactive",
+                    VerificationStatus = x.Member.IdentityVerifiedAt.HasValue ? "verified" : 
+                                       (x.HasPendingApproval ? "pending" : "unverified"),
+                    IsLandlord = x.Member.IsLandlord,
+                    RegistrationDate = x.Member.CreatedAt.ToString("yyyy-MM-dd"),
+                    LastLoginTime = x.Member.LastLoginAt.HasValue ? x.Member.LastLoginAt.Value.ToString("yyyy-MM-dd") : "--"
                 })
                 .ToList();
 
@@ -182,6 +190,13 @@ namespace zuHause.AdminViewModels
                 throw new ArgumentException($"找不到會員ID: {memberId}");
             }
 
+            var hasPendingApproval = context.Approvals.Any(a => a.ApplicantMemberId == memberId && 
+                                                               a.ModuleCode == "IDENTITY" && 
+                                                               a.StatusCode == "PENDING");
+
+            var verificationStatus = member.IdentityVerifiedAt.HasValue ? "verified" : 
+                                   (hasPendingApproval ? "pending" : "unverified");
+
             return new MemberData 
             { 
                 MemberID = member.MemberId.ToString(), 
@@ -190,7 +205,7 @@ namespace zuHause.AdminViewModels
                 NationalNo = member.NationalIdNo ?? "", 
                 PhoneNumber = member.PhoneNumber, 
                 AccountStatus = member.IsActive ? "active" : "inactive", 
-                VerificationStatus = member.IdentityVerifiedAt.HasValue ? "verified" : "pending", 
+                VerificationStatus = verificationStatus, 
                 IsLandlord = member.IsLandlord, 
                 RegistrationDate = member.CreatedAt.ToString("yyyy-MM-dd") 
             };

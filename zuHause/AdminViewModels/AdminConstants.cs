@@ -200,7 +200,7 @@ namespace zuHause.AdminViewModels
             { "memberName", "會員姓名" },
             { "email", "電子郵件" },
             { "phoneNumber", "手機號碼" },
-            { "nationalNo", "身分證號" },
+            { "nationalNo", "身分證字號" },
             { "addressLine", "詳細地址" }
         };
 

@@ -28,11 +28,10 @@
                         <input type="text" class="form-control" placeholder="搜尋關鍵字..." id="searchInput@(tabId)">
                         <select class="form-select" id="searchField@(tabId)" style="max-width: 150px;">
                             <option value="memberID">會員ID</option>
-                            <option value="memberName">會員姓名</option>
+                            <option value="memberName">姓名</option>
                             <option value="email">電子郵件</option>
                             <option value="phoneNumber">手機號碼</option>
-                            <option value="nationalNo">身分證號</option>
-                            <option value="addressLine">詳細地址</option>
+                            <option value="nationalIdNo">身分證字號</option>
                         </select>
                     </div>
                 </div>
@@ -82,8 +81,7 @@
                         <select class="form-select" id="accountStatus@(tabId)">
                             <option value="">全部</option>
                             <option value="active">啟用中</option>
-                            <option value="suspended">暫時停權</option>
-                            <option value="banned">永久停用</option>
+                            <option value="inactive">停用</option>
                         </select>
                     </div>
                 }

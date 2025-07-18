@@ -100,9 +100,13 @@
                                     {
                                         <span class="badge bg-success">已驗證</span>
                                     }
-                                    else
+                                    else if (user.VerificationStatus == "pending")
                                     {
                                         <span class="badge bg-warning">等待驗證</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">尚未驗證</span>
                                     }
                                 </td>
                                 <td>
