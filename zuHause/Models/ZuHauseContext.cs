@@ -1667,12 +1667,14 @@ public partial class ZuHauseContext : DbContext
             entity.Property(e => e.ImageId).HasColumnName("imageId");
             entity.Property(e => e.Category)
                 .HasMaxLength(50)
-                .HasColumnName("category");
+                .HasColumnName("category")
+                .HasConversion<string>();
             entity.Property(e => e.DisplayOrder).HasColumnName("displayOrder");
             entity.Property(e => e.EntityId).HasColumnName("entityId");
             entity.Property(e => e.EntityType)
                 .HasMaxLength(50)
-                .HasColumnName("entityType");
+                .HasColumnName("entityType")
+                .HasConversion<string>();
             entity.Property(e => e.FileSizeBytes).HasColumnName("fileSizeBytes");
             entity.Property(e => e.Height).HasColumnName("height");
             entity.Property(e => e.ImageGuid)
@@ -1693,10 +1695,16 @@ public partial class ZuHauseContext : DbContext
                 .HasComputedColumnSql("(lower(CONVERT([char](36),[imageGuid]))+case [mimeType] when 'image/webp' then '.webp' when 'image/jpeg' then '.jpg' when 'image/png' then '.png' else '.bin' end)", true)
                 .HasColumnName("storedFileName");
             entity.Property(e => e.UploadedAt)
-                .HasDefaultValueSql("(sysutcdatetime())")
+                .HasDefaultValueSql("(DATEADD(HOUR, 8, sysutcdatetime()))")
                 .HasColumnName("uploadedAt");
             entity.Property(e => e.UploadedByMemberId).HasColumnName("uploadedByMemberId");
             entity.Property(e => e.Width).HasColumnName("width");
+            entity.Property(e => e.RowVersion)
+                .HasColumnName("rowVersion")
+                .IsRowVersion()
+                .IsConcurrencyToken()
+                .ValueGeneratedOnAddOrUpdate()
+                .Metadata.SetBeforeSaveBehavior(Microsoft.EntityFrameworkCore.Metadata.PropertySaveBehavior.Ignore);
 
             entity.HasOne(d => d.UploadedByMember).WithMany(p => p.Images)
                 .HasForeignKey(d => d.UploadedByMemberId)

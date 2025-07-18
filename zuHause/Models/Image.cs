@@ -82,12 +82,12 @@ public partial class Image
     /// <summary>
     /// 上傳時間
     /// </summary>
-    public DateTime UploadedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UploadedAt { get; set; }
 
     /// <summary>
-    /// 併發控制版本號（樂觀鎖）
+    /// 併發控制版本號（樂觀鎖）- 由資料庫自動產生
     /// </summary>
-    public byte[] RowVersion { get; set; } = null!;
+    public byte[] RowVersion { get; set; } = Array.Empty<byte>();
 
     /// <summary>
     /// 導覽屬性：上傳者會員

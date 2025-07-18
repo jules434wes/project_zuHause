@@ -115,11 +115,19 @@ namespace zuHause.Data.Configurations
                 .IsRequired()
                 .HasDefaultValueSql("sysutcdatetime()");
 
-            // RowVersion 併發控制設定
-            builder.Property(i => i.RowVersion)
-                .HasColumnName("rowVersion")
-                .IsRowVersion()
-                .IsConcurrencyToken();
+            // 暫時註解掉 RowVersion 配置，避免 EF Core timestamp 插入問題
+            // TODO: 需要研究 EF Core 9.0.7 對 SQL Server timestamp/rowversion 的正確配置方法
+            // 可能的解決方向：
+            // 1. 升級 EF Core 版本檢查已修復的 Bug
+            // 2. 檢查資料庫 Schema 與 Code-First 模型的完全同步性
+            // 3. 在獨立測試專案中重現此問題以找出根因
+            // 
+            // builder.Property(i => i.RowVersion)
+            //     .HasColumnName("rowVersion")
+            //     .HasColumnType("timestamp")
+            //     .ValueGeneratedOnAddOrUpdate()
+            //     .IsConcurrencyToken()
+            //     .Metadata.SetBeforeSaveBehavior(Microsoft.EntityFrameworkCore.Metadata.PropertySaveBehavior.Ignore);
 
             // 主要查詢覆蓋索引
             builder.HasIndex(i => new { i.EntityType, i.EntityId, i.Category, i.DisplayOrder, i.IsActive })
