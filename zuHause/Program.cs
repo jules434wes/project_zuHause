@@ -74,7 +74,6 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// 亂碼請修正 FurnitureController �� FurnitureHomePage
 app.MapControllerRoute(
     name: "default",
 

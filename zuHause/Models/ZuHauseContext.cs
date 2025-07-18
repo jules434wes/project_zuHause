@@ -75,6 +75,8 @@ public partial class ZuHauseContext : DbContext
 
     public virtual DbSet<FurnitureRentalContract> FurnitureRentalContracts { get; set; }
 
+    public virtual DbSet<Image> Images { get; set; }
+
     public virtual DbSet<InventoryEvent> InventoryEvents { get; set; }
 
     public virtual DbSet<ListingPlan> ListingPlans { get; set; }
@@ -305,7 +307,9 @@ public partial class ZuHauseContext : DbContext
             entity.ToTable("approvals", tb =>
                 {
                     tb.HasComment("審核主檔");
-                    tb.HasTrigger("trg_approvals_status_sync");
+                    tb.HasTrigger("trg_approvals_identity_sync");
+                    tb.HasTrigger("trg_approvals_landlord_sync");
+                    tb.HasTrigger("trg_approvals_property_sync");
                 });
 
             entity.HasIndex(e => e.ApplicantMemberId, "IX_approvals_applicantMemberID");
@@ -638,6 +642,10 @@ public partial class ZuHauseContext : DbContext
                 .HasDefaultValueSql("(CONVERT([datetime2](0),sysdatetime()))")
                 .HasComment("建立時間")
                 .HasColumnName("createdAt");
+            entity.Property(e => e.CustomName)
+                .HasMaxLength(50)
+                .HasComment("合約自訂名稱")
+                .HasColumnName("customName");
             entity.Property(e => e.DepositAmount)
                 .HasComment("押金金額")
                 .HasColumnName("depositAmount");
@@ -1644,6 +1652,55 @@ public partial class ZuHauseContext : DbContext
                 .HasForeignKey(d => d.OrderId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_furnitureRentalContracts_order");
+        });
+
+        modelBuilder.Entity<Image>(entity =>
+        {
+            entity.HasKey(e => e.ImageId).HasName("pk_images");
+
+            entity.ToTable("images");
+
+            entity.HasIndex(e => new { e.EntityType, e.EntityId, e.Category, e.DisplayOrder, e.IsActive }, "ix_images_entity");
+
+            entity.HasIndex(e => e.ImageGuid, "uq_images_imageGuid").IsUnique();
+
+            entity.Property(e => e.ImageId).HasColumnName("imageId");
+            entity.Property(e => e.Category)
+                .HasMaxLength(50)
+                .HasColumnName("category");
+            entity.Property(e => e.DisplayOrder).HasColumnName("displayOrder");
+            entity.Property(e => e.EntityId).HasColumnName("entityId");
+            entity.Property(e => e.EntityType)
+                .HasMaxLength(50)
+                .HasColumnName("entityType");
+            entity.Property(e => e.FileSizeBytes).HasColumnName("fileSizeBytes");
+            entity.Property(e => e.Height).HasColumnName("height");
+            entity.Property(e => e.ImageGuid)
+                .HasDefaultValueSql("(newsequentialid())")
+                .HasColumnName("imageGuid");
+            entity.Property(e => e.IsActive)
+                .HasDefaultValue(true)
+                .HasColumnName("isActive");
+            entity.Property(e => e.MimeType)
+                .HasMaxLength(50)
+                .HasColumnName("mimeType");
+            entity.Property(e => e.OriginalFileName)
+                .HasMaxLength(255)
+                .HasColumnName("originalFileName");
+            entity.Property(e => e.StoredFileName)
+                .HasMaxLength(41)
+                .IsUnicode(false)
+                .HasComputedColumnSql("(lower(CONVERT([char](36),[imageGuid]))+case [mimeType] when 'image/webp' then '.webp' when 'image/jpeg' then '.jpg' when 'image/png' then '.png' else '.bin' end)", true)
+                .HasColumnName("storedFileName");
+            entity.Property(e => e.UploadedAt)
+                .HasDefaultValueSql("(sysutcdatetime())")
+                .HasColumnName("uploadedAt");
+            entity.Property(e => e.UploadedByMemberId).HasColumnName("uploadedByMemberId");
+            entity.Property(e => e.Width).HasColumnName("width");
+
+            entity.HasOne(d => d.UploadedByMember).WithMany(p => p.Images)
+                .HasForeignKey(d => d.UploadedByMemberId)
+                .HasConstraintName("fk_images_members");
         });
 
         modelBuilder.Entity<InventoryEvent>(entity =>
