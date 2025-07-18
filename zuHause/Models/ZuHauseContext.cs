@@ -75,6 +75,8 @@ public partial class ZuHauseContext : DbContext
 
     public virtual DbSet<FurnitureRentalContract> FurnitureRentalContracts { get; set; }
 
+    public virtual DbSet<Image> Images { get; set; }
+
     public virtual DbSet<InventoryEvent> InventoryEvents { get; set; }
 
     public virtual DbSet<ListingPlan> ListingPlans { get; set; }
@@ -302,7 +304,13 @@ public partial class ZuHauseContext : DbContext
 
         modelBuilder.Entity<Approval>(entity =>
         {
-            entity.ToTable("approvals", tb => tb.HasComment("審核主檔"));
+            entity.ToTable("approvals", tb =>
+                {
+                    tb.HasComment("審核主檔");
+                    tb.HasTrigger("trg_approvals_identity_sync");
+                    tb.HasTrigger("trg_approvals_landlord_sync");
+                    tb.HasTrigger("trg_approvals_property_sync");
+                });
 
             entity.HasIndex(e => e.ApplicantMemberId, "IX_approvals_applicantMemberID");
 
@@ -316,9 +324,13 @@ public partial class ZuHauseContext : DbContext
 
             entity.HasIndex(e => new { e.StatusCategory, e.StatusCode }, "IX_approvals_status_category");
 
-            entity.HasIndex(e => new { e.ModuleCode, e.SourceId }, "UQ_approvals_module_source")
-                .IsUnique()
-                .HasFillFactor(100);
+
+            //entity.HasIndex(e => new { e.ModuleCode, e.SourceId }, "UQ_approvals_module_source")
+            //    .IsUnique()
+            //    .HasFillFactor(100);
+
+            entity.HasIndex(e => new { e.ModuleCode, e.ApplicantMemberId, e.SourcePropertyId }, "UQ_approvals_member_module").IsUnique();
+
 
             entity.Property(e => e.ApprovalId)
                 .HasComment("審核ID (自動遞增，從701開始)")
@@ -338,9 +350,9 @@ public partial class ZuHauseContext : DbContext
                 .HasMaxLength(20)
                 .HasComment("模組代碼")
                 .HasColumnName("moduleCode");
-            entity.Property(e => e.SourceId)
-                .HasComment("來源ID")
-                .HasColumnName("sourceID");
+            entity.Property(e => e.SourcePropertyId)
+                .HasComment("審核房源ID")
+                .HasColumnName("sourcePropertyID");
             entity.Property(e => e.StatusCategory)
                 .HasMaxLength(20)
                 .HasComputedColumnSql("(CONVERT([nvarchar](20),N'APPROVAL_STATUS'))", true)
@@ -361,9 +373,8 @@ public partial class ZuHauseContext : DbContext
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_approvals_applicant");
 
-            entity.HasOne(d => d.Source).WithMany(p => p.Approvals)
-                .HasForeignKey(d => d.SourceId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
+            entity.HasOne(d => d.SourceProperty).WithMany(p => p.Approvals)
+                .HasForeignKey(d => d.SourcePropertyId)
                 .HasConstraintName("FK_approvals_Property");
 
             entity.HasOne(d => d.SystemCode).WithMany(p => p.Approvals)
@@ -397,7 +408,7 @@ public partial class ZuHauseContext : DbContext
                 .HasComment("操作類別 (計算欄位)")
                 .HasColumnName("actionCategory");
             entity.Property(e => e.ActionNote)
-                .HasComment("操作備註")
+                .HasComment("內部操作備註")
                 .HasColumnName("actionNote");
             entity.Property(e => e.ActionType)
                 .HasMaxLength(20)
@@ -637,6 +648,10 @@ public partial class ZuHauseContext : DbContext
                 .HasDefaultValueSql("(CONVERT([datetime2](0),sysdatetime()))")
                 .HasComment("建立時間")
                 .HasColumnName("createdAt");
+            entity.Property(e => e.CustomName)
+                .HasMaxLength(50)
+                .HasComment("合約自訂名稱")
+                .HasColumnName("customName");
             entity.Property(e => e.DepositAmount)
                 .HasComment("押金金額")
                 .HasColumnName("depositAmount");
@@ -830,6 +845,7 @@ public partial class ZuHauseContext : DbContext
                 .IsUnicode(false)
                 .HasComment("簽署人身份")
                 .HasColumnName("signerRole");
+            entity.Property(e => e.UploadId).HasColumnName("uploadId");
 
             entity.HasOne(d => d.Contract).WithMany(p => p.ContractSignatures)
                 .HasForeignKey(d => d.ContractId)
@@ -1644,6 +1660,55 @@ public partial class ZuHauseContext : DbContext
                 .HasConstraintName("FK_furnitureRentalContracts_order");
         });
 
+        modelBuilder.Entity<Image>(entity =>
+        {
+            entity.HasKey(e => e.ImageId).HasName("pk_images");
+
+            entity.ToTable("images");
+
+            entity.HasIndex(e => new { e.EntityType, e.EntityId, e.Category, e.DisplayOrder, e.IsActive }, "ix_images_entity");
+
+            entity.HasIndex(e => e.ImageGuid, "uq_images_imageGuid").IsUnique();
+
+            entity.Property(e => e.ImageId).HasColumnName("imageId");
+            entity.Property(e => e.Category)
+                .HasMaxLength(50)
+                .HasColumnName("category");
+            entity.Property(e => e.DisplayOrder).HasColumnName("displayOrder");
+            entity.Property(e => e.EntityId).HasColumnName("entityId");
+            entity.Property(e => e.EntityType)
+                .HasMaxLength(50)
+                .HasColumnName("entityType");
+            entity.Property(e => e.FileSizeBytes).HasColumnName("fileSizeBytes");
+            entity.Property(e => e.Height).HasColumnName("height");
+            entity.Property(e => e.ImageGuid)
+                .HasDefaultValueSql("(newsequentialid())")
+                .HasColumnName("imageGuid");
+            entity.Property(e => e.IsActive)
+                .HasDefaultValue(true)
+                .HasColumnName("isActive");
+            entity.Property(e => e.MimeType)
+                .HasMaxLength(50)
+                .HasColumnName("mimeType");
+            entity.Property(e => e.OriginalFileName)
+                .HasMaxLength(255)
+                .HasColumnName("originalFileName");
+            entity.Property(e => e.StoredFileName)
+                .HasMaxLength(41)
+                .IsUnicode(false)
+                .HasComputedColumnSql("(lower(CONVERT([char](36),[imageGuid]))+case [mimeType] when 'image/webp' then '.webp' when 'image/jpeg' then '.jpg' when 'image/png' then '.png' else '.bin' end)", true)
+                .HasColumnName("storedFileName");
+            entity.Property(e => e.UploadedAt)
+                .HasDefaultValueSql("(sysutcdatetime())")
+                .HasColumnName("uploadedAt");
+            entity.Property(e => e.UploadedByMemberId).HasColumnName("uploadedByMemberId");
+            entity.Property(e => e.Width).HasColumnName("width");
+
+            entity.HasOne(d => d.UploadedByMember).WithMany(p => p.Images)
+                .HasForeignKey(d => d.UploadedByMemberId)
+                .HasConstraintName("fk_images_members");
+        });
+
         modelBuilder.Entity<InventoryEvent>(entity =>
         {
             entity.HasKey(e => e.FurnitureInventoryId);
@@ -1699,8 +1764,7 @@ public partial class ZuHauseContext : DbContext
             entity.ToTable("listingPlans", tb => tb.HasComment("刊登費方案表"));
 
             entity.Property(e => e.PlanId)
-                .ValueGeneratedNever()
-                .HasComment("方案ID")
+                .HasComment("刊登費方案ID")
                 .HasColumnName("planId");
             entity.Property(e => e.CreatedAt)
                 .HasPrecision(0)
@@ -1747,8 +1811,6 @@ public partial class ZuHauseContext : DbContext
             entity.ToTable("members", tb => tb.HasComment("會員資料表"));
 
             entity.HasIndex(e => e.Email, "IX_members_email");
-
-            entity.HasIndex(e => e.NationalIdNo, "IX_members_nationalIdNo").IsUnique();
 
             entity.HasIndex(e => e.PhoneNumber, "IX_members_phone");
 
@@ -2060,6 +2122,9 @@ public partial class ZuHauseContext : DbContext
             entity.ToTable("properties", tb =>
                 {
                     tb.HasComment("房源資料表");
+
+                    tb.HasTrigger("trg_properties_status_protection");
+
                     tb.HasTrigger("trg_properties_validate_landlord");
                 });
 

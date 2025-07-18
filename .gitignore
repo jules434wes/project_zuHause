@@ -3,6 +3,7 @@
 
 bin/
 obj/
+.github/workflows/
 
 *.nupkg
 project.lock.json
@@ -23,4 +24,25 @@ project.assets.json
 *.db-shm
 *.vshost.*
 *.log
+/CLAUDE.md
+/.claude
 node_modules/
+
+# Documentation folder (should not be committed)
+docs/
+
+# Third-party libraries
+wwwroot/lib/
+
+# NuGet related files
+packages/
+*.nuget.props
+*.nuget.targets
+project.assets.json
+project.nuget.cache
+
+# MCP and temporary files
+.claude/
+wsl-dotnet-setup.sh
+~/.nuget/
+/~/.nuget/packages

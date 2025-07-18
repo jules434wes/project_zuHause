@@ -19,9 +19,9 @@ public partial class Approval
     public string ModuleCode { get; set; } = null!;
 
     /// <summary>
-    /// 來源ID
+    /// 審核房源ID
     /// </summary>
-    public int SourceId { get; set; }
+    public int? SourcePropertyId { get; set; }
 
     /// <summary>
     /// 申請會員ID
@@ -57,7 +57,7 @@ public partial class Approval
 
     public virtual ICollection<ApprovalItem> ApprovalItems { get; set; } = new List<ApprovalItem>();
 
-    public virtual Property Source { get; set; } = null!;
+    public virtual Property? SourceProperty { get; set; }
 
     public virtual SystemCode? SystemCode { get; set; }
 }

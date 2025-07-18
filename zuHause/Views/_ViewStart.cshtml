@@ -1,4 +1,5 @@
 ﻿@{
+
     Layout = "_Layout";
     var tenantControllers = new List<string> { "Announcement", "Tenant", "Search" }; 
 
@@ -10,4 +11,9 @@
     {
         Layout = "_LayoutTenant";
     }
-}
+    else if(ViewContext.RouteData.Values["Controller"]?.ToString() == "Furniture")
+    {
+        Layout = "_NavigationBar";
+    }
+
+  }

@@ -21,7 +21,7 @@ public partial class ApprovalItem
     /// <summary>
     /// 操作者ID
     /// </summary>
-    public int ActionBy { get; set; }
+    public int? ActionBy { get; set; }
 
     /// <summary>
     /// 操作類型
@@ -29,7 +29,7 @@ public partial class ApprovalItem
     public string ActionType { get; set; } = null!;
 
     /// <summary>
-    /// 操作備註
+    /// 內部操作備註
     /// </summary>
     public string? ActionNote { get; set; }
 

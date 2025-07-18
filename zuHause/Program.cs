@@ -1,11 +1,22 @@
 using Microsoft.EntityFrameworkCore;
-
-using zuHause.Models; // �T�O�o�O ZuHauseContext ���T���R�W�Ŷ�
-
+using zuHause.Models;
+using zuHause.Data;
+using Microsoft.AspNetCore.Identity;
+using System.Text.Encodings.Web;
+using System.Text.Unicode;
+using zuHause.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ?�員
+builder.Services.AddControllers().AddJsonOptions(options =>
+{
+    options.JsonSerializerOptions.PropertyNamingPolicy = null;
+    options.JsonSerializerOptions.Encoder = JavaScriptEncoder.Create(UnicodeRanges.BasicLatin, UnicodeRanges.Cyrillic,
+                UnicodeRanges.CjkUnifiedIdeographs);
+    options.JsonSerializerOptions.WriteIndented = true;
+});
+
+// 會員
 builder.Services.AddAuthentication("MemberCookieAuth").AddCookie("MemberCookieAuth", options =>
 {
     options.LoginPath = "/Member/Login";
@@ -14,21 +25,44 @@ builder.Services.AddAuthentication("MemberCookieAuth").AddCookie("MemberCookieAu
 
 
 builder.Services.AddDbContext<ZuHauseContext>(
-            options => options.UseSqlServer(builder.Configuration.GetConnectionString("zuHauseDBConnstring")));
+            options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 
 builder.Services.AddMemoryCache();
 
+// 註冊 RealDataSeeder
+builder.Services.AddScoped<RealDataSeeder>();
+
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
+builder.Services.AddScoped<IPasswordHasher<Member>, PasswordHasher<Member>>();
+builder.Services.AddScoped<MemberService>();
+
 var app = builder.Build();
+
+// 在開發環境自動執行資料重置和播種
+if (app.Environment.IsDevelopment())
+{
+    using (var scope = app.Services.CreateScope())
+    {
+        var seeder = scope.ServiceProvider.GetRequiredService<RealDataSeeder>();
+        try
+        {
+            await seeder.ResetTestDataAsync();
+        }
+        catch (Exception ex)
+        {
+            var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+            logger.LogError(ex, "資料播種失敗");
+        }
+    }
+}
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
@@ -41,8 +75,5 @@ app.MapControllers();
 
 app.MapControllerRoute(
     name: "default",
-    //pattern: "{controller=Home}/{action=Index}/{id?}");
     pattern: "{controller=Tenant}/{action=Search}/{id?}");
-
-
 app.Run();

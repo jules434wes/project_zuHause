@@ -1,0 +1,583 @@
+@using zuHause.ViewModels
+@model PropertyDetailViewModel
+@{
+    ViewData["Title"] = Model.Title;
+    Layout = null; // 使用自定義佈局
+}
+
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"]</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Variables CSS -->
+    <link rel="stylesheet" href="~/css/variables.css" />
+    <!-- Property Detail CSS -->
+    <link rel="stylesheet" href="~/css/property-detail.css" />
+
+        <link rel="stylesheet" href="~/css/_LoginPartialShared.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/zuHause.styles.css" asp-append-version="true" />
+</head>
+<body>
+    <div class="min-vh-100 bg-light position-relative">
+        <!-- 主導覽列 -->
+            @await Component.InvokeAsync("NavbarMember")
+
+        <!-- 偵測點元素 - 用於觸發次導覽列顯示 -->
+        <div class="sentinel-element" id="sentinelElement"></div>
+
+        <!-- 次要導覽列 - 滾動觸發 -->
+        <nav class="quick-navigation-tabs" id="quickNavigationTabs">
+            <div class="container-fluid px-4">
+                <ul class="nav nav-tabs" role="tablist" aria-label="房源詳細資訊導覽">
+                    <li class="nav-item" role="presentation">
+                        <a class="nav-link active" 
+                           id="house-info-tab" 
+                           href="#house-info" 
+                           role="tab" 
+                           aria-controls="house-info" 
+                           aria-selected="true"
+                           data-section="house-info">
+                            房屋資訊
+                        </a>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <a class="nav-link" 
+                           id="costs-rules-tab" 
+                           href="#costs-rules" 
+                           role="tab" 
+                           aria-controls="costs-rules" 
+                           aria-selected="false"
+                           data-section="costs-rules">
+                            費用及守則
+                        </a>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <a class="nav-link" 
+                           id="amenities-tab" 
+                           href="#amenities" 
+                           role="tab" 
+                           aria-controls="amenities" 
+                           aria-selected="false"
+                           data-section="amenities">
+                            設備與服務
+                        </a>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <a class="nav-link" 
+                           id="description-tab" 
+                           href="#description" 
+                           role="tab" 
+                           aria-controls="description" 
+                           aria-selected="false"
+                           data-section="description">
+                            描述
+                        </a>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <a class="nav-link" 
+                           id="transportation-tab" 
+                           href="#transportation" 
+                           role="tab" 
+                           aria-controls="transportation" 
+                           aria-selected="false"
+                           data-section="transportation">
+                            位置
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+        <!-- 主要內容區域 -->
+        <div class="container-fluid px-4 py-4">
+            <div class="row">
+                <!-- 左側主要內容 -->
+                <div class="col-lg-8">
+                    <!-- 房屋標題和操作按鈕 -->
+                    <div class="property-header mb-4">
+                        <div class="d-flex align-items-start justify-content-between mb-3">
+                            <h1 class="property-title">@Model.Title</h1>
+                            <div class="property-actions d-flex gap-2">
+                                <button class="action-btn-v2" id="shareBtn">
+                                    <i class="fas fa-share me-1"></i>
+                                    分享
+                                </button>
+                                <button class="action-btn-v2 @(Model.IsFavorite ? "active" : "")" id="favoriteBtn" data-property-id="@Model.PropertyId">
+                                    <i class="@(Model.IsFavorite ? "fas" : "far") fa-heart me-1"></i>
+                                    @(Model.IsFavorite ? "已收藏" : "收藏")
+                                </button>
+                                <div class="dropdown">
+                                    <button class="action-btn-v2" data-bs-toggle="dropdown">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="#" id="reportBtn">
+                                            <i class="fas fa-flag me-2"></i>回報此房源問題
+                                        </a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 圖片展示區域 -->
+                    <div class="property-gallery mb-4">
+                        @if (Model.Images.Any())
+                        {
+                            <!-- 主圖片 -->
+                            <div class="main-image-container position-relative mb-3">
+                                <img src="@Model.Images.FirstOrDefault()?.ImagePath" 
+                                     alt="@Model.Images.FirstOrDefault()?.ImageDescription" 
+                                     class="main-image w-100 rounded-3" 
+                                     id="mainImage" 
+                                     data-bs-toggle="modal" 
+                                     data-bs-target="#imageModal">
+                                <div class="image-overlay position-absolute top-0 start-0 p-3">
+                                    <span class="image-label bg-dark bg-opacity-50 text-white px-2 py-1 rounded small">
+                                        房子總覽圖
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- 縮圖 -->
+                            @if (Model.Images.Count > 1)
+                            {
+                                <div class="row g-2">
+                                    @foreach (var image in Model.Images.Skip(1).Take(4))
+                                    {
+                                        <div class="col-3">
+                                            <div class="thumbnail-container position-relative">
+                                                <img src="@image.ImagePath" 
+                                                     alt="@image.ImageDescription" 
+                                                     class="thumbnail-image w-100 rounded-2" 
+                                                     data-image-src="@image.ImagePath">
+                                                <div class="thumbnail-overlay position-absolute bottom-0 start-0 p-1">
+                                                    <span class="thumbnail-label bg-dark bg-opacity-70 text-white px-1 rounded small" style="font-size: 0.7rem;">
+                                                        @image.ImageDescription
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        }
+                    </div>
+
+                    <!-- 房屋資訊 -->
+                    <section id="house-info" class="detail-section mb-4">
+                        <h2 class="section-header">
+                            <i class="fas fa-home me-2"></i>
+                            房屋資訊
+                        </h2>
+                        <div class="section-content">
+                            <!-- 基本資訊圖標列 -->
+                            <div class="d-flex flex-wrap gap-4 mb-4 text-muted">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-map-marker-alt me-1"></i>
+                                    @Model.DistrictName, @Model.CityName
+                                </div>
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-bed me-1"></i>
+                                    @(Model.HouseInfo.Rooms ?? "未提供")
+                                </div>
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-bath me-1"></i>
+                                    @(Model.HouseInfo.Bathrooms ?? "未提供")
+                                </div>
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-users me-1"></i>
+                                    1-2人
+                                </div>
+                            </div>
+
+                            <!-- 詳細資訊 -->
+                            <div class="row g-4">
+                                <div class="col-md-6">
+                                    <div class="info-grid">
+                                        <div class="info-item">
+                                            <span class="info-label">房屋類型：</span>
+                                            <span class="info-value">@(Model.HouseInfo.PropertyType ?? "未提供")</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <span class="info-label">樓層：</span>
+                                            <span class="info-value">@(Model.HouseInfo.Floor ?? "未提供")</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <span class="info-label">坪數：</span>
+                                            <span class="info-value">@(Model.HouseInfo.Area ?? "未提供")</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <span class="info-label">朝向：</span>
+                                            <span class="info-value">南向</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="info-grid">
+                                        <div class="info-item">
+                                            <span class="info-label">屋齡：</span>
+                                            <span class="info-value">@(Model.HouseInfo.Age > 0 ? Model.HouseInfo.Age + "年" : "未提供")</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <span class="info-label">電梯：</span>
+                                            <span class="info-value">有</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <span class="info-label">停車位：</span>
+                                            <span class="info-value">@(Model.HouseInfo.Parking ?? "未提供")</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <span class="info-label">寵物：</span>
+                                            <span class="info-value">@(Model.RulesAndFees.AllowPets ? "可養" : "不可養")</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- 費用及守則 -->
+                    <section id="costs-rules" class="detail-section mb-4">
+                        <h2 class="section-header">
+                            <i class="fas fa-file-contract me-2"></i>
+                            費用
+                        </h2>
+                        <div class="section-content">
+                            <div class="row g-4">
+                                <div class="col-md-6">
+                                    <h4 class="h6 text-muted mb-3">附加費用</h4>
+                                    <div class="cost-items">
+                                        <div class="cost-item">
+                                            <div class="d-flex align-items-center">
+                                                <span class="cost-label">電費</span>
+                                                <i class="fas fa-info-circle ms-1 text-muted small"></i>
+                                            </div>
+                                            <div class="cost-value small text-muted">每度 NT$ 6/月</div>
+                                        </div>
+                                        <div class="cost-item">
+                                            <div class="d-flex align-items-center">
+                                                <span class="cost-label">水費</span>
+                                                <i class="fas fa-info-circle ms-1 text-muted small"></i>
+                                            </div>
+                                            <div class="cost-value small text-muted">NT$ @Model.RulesAndFees.UtilityDeposit.ToString("N0")/月</div>
+                                        </div>
+                                        <div class="cost-item">
+                                            <div class="d-flex align-items-center">
+                                                <span class="cost-label">停車費</span>
+                                                <i class="fas fa-info-circle ms-1 text-muted small"></i>
+                                            </div>
+                                            <div class="cost-value small text-muted">每車位 NT$ 2,000/月</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <h4 class="h6 text-muted mb-3">一次性費用</h4>
+                                    <div class="cost-items">
+                                        <div class="cost-item">
+                                            <span class="cost-label">押金</span>
+                                            <div class="cost-value fw-medium text-danger">NT$ @Model.RulesAndFees.Deposit.ToString("N0")</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- 設備與服務 -->
+                    <section id="amenities" class="detail-section mb-4">
+                        <h2 class="section-header">
+                            <i class="fas fa-cogs me-2"></i>
+                            設備與服務
+                        </h2>
+                        <div class="section-content">
+                            @if (Model.Equipment.Any())
+                            {
+                                var groupedEquipment = Model.Equipment.GroupBy(e => e.EquipmentType).ToList();
+                                
+                                <!-- 建物設施 -->
+                                <div class="amenity-category mb-4">
+                                    <h3 class="amenity-title">建物設施</h3>
+                                    <div class="row g-2">
+                                        <div class="col-md-4">‧ 游泳池</div>
+                                        <div class="col-md-4">‧ 健身房</div>
+                                        <div class="col-md-4">‧ 會議室</div>
+                                        <div class="col-md-4">‧ KTV</div>
+                                    </div>
+                                </div>
+                                <hr class="amenity-divider">
+
+                                <!-- 物業服務 -->
+                                <div class="amenity-category mb-4">
+                                    <h3 class="amenity-title">物業服務</h3>
+                                    <div class="row g-2">
+                                        <div class="col-md-4">‧ 收發包裹</div>
+                                        <div class="col-md-4">‧ 24小時管理</div>
+                                        <div class="col-md-4">‧ 垃圾子母車</div>
+                                    </div>
+                                </div>
+                                <hr class="amenity-divider">
+
+                                <!-- 室內設備 -->
+                                @foreach (var category in groupedEquipment.Where(g => g.Key != "其他"))
+                                {
+                                    <div class="amenity-category mb-4">
+                                        <h3 class="amenity-title">@category.Key</h3>
+                                        <div class="row g-2">
+                                            @foreach (var equipment in category)
+                                            {
+                                                <div class="col-md-4">‧ @equipment.EquipmentName</div>
+                                            }
+                                        </div>
+                                    </div>
+                                    <hr class="amenity-divider">
+                                }
+
+                                <!-- 其他 -->
+                                var otherCategory = groupedEquipment.FirstOrDefault(g => g.Key == "其他");
+                                @if (otherCategory != null)
+                                {
+                                    <div class="amenity-category">
+                                        <h3 class="amenity-title">其他</h3>
+                                        <div class="row g-4">
+                                            <div class="col-md-6">
+                                                <div class="other-group">
+                                                    <div class="fw-semibold text-muted mb-2">寵物</div>
+                                                    <div class="ms-3">
+                                                        <div class="fw-medium">貓咪</div>
+                                                        <div class="ms-3">‧ @(Model.RulesAndFees.AllowPets ? "允許" : "不允許")</div>
+                                                        <div class="fw-medium mt-2">狗</div>
+                                                        <div class="ms-3">‧ 不允許</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="other-group">
+                                                    <div class="fw-semibold text-muted mb-2">神明廳</div>
+                                                    <div class="ms-3">‧ 不允許</div>
+                                                </div>
+                                                <div class="other-group mt-3">
+                                                    <div class="fw-semibold text-muted mb-2">租屋補助</div>
+                                                    <div class="ms-3">‧ 可申請</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                        </div>
+                    </section>
+
+                    <!-- 房屋描述 -->
+                    <section id="description" class="detail-section mb-4">
+                        <h2 class="section-header">
+                            <i class="fas fa-info-circle me-2"></i>
+                            房屋描述
+                        </h2>
+                        <div class="section-content">
+                            <p class="lh-relaxed text-muted">
+                                @if (!string.IsNullOrEmpty(Model.Description))
+                                {
+                                    @Html.Raw(Model.Description.Replace("\n", "<br>"))
+                                }
+                                else
+                                {
+                                    @:房東尚未提供詳細描述
+                                }
+                            </p>
+                        </div>
+                    </section>
+
+                    <!-- 交通資訊 -->
+                    <section id="transportation" class="detail-section mb-4">
+                        <h2 class="section-header">
+                            <i class="fas fa-map-marker-alt me-2"></i>
+                            交通資訊
+                        </h2>
+                        <div class="section-content">
+                            <div class="transport-info">
+                                <div class="transport-item">
+                                    <span class="transport-label">捷運市政府站：</span>
+                                    <span class="transport-value">步行5分鐘</span>
+                                </div>
+                                <div class="transport-item">
+                                    <span class="transport-label">公車站：</span>
+                                    <span class="transport-value">步行2分鐘</span>
+                                </div>
+                                <div class="transport-item">
+                                    <span class="transport-label">台北101：</span>
+                                    <span class="transport-value">步行8分鐘</span>
+                                </div>
+                                <div class="transport-item">
+                                    <span class="transport-label">信義商圈：</span>
+                                    <span class="transport-value">步行10分鐘</span>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- 右側資訊面板 -->
+                <div class="col-lg-4">
+                    <div class="property-info-sidebar" id="propertySidebar">
+                        <!-- 價格資訊卡片 -->
+                        <div class="info-card" id="price-info">
+                            <div class="price-display text-center mb-3">
+                                <div class="price-label small text-muted mb-1">標題</div>
+                                <div class="price-amount">NT$ @Model.Price.ToString("N0")/月</div>
+                            </div>
+
+                            <div class="property-quick-info">
+                                <div class="quick-info-item">
+                                    <i class="fas fa-map-marker-alt me-2 text-muted"></i>
+                                    地址：@Model.Address
+                                </div>
+
+                                <div class="row g-2 mt-3">
+                                    <div class="col-6">
+                                        <div class="quick-detail">
+                                            <span class="quick-label">押金:</span>
+                                            <span class="quick-value">押兩個月</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="quick-detail">
+                                            <span class="quick-label">坪數:</span>
+                                            <span class="quick-value">@(Model.HouseInfo.Area ?? "未提供")</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="quick-detail">
+                                            <span class="quick-label">類型:</span>
+                                            <span class="quick-value">@(Model.HouseInfo.PropertyType ?? "未提供")</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="quick-detail">
+                                            <span class="quick-label">格局:</span>
+                                            <span class="quick-value">@(Model.HouseInfo.Rooms ?? "未提供")</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="quick-detail">
+                                            <span class="quick-label">車位:</span>
+                                            <span class="quick-value">@(Model.HouseInfo.Parking ?? "無")</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="quick-detail">
+                                            <span class="quick-label">樓層:</span>
+                                            <span class="quick-value">@(Model.HouseInfo.Floor ?? "未提供")</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 房東資訊和操作按鈕卡片 -->
+                        <div class="info-card">
+                            <!-- 房東資訊 -->
+                            <div class="landlord-info mb-4">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="landlord-avatar bg-light rounded-circle d-flex align-items-center justify-content-center me-3">
+                                        <i class="fas fa-user text-muted"></i>
+                                    </div>
+                                    <div>
+                                        <div class="landlord-label small text-muted">房東</div>
+                                        <div class="landlord-name fw-medium">@Model.LandlordName</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 立即申租按鈕 (特殊樣式) -->
+                            <div class="mb-3">
+                                <button class="btn-apply-rent w-100">
+                                    🔥 立即申租
+                                </button>
+                            </div>
+
+                            <!-- 其他操作按鈕 -->
+                            <div class="action-buttons">
+                                <button class="btn-schedule-visit w-100 mb-2">
+                                    <i class="fas fa-calendar me-2"></i>
+                                    預約看房
+                                </button>
+                                <button class="btn-contact w-100" data-bs-toggle="modal" data-bs-target="#contactModal">
+                                    <i class="fas fa-envelope me-2"></i>
+                                    立即聯絡
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 圖片放大模態框 -->
+    <div class="modal fade" id="imageModal" tabindex="-1">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content bg-transparent border-0">
+                <div class="modal-header border-0 bg-transparent">
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <img src="" alt="" class="w-100 rounded" id="modalImage">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 聯絡房東模態框 -->
+    <div class="modal fade" id="contactModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">聯絡房東</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <div class="mb-3">
+                            <label class="form-label">姓名 *</label>
+                            <input type="text" class="form-control" placeholder="請輸入您的姓名">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">聯絡電話 *</label>
+                            <input type="tel" class="form-control" placeholder="請輸入您的電話號碼">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">電子郵件 *</label>
+                            <input type="email" class="form-control" placeholder="請輸入您的電子郵件">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">LINE 帳號</label>
+                            <input type="text" class="form-control" placeholder="請輸入您的 LINE ID">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">備註和說明</label>
+                            <textarea class="form-control" rows="3" placeholder="請輸入其他想說明的事項..."></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary">提交</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Property Detail JS -->
+    <script src="~/js/property-detail.js"></script>
+</body>
+</html>
