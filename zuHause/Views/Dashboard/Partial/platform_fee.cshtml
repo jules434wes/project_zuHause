@@ -1,0 +1,196 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+}
+<div class="container mt-4">
+    <div class="card mb-4">
+        <div class="card-header">
+            📋 刊登費方案清單
+        </div>
+
+        <div class="card-body p-2">
+            <table class="table table-bordered table-sm text-center" id="listingPlansTable">
+                <thead class="table-light">
+                    <tr>
+                        <th>方案ID</th>
+                        <th>方案名稱</th>
+                        <th>每日刊登費</th>
+                        <th>最小天數</th>
+                       
+                        <th>生效期間</th>
+                        <th>狀態</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- 由 JS 動態載入 -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- 上方狀態區 -->
+    <div class="container bg-light p-3 rounded border mb-4">
+        <h5 class="mb-3 fw-bold">目前費用設定</h5>
+        <div class="row g-3">
+            <!-- 左欄 -->
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label>目前最低上架天數：</label>
+                    <div class="form-control-plaintext">15 天</div>
+                </div>
+                <div class="form-group">
+                    <label>此設定檔開始執行時間：</label>
+                    <div class="form-control-plaintext">2025/6/25 下午 08:00</div>
+                </div>
+            </div>
+
+            <!-- 右欄 -->
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label>目前上架服務費(天)：</label>
+                    <div class="form-control-plaintext">20 元</div>
+                </div>
+
+                <div class="form-group">
+                    <label>此設定檔結束執行時間：</label>
+                    <div class="form-control-plaintext">2026/6/25 下午 08:00</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <hr class="my-4 border border-dark border-2 opacity-50">
+
+    <div class="container bg-light p-3 rounded border mb-4">
+        <h5 class="mb-3 fw-bold">已排程費用設定</h5>
+        <div class="row g-3">
+            <!-- 左欄 -->
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label>最低上架天數：</label>
+                    <div class="form-control-plaintext">15 天</div>
+                </div>
+                <div class="form-group">
+                    <label>此設定檔開始執行時間：</label>
+                    <div class="form-control-plaintext">2026/6/25 下午 08:00</div>
+                </div>
+            </div>
+
+            <!-- 右欄 -->
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label>上架服務費(天)：</label>
+                    <div class="form-control-plaintext">20元</div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <hr class="my-4 border border-dark border-2 opacity-50">
+    <div class="card mt-4">
+        <div class="card-header bg-success text-white">
+            🧾 新增 / 編輯刊登費方案
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label for="planName" class="form-label">方案名稱</label>
+                    <input type="text" class="form-control" id="planName" />
+                </div>
+                <div class="col-md-4">
+                    <label for="pricePerDay" class="form-label">每日刊登費</label>
+                    <input type="number" class="form-control" id="pricePerDay" />
+                </div>
+                <div class="col-md-4">
+                    <label for="minListingDays" class="form-label">最小天數</label>
+                    <input type="number" class="form-control" id="minListingDays" />
+                </div>
+                <div class="col-md-4">
+                    <label for="currencyCode" class="form-label">幣別</label>
+                    <input type="text" class="form-control" id="currencyCode" value="TWD" />
+                </div>
+                <div class="col-md-4">
+                    <label for="startAt" class="form-label">開始日期</label>
+                    <input type="datetime-local" class="form-control" id="startAt" />
+                </div>
+                <div class="col-md-4">
+                    <label for="endAt" class="form-label">結束日期（可空）</label>
+                    <input type="datetime-local" class="form-control" id="endAt" />
+                </div>
+            </div>
+            <div class="mt-3">
+                <button class="btn btn-success" onclick="submitListingPlan()">💾 儲存方案</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ✅ 設定表單（可編輯） -->
+    <div class="bg-primary bg-opacity-10 p-3 rounded border">
+        <h6 id="formMode" class="text-info">📝 請選擇方案進行編輯</h6>
+        <h5 class="fw-bold">服務費與最低上架天數設定</h5>
+
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label>設定最低上架天數：</label>
+                <input type="text" class="form-control" id="Minlistthreshold" placeholder="XXX 天">
+            </div>
+
+            <div class="col-md-6">
+                <label>設定上架服務費(天)：</label>
+                <input type="text" class="form-control" id="listingFee" placeholder="XXX 元">
+            </div>
+        </div>
+
+        <!-- ✅ 執行時間選擇 -->
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <label>執行時間：</label>
+                <div class="input-group">
+                    <input type="datetime-local" class="form-control" id="executeTime">
+
+                </div>
+            </div>
+        </div>
+
+        <!-- 試算區 -->
+        <div class="bg-light p-3 rounded border mt-4">
+            <h5 class="fw-bold mb-3">上架服務費與折扣費試算</h5>
+
+            <div class="row">
+                <!-- 左側輸入 -->
+                <div class="col-md-4">
+                    <label class="form-label">上架天數：</label>
+                    <input type="number" class="form-control mb-2" id="daysInput" placeholder="請輸入天數">
+
+
+
+                </div>
+
+                <!-- 右側試算結果 -->
+                <div class="col-md-8">
+                    <div class="p-3 border rounded bg-white" id="calcResult">
+                        <div class="mt-1" id="calcService"></div>
+
+
+                        <div class="mt-1" id="calcVerifyRate"></div>
+                        <hr>
+                        <div class="fw-bold mt-2" id="calcTotal"></div>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+
+
+        <!-- 動作按鈕 -->
+        <div class="d-flex justify-content-end gap-3">
+            <button id="saveSetting" class="btn btn-success">✅ 確定儲存設定</button>
+
+            <button class="btn btn-danger">❌ 取消儲存設定</button>
+        </div>
+     </div>
+</div>
+

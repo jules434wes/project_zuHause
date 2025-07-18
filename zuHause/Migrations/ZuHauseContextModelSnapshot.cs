@@ -17,7 +17,7 @@ namespace zuHause.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.10")
+                .HasAnnotation("ProductVersion", "9.0.7")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -121,9 +121,12 @@ namespace zuHause.Migrations
             modelBuilder.Entity("zuHause.Models.AdminMessageTemplate", b =>
                 {
                     b.Property<int>("TemplateId")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("int")
                         .HasColumnName("templateID")
-                        .HasComment("模板ID");
+                        .HasComment("模板ID(自動遞增)");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TemplateId"));
 
                     b.Property<string>("CategoryCode")
                         .IsRequired()
@@ -284,9 +287,12 @@ namespace zuHause.Migrations
             modelBuilder.Entity("zuHause.Models.Approval", b =>
                 {
                     b.Property<int>("ApprovalId")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("int")
                         .HasColumnName("approvalID")
-                        .HasComment("審核ID");
+                        .HasComment("審核ID (自動遞增，從701開始)");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ApprovalId"));
 
                     b.Property<int>("ApplicantMemberId")
                         .HasColumnType("int")
@@ -313,18 +319,18 @@ namespace zuHause.Migrations
                         .HasColumnName("moduleCode")
                         .HasComment("模組代碼");
 
-                    b.Property<int>("SourceId")
+                    b.Property<int?>("SourcePropertyId")
                         .HasColumnType("int")
-                        .HasColumnName("sourceID")
-                        .HasComment("來源ID");
+                        .HasColumnName("sourcePropertyID")
+                        .HasComment("審核房源ID");
 
                     b.Property<string>("StatusCategory")
                         .ValueGeneratedOnAddOrUpdate()
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)")
                         .HasColumnName("statusCategory")
-                        .HasComputedColumnSql("(CONVERT([nvarchar](20),N'ApprovalStatus'))", true)
-                        .HasComment("審核狀態分類");
+                        .HasComputedColumnSql("(CONVERT([nvarchar](20),N'APPROVAL_STATUS'))", true)
+                        .HasComment("狀態類別 (計算欄位)");
 
                     b.Property<string>("StatusCode")
                         .IsRequired()
@@ -343,29 +349,45 @@ namespace zuHause.Migrations
 
                     b.HasKey("ApprovalId");
 
-                    b.HasIndex("ApplicantMemberId");
+                    b.HasIndex("SourcePropertyId");
 
-                    b.HasIndex("SourceId");
+                    b.HasIndex(new[] { "ApplicantMemberId" }, "IX_approvals_applicantMemberID");
 
-                    b.HasIndex("StatusCategory", "StatusCode");
+                    b.HasIndex(new[] { "CreatedAt" }, "IX_approvals_createdAt");
 
-                    b.HasIndex(new[] { "ModuleCode", "SourceId" }, "UQ_approvals_module_source")
-                        .IsUnique();
+                    b.HasIndex(new[] { "CurrentApproverId" }, "IX_approvals_currentApproverID");
+
+                    b.HasIndex(new[] { "ModuleCode" }, "IX_approvals_moduleCode");
+
+                    b.HasIndex(new[] { "StatusCode" }, "IX_approvals_statusCode");
+
+                    b.HasIndex(new[] { "StatusCategory", "StatusCode" }, "IX_approvals_status_category");
+
+                    b.HasIndex(new[] { "ModuleCode", "ApplicantMemberId", "SourcePropertyId" }, "UQ_approvals_member_module")
+                        .IsUnique()
+                        .HasFilter("[sourcePropertyID] IS NOT NULL");
 
                     b.ToTable("approvals", null, t =>
                         {
                             t.HasComment("審核主檔");
+
+                            t.HasTrigger("trg_approvals_status_sync");
                         });
+
+                    b.HasAnnotation("SqlServer:UseSqlOutputClause", false);
                 });
 
             modelBuilder.Entity("zuHause.Models.ApprovalItem", b =>
                 {
                     b.Property<int>("ApprovalItemId")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("int")
                         .HasColumnName("approvalItemID")
-                        .HasComment("審核明細ID");
+                        .HasComment("審核明細ID (自動遞增，從801開始)");
 
-                    b.Property<int>("ActionBy")
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ApprovalItemId"));
+
+                    b.Property<int?>("ActionBy")
                         .HasColumnType("int")
                         .HasColumnName("actionBy")
                         .HasComment("操作者ID");
@@ -375,12 +397,13 @@ namespace zuHause.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)")
                         .HasColumnName("actionCategory")
-                        .HasComputedColumnSql("(CONVERT([nvarchar](20),N'ApprovalAction'))", true);
+                        .HasComputedColumnSql("(CONVERT([nvarchar](20),N'APPROVAL_ACTION'))", true)
+                        .HasComment("操作類別 (計算欄位)");
 
                     b.Property<string>("ActionNote")
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("actionNote")
-                        .HasComment("操作備註");
+                        .HasComment("內部操作備註");
 
                     b.Property<string>("ActionType")
                         .IsRequired()
@@ -409,9 +432,15 @@ namespace zuHause.Migrations
 
                     b.HasKey("ApprovalItemId");
 
-                    b.HasIndex("ApprovalId");
+                    b.HasIndex(new[] { "ActionBy" }, "IX_approvalItems_actionBy");
 
-                    b.HasIndex("ActionCategory", "ActionType");
+                    b.HasIndex(new[] { "ActionType" }, "IX_approvalItems_actionType");
+
+                    b.HasIndex(new[] { "ActionCategory", "ActionType" }, "IX_approvalItems_action_category");
+
+                    b.HasIndex(new[] { "ApprovalId" }, "IX_approvalItems_approvalID");
+
+                    b.HasIndex(new[] { "CreatedAt" }, "IX_approvalItems_createdAt");
 
                     b.ToTable("approvalItems", null, t =>
                         {
@@ -1029,6 +1058,10 @@ namespace zuHause.Migrations
                         .HasColumnName("signerRole")
                         .HasComment("簽署人身份");
 
+                    b.Property<int?>("UploadId")
+                        .HasColumnType("int")
+                        .HasColumnName("uploadId");
+
                     b.HasKey("IdcontractSignatureId");
 
                     b.HasIndex("ContractId");
@@ -1078,9 +1111,12 @@ namespace zuHause.Migrations
             modelBuilder.Entity("zuHause.Models.CustomerServiceTicket", b =>
                 {
                     b.Property<int>("TicketId")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("int")
                         .HasColumnName("ticketId")
-                        .HasComment("客服單ID");
+                        .HasComment("客服單ID (自動遞增，從201開始)");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TicketId"));
 
                     b.Property<string>("CategoryCode")
                         .IsRequired()
@@ -1172,13 +1208,21 @@ namespace zuHause.Migrations
 
                     b.HasKey("TicketId");
 
-                    b.HasIndex("ContractId");
-
                     b.HasIndex("FurnitureOrderId");
 
-                    b.HasIndex("MemberId");
+                    b.HasIndex(new[] { "CategoryCode" }, "IX_customerServiceTickets_categoryCode");
 
-                    b.HasIndex("PropertyId");
+                    b.HasIndex(new[] { "ContractId" }, "IX_customerServiceTickets_contractId");
+
+                    b.HasIndex(new[] { "CreatedAt" }, "IX_customerServiceTickets_createdAt");
+
+                    b.HasIndex(new[] { "IsResolved" }, "IX_customerServiceTickets_isResolved");
+
+                    b.HasIndex(new[] { "MemberId" }, "IX_customerServiceTickets_memberId");
+
+                    b.HasIndex(new[] { "PropertyId" }, "IX_customerServiceTickets_propertyId");
+
+                    b.HasIndex(new[] { "StatusCode" }, "IX_customerServiceTickets_statusCode");
 
                     b.ToTable("customerServiceTickets", null, t =>
                         {
@@ -2131,6 +2175,109 @@ namespace zuHause.Migrations
                         });
                 });
 
+            modelBuilder.Entity("zuHause.Models.Image", b =>
+                {
+                    b.Property<long>("ImageId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("imageId");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("ImageId"));
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("category");
+
+                    b.Property<int?>("DisplayOrder")
+                        .HasColumnType("int")
+                        .HasColumnName("displayOrder");
+
+                    b.Property<int>("EntityId")
+                        .HasColumnType("int")
+                        .HasColumnName("entityId");
+
+                    b.Property<string>("EntityType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("entityType");
+
+                    b.Property<long>("FileSizeBytes")
+                        .HasColumnType("bigint")
+                        .HasColumnName("fileSizeBytes");
+
+                    b.Property<int>("Height")
+                        .HasColumnType("int")
+                        .HasColumnName("height");
+
+                    b.Property<Guid>("ImageGuid")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("imageGuid")
+                        .HasDefaultValueSql("newsequentialid()");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true)
+                        .HasColumnName("isActive");
+
+                    b.Property<string>("MimeType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("mimeType");
+
+                    b.Property<string>("OriginalFileName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasColumnName("originalFileName");
+
+                    b.Property<string>("StoredFileName")
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("storedFileName")
+                        .HasComputedColumnSql("lower(CONVERT([char](36),[imageGuid]))+case [mimeType] when 'image/webp' then '.webp' when 'image/jpeg' then '.jpg' when 'image/png' then '.png' else '.bin' end", true);
+
+                    b.Property<DateTime>("UploadedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasColumnName("uploadedAt")
+                        .HasDefaultValueSql("sysutcdatetime()");
+
+                    b.Property<int?>("UploadedByMemberId")
+                        .HasColumnType("int")
+                        .HasColumnName("uploadedByMemberId");
+
+                    b.Property<int>("Width")
+                        .HasColumnType("int")
+                        .HasColumnName("width");
+
+                    b.HasKey("ImageId");
+
+                    b.HasIndex("ImageGuid")
+                        .IsUnique()
+                        .HasDatabaseName("uq_images_imageGuid");
+
+                    b.HasIndex("UploadedByMemberId");
+
+                    b.HasIndex("EntityType", "EntityId", "Category", "DisplayOrder", "IsActive")
+                        .HasDatabaseName("ix_images_entity");
+
+                    SqlServerIndexBuilderExtensions.IncludeProperties(b.HasIndex("EntityType", "EntityId", "Category", "DisplayOrder", "IsActive"), new[] { "ImageGuid", "StoredFileName", "FileSizeBytes", "Width", "Height", "UploadedAt", "MimeType", "OriginalFileName" });
+
+                    b.ToTable("images", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_images_category", "[category] IN ('BedRoom','Kitchen','Living','Balcony','Avatar','Gallery','Product')");
+
+                            t.HasCheckConstraint("ck_images_entityType", "[entityType] IN ('Member','Property','Furniture','Announcement')");
+                        });
+                });
+
             modelBuilder.Entity("zuHause.Models.InventoryEvent", b =>
                 {
                     b.Property<Guid>("FurnitureInventoryId")
@@ -2200,9 +2347,12 @@ namespace zuHause.Migrations
             modelBuilder.Entity("zuHause.Models.ListingPlan", b =>
                 {
                     b.Property<int>("PlanId")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("int")
                         .HasColumnName("planId")
-                        .HasComment("方案ID");
+                        .HasComment("刊登費方案ID");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PlanId"));
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
@@ -2355,7 +2505,6 @@ namespace zuHause.Migrations
                         .HasComment("會員身份別ID");
 
                     b.Property<string>("NationalIdNo")
-                        .IsRequired()
                         .HasMaxLength(10)
                         .IsUnicode(false)
                         .HasColumnType("char(10)")
@@ -2424,9 +2573,6 @@ namespace zuHause.Migrations
                     b.HasIndex("ResidenceDistrictId");
 
                     b.HasIndex(new[] { "Email" }, "IX_members_email");
-
-                    b.HasIndex(new[] { "NationalIdNo" }, "IX_members_nationalIdNo")
-                        .IsUnique();
 
                     b.HasIndex(new[] { "PhoneNumber" }, "IX_members_phone");
 
@@ -2977,15 +3123,24 @@ namespace zuHause.Migrations
                     b.ToTable("properties", null, t =>
                         {
                             t.HasComment("房源資料表");
+
+                            t.HasTrigger("trg_properties_status_protection");
+
+                            t.HasTrigger("trg_properties_validate_landlord");
                         });
+
+                    b.HasAnnotation("SqlServer:UseSqlOutputClause", false);
                 });
 
             modelBuilder.Entity("zuHause.Models.PropertyComplaint", b =>
                 {
                     b.Property<int>("ComplaintId")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("int")
                         .HasColumnName("complaintId")
-                        .HasComment("投訴ID");
+                        .HasComment("投訴ID (自動遞增，從301開始)");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ComplaintId"));
 
                     b.Property<int>("ComplainantId")
                         .HasColumnType("int")
@@ -3050,11 +3205,19 @@ namespace zuHause.Migrations
 
                     b.HasKey("ComplaintId");
 
-                    b.HasIndex("ComplainantId");
+                    b.HasIndex(new[] { "ComplainantId" }, "IX_propertyComplaints_complainantId");
 
-                    b.HasIndex("LandlordId");
+                    b.HasIndex(new[] { "CreatedAt" }, "IX_propertyComplaints_createdAt");
 
-                    b.HasIndex("PropertyId");
+                    b.HasIndex(new[] { "HandledBy" }, "IX_propertyComplaints_handledBy");
+
+                    b.HasIndex(new[] { "LandlordId" }, "IX_propertyComplaints_landlordId");
+
+                    b.HasIndex(new[] { "PropertyId" }, "IX_propertyComplaints_propertyId");
+
+                    b.HasIndex(new[] { "ResolvedAt" }, "IX_propertyComplaints_resolvedAt");
+
+                    b.HasIndex(new[] { "StatusCode" }, "IX_propertyComplaints_statusCode");
 
                     b.ToTable("propertyComplaints", null, t =>
                         {
@@ -3065,9 +3228,11 @@ namespace zuHause.Migrations
             modelBuilder.Entity("zuHause.Models.PropertyEquipmentCategory", b =>
                 {
                     b.Property<int>("CategoryId")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("int")
-                        .HasColumnName("categoryID")
-                        .HasComment("設備分類ID");
+                        .HasColumnName("categoryID");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CategoryId"));
 
                     b.Property<string>("CategoryName")
                         .IsRequired()
@@ -3799,9 +3964,12 @@ namespace zuHause.Migrations
             modelBuilder.Entity("zuHause.Models.SystemMessage", b =>
                 {
                     b.Property<int>("MessageId")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("int")
                         .HasColumnName("messageID")
-                        .HasComment("系統訊息ID");
+                        .HasComment("系統訊息ID (自動遞增，從401開始)");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("MessageId"));
 
                     b.Property<int>("AdminId")
                         .HasColumnType("int")
@@ -3886,11 +4054,19 @@ namespace zuHause.Migrations
 
                     b.HasKey("MessageId");
 
-                    b.HasIndex("AdminId");
-
-                    b.HasIndex("ReceiverId");
-
                     b.HasIndex(new[] { "IsActive", "CategoryCode" }, "IX_systemMessages_active_category");
+
+                    SqlServerIndexBuilderExtensions.HasFillFactor(b.HasIndex(new[] { "IsActive", "CategoryCode" }, "IX_systemMessages_active_category"), 100);
+
+                    b.HasIndex(new[] { "AdminId" }, "IX_systemMessages_adminID");
+
+                    b.HasIndex(new[] { "AudienceTypeCode" }, "IX_systemMessages_audienceTypeCode");
+
+                    b.HasIndex(new[] { "DeletedAt" }, "IX_systemMessages_deletedAt");
+
+                    b.HasIndex(new[] { "ReceiverId" }, "IX_systemMessages_receiverID");
+
+                    b.HasIndex(new[] { "SentAt" }, "IX_systemMessages_sentAt");
 
                     b.ToTable("systemMessages", null, t =>
                         {
@@ -4181,10 +4357,9 @@ namespace zuHause.Migrations
                         .IsRequired()
                         .HasConstraintName("FK_approvals_applicant");
 
-                    b.HasOne("zuHause.Models.Property", "Source")
+                    b.HasOne("zuHause.Models.Property", "SourceProperty")
                         .WithMany("Approvals")
-                        .HasForeignKey("SourceId")
-                        .IsRequired()
+                        .HasForeignKey("SourcePropertyId")
                         .HasConstraintName("FK_approvals_Property");
 
                     b.HasOne("zuHause.Models.SystemCode", "SystemCode")
@@ -4194,7 +4369,7 @@ namespace zuHause.Migrations
 
                     b.Navigation("ApplicantMember");
 
-                    b.Navigation("Source");
+                    b.Navigation("SourceProperty");
 
                     b.Navigation("SystemCode");
                 });
@@ -4551,6 +4726,15 @@ namespace zuHause.Migrations
                         .HasConstraintName("FK_furnitureRentalContracts_order");
 
                     b.Navigation("Order");
+                });
+
+            modelBuilder.Entity("zuHause.Models.Image", b =>
+                {
+                    b.HasOne("zuHause.Models.Member", null)
+                        .WithMany()
+                        .HasForeignKey("UploadedByMemberId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_images_members");
                 });
 
             modelBuilder.Entity("zuHause.Models.InventoryEvent", b =>
