@@ -62,8 +62,6 @@ builder.Services.AddSession(options =>
 builder.Services.AddScoped<IPasswordHasher<Member>, PasswordHasher<Member>>();
 builder.Services.AddScoped<MemberService>();
 
-
-
 var app = builder.Build();
 
 // 在開發環境自動執行資料重置和播種
@@ -97,16 +95,10 @@ app.UseRouting();
 app.UseSession(); // 啟用 Session 中間件
 app.UseAuthentication();
 app.UseAuthorization();
+app.MapControllers();
 
 // 亂碼請修正 FurnitureController �� FurnitureHomePage
 app.MapControllerRoute(
     name: "default",
-
-    //pattern: "{controller=Furniture}/{action=FurnitureHomePage}/{id?}");
-    //pattern: "{controller=Home}/{action=Index}/{id?}");
-    pattern: "{controller=Admin}/{action=Index}/{id?}");
-    //pattern: "{controller=Tenant}/{action=Announcement}/{id?}");
-
-
-
+    pattern: "{controller=Tenant}/{action=Search}/{id?}");
 app.Run();

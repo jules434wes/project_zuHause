@@ -324,7 +324,13 @@ public partial class ZuHauseContext : DbContext
 
             entity.HasIndex(e => new { e.StatusCategory, e.StatusCode }, "IX_approvals_status_category");
 
+
+            //entity.HasIndex(e => new { e.ModuleCode, e.SourceId }, "UQ_approvals_module_source")
+            //    .IsUnique()
+            //    .HasFillFactor(100);
+
             entity.HasIndex(e => new { e.ModuleCode, e.ApplicantMemberId, e.SourcePropertyId }, "UQ_approvals_member_module").IsUnique();
+
 
             entity.Property(e => e.ApprovalId)
                 .HasComment("審核ID (自動遞增，從701開始)")
@@ -2124,7 +2130,9 @@ public partial class ZuHauseContext : DbContext
             entity.ToTable("properties", tb =>
                 {
                     tb.HasComment("房源資料表");
+
                     tb.HasTrigger("trg_properties_status_protection");
+
                     tb.HasTrigger("trg_properties_validate_landlord");
                 });
 

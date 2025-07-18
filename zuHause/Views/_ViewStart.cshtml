@@ -1,11 +1,13 @@
 ﻿@{
 
     Layout = "_Layout";
+    var tenantControllers = new List<string> { "Announcement", "Tenant", "Search" }; 
+
     if(ViewContext.RouteData.Values["Controller"]?.ToString() == "Member")
     {
         Layout = "_LoginLayout";
     }
-    else if(ViewContext.RouteData.Values["Controller"]?.ToString() == "Tenant")
+    else if (tenantControllers.Contains(ViewContext.RouteData.Values["Controller"]?.ToString()!))
     {
         Layout = "_LayoutTenant";
     }
