@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
-using zuHause.Data.Configurations;
 
 namespace zuHause.Models;
 
@@ -129,13 +128,8 @@ public partial class ZuHauseContext : DbContext
     public virtual DbSet<UserUpload> UserUploads { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    {
-        if (!optionsBuilder.IsConfigured)
-        {
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-            optionsBuilder.UseSqlServer("Server=tcp:zuhause.database.windows.net,1433;Initial Catalog=zuHause;Persist Security Info=False;User ID=zuhause;Password=DB$MSIT67;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;");
-        }
-    }
+        => optionsBuilder.UseSqlServer("Server=tcp:zuhause.database.windows.net,1433;Initial Catalog=zuHause;Persist Security Info=False;User ID=zuhause;Password=DB$MSIT67;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -313,24 +307,12 @@ public partial class ZuHauseContext : DbContext
             entity.ToTable("approvals", tb =>
                 {
                     tb.HasComment("審核主檔");
-                    tb.HasTrigger("trg_approvals_status_sync");
+                    tb.HasTrigger("trg_approvals_identity_sync");
+                    tb.HasTrigger("trg_approvals_landlord_sync");
+                    tb.HasTrigger("trg_approvals_property_sync");
                 });
 
             entity.HasIndex(e => e.ApplicantMemberId, "IX_approvals_applicantMemberID");
-
-            entity.HasIndex(e => e.CreatedAt, "IX_approvals_createdAt");
-
-            entity.HasIndex(e => e.CurrentApproverId, "IX_approvals_currentApproverID");
-
-            entity.HasIndex(e => e.ModuleCode, "IX_approvals_moduleCode");
-
-            entity.HasIndex(e => e.StatusCode, "IX_approvals_statusCode");
-
-            entity.HasIndex(e => new { e.StatusCategory, e.StatusCode }, "IX_approvals_status_category");
-
-            entity.HasIndex(e => new { e.ModuleCode, e.SourcePropertyId }, "UQ_approvals_module_source")
-                .IsUnique()
-                .HasFillFactor(100);
 
             entity.HasIndex(e => e.CreatedAt, "IX_approvals_createdAt");
 
@@ -660,6 +642,10 @@ public partial class ZuHauseContext : DbContext
                 .HasDefaultValueSql("(CONVERT([datetime2](0),sysdatetime()))")
                 .HasComment("建立時間")
                 .HasColumnName("createdAt");
+            entity.Property(e => e.CustomName)
+                .HasMaxLength(50)
+                .HasComment("合約自訂名稱")
+                .HasColumnName("customName");
             entity.Property(e => e.DepositAmount)
                 .HasComment("押金金額")
                 .HasColumnName("depositAmount");
@@ -1670,29 +1656,51 @@ public partial class ZuHauseContext : DbContext
 
         modelBuilder.Entity<Image>(entity =>
         {
-            entity.HasKey(e => e.ImageId).HasName("PK__Images__7516F70C0063CFAC");
+            entity.HasKey(e => e.ImageId).HasName("pk_images");
 
-            entity.ToTable(tb => tb.HasComment("圖片表"));
+            entity.ToTable("images");
 
-            entity.HasIndex(e => new { e.EntityType, e.EntityId, e.Category, e.DisplayOrder, e.IsActive }, "IX_Images_EntityType_EntityId_Covering");
+            entity.HasIndex(e => new { e.EntityType, e.EntityId, e.Category, e.DisplayOrder, e.IsActive }, "ix_images_entity");
 
-            entity.HasIndex(e => new { e.EntityType, e.EntityId, e.Category, e.DisplayOrder }, "IX_Images_UQ_DisplayOrder")
-                .IsUnique()
-                .HasFilter("([DisplayOrder] IS NOT NULL)");
+            entity.HasIndex(e => e.ImageGuid, "uq_images_imageGuid").IsUnique();
 
-            entity.HasIndex(e => e.ImageGuid, "UQ_Images_ImageGuid").IsUnique();
-
-            entity.Property(e => e.Category).HasMaxLength(50);
-            entity.Property(e => e.EntityType).HasMaxLength(50);
-            entity.Property(e => e.ImageGuid).HasDefaultValueSql("(newsequentialid())");
-            entity.Property(e => e.IsActive).HasDefaultValue(true);
-            entity.Property(e => e.MimeType).HasMaxLength(50);
-            entity.Property(e => e.OriginalFileName).HasMaxLength(255);
+            entity.Property(e => e.ImageId).HasColumnName("imageId");
+            entity.Property(e => e.Category)
+                .HasMaxLength(50)
+                .HasColumnName("category");
+            entity.Property(e => e.DisplayOrder).HasColumnName("displayOrder");
+            entity.Property(e => e.EntityId).HasColumnName("entityId");
+            entity.Property(e => e.EntityType)
+                .HasMaxLength(50)
+                .HasColumnName("entityType");
+            entity.Property(e => e.FileSizeBytes).HasColumnName("fileSizeBytes");
+            entity.Property(e => e.Height).HasColumnName("height");
+            entity.Property(e => e.ImageGuid)
+                .HasDefaultValueSql("(newsequentialid())")
+                .HasColumnName("imageGuid");
+            entity.Property(e => e.IsActive)
+                .HasDefaultValue(true)
+                .HasColumnName("isActive");
+            entity.Property(e => e.MimeType)
+                .HasMaxLength(50)
+                .HasColumnName("mimeType");
+            entity.Property(e => e.OriginalFileName)
+                .HasMaxLength(255)
+                .HasColumnName("originalFileName");
             entity.Property(e => e.StoredFileName)
                 .HasMaxLength(41)
                 .IsUnicode(false)
-                .HasComputedColumnSql("(lower(CONVERT([char](36),[ImageGuid]))+case [MimeType] when 'image/webp' then '.webp' when 'image/jpeg' then '.jpg' when 'image/png' then '.png' else '.bin' end)", true);
-            entity.Property(e => e.UploadedAt).HasDefaultValueSql("(getutcdate())");
+                .HasComputedColumnSql("(lower(CONVERT([char](36),[imageGuid]))+case [mimeType] when 'image/webp' then '.webp' when 'image/jpeg' then '.jpg' when 'image/png' then '.png' else '.bin' end)", true)
+                .HasColumnName("storedFileName");
+            entity.Property(e => e.UploadedAt)
+                .HasDefaultValueSql("(sysutcdatetime())")
+                .HasColumnName("uploadedAt");
+            entity.Property(e => e.UploadedByMemberId).HasColumnName("uploadedByMemberId");
+            entity.Property(e => e.Width).HasColumnName("width");
+
+            entity.HasOne(d => d.UploadedByMember).WithMany(p => p.Images)
+                .HasForeignKey(d => d.UploadedByMemberId)
+                .HasConstraintName("fk_images_members");
         });
 
         modelBuilder.Entity<InventoryEvent>(entity =>
@@ -2108,7 +2116,6 @@ public partial class ZuHauseContext : DbContext
             entity.ToTable("properties", tb =>
                 {
                     tb.HasComment("房源資料表");
-                    tb.HasTrigger("trg_properties_status_protection");
                     tb.HasTrigger("trg_properties_validate_landlord");
                 });
 
@@ -3136,9 +3143,6 @@ public partial class ZuHauseContext : DbContext
                 .HasConstraintName("FK_userUploads_member");
         });
         modelBuilder.HasSequence<int>("seq_memberID");
-
-        // 套用 ImageConfiguration
-        modelBuilder.ApplyConfiguration(new ImageConfiguration());
 
         OnModelCreatingPartial(modelBuilder);
     }
