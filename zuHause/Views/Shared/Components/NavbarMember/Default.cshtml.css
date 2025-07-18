@@ -3,15 +3,12 @@ header nav {
     background-color: #ebffff;
 }
 
-    header nav .navbar-brand {
-        width: 13rem;
-    }
 
-    header nav .nav-separator {
-        width: 1px;
-        height: 1.5rem;
-        background-color: #40b0ae;
-    }
+        header nav .nav-separator {
+            width: 1px;
+            height: 1.5rem;
+            background-color: #40b0ae;
+        }
 
     header nav .user-img {
         width: 2.5rem;
@@ -19,6 +16,7 @@ header nav {
     }
 
         header nav .user-img img {
+            width:100%;
             height: 100%;
             -o-object-fit: cover;
             object-fit: cover;

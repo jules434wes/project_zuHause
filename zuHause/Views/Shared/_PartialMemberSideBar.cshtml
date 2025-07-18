@@ -10,5 +10,5 @@
     <a asp-controller="MemberInbox" asp-action="Index" class="list-group-item list-group-item-action rounded-1 text-center  @(page == "MemberInbox" ? "active" : "") ">通知/訊息管理</a>
     <a asp-controller="MemberApplications" asp-action="Index" class="list-group-item list-group-item-action rounded-1 text-center  @(page == "MemberApplications" ? "active" : "") ">申請紀錄管理</a>
     <a asp-controller="MemberContracts" asp-action="Index" class="list-group-item list-group-item-action rounded-1 text-center  @(page == "MemberContracts" ? "active" : "") ">我的合約</a>
-    <a href="#" class="list-group-item list-group-item-action rounded-1 text-center">我的收藏</a>
+    <a asp-action="CollectionAndComparison" asp-controller="Tenant" class="list-group-item list-group-item-action rounded-1 text-center">我的收藏</a>
 </div>

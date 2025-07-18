@@ -1,9 +1,10 @@
 ﻿@{
 
     Layout = "_Layout";
-    var tenantControllers = new List<string> { "Announcement", "Tenant", "Search" }; 
+    var tenantControllers = new List<string> { "Announcement", "Tenant", "Search" };
+    List<string> LoginLayoutController = new List<string> { "Member", "MemberInbox", "MemberContracts", "MemberApplications" };
 
-    if(ViewContext.RouteData.Values["Controller"]?.ToString() == "Member")
+    if (LoginLayoutController.Contains(ViewContext.RouteData.Values["Controller"]?.ToString()!))
     {
         Layout = "_LoginLayout";
     }
