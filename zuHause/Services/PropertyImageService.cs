@@ -10,7 +10,7 @@ namespace zuHause.Services
     /// 房源圖片處理服務 - 純 Facade 模式，委託給統一圖片管理系統
     /// 保持向後相容性，內部完全委託給 IImageUploadService 和 IImageQueryService
     /// </summary>
-    public class PropertyImageService
+    public class PropertyImageService : IPropertyImageService
     {
         private readonly IImageUploadService _imageUploadService;
         private readonly IImageQueryService _imageQueryService;
@@ -288,7 +288,7 @@ namespace zuHause.Services
         /// </summary>
         private PropertyImageResult ConvertToPropertyImageResult(ImageUploadResult uploadResult)
         {
-            if (!uploadResult.IsSuccess)
+            if (!uploadResult.Success)
             {
                 return PropertyImageResult.CreateFailure(uploadResult.OriginalFileName, uploadResult.ErrorMessage ?? "未知錯誤");
             }

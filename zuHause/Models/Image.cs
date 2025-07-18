@@ -81,5 +81,10 @@ namespace zuHause.Models
         /// 上傳時間
         /// </summary>
         public DateTime UploadedAt { get; set; } = DateTime.UtcNow;
+
+        /// <summary>
+        /// 併發控制版本號（樂觀鎖）
+        /// </summary>
+        public byte[] RowVersion { get; set; } = null!;
     }
 }

@@ -115,6 +115,12 @@ namespace zuHause.Data.Configurations
                 .IsRequired()
                 .HasDefaultValueSql("sysutcdatetime()");
 
+            // RowVersion 併發控制設定
+            builder.Property(i => i.RowVersion)
+                .HasColumnName("rowVersion")
+                .IsRowVersion()
+                .IsConcurrencyToken();
+
             // 主要查詢覆蓋索引
             builder.HasIndex(i => new { i.EntityType, i.EntityId, i.Category, i.DisplayOrder, i.IsActive })
                 .HasDatabaseName("ix_images_entity")

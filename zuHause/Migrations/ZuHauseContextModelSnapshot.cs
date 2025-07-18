@@ -367,6 +367,12 @@ namespace zuHause.Migrations
                         .IsUnique()
                         .HasFilter("[sourcePropertyID] IS NOT NULL");
 
+                    b.HasIndex(new[] { "ModuleCode", "SourcePropertyId" }, "UQ_approvals_module_source")
+                        .IsUnique()
+                        .HasFilter("[sourcePropertyID] IS NOT NULL");
+
+                    SqlServerIndexBuilderExtensions.HasFillFactor(b.HasIndex(new[] { "ModuleCode", "SourcePropertyId" }, "UQ_approvals_module_source"), 100);
+
                     b.ToTable("approvals", null, t =>
                         {
                             t.HasComment("審核主檔");
@@ -2236,10 +2242,19 @@ namespace zuHause.Migrations
                         .HasColumnType("nvarchar(255)")
                         .HasColumnName("originalFileName");
 
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion")
+                        .HasColumnName("rowVersion");
+
                     b.Property<string>("StoredFileName")
                         .IsRequired()
                         .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("nvarchar(max)")
+                        .HasMaxLength(41)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(41)")
                         .HasColumnName("storedFileName")
                         .HasComputedColumnSql("lower(CONVERT([char](36),[imageGuid]))+case [mimeType] when 'image/webp' then '.webp' when 'image/jpeg' then '.jpg' when 'image/png' then '.png' else '.bin' end", true);
 
@@ -2257,7 +2272,8 @@ namespace zuHause.Migrations
                         .HasColumnType("int")
                         .HasColumnName("width");
 
-                    b.HasKey("ImageId");
+                    b.HasKey("ImageId")
+                        .HasName("PK__Images__7516F70C0063CFAC");
 
                     b.HasIndex("ImageGuid")
                         .IsUnique()
@@ -2270,8 +2286,19 @@ namespace zuHause.Migrations
 
                     SqlServerIndexBuilderExtensions.IncludeProperties(b.HasIndex("EntityType", "EntityId", "Category", "DisplayOrder", "IsActive"), new[] { "ImageGuid", "StoredFileName", "FileSizeBytes", "Width", "Height", "UploadedAt", "MimeType", "OriginalFileName" });
 
+                    b.HasIndex(new[] { "EntityType", "EntityId", "Category", "DisplayOrder", "IsActive" }, "IX_Images_EntityType_EntityId_Covering");
+
+                    b.HasIndex(new[] { "EntityType", "EntityId", "Category", "DisplayOrder" }, "IX_Images_UQ_DisplayOrder")
+                        .IsUnique()
+                        .HasFilter("([DisplayOrder] IS NOT NULL)");
+
+                    b.HasIndex(new[] { "ImageGuid" }, "UQ_Images_ImageGuid")
+                        .IsUnique();
+
                     b.ToTable("images", null, t =>
                         {
+                            t.HasComment("圖片表");
+
                             t.HasCheckConstraint("ck_images_category", "[category] IN ('BedRoom','Kitchen','Living','Balcony','Avatar','Gallery','Product')");
 
                             t.HasCheckConstraint("ck_images_entityType", "[entityType] IN ('Member','Property','Furniture','Announcement')");

@@ -10,7 +10,7 @@ namespace zuHause.DTOs
         /// <summary>
         /// 上傳是否成功
         /// </summary>
-        public bool IsSuccess { get; set; }
+        public bool Success { get; set; }
 
         /// <summary>
         /// 錯誤訊息 (上傳失敗時)
@@ -36,6 +36,11 @@ namespace zuHause.DTOs
         /// 儲存檔名
         /// </summary>
         public string StoredFileName { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 圖片存取 URL (用於前端顯示)
+        /// </summary>
+        public string? ImageUrl => !string.IsNullOrEmpty(StoredFileName) ? $"/uploads/{StoredFileName}" : null;
 
         /// <summary>
         /// 原始檔案名稱
@@ -95,7 +100,7 @@ namespace zuHause.DTOs
         /// <summary>
         /// 靜態工廠方法 - 建立成功結果
         /// </summary>
-        public static ImageUploadResult Success(
+        public static ImageUploadResult CreateSuccess(
             long imageId,
             Guid imageGuid,
             string originalFileName,
@@ -112,7 +117,7 @@ namespace zuHause.DTOs
         {
             return new ImageUploadResult
             {
-                IsSuccess = true,
+                Success = true,
                 ImageId = imageId,
                 ImageGuid = imageGuid,
                 OriginalFileName = originalFileName,
@@ -133,14 +138,14 @@ namespace zuHause.DTOs
         /// <summary>
         /// 靜態工廠方法 - 建立失敗結果
         /// </summary>
-        public static ImageUploadResult Failure(
+        public static ImageUploadResult CreateFailure(
             string originalFileName, 
             string errorMessage, 
             string? errorCode = null)
         {
             return new ImageUploadResult
             {
-                IsSuccess = false,
+                Success = false,
                 OriginalFileName = originalFileName,
                 ErrorMessage = errorMessage,
                 ErrorCode = errorCode
@@ -156,7 +161,7 @@ namespace zuHause.DTOs
         {
             return new ImageUploadResult
             {
-                IsSuccess = false,
+                Success = false,
                 OriginalFileName = originalFileName,
                 ErrorMessage = validationError,
                 ErrorCode = "VALIDATION_FAILED"
@@ -173,7 +178,7 @@ namespace zuHause.DTOs
         {
             return new ImageUploadResult
             {
-                IsSuccess = false,
+                Success = false,
                 OriginalFileName = originalFileName,
                 ErrorMessage = $"{entityType} ID {entityId} 不存在",
                 ErrorCode = "ENTITY_NOT_FOUND",

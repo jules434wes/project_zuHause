@@ -54,7 +54,7 @@ namespace zuHause.Services
             {
                 // 1. 基本驗證
                 var validationResult = await ValidateUploadRequestAsync(files, entityType, entityId, category);
-                if (validationResult.Any(r => !r.IsSuccess))
+                if (validationResult.Any(r => !r.Success))
                 {
                     return validationResult;
                 }
@@ -63,7 +63,7 @@ namespace zuHause.Services
                 var entityExists = await _entityExistenceChecker.ExistsAsync(entityType, entityId);
                 if (!entityExists)
                 {
-                    results.Add(ImageUploadResult.Failure("", $"{entityType} ID {entityId} 不存在"));
+                    results.Add(ImageUploadResult.CreateFailure("", $"{entityType} ID {entityId} 不存在"));
                     return results;
                 }
 
@@ -73,7 +73,7 @@ namespace zuHause.Services
 
                 if (currentImageCount + files.Count > MaxImageCount)
                 {
-                    results.Add(ImageUploadResult.Failure("", 
+                    results.Add(ImageUploadResult.CreateFailure("", 
                         $"超過圖片數量限制，目前已有 {currentImageCount} 張，最多允許 {MaxImageCount} 張"));
                     return results;
                 }
@@ -92,11 +92,11 @@ namespace zuHause.Services
                         var result = await ProcessSingleImageAsync(file, entityType, entityId, category, uploadedByMemberId);
                         results.Add(result);
 
-                        if (result.IsSuccess && result.ImageId.HasValue)
+                        if (result.Success && result.ImageId.HasValue)
                         {
                             uploadedImageIds.Add(result.ImageId.Value);
                         }
-                        else if (!result.IsSuccess)
+                        else if (!result.Success)
                         {
                             _logger.LogWarning("圖片處理失敗: {FileName} - {Error}", file.FileName, result.ErrorMessage);
                         }
@@ -147,7 +147,7 @@ namespace zuHause.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "上傳圖片時發生未預期錯誤，實體: {EntityType} ID: {EntityId}", entityType, entityId);
-                results.Add(ImageUploadResult.Failure("", $"系統錯誤: {ex.Message}"));
+                results.Add(ImageUploadResult.CreateFailure("", $"系統錯誤: {ex.Message}"));
             }
 
             return results;
@@ -165,7 +165,7 @@ namespace zuHause.Services
         {
             var files = new FormFileCollection { file };
             var results = await UploadImagesAsync(files, entityType, entityId, category, uploadedByMemberId);
-            return results.FirstOrDefault() ?? ImageUploadResult.Failure(file.FileName, "無法處理圖片");
+            return results.FirstOrDefault() ?? ImageUploadResult.CreateFailure(file.FileName, "無法處理圖片");
         }
 
         /// <summary>
@@ -194,7 +194,7 @@ namespace zuHause.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "從串流上傳圖片失敗: {FileName}", originalFileName);
-                return ImageUploadResult.Failure(originalFileName, $"系統錯誤: {ex.Message}");
+                return ImageUploadResult.CreateFailure(originalFileName, $"系統錯誤: {ex.Message}");
             }
         }
 
@@ -330,34 +330,87 @@ namespace zuHause.Services
         /// </summary>
         public async Task<bool> ReorderImagesAsync(EntityType entityType, int entityId, List<long> imageIds)
         {
-            try
+            const int maxRetryAttempts = 3;
+            
+            for (int retryCount = 0; retryCount < maxRetryAttempts; retryCount++)
             {
-                // 重新分配 DisplayOrder
-                var assignResult = await _displayOrderManager.AssignDisplayOrdersAsync(
-                    entityType, 
-                    entityId, 
-                    ImageCategory.Gallery, // 使用預設分類
-                    imageIds,
-                    ConcurrencyControlStrategy.PessimisticLock);
-                
-                if (assignResult.IsSuccess)
+                try
                 {
-                    _logger.LogInformation("成功重新排序 {Count} 張圖片: {EntityType} ID: {EntityId}", 
-                        imageIds.Count, entityType, entityId);
-                    return true;
+                    if (imageIds == null || !imageIds.Any())
+                    {
+                        _logger.LogWarning("重新排序失敗: 圖片ID列表為空");
+                        return false;
+                    }
+
+                    // 驗證所有圖片是否存在並屬於指定實體（每次重試都重新讀取）
+                    var images = await _context.Images
+                        .Where(i => imageIds.Contains(i.ImageId) && 
+                                   i.EntityType == entityType && 
+                                   i.EntityId == entityId && 
+                                   i.IsActive)
+                        .ToListAsync();
+
+                    if (images.Count != imageIds.Count)
+                    {
+                        var missingIds = imageIds.Except(images.Select(i => i.ImageId)).ToList();
+                        _logger.LogWarning("重新排序失敗: 找不到圖片ID: {MissingIds}", string.Join(", ", missingIds));
+                        return false;
+                    }
+
+                    // 使用併發安全的方式直接設定新的 DisplayOrder
+                    // 不依賴 category，直接根據 imageIds 順序設定
+                    using var transaction = await _context.Database.BeginTransactionAsync();
+                    
+                    try
+                    {
+                        // 使用 Dictionary 優化查找性能
+                        var imageDict = images.ToDictionary(img => img.ImageId, img => img);
+                        
+                        for (int i = 0; i < imageIds.Count; i++)
+                        {
+                            if (imageDict.TryGetValue(imageIds[i], out var image))
+                            {
+                                image.DisplayOrder = i + 1;
+                            }
+                        }
+
+                        await _context.SaveChangesAsync();
+                        await transaction.CommitAsync();
+                        
+                        _logger.LogInformation("成功重新排序 {Count} 張圖片: {EntityType} ID: {EntityId} (重試次數: {RetryCount})", 
+                            imageIds.Count, entityType, entityId, retryCount);
+                        return true;
+                    }
+                    catch
+                    {
+                        await transaction.RollbackAsync();
+                        throw;
+                    }
                 }
-                else
+                catch (DbUpdateConcurrencyException ex)
                 {
-                    _logger.LogWarning("重新排序失敗: {EntityType} ID: {EntityId} - {Error}", 
-                        entityType, entityId, assignResult.ErrorMessage);
+                    _logger.LogWarning(ex, "重新排序發生併發衝突: {EntityType} ID: {EntityId} (第 {RetryCount}/{MaxRetries} 次重試)", 
+                        entityType, entityId, retryCount + 1, maxRetryAttempts);
+                    
+                    if (retryCount == maxRetryAttempts - 1)
+                    {
+                        _logger.LogError("重新排序失敗: 達到最大重試次數 {MaxRetries}: {EntityType} ID: {EntityId}", 
+                            maxRetryAttempts, entityType, entityId);
+                        return false;
+                    }
+                    
+                    // 短暫延遲後重試
+                    await Task.Delay(TimeSpan.FromMilliseconds(100 * (retryCount + 1)));
+                    continue;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "重新排序圖片失敗: {EntityType} ID: {EntityId}", entityType, entityId);
                     return false;
                 }
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "重新排序圖片失敗: {EntityType} ID: {EntityId}", entityType, entityId);
-                return false;
-            }
+            
+            return false;
         }
 
         /// <summary>
@@ -402,13 +455,13 @@ namespace zuHause.Services
 
             if (files == null || files.Count == 0)
             {
-                results.Add(ImageUploadResult.Failure("", "沒有選擇任何檔案"));
+                results.Add(ImageUploadResult.CreateFailure("", "沒有選擇任何檔案"));
                 return results;
             }
 
             if (files.Count > MaxImageCount)
             {
-                results.Add(ImageUploadResult.Failure("", $"一次最多只能上傳 {MaxImageCount} 張圖片"));
+                results.Add(ImageUploadResult.CreateFailure("", $"一次最多只能上傳 {MaxImageCount} 張圖片"));
                 return results;
             }
 
@@ -493,7 +546,7 @@ namespace zuHause.Services
                 var processingResult = await _imageProcessor.ConvertToWebPAsync(imageStream, 1200, 90);
                 if (!processingResult.Success)
                 {
-                    return ImageUploadResult.Failure(originalFileName, $"圖片處理失敗: {processingResult.ErrorMessage}");
+                    return ImageUploadResult.CreateFailure(originalFileName, $"圖片處理失敗: {processingResult.ErrorMessage}");
                 }
 
                 // 儲存到資料庫
@@ -517,7 +570,7 @@ namespace zuHause.Services
                 _context.Images.Add(image);
                 await _context.SaveChangesAsync();
 
-                return ImageUploadResult.Success(
+                return ImageUploadResult.CreateSuccess(
                     image.ImageId,
                     imageGuid,
                     originalFileName,
@@ -533,7 +586,7 @@ namespace zuHause.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "處理圖片失敗: {FileName}", originalFileName);
-                return ImageUploadResult.Failure(originalFileName, $"處理失敗: {ex.Message}");
+                return ImageUploadResult.CreateFailure(originalFileName, $"處理失敗: {ex.Message}");
             }
         }
 
@@ -542,7 +595,7 @@ namespace zuHause.Services
         /// </summary>
         private void UpdateResultsWithDisplayOrder(List<ImageUploadResult> results, Dictionary<long, int> assignedOrders)
         {
-            foreach (var result in results.Where(r => r.IsSuccess && r.ImageId.HasValue))
+            foreach (var result in results.Where(r => r.Success && r.ImageId.HasValue))
             {
                 if (assignedOrders.TryGetValue(result.ImageId!.Value, out var displayOrder))
                 {
