@@ -307,7 +307,9 @@ public partial class ZuHauseContext : DbContext
             entity.ToTable("approvals", tb =>
                 {
                     tb.HasComment("審核主檔");
-                    tb.HasTrigger("trg_approvals_status_sync");
+                    tb.HasTrigger("trg_approvals_identity_sync");
+                    tb.HasTrigger("trg_approvals_landlord_sync");
+                    tb.HasTrigger("trg_approvals_property_sync");
                 });
 
             entity.HasIndex(e => e.ApplicantMemberId, "IX_approvals_applicantMemberID");
@@ -640,6 +642,10 @@ public partial class ZuHauseContext : DbContext
                 .HasDefaultValueSql("(CONVERT([datetime2](0),sysdatetime()))")
                 .HasComment("建立時間")
                 .HasColumnName("createdAt");
+            entity.Property(e => e.CustomName)
+                .HasMaxLength(50)
+                .HasComment("合約自訂名稱")
+                .HasColumnName("customName");
             entity.Property(e => e.DepositAmount)
                 .HasComment("押金金額")
                 .HasColumnName("depositAmount");
