@@ -15,9 +15,6 @@ namespace zuHause.Controllers
 {
     public class MemberController : Controller
     {
-
-
-
         public readonly ZuHauseContext _context;
         private readonly IMemoryCache _cache;
         public readonly MemberService _memberService;
@@ -136,7 +133,6 @@ namespace zuHause.Controllers
 
             };
 
-            // 大頭照查詢
             var photoPath = _context.Members.Join(_context.UserUploads,
                 m => new { m.MemberId },
                 u => new { u.MemberId },

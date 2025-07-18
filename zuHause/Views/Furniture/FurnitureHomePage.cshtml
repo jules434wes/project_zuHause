@@ -8,36 +8,11 @@
     var categories = ViewBag.categories as List<zuHause.Models.FurnitureCategory>;
 
     // 輪播圖圖片路徑清單
-   
-    var carouselImages = ViewBag.CarouselImages as List<zuHause.Models.CarouselImage>;
-    
-
-    @if (carouselImages != null && carouselImages.Any())
-    {
-        <div id="furnitureCarousel" class="carousel slide mb-4" data-bs-ride="carousel">
-            <div class="carousel-inner">
-                @for (int i = 0; i < carouselImages.Count; i++)
-                {
-                    <div class="carousel-item @(i == 0 ? "active" : "")">
-                        <img src="@carouselImages[i].ImageUrl" class="d-block w-100" alt="@carouselImages[i].ImagesName">
-                        <div class="carousel-caption d-none d-md-block">
-                            <h5>@carouselImages[i].ImagesName</h5>
-                        </div>
-                    </div>
-                }
-            </div>
-            <button class="carousel-control-prev" type="button" data-bs-target="#furnitureCarousel" data-bs-slide="prev">
-                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-            </button>
-            <button class="carousel-control-next" type="button" data-bs-target="#furnitureCarousel" data-bs-slide="next">
-                <span class="carousel-control-next-icon" aria-hidden="true"></span>
-            </button>
-        </div>
-    }
+    var carouselImages = ViewBag.carouselImages as List<string>;
 
     // 熱門商品清單
     var hotProducts = ViewBag.hotProducts as List<zuHause.Models.FurnitureProduct>;
-    }
+}
 
 <div class="row">
     <!-- 左側分類與租借須知 -->

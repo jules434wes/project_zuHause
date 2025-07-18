@@ -8,14 +8,6 @@
 
   <ItemGroup>
     <Folder Include="wwwroot\uploads\userPhoto\" />
-    <Compile Remove="Helpers\**" />
-    <Compile Remove="OldModels\**" />
-    <Content Remove="Helpers\**" />
-    <Content Remove="OldModels\**" />
-    <EmbeddedResource Remove="Helpers\**" />
-    <EmbeddedResource Remove="OldModels\**" />
-    <None Remove="Helpers\**" />
-    <None Remove="OldModels\**" />
   </ItemGroup>
 
   <ItemGroup>
@@ -34,8 +26,6 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.10" />
-    <PackageReference Include="Stripe.net" Version="48.3.0" />
     <PackageReference Include="System.Formats.Asn1" Version="9.0.7" />
   </ItemGroup>
 
