@@ -24,13 +24,5 @@ namespace zuHause.Services
             var result = _passwordHasher.VerifyHashedPassword(member, member.Password,inputPassword);
             return result == PasswordVerificationResult.Success;
         }
-
-        public void ResetPassword(Member member, string newPassword)
-        {
-            member.Password = _passwordHasher.HashPassword(member, newPassword);
-            member.UpdatedAt = DateTime.Now;
-            _context.Members.Update(member);
-            _context.SaveChanges();
-        }
     }
 }

@@ -1,1 +1,30 @@
-﻿
+﻿.property-img {
+    height: 100%;
+}
+
+    .property-img .image-area {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center;
+    }
+
+.step-area .icon {
+    background-color: white;
+    --bs-border-color: #225e5d;
+    color: #225e5d;
+}
+
+.step-area-active .icon {
+    background-color: #225e5d;
+    --bs-border-color: #225e5d;
+    color: white;
+}
+
+.step-area .step-area-line {
+    background-color: #9ad8cd;
+}
+
+.step-area-active .step-area-line {
+    background-color: #40b0ae;
+}

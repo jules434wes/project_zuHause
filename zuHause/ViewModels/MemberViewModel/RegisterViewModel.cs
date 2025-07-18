@@ -32,7 +32,6 @@ namespace zuHause.ViewModels.MemberViewModel
         public byte Gender { get; set; }
         [Required(ErrorMessage = "請輸入生日")]
         [Display(Name = "生日")]
-        [DataType(DataType.Date, ErrorMessage = "請輸入正確日期")]
         public string? Birthday { get; set; }
         [Required]
         [Range(1, int.MaxValue, ErrorMessage = "請選擇居住縣市")]

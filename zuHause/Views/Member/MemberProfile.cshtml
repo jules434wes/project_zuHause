@@ -3,18 +3,17 @@
 
 @{
     ViewData["Title"] = "個人檔案檢視";
-    ViewData["activePage"] = "MemberProfile";
 }
 
 <div class="row w-100 gx-5 justify-content-center position-relative h-100">
-    @await Html.PartialAsync("_PartialMemberSideBar", ViewData["activePage"])
-    <div class="col-10 d-flex justify-content-start flex-column
+    @await Html.PartialAsync("_PartialMemberSideBar")
+    <div class="col-9 d-flex justify-content-start flex-column
         align-items-center">
         <div class="row w-100">
             <h1 class="fs-3 text-white px-0">個人檔案檢視</h1>
             <div class="col-12 card border-dark my-3">
                 <div class="card-body row">
-                    <div class="col-2 d-flex flex-column gap-2">
+                    <div class="col-3 d-flex flex-column gap-2">
                         <div class="user-image border border-1 border-black rounded-2 ratio ratio-1x1">
                             <img class="w-100 h-100 object-fit-cover" src="@Url.Content(ViewBag.userPhoto)" alt="">
                         </div>
@@ -324,7 +323,7 @@
 
                 <div class="row align-items-center w-100 input-id-area">
                     <p class="col-2 col-form-label text-end">身分證正面</p>
-                    <div class="col pe-0 d-flex align-items-center gap-3 input-id-area-front">
+                    <div class="col pe-0 d-flex align-items-center gap-3">
                         <div class="row align-items-center w-100">
                             <label for="inputIdFront" class="col-4 col-form-label rounded-1 bg-white text-secondary text-truncate" role="button">請上傳身分證正面照片</label>
                             <!-- 沒上傳之前隱藏，上傳後顯示 -->
@@ -340,7 +339,7 @@
                 </div>
                 <div class="row align-items-center w-100 input-id-area">
                     <p class="col-2 col-form-label text-end">身分證反面</p>
-                    <div class="col pe-0 d-flex align-items-center gap-3 input-id-area-back">
+                    <div class="col pe-0 d-flex align-items-center gap-3">
                         <div class="row align-items-center w-100">
                             <label for="inputIdBack" class="col-4 col-form-label rounded-1 bg-white text-secondary text-truncate" role="button">請上傳身分證反面照片</label>
                             <!-- 沒上傳之前隱藏，上傳後顯示，上傳或審核後，用label來顯示處理文字，用disabled禁止上傳 -->
@@ -472,8 +471,55 @@
                         <h1 class="modal-title fs-5" id="changePasswordLabel">修改密碼</h1>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-                    <div class="modal-body p-3 w-100">
-                        @await Html.PartialAsync("_PartialResetPassword", new ForgotPasswordViewModel{ ReturnUrl = Url.Action("MemberProfile","Member")})
+                    <div class="modal-body p-3">
+                        <form action="" method="post" class="w-100">
+                            <div class="row mx-auto w-100">
+                                <div class="col-12 mx-auto p-0 d-flex flex-column gap-2">
+                                    <div class="input-group has-validation password-area pwd-hidden">
+                                        <span class="input-group-text  rounded-0 px-3 bg-white">
+                                            <i class="text-aqua bi bi-lock-fill"></i>
+                                        </span>
+                                        <div class="form-floating ">
+                                            <input type="password" class=" form-control rounded-0 pe-5" id="user-password"
+                                                   placeholder="Password">
+                                            <label for="user-password">請輸入新密碼</label>
+                                        </div>
+                                        <span class="input-group-text  rounded-0 p-0 bg-white">
+                                            <button id="toggle-pwd" type="button" class="btn btn-aqua-color">
+                                                <i class="text-aqua bi bi-eye"></i>
+                                                <i class="text-aqua bi bi-eye-slash"></i>
+                                            </button>
+                                        </span>
+                                        <div class="invalid-feedback">
+                                            密碼格式錯誤
+                                        </div>
+                                    </div>
+                                    <div class="input-group has-validation password-area pwd-hidden">
+                                        <span class="input-group-text  rounded-0 px-3 bg-white">
+                                            <i class="text-aqua bi bi-lock-fill"></i>
+                                        </span>
+                                        <div class="form-floating ">
+                                            <input type="password" class=" form-control rounded-0 pe-5" id="user-password"
+                                                   placeholder="Password">
+                                            <label for="user-password">請再次輸入密碼</label>
+                                        </div>
+                                        <span class="input-group-text  rounded-0 p-0 bg-white">
+                                            <button id="toggle-pwd" type="button" class="btn btn-aqua-color">
+                                                <i class="text-aqua bi bi-eye"></i>
+                                                <i class="text-aqua bi bi-eye-slash"></i>
+                                            </button>
+                                        </span>
+                                        <div class="invalid-feedback">
+                                            密碼格式錯誤
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                        <button type="button" class="btn btn-aqua">確認修改</button>
                     </div>
                 </div>
             </div>
@@ -486,6 +532,4 @@
 @section Scripts {
     <script src="~/js/memberProfile.js"></script>
     <script src="~/js/selectDistrict.js"></script>
-    <script src="~/js/hiddenPassword.js"></script>
-    <script src="~/js/checkUpload.js"></script>
 }
