@@ -88,11 +88,6 @@ public partial class Contract
     /// </summary>
     public DateTime UpdatedAt { get; set; }
 
-    /// <summary>
-    /// 合約自訂名稱
-    /// </summary>
-    public string? CustomName { get; set; }
-
     public virtual ICollection<ContractComment> ContractComments { get; set; } = new List<ContractComment>();
 
     public virtual ICollection<ContractCustomField> ContractCustomFields { get; set; } = new List<ContractCustomField>();

@@ -136,8 +136,6 @@ public partial class Member
 
     public virtual ICollection<FurnitureOrder> FurnitureOrders { get; set; } = new List<FurnitureOrder>();
 
-    public virtual ICollection<Image> Images { get; set; } = new List<Image>();
-
     public virtual MemberType? MemberType { get; set; }
 
     public virtual ICollection<MemberVerification> MemberVerifications { get; set; } = new List<MemberVerification>();
