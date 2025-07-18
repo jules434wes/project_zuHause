@@ -43,6 +43,8 @@ builder.Services.AddScoped<zuHause.Services.PropertyImageService>();
 builder.Services.AddScoped<zuHause.Interfaces.IEntityExistenceChecker, zuHause.Services.EntityExistenceChecker>();
 builder.Services.AddScoped<zuHause.Interfaces.IDisplayOrderManager, zuHause.Services.DisplayOrderManager>();
 builder.Services.AddScoped<zuHause.Interfaces.IImageQueryService, zuHause.Services.ImageQueryService>();
+builder.Services.AddScoped<zuHause.Interfaces.IImageUploadService, zuHause.Services.ImageUploadService>();
+builder.Services.AddScoped<zuHause.Services.Interfaces.IImageValidationService, zuHause.Services.ImageValidationService>();
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();

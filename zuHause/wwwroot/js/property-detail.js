@@ -24,6 +24,12 @@ class PropertyDetail {
         this.setupImageGallery();
         this.setupActionButtons();
         this.initializeNavigation();
+        this.updateSidebarPosition(this.isNavVisible); // 初始化時調用一次
+
+        // 動態偵測視窗滾動與尺寸變化，確保側邊欄不被導航列遮蓋
+        this.handleDynamicSidebarPosition = () => this.updateSidebarPosition(this.isNavVisible);
+        window.addEventListener('scroll', this.handleDynamicSidebarPosition);
+        window.addEventListener('resize', this.handleDynamicSidebarPosition);
     }
 
     // 設置 Intersection Observer API 用於偵測快速導覽列顯示
@@ -96,21 +102,25 @@ class PropertyDetail {
     // 更新側邊欄 sticky 位置
     updateSidebarPosition(navVisible) {
         if (!this.sidebar) return;
-
-        const mainNavHeight = 72; // 主導覽列高度
-        const quickNavHeight = 60; // 快速導覽列高度
+        // 取得主導覽列高度（若找不到則使用預設值）
+        const mainNav = document.querySelector('header');
+        const mainNavHeight = mainNav ? mainNav.getBoundingClientRect().height : 72; // 主導覽列高度
+        const quickNavHeight = 60; // 次導覽列高度（固定，若需要也可動態計算）
         const padding = 20; // 額外間距
 
+        let topOffset;
+
         if (navVisible) {
-            // 快速導覽列可見時，緊貼在其下方
-            const topOffset = mainNavHeight + quickNavHeight + padding;
-            this.sidebar.style.top = `${topOffset}px`;
-            this.sidebar.style.maxHeight = `calc(100vh - ${topOffset + padding}px)`;
+            // 次導覽列可見時，側邊欄需位於主導覽列 + 次導覽列之下
+            topOffset = mainNavHeight + quickNavHeight + padding;
         } else {
-            // 快速導覽列隱藏時，回到原始位置
-            this.sidebar.style.top = `${padding}px`;
-            this.sidebar.style.maxHeight = `calc(100vh - ${padding * 2}px)`;
+            // 只須位於主導覽列之下
+            topOffset = mainNavHeight + padding;
         }
+
+        // 設定側邊欄位置及可視高度
+        this.sidebar.style.top = `${topOffset}px`;
+        this.sidebar.style.maxHeight = `calc(100vh - ${topOffset + padding}px)`;
     }
 
     // 初始化導覽狀態
@@ -402,6 +412,10 @@ class PropertyDetail {
         }
         if (this.sectionObserver) {
             this.sectionObserver.disconnect();
+        }
+        if (this.handleDynamicSidebarPosition) {
+            window.removeEventListener('scroll', this.handleDynamicSidebarPosition);
+            window.removeEventListener('resize', this.handleDynamicSidebarPosition);
         }
     }
 }

@@ -1,318 +1,316 @@
 using Microsoft.AspNetCore.Http;
-using Microsoft.EntityFrameworkCore;
 using zuHause.DTOs;
+using zuHause.Enums;
 using zuHause.Interfaces;
 using zuHause.Models;
 
 namespace zuHause.Services
 {
     /// <summary>
-    /// 房源圖片處理服務 - 專注於圖片上傳、格式轉換、多尺寸生成和檔案儲存
+    /// 房源圖片處理服務 - 純 Facade 模式，委託給統一圖片管理系統
+    /// 保持向後相容性，內部完全委託給 IImageUploadService 和 IImageQueryService
     /// </summary>
     public class PropertyImageService
     {
-        private readonly ZuHauseContext _context;
-        private readonly IImageProcessor _imageProcessor;
-        private readonly IWebHostEnvironment _environment;
+        private readonly IImageUploadService _imageUploadService;
+        private readonly IImageQueryService _imageQueryService;
         private readonly ILogger<PropertyImageService> _logger;
 
-        // 檔案驗證常數
-        private const int MaxFileSize = 2 * 1024 * 1024; // 2MB
-        private const int MaxFileCount = 15;
-        private static readonly string[] AllowedExtensions = { ".jpg", ".jpeg", ".png" };
-        private static readonly string[] AllowedMimeTypes = { "image/jpeg", "image/png" };
-
-        // 圖片尺寸設定
-        private const int OriginalMaxWidth = 1200;
-        private const int MediumWidth = 800;
-        private const int ThumbnailWidth = 300;
-        private const int ThumbnailHeight = 200;
-
         public PropertyImageService(
-            ZuHauseContext context,
-            IImageProcessor imageProcessor,
-            IWebHostEnvironment environment,
+            IImageUploadService imageUploadService,
+            IImageQueryService imageQueryService,
             ILogger<PropertyImageService> logger)
         {
-            _context = context;
-            _imageProcessor = imageProcessor;
-            _environment = environment;
+            _imageUploadService = imageUploadService;
+            _imageQueryService = imageQueryService;
             _logger = logger;
         }
 
         /// <summary>
-        /// 上傳房源圖片並處理為多種尺寸
+        /// 上傳房源圖片 - Facade 方法，完全委託給統一圖片上傳服務
         /// </summary>
         /// <param name="propertyId">房源ID</param>
         /// <param name="files">上傳的圖片檔案</param>
-        /// <returns>處理結果列表</returns>
+        /// <returns>處理結果列表，轉換為 PropertyImageResult 保持向後相容性</returns>
         public async Task<List<PropertyImageResult>> UploadPropertyImagesAsync(int propertyId, IFormFileCollection files)
         {
-            var results = new List<PropertyImageResult>();
-
             try
             {
-                // 1. 基本驗證
-                var validationResult = ValidateUploadRequest(propertyId, files);
-                if (validationResult.Any(r => !r.Success))
-                {
-                    return validationResult;
-                }
+                _logger.LogInformation("開始上傳房源圖片，房源ID: {PropertyId}, 檔案數量: {FileCount}", propertyId, files.Count);
 
-                // 2. 檢查房源是否存在
-                var propertyExists = await _context.Properties.AnyAsync(p => p.PropertyId == propertyId);
-                if (!propertyExists)
-                {
-                    results.Add(PropertyImageResult.CreateFailure("", $"房源 ID {propertyId} 不存在"));
-                    return results;
-                }
+                // 完全委託給統一圖片上傳服務
+                var uploadResults = await _imageUploadService.UploadImagesAsync(
+                    files, 
+                    EntityType.Property, 
+                    propertyId, 
+                    ImageCategory.Gallery);
 
-                // 3. 檢查目前圖片數量
-                var currentImageCount = await _context.PropertyImages
-                    .CountAsync(pi => pi.PropertyId == propertyId);
+                // 轉換為 PropertyImageResult 以保持向後相容性
+                var propertyResults = uploadResults.Select(ConvertToPropertyImageResult).ToList();
 
-                if (currentImageCount + files.Count > MaxFileCount)
-                {
-                    results.Add(PropertyImageResult.CreateFailure("", 
-                        $"超過圖片數量限制，目前已有 {currentImageCount} 張，最多允許 {MaxFileCount} 張"));
-                    return results;
-                }
+                var successCount = propertyResults.Count(r => r.Success);
+                _logger.LogInformation("房源圖片上傳完成，房源ID: {PropertyId}, 成功: {SuccessCount}/{TotalCount}", 
+                    propertyId, successCount, propertyResults.Count);
 
-                // 4. 確保上傳目錄存在
-                var uploadDir = GetPropertyUploadDirectory(propertyId);
-                Directory.CreateDirectory(uploadDir);
-
-                // 5. 取得下一個顯示順序
-                var nextDisplayOrder = await GetNextDisplayOrderAsync(propertyId);
-
-                // 6. 處理每個檔案
-                using var transaction = await _context.Database.BeginTransactionAsync();
-
-                try
-                {
-                    for (int i = 0; i < files.Count; i++)
-                    {
-                        var file = files[i];
-                        var isMainImage = currentImageCount == 0 && i == 0; // 第一張設為主圖
-                        var displayOrder = nextDisplayOrder + i;
-
-                        var result = await ProcessSingleImageAsync(propertyId, file, displayOrder, isMainImage);
-                        results.Add(result);
-
-                        if (!result.Success)
-                        {
-                            _logger.LogWarning("圖片處理失敗: {FileName} - {Error}", file.FileName, result.ErrorMessage);
-                        }
-                    }
-
-                    // 7. 如果所有圖片都處理成功，提交事務
-                    var successResults = results.Where(r => r.Success).ToList();
-                    if (successResults.Any())
-                    {
-                        await transaction.CommitAsync();
-                        _logger.LogInformation("成功處理 {Count} 張圖片，房源ID: {PropertyId}", successResults.Count, propertyId);
-                    }
-                    else
-                    {
-                        await transaction.RollbackAsync();
-                        _logger.LogWarning("所有圖片處理失敗，回滾事務，房源ID: {PropertyId}", propertyId);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    await transaction.RollbackAsync();
-                    _logger.LogError(ex, "圖片處理過程發生錯誤，房源ID: {PropertyId}", propertyId);
-                    throw;
-                }
+                return propertyResults;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "上傳房源圖片時發生未預期錯誤，房源ID: {PropertyId}", propertyId);
-                results.Add(PropertyImageResult.CreateFailure("", $"系統錯誤: {ex.Message}"));
-            }
-
-            return results;
-        }
-
-        /// <summary>
-        /// 驗證上傳請求
-        /// </summary>
-        private List<PropertyImageResult> ValidateUploadRequest(int propertyId, IFormFileCollection files)
-        {
-            var results = new List<PropertyImageResult>();
-
-            if (propertyId <= 0)
-            {
-                results.Add(PropertyImageResult.CreateFailure("", "無效的房源ID"));
-                return results;
-            }
-
-            if (files == null || files.Count == 0)
-            {
-                results.Add(PropertyImageResult.CreateFailure("", "沒有選擇任何檔案"));
-                return results;
-            }
-
-            if (files.Count > MaxFileCount)
-            {
-                results.Add(PropertyImageResult.CreateFailure("", $"一次最多只能上傳 {MaxFileCount} 張圖片"));
-                return results;
-            }
-
-            // 驗證每個檔案
-            foreach (var file in files)
-            {
-                var fileValidation = ValidateFile(file);
-                if (!fileValidation.Success)
-                {
-                    results.Add(fileValidation);
-                }
-            }
-
-            return results;
-        }
-
-        /// <summary>
-        /// 驗證單一檔案
-        /// </summary>
-        private PropertyImageResult ValidateFile(IFormFile file)
-        {
-            var fileName = file.FileName ?? "";
-
-            if (file.Length == 0)
-            {
-                return PropertyImageResult.CreateFailure(fileName, "檔案大小為 0");
-            }
-
-            if (file.Length > MaxFileSize)
-            {
-                return PropertyImageResult.CreateFailure(fileName, $"檔案大小超過 {MaxFileSize / 1024 / 1024}MB 限制");
-            }
-
-            var extension = Path.GetExtension(fileName).ToLowerInvariant();
-            if (!AllowedExtensions.Contains(extension))
-            {
-                return PropertyImageResult.CreateFailure(fileName, $"不支援的檔案格式，僅支援: {string.Join(", ", AllowedExtensions)}");
-            }
-
-            if (!AllowedMimeTypes.Contains(file.ContentType))
-            {
-                return PropertyImageResult.CreateFailure(fileName, $"無效的檔案類型: {file.ContentType}");
-            }
-
-            return PropertyImageResult.CreateSuccess(fileName, 0, "", "", "", false, 0, 0, 0, 0);
-        }
-
-        /// <summary>
-        /// 處理單一圖片
-        /// </summary>
-        private async Task<PropertyImageResult> ProcessSingleImageAsync(int propertyId, IFormFile file, int displayOrder, bool isMainImage)
-        {
-            var fileName = file.FileName ?? "";
-            
-            try
-            {
-                using var inputStream = file.OpenReadStream();
-                
-                // 1. 生成唯一檔案名稱
-                var fileId = Guid.NewGuid().ToString();
-                var baseFileName = $"{fileId}";
-
-                // 2. 生成三種尺寸的圖片
-                var originalResult = await _imageProcessor.ConvertToWebPAsync(inputStream, OriginalMaxWidth, 90);
-                if (!originalResult.Success)
-                {
-                    return PropertyImageResult.CreateFailure(fileName, $"原圖處理失敗: {originalResult.ErrorMessage}");
-                }
-
-                inputStream.Position = 0;
-                var mediumResult = await _imageProcessor.ConvertToWebPAsync(inputStream, MediumWidth, 85);
-                if (!mediumResult.Success)
-                {
-                    return PropertyImageResult.CreateFailure(fileName, $"中圖處理失敗: {mediumResult.ErrorMessage}");
-                }
-
-                inputStream.Position = 0;
-                var thumbnailResult = await _imageProcessor.GenerateThumbnailAsync(inputStream, ThumbnailWidth, ThumbnailHeight);
-                if (!thumbnailResult.Success)
-                {
-                    return PropertyImageResult.CreateFailure(fileName, $"縮圖處理失敗: {thumbnailResult.ErrorMessage}");
-                }
-
-                // 3. 儲存檔案到檔案系統
-                var originalPath = await SaveImageToFileSystemAsync(propertyId, baseFileName + "_original.webp", originalResult.ProcessedStream!);
-                var mediumPath = await SaveImageToFileSystemAsync(propertyId, baseFileName + "_medium.webp", mediumResult.ProcessedStream!);
-                var thumbnailPath = await SaveImageToFileSystemAsync(propertyId, baseFileName + "_thumbnail.webp", thumbnailResult.ProcessedStream!);
-
-                // 4. 儲存到資料庫
-                var propertyImage = new PropertyImage
-                {
-                    PropertyId = propertyId,
-                    ImagePath = originalPath, // 資料庫儲存原圖路徑
-                    DisplayOrder = displayOrder,
-                    CreatedAt = DateTime.UtcNow
+                _logger.LogError(ex, "上傳房源圖片時發生錯誤，房源ID: {PropertyId}", propertyId);
+                return new List<PropertyImageResult> 
+                { 
+                    PropertyImageResult.CreateFailure("", $"系統錯誤: {ex.Message}") 
                 };
+            }
+        }
 
-                _context.PropertyImages.Add(propertyImage);
-                await _context.SaveChangesAsync();
-
-                // 5. 計算處理後總檔案大小
-                var processedSize = originalResult.SizeBytes + mediumResult.SizeBytes + thumbnailResult.SizeBytes;
-
-                return PropertyImageResult.CreateSuccess(
-                    fileName,
-                    propertyImage.ImageId,
-                    originalPath,
-                    mediumPath,
-                    thumbnailPath,
-                    isMainImage,
-                    file.Length,
-                    processedSize,
-                    originalResult.Width,
-                    originalResult.Height
-                );
+        /// <summary>
+        /// 獲取房源主圖 - Facade 方法，委託給統一圖片查詢服務
+        /// </summary>
+        /// <param name="propertyId">房源ID</param>
+        /// <returns>主圖資訊，如果沒有則返回 null</returns>
+        public async Task<Image?> GetMainPropertyImageAsync(int propertyId)
+        {
+            try
+            {
+                return await _imageQueryService.GetMainImageAsync(EntityType.Property, propertyId);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "處理圖片時發生錯誤: {FileName}", fileName);
-                return PropertyImageResult.CreateFailure(fileName, $"處理失敗: {ex.Message}");
+                _logger.LogError(ex, "獲取房源主圖失敗，房源ID: {PropertyId}", propertyId);
+                return null;
             }
         }
 
         /// <summary>
-        /// 儲存圖片到檔案系統
+        /// 獲取房源所有圖片 - Facade 方法，委託給統一圖片查詢服務
         /// </summary>
-        private async Task<string> SaveImageToFileSystemAsync(int propertyId, string fileName, Stream imageStream)
+        /// <param name="propertyId">房源ID</param>
+        /// <returns>房源圖片列表</returns>
+        public async Task<List<Image>> GetPropertyImagesAsync(int propertyId)
         {
-            var directory = GetPropertyUploadDirectory(propertyId);
-            var filePath = Path.Combine(directory, fileName);
-            
-            using var fileStream = new FileStream(filePath, FileMode.Create);
-            imageStream.Position = 0;
-            await imageStream.CopyToAsync(fileStream);
-            
-            // 返回相對路徑
-            return $"/uploads/properties/{propertyId}/{fileName}";
+            try
+            {
+                return await _imageQueryService.GetImagesByEntityAsync(EntityType.Property, propertyId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "獲取房源圖片列表失敗，房源ID: {PropertyId}", propertyId);
+                return new List<Image>();
+            }
         }
 
         /// <summary>
-        /// 取得房源上傳目錄的完整路徑
+        /// 獲取房源圖片數量 - 新增的便利方法
         /// </summary>
-        private string GetPropertyUploadDirectory(int propertyId)
+        /// <param name="propertyId">房源ID</param>
+        /// <returns>圖片數量</returns>
+        public async Task<int> GetPropertyImageCountAsync(int propertyId)
         {
-            return Path.Combine(_environment.WebRootPath, "uploads", "properties", propertyId.ToString());
+            try
+            {
+                return await _imageQueryService.GetImageCountAsync(EntityType.Property, propertyId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "獲取房源圖片數量失敗，房源ID: {PropertyId}", propertyId);
+                return 0;
+            }
         }
 
         /// <summary>
-        /// 取得下一個顯示順序
+        /// 檢查房源是否有圖片 - 新增的便利方法
         /// </summary>
-        private async Task<int> GetNextDisplayOrderAsync(int propertyId)
+        /// <param name="propertyId">房源ID</param>
+        /// <returns>是否有圖片</returns>
+        public async Task<bool> HasPropertyImagesAsync(int propertyId)
         {
-            var maxOrder = await _context.PropertyImages
-                .Where(pi => pi.PropertyId == propertyId)
-                .MaxAsync(pi => (int?)pi.DisplayOrder);
-            
-            return (maxOrder ?? 0) + 1;
+            try
+            {
+                return await _imageQueryService.HasImagesAsync(EntityType.Property, propertyId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "檢查房源圖片存在性失敗，房源ID: {PropertyId}", propertyId);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 刪除房源圖片 - Facade 方法，委託給統一圖片上傳服務
+        /// </summary>
+        /// <param name="imageId">圖片ID</param>
+        /// <returns>刪除是否成功</returns>
+        public async Task<bool> DeletePropertyImageAsync(long imageId)
+        {
+            try
+            {
+                _logger.LogInformation("開始刪除房源圖片，圖片ID: {ImageId}", imageId);
+                var result = await _imageUploadService.DeleteImageAsync(imageId);
+                
+                if (result)
+                {
+                    _logger.LogInformation("成功刪除房源圖片，圖片ID: {ImageId}", imageId);
+                }
+                else
+                {
+                    _logger.LogWarning("刪除房源圖片失敗，圖片ID: {ImageId}", imageId);
+                }
+                
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "刪除房源圖片時發生錯誤，圖片ID: {ImageId}", imageId);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 刪除房源所有圖片 - Facade 方法，委託給統一圖片上傳服務
+        /// </summary>
+        /// <param name="propertyId">房源ID</param>
+        /// <returns>刪除是否成功</returns>
+        public async Task<bool> DeleteAllPropertyImagesAsync(int propertyId)
+        {
+            try
+            {
+                _logger.LogInformation("開始刪除房源所有圖片，房源ID: {PropertyId}", propertyId);
+                var result = await _imageUploadService.DeleteImagesByEntityAsync(
+                    EntityType.Property, 
+                    propertyId, 
+                    ImageCategory.Gallery);
+                
+                if (result)
+                {
+                    _logger.LogInformation("成功刪除房源所有圖片，房源ID: {PropertyId}", propertyId);
+                }
+                else
+                {
+                    _logger.LogWarning("刪除房源所有圖片失敗，房源ID: {PropertyId}", propertyId);
+                }
+                
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "刪除房源所有圖片時發生錯誤，房源ID: {PropertyId}", propertyId);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 設定房源主圖 - Facade 方法，委託給統一圖片上傳服務
+        /// </summary>
+        /// <param name="imageId">要設為主圖的圖片ID</param>
+        /// <returns>設定是否成功</returns>
+        public async Task<bool> SetMainPropertyImageAsync(long imageId)
+        {
+            try
+            {
+                _logger.LogInformation("開始設定房源主圖，圖片ID: {ImageId}", imageId);
+                var result = await _imageUploadService.SetMainImageAsync(imageId);
+                
+                if (result)
+                {
+                    _logger.LogInformation("成功設定房源主圖，圖片ID: {ImageId}", imageId);
+                }
+                else
+                {
+                    _logger.LogWarning("設定房源主圖失敗，圖片ID: {ImageId}", imageId);
+                }
+                
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "設定房源主圖時發生錯誤，圖片ID: {ImageId}", imageId);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 重新排序房源圖片 - Facade 方法，委託給統一圖片上傳服務
+        /// </summary>
+        /// <param name="propertyId">房源ID</param>
+        /// <param name="imageIds">按新順序排列的圖片ID列表</param>
+        /// <returns>重新排序是否成功</returns>
+        public async Task<bool> ReorderPropertyImagesAsync(int propertyId, List<long> imageIds)
+        {
+            try
+            {
+                _logger.LogInformation("開始重新排序房源圖片，房源ID: {PropertyId}, 圖片數量: {ImageCount}", 
+                    propertyId, imageIds.Count);
+                
+                var result = await _imageUploadService.ReorderImagesAsync(EntityType.Property, propertyId, imageIds);
+                
+                if (result)
+                {
+                    _logger.LogInformation("成功重新排序房源圖片，房源ID: {PropertyId}", propertyId);
+                }
+                else
+                {
+                    _logger.LogWarning("重新排序房源圖片失敗，房源ID: {PropertyId}", propertyId);
+                }
+                
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "重新排序房源圖片時發生錯誤，房源ID: {PropertyId}", propertyId);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 生成房源圖片 URL - Facade 方法，委託給統一圖片查詢服務
+        /// </summary>
+        /// <param name="storedFileName">儲存檔名</param>
+        /// <param name="size">圖片尺寸</param>
+        /// <returns>圖片 URL</returns>
+        public string GeneratePropertyImageUrl(string storedFileName, ImageSize size = ImageSize.Original)
+        {
+            try
+            {
+                return _imageQueryService.GenerateImageUrl(storedFileName, size);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "生成房源圖片 URL 失敗，檔名: {FileName}", storedFileName);
+                return string.Empty;
+            }
+        }
+
+        // === 私有輔助方法 ===
+
+        /// <summary>
+        /// 將 ImageUploadResult 轉換為 PropertyImageResult 以保持向後相容性
+        /// </summary>
+        private PropertyImageResult ConvertToPropertyImageResult(ImageUploadResult uploadResult)
+        {
+            if (!uploadResult.IsSuccess)
+            {
+                return PropertyImageResult.CreateFailure(uploadResult.OriginalFileName, uploadResult.ErrorMessage ?? "未知錯誤");
+            }
+
+            // 為了向後相容性，我們需要生成圖片路徑
+            // 這裡使用 URL 生成器來建立相容的路徑格式
+            var originalPath = GeneratePropertyImageUrl(uploadResult.StoredFileName, ImageSize.Original);
+            var mediumPath = GeneratePropertyImageUrl(uploadResult.StoredFileName, ImageSize.Medium);
+            var thumbnailPath = GeneratePropertyImageUrl(uploadResult.StoredFileName, ImageSize.Thumbnail);
+
+            return PropertyImageResult.CreateSuccess(
+                uploadResult.OriginalFileName,
+                (int)uploadResult.ImageId!.Value, // 轉換為 int 以保持向後相容性
+                originalPath,
+                mediumPath,
+                thumbnailPath,
+                uploadResult.IsMainImage,
+                uploadResult.FileSizeBytes,
+                uploadResult.FileSizeBytes, // 向後相容性：使用相同的檔案大小
+                uploadResult.Width,
+                uploadResult.Height
+            );
         }
     }
 }

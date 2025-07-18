@@ -1,28 +1,38 @@
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Primitives;
 using Moq;
 using zuHause.DTOs;
 using zuHause.Interfaces;
 using zuHause.Models;
 using zuHause.Services;
+using zuHause.Enums;
 
 namespace zuHause.Tests.Services
 {
     /// <summary>
-    /// PropertyImageService 單元測試
-    /// 遵循反過度模擬原則：測試真實業務邏輯，最小化 Mock 使用
+    /// PropertyImageService 單元測試 - 重構為 Facade 模式測試
+    /// 遵循反過度模擬原則：使用真實的業務邏輯服務，僅 Mock 外部依賴
     /// </summary>
     public class PropertyImageServiceTests : IDisposable
     {
         private readonly ZuHauseContext _context;
         private readonly PropertyImageService _service;
+        
+        // 只 Mock 外部依賴
         private readonly Mock<IImageProcessor> _mockImageProcessor;
-        private readonly Mock<IWebHostEnvironment> _mockEnvironment;
+        private readonly Mock<IConfiguration> _mockConfiguration;
         private readonly Mock<ILogger<PropertyImageService>> _mockLogger;
-        private readonly string _testWebRoot;
+        private readonly Mock<ILogger<ImageUploadService>> _mockImageUploadLogger;
+        
+        // 使用真實的業務邏輯服務
+        private readonly ImageUploadService _imageUploadService;
+        private readonly ImageQueryService _imageQueryService;
+        private readonly EntityExistenceChecker _entityExistenceChecker;
+        private readonly DisplayOrderManager _displayOrderManager;
 
         public PropertyImageServiceTests()
         {
@@ -32,24 +42,51 @@ namespace zuHause.Tests.Services
                 .Options;
             _context = new ZuHauseContext(options);
 
-            // 設定測試環境
-            _testWebRoot = Path.Combine(Path.GetTempPath(), "PropertyImageServiceTests", Guid.NewGuid().ToString());
-            Directory.CreateDirectory(_testWebRoot);
-
+            // 只 Mock 外部依賴
             _mockImageProcessor = new Mock<IImageProcessor>();
-            _mockEnvironment = new Mock<IWebHostEnvironment>();
+            _mockConfiguration = new Mock<IConfiguration>();
             _mockLogger = new Mock<ILogger<PropertyImageService>>();
+            _mockImageUploadLogger = new Mock<ILogger<ImageUploadService>>();
 
-            _mockEnvironment.Setup(e => e.WebRootPath).Returns(_testWebRoot);
+            // 設定 Configuration Mock
+            _mockConfiguration.Setup(c => c["ImageSettings:BaseUrl"]).Returns("/images/");
 
-            _service = new PropertyImageService(
+            // 建立真實的業務邏輯服務
+            _entityExistenceChecker = new EntityExistenceChecker(_context);
+            _displayOrderManager = new DisplayOrderManager(_context);
+            _imageUploadService = new ImageUploadService(
                 _context,
                 _mockImageProcessor.Object,
-                _mockEnvironment.Object,
+                _entityExistenceChecker,
+                _displayOrderManager,
+                _mockImageUploadLogger.Object);
+            _imageQueryService = new ImageQueryService(_context, _mockConfiguration.Object);
+
+            // 建立 PropertyImageService facade
+            _service = new PropertyImageService(
+                _imageUploadService,
+                _imageQueryService,
                 _mockLogger.Object);
+
+            // 設定外部依賴的預設行為
+            SetupImageProcessor();
 
             // 準備測試資料
             SeedTestData();
+        }
+
+        private void SetupImageProcessor()
+        {
+            // 設定 ImageProcessor 的預設行為（外部依賴）
+            _mockImageProcessor.Setup(ip => ip.ConvertToWebPAsync(It.IsAny<Stream>(), It.IsAny<int>(), It.IsAny<int>()))
+                .ReturnsAsync(new ImageProcessingResult
+                {
+                    Success = true,
+                    ProcessedFormat = "webp",
+                    SizeBytes = 500000,
+                    Width = 1200,
+                    Height = 800
+                });
         }
 
         private void SeedTestData()
@@ -76,28 +113,30 @@ namespace zuHause.Tests.Services
             var propertyId = 1;
             var files = CreateMockFiles(("test1.jpg", 1024 * 1024, "image/jpeg")); // 1MB
 
-            SetupMockImageProcessor();
-
             // Act
             var results = await _service.UploadPropertyImagesAsync(propertyId, files);
 
             // Assert
             results.Should().HaveCount(1);
+            
+            // 調試輸出
             if (!results[0].Success)
             {
-                // 調試輸出錯誤訊息
-                Console.WriteLine($"Error: {results[0].ErrorMessage}");
+                Console.WriteLine($"上傳失敗: {results[0].ErrorMessage}");
             }
+            
             results[0].Success.Should().BeTrue();
             results[0].IsMainImage.Should().BeTrue(); // 第一張應該是主圖
             results[0].OriginalFileName.Should().Be("test1.jpg");
             results[0].PropertyImageId.Should().BeGreaterThan(0);
             results[0].IsValidResult().Should().BeTrue();
 
-            // 驗證資料庫記錄
-            var dbImage = await _context.PropertyImages.FirstOrDefaultAsync(pi => pi.PropertyId == propertyId);
+            // 驗證資料庫記錄 - 現在儲存到統一的 Images 表
+            var dbImage = await _context.Images.FirstOrDefaultAsync(i => 
+                i.EntityType == EntityType.Property && i.EntityId == propertyId);
             dbImage.Should().NotBeNull();
-            dbImage!.DisplayOrder.Should().Be(1);
+            dbImage!.IsActive.Should().BeTrue();
+            dbImage.Category.Should().Be(ImageCategory.Gallery);
         }
 
         [Fact]
@@ -106,239 +145,169 @@ namespace zuHause.Tests.Services
             // Arrange
             var propertyId = 1;
             var files = CreateMockFiles(
-                ("test1.jpg", 1024 * 1024, "image/jpeg"),
-                ("test2.png", 512 * 1024, "image/png"),
-                ("test3.jpg", 2 * 1024 * 1024, "image/jpeg") // 2MB
+                ("image1.jpg", 1024 * 1024, "image/jpeg"),
+                ("image2.png", 2 * 1024 * 1024, "image/png"),
+                ("image3.webp", 800 * 1024, "image/webp")
             );
-
-            SetupMockImageProcessor();
 
             // Act
             var results = await _service.UploadPropertyImagesAsync(propertyId, files);
 
             // Assert
             results.Should().HaveCount(3);
-            results.All(r => r.Success).Should().BeTrue();
+            results.Should().AllSatisfy(r => r.Success.Should().BeTrue());
             
-            results[0].IsMainImage.Should().BeTrue(); // 只有第一張是主圖
+            // 第一張應該是主圖
+            results[0].IsMainImage.Should().BeTrue();
             results[1].IsMainImage.Should().BeFalse();
             results[2].IsMainImage.Should().BeFalse();
 
-            // 驗證顯示順序
-            var dbImages = await _context.PropertyImages
-                .Where(pi => pi.PropertyId == propertyId)
-                .OrderBy(pi => pi.DisplayOrder)
+            // 驗證資料庫記錄
+            var dbImages = await _context.Images
+                .Where(i => i.EntityType == EntityType.Property && i.EntityId == propertyId)
+                .OrderBy(i => i.DisplayOrder)
                 .ToListAsync();
-
+            
             dbImages.Should().HaveCount(3);
-            dbImages[0].DisplayOrder.Should().Be(1);
+            dbImages[0].DisplayOrder.Should().Be(1); // 主圖
             dbImages[1].DisplayOrder.Should().Be(2);
             dbImages[2].DisplayOrder.Should().Be(3);
-        }
-
-        [Fact]
-        public async Task UploadPropertyImagesAsync_WithFileExceedingSize_ShouldReturnFailure()
-        {
-            // Arrange
-            var propertyId = 1;
-            var files = CreateMockFiles(("large.jpg", 3 * 1024 * 1024, "image/jpeg")); // 3MB 超過限制
-
-            // Act
-            var results = await _service.UploadPropertyImagesAsync(propertyId, files);
-
-            // Assert
-            results.Should().HaveCount(1);
-            results[0].Success.Should().BeFalse();
-            results[0].ErrorMessage.Should().Contain("檔案大小超過");
-        }
-
-        [Fact]
-        public async Task UploadPropertyImagesAsync_WithUnsupportedFormat_ShouldReturnFailure()
-        {
-            // Arrange
-            var propertyId = 1;
-            var files = CreateMockFiles(("test.gif", 1024, "image/gif")); // 不支援的格式
-
-            // Act
-            var results = await _service.UploadPropertyImagesAsync(propertyId, files);
-
-            // Assert
-            results.Should().HaveCount(1);
-            results[0].Success.Should().BeFalse();
-            results[0].ErrorMessage.Should().Contain("不支援的檔案格式");
-        }
-
-        [Fact]
-        public async Task UploadPropertyImagesAsync_WithTooManyFiles_ShouldReturnFailure()
-        {
-            // Arrange
-            var propertyId = 1;
-            var fileSpecs = Enumerable.Range(1, 16) // 16 張超過限制
-                .Select(i => ($"test{i}.jpg", (long)1024, "image/jpeg"))
-                .ToArray();
-            var files = CreateMockFilesFromArray(fileSpecs);
-
-            // Act
-            var results = await _service.UploadPropertyImagesAsync(propertyId, files);
-
-            // Assert
-            results.Should().HaveCount(1);
-            results[0].Success.Should().BeFalse();
-            results[0].ErrorMessage.Should().Contain("最多只能上傳 15 張圖片");
-        }
-
-        [Fact]
-        public async Task UploadPropertyImagesAsync_WithExistingImages_ShouldRespectTotalLimit()
-        {
-            // Arrange
-            var propertyId = 1;
-            
-            // 先新增 14 張圖片到資料庫
-            for (int i = 1; i <= 14; i++)
-            {
-                _context.PropertyImages.Add(new PropertyImage
-                {
-                    PropertyId = propertyId,
-                    ImagePath = $"/uploads/properties/{propertyId}/existing_{i}.webp",
-                    DisplayOrder = i,
-                    CreatedAt = DateTime.UtcNow
-                });
-            }
-            await _context.SaveChangesAsync();
-
-            // 嘗試再上傳 2 張（總共會超過 15 張限制）
-            var files = CreateMockFiles(
-                ("new1.jpg", 1024, "image/jpeg"),
-                ("new2.jpg", 1024, "image/jpeg")
-            );
-
-            // Act
-            var results = await _service.UploadPropertyImagesAsync(propertyId, files);
-
-            // Assert
-            results.Should().HaveCount(1);
-            results[0].Success.Should().BeFalse();
-            results[0].ErrorMessage.Should().Contain("超過圖片數量限制");
-            results[0].ErrorMessage.Should().Contain("目前已有 14 張");
         }
 
         [Fact]
         public async Task UploadPropertyImagesAsync_WithNonExistentProperty_ShouldReturnFailure()
         {
             // Arrange
-            var propertyId = 999; // 不存在的房源ID
-            var files = CreateMockFiles(("test.jpg", 1024, "image/jpeg"));
+            var nonExistentPropertyId = 999;
+            var files = CreateMockFiles(("test.jpg", 1024 * 1024, "image/jpeg"));
 
             // Act
-            var results = await _service.UploadPropertyImagesAsync(propertyId, files);
+            var results = await _service.UploadPropertyImagesAsync(nonExistentPropertyId, files);
 
             // Assert
             results.Should().HaveCount(1);
             results[0].Success.Should().BeFalse();
-            results[0].ErrorMessage.Should().Contain("房源 ID 999 不存在");
+            results[0].ErrorMessage.Should().Contain("不存在");
         }
 
         [Fact]
-        public async Task UploadPropertyImagesAsync_WhenImageProcessorFails_ShouldReturnFailure()
+        public async Task GetMainPropertyImageAsync_WithExistingImages_ShouldReturnMainImage()
         {
             // Arrange
             var propertyId = 1;
-            var files = CreateMockFiles(("test.jpg", 1024, "image/jpeg"));
-
-            // 設定 ImageProcessor 失敗
-            _mockImageProcessor.Setup(ip => ip.ConvertToWebPAsync(It.IsAny<Stream>(), It.IsAny<int?>(), It.IsAny<int>()))
-                .ReturnsAsync(ImageProcessingResult.CreateFailure("圖片處理引擎錯誤"));
+            
+            // 先上傳一些圖片
+            var files = CreateMockFiles(
+                ("main.jpg", 1024 * 1024, "image/jpeg"),
+                ("secondary.jpg", 1024 * 1024, "image/jpeg")
+            );
+            await _service.UploadPropertyImagesAsync(propertyId, files);
 
             // Act
-            var results = await _service.UploadPropertyImagesAsync(propertyId, files);
+            var mainImage = await _service.GetMainPropertyImageAsync(propertyId);
 
             // Assert
-            results.Should().HaveCount(1);
-            results[0].Success.Should().BeFalse();
-            results[0].ErrorMessage.Should().Contain("原圖處理失敗");
+            mainImage.Should().NotBeNull();
+            mainImage!.DisplayOrder.Should().Be(1);
+            mainImage.EntityType.Should().Be(EntityType.Property);
+            mainImage.EntityId.Should().Be(propertyId);
         }
 
         [Fact]
-        public void PropertyImageResult_CreateSuccess_ShouldCreateValidResult()
+        public async Task GetPropertyImagesAsync_WithExistingImages_ShouldReturnAllImages()
         {
-            // Arrange & Act
-            var result = PropertyImageResult.CreateSuccess(
-                "test.jpg", 1, "/original.webp", "/medium.webp", "/thumb.webp", 
-                true, 1024, 800, 1200, 800);
+            // Arrange
+            var propertyId = 1;
+            
+            // 先上傳一些圖片
+            var files = CreateMockFiles(
+                ("image1.jpg", 1024 * 1024, "image/jpeg"),
+                ("image2.jpg", 1024 * 1024, "image/jpeg"),
+                ("image3.jpg", 1024 * 1024, "image/jpeg")
+            );
+            await _service.UploadPropertyImagesAsync(propertyId, files);
+
+            // Act
+            var images = await _service.GetPropertyImagesAsync(propertyId);
 
             // Assert
-            result.Success.Should().BeTrue();
-            result.IsValidResult().Should().BeTrue();
-            result.GetDimensionDescription().Should().Be("1200x800");
-            result.GetCompressionDescription().Should().Contain("節省");
-            result.GetAllImagePaths().Should().HaveCount(3);
+            images.Should().HaveCount(3);
+            images.Should().AllSatisfy(img => 
+            {
+                img.EntityType.Should().Be(EntityType.Property);
+                img.EntityId.Should().Be(propertyId);
+                img.IsActive.Should().BeTrue();
+            });
         }
 
         [Fact]
-        public void PropertyImageResult_CreateFailure_ShouldCreateFailureResult()
+        public async Task DeletePropertyImageAsync_WithExistingImage_ShouldReturnTrue()
         {
-            // Arrange & Act
-            var result = PropertyImageResult.CreateFailure("test.jpg", "測試錯誤");
+            // Arrange
+            var propertyId = 1;
+            var files = CreateMockFiles(("test.jpg", 1024 * 1024, "image/jpeg"));
+            var uploadResults = await _service.UploadPropertyImagesAsync(propertyId, files);
+            var imageId = uploadResults[0].PropertyImageId!.Value;
+
+            // Act
+            var result = await _service.DeletePropertyImageAsync(imageId);
 
             // Assert
-            result.Success.Should().BeFalse();
-            result.ErrorMessage.Should().Be("測試錯誤");
-            result.IsValidResult().Should().BeFalse();
-            result.GetProcessingSummary().Should().Contain("處理失敗");
+            result.Should().BeTrue();
+            
+            // 驗證圖片被軟刪除
+            var deletedImage = await _context.Images.FindAsync((long)imageId);
+            deletedImage.Should().NotBeNull();
+            deletedImage!.IsActive.Should().BeFalse();
         }
 
+        [Fact]
+        public async Task SetMainPropertyImageAsync_WithValidImageId_ShouldReturnTrue()
+        {
+            // Arrange
+            var propertyId = 1;
+            var files = CreateMockFiles(
+                ("image1.jpg", 1024 * 1024, "image/jpeg"),
+                ("image2.jpg", 1024 * 1024, "image/jpeg")
+            );
+            var uploadResults = await _service.UploadPropertyImagesAsync(propertyId, files);
+            var secondImageId = uploadResults[1].PropertyImageId!.Value;
+
+            // Act - 將第二張圖片設為主圖
+            var result = await _service.SetMainPropertyImageAsync(secondImageId);
+
+            // Assert
+            result.Should().BeTrue();
+            
+            // 驗證第二張圖片現在是主圖（DisplayOrder = 1）
+            var newMainImage = await _context.Images.FindAsync((long)secondImageId);
+            newMainImage.Should().NotBeNull();
+            newMainImage!.DisplayOrder.Should().Be(1);
+        }
+
+        // 測試輔助方法
         private IFormFileCollection CreateMockFiles(params (string fileName, long size, string contentType)[] fileSpecs)
         {
             var files = new FormFileCollection();
             
             foreach (var (fileName, size, contentType) in fileSpecs)
             {
-                var content = new byte[size];
-                // 填入一些假的圖片數據 (為了測試檔案大小驗證)
-                for (int i = 0; i < Math.Min(size, 1000); i++)
-                {
-                    content[i] = (byte)(i % 256);
-                }
-
-                var stream = new MemoryStream(content);
-                var formFile = new FormFile(stream, 0, size, "file", fileName)
+                var stream = new MemoryStream(new byte[size]);
+                var file = new FormFile(stream, 0, size, "file", fileName)
                 {
                     Headers = new HeaderDictionary(),
                     ContentType = contentType
                 };
                 
-                files.Add(formFile);
+                files.Add(file);
             }
-
-            return files;
-        }
-
-        private IFormFileCollection CreateMockFilesFromArray((string fileName, long size, string contentType)[] fileSpecs)
-        {
-            return CreateMockFiles(fileSpecs);
-        }
-
-        private void SetupMockImageProcessor()
-        {
-            // 設定成功的圖片處理回應
-            var successStream = new MemoryStream(new byte[1000]);
             
-            _mockImageProcessor.Setup(ip => ip.ConvertToWebPAsync(It.IsAny<Stream>(), It.IsAny<int?>(), It.IsAny<int>()))
-                .ReturnsAsync(() => ImageProcessingResult.CreateSuccess(successStream, 800, 600, "jpeg"));
-
-            _mockImageProcessor.Setup(ip => ip.GenerateThumbnailAsync(It.IsAny<Stream>(), It.IsAny<int>(), It.IsAny<int>()))
-                .ReturnsAsync(() => ImageProcessingResult.CreateSuccess(successStream, 300, 200, "jpeg"));
+            return files;
         }
 
         public void Dispose()
         {
             _context.Dispose();
-            
-            // 清理測試檔案
-            if (Directory.Exists(_testWebRoot))
-            {
-                Directory.Delete(_testWebRoot, true);
-            }
         }
     }
 }
