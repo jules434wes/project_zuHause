@@ -302,7 +302,11 @@ public partial class ZuHauseContext : DbContext
 
         modelBuilder.Entity<Approval>(entity =>
         {
-            entity.ToTable("approvals", tb => tb.HasComment("審核主檔"));
+            entity.ToTable("approvals", tb =>
+                {
+                    tb.HasComment("審核主檔");
+                    tb.HasTrigger("trg_approvals_status_sync");
+                });
 
             entity.HasIndex(e => e.ApplicantMemberId, "IX_approvals_applicantMemberID");
 
@@ -316,9 +320,7 @@ public partial class ZuHauseContext : DbContext
 
             entity.HasIndex(e => new { e.StatusCategory, e.StatusCode }, "IX_approvals_status_category");
 
-            entity.HasIndex(e => new { e.ModuleCode, e.SourceId }, "UQ_approvals_module_source")
-                .IsUnique()
-                .HasFillFactor(100);
+            entity.HasIndex(e => new { e.ModuleCode, e.ApplicantMemberId, e.SourcePropertyId }, "UQ_approvals_member_module").IsUnique();
 
             entity.Property(e => e.ApprovalId)
                 .HasComment("審核ID (自動遞增，從701開始)")
@@ -338,9 +340,9 @@ public partial class ZuHauseContext : DbContext
                 .HasMaxLength(20)
                 .HasComment("模組代碼")
                 .HasColumnName("moduleCode");
-            entity.Property(e => e.SourceId)
-                .HasComment("來源ID")
-                .HasColumnName("sourceID");
+            entity.Property(e => e.SourcePropertyId)
+                .HasComment("審核房源ID")
+                .HasColumnName("sourcePropertyID");
             entity.Property(e => e.StatusCategory)
                 .HasMaxLength(20)
                 .HasComputedColumnSql("(CONVERT([nvarchar](20),N'APPROVAL_STATUS'))", true)
@@ -361,9 +363,8 @@ public partial class ZuHauseContext : DbContext
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_approvals_applicant");
 
-            entity.HasOne(d => d.Source).WithMany(p => p.Approvals)
-                .HasForeignKey(d => d.SourceId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
+            entity.HasOne(d => d.SourceProperty).WithMany(p => p.Approvals)
+                .HasForeignKey(d => d.SourcePropertyId)
                 .HasConstraintName("FK_approvals_Property");
 
             entity.HasOne(d => d.SystemCode).WithMany(p => p.Approvals)
@@ -397,7 +398,7 @@ public partial class ZuHauseContext : DbContext
                 .HasComment("操作類別 (計算欄位)")
                 .HasColumnName("actionCategory");
             entity.Property(e => e.ActionNote)
-                .HasComment("操作備註")
+                .HasComment("內部操作備註")
                 .HasColumnName("actionNote");
             entity.Property(e => e.ActionType)
                 .HasMaxLength(20)
@@ -1700,8 +1701,7 @@ public partial class ZuHauseContext : DbContext
             entity.ToTable("listingPlans", tb => tb.HasComment("刊登費方案表"));
 
             entity.Property(e => e.PlanId)
-                .ValueGeneratedNever()
-                .HasComment("方案ID")
+                .HasComment("刊登費方案ID")
                 .HasColumnName("planId");
             entity.Property(e => e.CreatedAt)
                 .HasPrecision(0)
@@ -1748,8 +1748,6 @@ public partial class ZuHauseContext : DbContext
             entity.ToTable("members", tb => tb.HasComment("會員資料表"));
 
             entity.HasIndex(e => e.Email, "IX_members_email");
-
-            entity.HasIndex(e => e.NationalIdNo, "IX_members_nationalIdNo").IsUnique();
 
             entity.HasIndex(e => e.PhoneNumber, "IX_members_phone");
 
@@ -2061,6 +2059,7 @@ public partial class ZuHauseContext : DbContext
             entity.ToTable("properties", tb =>
                 {
                     tb.HasComment("房源資料表");
+                    tb.HasTrigger("trg_properties_status_protection");
                     tb.HasTrigger("trg_properties_validate_landlord");
                 });
 
