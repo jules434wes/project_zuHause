@@ -136,6 +136,12 @@ ul {
     --bs-btn-hover-color: #00dab5;
     --bs-btn-active-border-color: transparent;
 }
+
+label.disabled-label{
+    pointer-events:none;
+    cursor:unset;
+}
+
 body .mb-10{
     margin-bottom: 10rem;
 }

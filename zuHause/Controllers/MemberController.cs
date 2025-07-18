@@ -33,6 +33,11 @@ namespace zuHause.Controllers
         [HttpGet]
         public IActionResult Login(string? ReturnUrl = null)
         {
+            if(User.Identity?.IsAuthenticated == true)
+            {
+                return RedirectToAction("Index");
+            }
+
             var model = new LoginViewModel()
             {
                 ReturnUrl = ReturnUrl
@@ -44,6 +49,11 @@ namespace zuHause.Controllers
         [HttpPost]
         public async Task<IActionResult> Login(LoginViewModel model)
         {
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                return RedirectToAction("Index");
+            }
+
             if (!ModelState.IsValid)
             {
                 return View(model);
@@ -51,8 +61,26 @@ namespace zuHause.Controllers
 
             string? userPhoneNumber = model.PhoneNumber;
             string? userPassword = model.UserPassword;
-            var member = await _context.Members.SingleOrDefaultAsync((x) => (x.PhoneNumber
+            Member? member;
+
+            try
+            {
+                member = await _context.Members.SingleOrDefaultAsync((x) => (x.PhoneNumber
              == userPhoneNumber));
+            }
+            catch (InvalidOperationException)
+            {
+                ModelState.AddModelError("LoginStatus", "資料異常，請聯絡客服");
+                return View(model);
+
+            }
+            catch (Exception)
+            {
+                ModelState.AddModelError("LoginStatus", "系統錯誤，請稍後再試");
+                return View(model);
+            }
+
+            // 嘗試用try/catch
             if (member == null)
             {
                 ModelState.AddModelError("LoginStatus", "帳號或密碼錯誤");
@@ -79,6 +107,9 @@ namespace zuHause.Controllers
                 return View(model);
             }
 
+            member.LastLoginAt = DateTime.Now;
+            _context.Entry(member).Property(m => m.LastLoginAt).IsModified = true;
+            await _context.SaveChangesAsync();
 
             var claims = new List<Claim>
             {
@@ -275,19 +306,48 @@ namespace zuHause.Controllers
         [Authorize(AuthenticationSchemes = "MemberCookieAuth")]
         public IActionResult ResetPasswordConfirmCode()
         {
-            ForgotPasswordViewModel pwd = new ForgotPasswordViewModel
-            {
 
-            };
-            return RedirectToAction("resetPassword" );
+            return View("ResetPasswordConfirmCode", new ForgotPasswordViewModel());
         }
 
         [HttpPost]
         [Authorize(AuthenticationSchemes = "MemberCookieAuth")]
-        public IActionResult resetPassword(ForgotPasswordViewModel model)
+        public async Task<IActionResult> ResetPassword(ForgotPasswordViewModel model)
         {
+            if(model.ReturnUrl == null)
+            {
+                model.ReturnUrl = Url.Action("Index", "Member");
+            }
 
-            return View();
+            if (!ModelState.IsValid)
+            {
+                return View("ResetPasswordConfirmCode", model);
+            }
+
+            var member = await _context.Members.FindAsync(int.Parse(User.FindFirst("UserId")!.Value));
+
+            if(member == null) return View("ResetPasswordConfirmCode", model);
+            bool result = _memberService.verifyPassword(member, model.OriginalPassword!);
+
+            if (!result)
+            {
+                ModelState.AddModelError("OriginalPassword", "原密碼錯誤");
+                return View("ResetPasswordConfirmCode", model);
+            }
+
+
+            _memberService.ResetPassword(member, model.UserPassword!);
+
+
+            TempData["SuccessMessageTitle"] = "成功";
+            TempData["SuccessMessageContent"] = "密碼修改完成";
+
+            if(!string.IsNullOrEmpty(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl))
+            {
+                return Redirect(model.ReturnUrl);
+            }
+
+            return RedirectToAction("Index");
         }
 
         public IActionResult ResetPasswordChange()
@@ -297,6 +357,12 @@ namespace zuHause.Controllers
         [HttpGet]
         public IActionResult RegisterVerifyPhone()
         {
+
+            if(User.Identity?.IsAuthenticated == true)
+            {
+                return RedirectToAction("Index");
+            }
+
             TempData["activePage"] = "VerifyPhone";
             return View();
         }
@@ -648,6 +714,41 @@ namespace zuHause.Controllers
         public String AccessDenied()
         {
             return "權限不足";
+        }
+
+        [Authorize(AuthenticationSchemes = "MemberCookieAuth")]
+        public async Task<IActionResult> GetUploadStatus()
+        {
+
+            var member = await _context.Members.FindAsync(int.Parse(User.FindFirst("UserId")!.Value));
+            if (member == null) return BadRequest(new
+            {
+                status= "error",
+                message= "請先登入",
+            });
+
+            var frontLog = await _context.UserUploads.Where(u => u.MemberId == member.MemberId && u.UploadTypeCode == "USER_ID_FRONT").OrderByDescending(x=>x.UploadId).FirstOrDefaultAsync();
+
+
+
+            var backLog = await _context.UserUploads.Where(u => u.MemberId == member.MemberId && u.UploadTypeCode == "USER_ID_BACK").OrderByDescending(x=>x.UploadId).FirstOrDefaultAsync();
+
+            if(backLog == null && frontLog == null) return BadRequest(new
+            {
+                status = "error",
+                message = "無上傳紀錄",
+            });
+
+
+            return Ok(new {
+                status = "ok",
+                hasFront = frontLog != null,
+                hasBack = backLog != null,
+                frontUploadedAt = frontLog == null ? "" : frontLog!.UploadedAt.ToString("yyyy-MM-dd"),
+                backUploadedAt = backLog == null ? "" : backLog.UploadedAt.ToString("yyyy-MM-dd"),
+                frontFilePath = frontLog == null ? "" : frontLog.FilePath,
+                backFilePath = backLog == null ? "" : backLog.FilePath
+            });
         }
 
         public async Task<IActionResult> Upload([FromForm] UserUploadViewModel model)

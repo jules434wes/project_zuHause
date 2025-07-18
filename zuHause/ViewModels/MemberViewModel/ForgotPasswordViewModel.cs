@@ -21,5 +21,7 @@ namespace zuHause.ViewModels.MemberViewModel
         [Display(Name = "確認新密碼")]
         [Compare("UserPassword", ErrorMessage = "兩次輸入的密碼不一致")]
         public string? ConfirmPassword { get; set; }
+
+        public string? ReturnUrl { get; set; }
     }
 }

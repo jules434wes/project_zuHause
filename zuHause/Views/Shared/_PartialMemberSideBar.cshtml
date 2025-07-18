@@ -1,9 +1,14 @@
-﻿<div class="list-group col-2 px-3 d-flex flex-column gap-3 position-sticky top-0">
-    <a href="#" class="list-group-item list-group-item-action rounded-1 text-center active" aria-current="true">
+﻿@{
+    string page = ViewData["activePage"] as string ?? "MemberProfile";
+}
+
+
+<div class="list-group col-2 px-3 d-flex flex-column gap-3 position-sticky top-0">
+    <a asp-controller="Member" asp-action="MemberProfile" class="list-group-item list-group-item-action rounded-1 text-center @(page == "MemberProfile" ? "active" : "") " aria-current="true">
         會員資料管理
     </a>
-    <a href="#" class="list-group-item list-group-item-action rounded-1 text-center">通知/訊息管理</a>
-    <a href="#" class="list-group-item list-group-item-action rounded-1 text-center">申請紀錄管理</a>
-    <a href="#" class="list-group-item list-group-item-action rounded-1 text-center">我的合約</a>
+    <a asp-controller="MemberInbox" asp-action="Index" class="list-group-item list-group-item-action rounded-1 text-center  @(page == "MemberInbox" ? "active" : "") ">通知/訊息管理</a>
+    <a asp-controller="MemberApplications" asp-action="Index" class="list-group-item list-group-item-action rounded-1 text-center  @(page == "MemberApplications" ? "active" : "") ">申請紀錄管理</a>
+    <a asp-controller="MemberContracts" asp-action="Index" class="list-group-item list-group-item-action rounded-1 text-center  @(page == "MemberContracts" ? "active" : "") ">我的合約</a>
     <a href="#" class="list-group-item list-group-item-action rounded-1 text-center">我的收藏</a>
 </div>
