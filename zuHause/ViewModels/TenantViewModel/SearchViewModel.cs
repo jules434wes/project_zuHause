@@ -20,5 +20,6 @@ namespace zuHause.ViewModels.TenantViewModel
         public List<string> Features { get; set; } = new List<string>();
         public string? ImagePath { get; set; }
         public DateTime? PublishedAt { get; set; }
+        public bool IsFavorited { get; set; }
     }
 }

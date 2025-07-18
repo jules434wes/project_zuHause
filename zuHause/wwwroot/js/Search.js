@@ -310,7 +310,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             districts.forEach(district => {
                 const isNantun = district.districtName === '北屯區' &&
-                    cityCode === (allCities.find(c => c.cityName === '台中市')?.cityCode || '');
+                    cityCode === (allCities.find(c => c.cityName === '臺中市')?.cityCode || '');
 
                 const checkboxHtml = `
                     <input type="checkbox" class="btn-check district-checkbox" id="district_${district.districtCode}" value="${district.districtCode}" ${isNantun ? 'checked' : ''}>
