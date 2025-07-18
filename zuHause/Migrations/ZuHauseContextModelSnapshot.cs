@@ -367,12 +367,6 @@ namespace zuHause.Migrations
                         .IsUnique()
                         .HasFilter("[sourcePropertyID] IS NOT NULL");
 
-                    b.HasIndex(new[] { "ModuleCode", "SourcePropertyId" }, "UQ_approvals_module_source")
-                        .IsUnique()
-                        .HasFilter("[sourcePropertyID] IS NOT NULL");
-
-                    SqlServerIndexBuilderExtensions.HasFillFactor(b.HasIndex(new[] { "ModuleCode", "SourcePropertyId" }, "UQ_approvals_module_source"), 100);
-
                     b.ToTable("approvals", null, t =>
                         {
                             t.HasComment("審核主檔");

@@ -1,5 +1,48 @@
 <script>
+// 全域函數：載入會員證件 (供HTML onclick呼叫)
+function loadDocuments(memberId) {
+    console.log('載入會員ID ' + memberId + ' 的證件');
+    
+    // 更新Modal標題
+    document.getElementById('viewDocumentModalLabel').textContent = '查看身分證件 - 會員ID: ' + memberId;
+    
+    // TODO: 後續實作從伺服器載入證件圖片的功能
+    // 暫時顯示會員ID資訊
+    var modalBody = document.querySelector('#viewDocumentModal .modal-body');
+    modalBody.innerHTML = `
+        <div class="text-center">
+            <h6>會員ID: ${memberId}</h6>
+            <p class="text-muted">身分證件載入功能開發中...</p>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <small class="text-muted">身分證正面</small>
+                        </div>
+                        <div class="card-body text-center" style="height: 200px; background-color: #f8f9fa;">
+                            <i class="fas fa-image fa-3x text-muted"></i>
+                            <p class="text-muted mt-2">圖片載入中...</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <small class="text-muted">身分證反面</small>
+                        </div>
+                        <div class="card-body text-center" style="height: 200px; background-color: #f8f9fa;">
+                            <i class="fas fa-image fa-3x text-muted"></i>
+                            <p class="text-muted mt-2">圖片載入中...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
 document.addEventListener('DOMContentLoaded', function() {
+    // 初始化分頁切換事件
     var triggerTabList = [].slice.call(document.querySelectorAll('#userTabs button'))
     triggerTabList.forEach(function (triggerEl) {
         var tabTrigger = new bootstrap.Tab(triggerEl)
@@ -7,6 +50,11 @@ document.addEventListener('DOMContentLoaded', function() {
         triggerEl.addEventListener('click', function (event) {
             event.preventDefault()
             tabTrigger.show()
+            
+            // 切換分頁後重新初始化排序功能
+            setTimeout(function() {
+                initSortingEvents();
+            }, 100);
         })
     })
 
@@ -17,6 +65,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 初始化排序功能
     initSortingEvents();
+    
+    // 初始化載入筆數功能
+    initPageSizeEvents();
+    
+    // 初始頁面載入時套用預設載入筆數 (10筆)
+    setTimeout(function() {
+        document.querySelectorAll('.page-size-selector').forEach(function(selector) {
+            var tableType = selector.getAttribute('data-table-type');
+            updateTableDisplay(tableType, 10);
+        });
+    }, 100);
 
     // Double Check 確認機制
     let currentAction = null;
@@ -212,6 +271,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 排序功能初始化
     function initSortingEvents() {
+        // 移除現有的排序事件監聽器
+        document.querySelectorAll('.sortable').forEach(function(header) {
+            var newHeader = header.cloneNode(true);
+            header.parentNode.replaceChild(newHeader, header);
+        });
+
+        // 重新添加排序事件監聽器
         document.querySelectorAll('.sortable').forEach(function(header) {
             header.addEventListener('click', function() {
                 var sortField = this.getAttribute('data-sort');
@@ -259,10 +325,24 @@ document.addEventListener('DOMContentLoaded', function() {
             var aValue = getSortValue(a, sortField);
             var bValue = getSortValue(b, sortField);
             
-            if (direction === 'asc') {
-                return aValue.localeCompare(bValue, 'zh-TW');
+            // 如果是日期欄位，使用日期比較
+            if (sortField === 'registerDate' || sortField === 'lastLogin' || sortField === 'verificationTime') {
+                // 處理日期格式 YYYY-MM-DD
+                var aDate = new Date(aValue);
+                var bDate = new Date(bValue);
+                
+                if (direction === 'asc') {
+                    return aDate - bDate;
+                } else {
+                    return bDate - aDate;
+                }
             } else {
-                return bValue.localeCompare(aValue, 'zh-TW');
+                // 其他欄位使用字串比較
+                if (direction === 'asc') {
+                    return aValue.localeCompare(bValue, 'zh-TW');
+                } else {
+                    return bValue.localeCompare(aValue, 'zh-TW');
+                }
             }
         });
         
@@ -270,6 +350,13 @@ document.addEventListener('DOMContentLoaded', function() {
         rows.forEach(function(row) {
             tbody.appendChild(row);
         });
+        
+        // 排序後重新應用分頁
+        var tableTypeAttr = table.getAttribute('data-table-type');
+        var pageSizeSelector = document.querySelector('#pageSize' + tableTypeAttr);
+        var currentPageSize = pageSizeSelector ? parseInt(pageSizeSelector.value) : 10;
+        
+        updateTableDisplay(tableTypeAttr, currentPageSize, 1); // 排序後回到第一頁
     }
 
     // 獲取排序值
@@ -278,20 +365,157 @@ document.addEventListener('DOMContentLoaded', function() {
         
         switch(sortField) {
             case 'registerDate':
-                return cells[3].textContent.trim(); // 註冊日期
+                // 註冊日期在第4個欄位 (index 3)
+                var dateValue = cells[3].textContent.trim();
+                return dateValue === '--' ? '0000-00-00' : dateValue;
             case 'lastLogin':
-                var loginCell = cells[4];
-                // 檢查是否有申請驗證時間欄位
-                if (cells.length > 6 && cells[5].textContent.includes('2024')) {
-                    return loginCell.textContent.trim(); // 上次登入
-                } else {
-                    return loginCell.textContent.trim(); // 上次登入
-                }
+                // 上次登入時間在第5個欄位 (index 4)
+                var loginValue = cells[4].textContent.trim();
+                return loginValue === '--' ? '0000-00-00' : loginValue;
             case 'verificationTime':
-                return cells[5].textContent.trim(); // 申請驗證時間
+                // 申請驗證時間在第6個欄位 (index 5)
+                var verificationValue = cells[5].textContent.trim();
+                return verificationValue === '--' ? '0000-00-00' : verificationValue;
             default:
                 return '';
         }
+    }
+
+    // 載入筆數功能初始化
+    function initPageSizeEvents() {
+        document.querySelectorAll('.page-size-selector').forEach(function(selector) {
+            selector.addEventListener('change', function() {
+                var pageSize = parseInt(this.value);
+                var tableType = this.getAttribute('data-table-type');
+                updateTableDisplay(tableType, pageSize);
+            });
+        });
+    }
+
+    // 更新表格顯示
+    function updateTableDisplay(tableType, pageSize, currentPage) {
+        if (!currentPage) currentPage = 1;
+        
+        var tableId = getTableId(tableType);
+        var table = document.querySelector(tableId + ' table tbody');
+        var paginationContainer = document.querySelector(tableId + ' nav[aria-label*="分頁"]');
+        
+        if (table) {
+            var allRows = Array.from(table.querySelectorAll('tr'));
+            var totalRows = allRows.length;
+            var totalPages = Math.ceil(totalRows / pageSize);
+            
+            // 隱藏所有行
+            allRows.forEach(function(row) {
+                row.style.display = 'none';
+            });
+            
+            // 顯示指定頁面的行
+            showPageRows(allRows, currentPage, pageSize);
+            
+            // 更新分頁按鈕
+            updatePagination(paginationContainer, currentPage, totalPages, pageSize, allRows, tableType);
+        }
+    }
+    
+    // 顯示指定頁面的行
+    function showPageRows(allRows, currentPage, pageSize) {
+        var startIndex = (currentPage - 1) * pageSize;
+        var endIndex = Math.min(startIndex + pageSize, allRows.length);
+        
+        for (var i = startIndex; i < endIndex; i++) {
+            if (allRows[i]) {
+                allRows[i].style.display = '';
+            }
+        }
+    }
+
+    // 獲取對應的表格ID
+    function getTableId(tableType) {
+        switch(tableType) {
+            case 'all':
+                return '#all-users';
+            case 'pending':
+                return '#pending-verification';
+            case 'landlord':
+                return '#pending-landlord';
+            default:
+                return '#all-users';
+        }
+    }
+
+    // 更新分頁
+    function updatePagination(paginationContainer, currentPage, totalPages, pageSize, allRows, tableType) {
+        if (!paginationContainer) return;
+        
+        var paginationList = paginationContainer.querySelector('.pagination');
+        if (!paginationList) return;
+        
+        // 如果只有一頁或沒有資料，隱藏分頁
+        if (totalPages <= 1) {
+            paginationContainer.style.display = 'none';
+            return;
+        } else {
+            paginationContainer.style.display = 'block';
+        }
+        
+        // 清空現有分頁
+        paginationList.innerHTML = '';
+        
+        // 上一頁按鈕
+        var prevItem = document.createElement('li');
+        prevItem.className = currentPage === 1 ? 'page-item disabled' : 'page-item';
+        prevItem.innerHTML = '<a class="page-link" href="#" tabindex="-1">上一頁</a>';
+        if (currentPage > 1) {
+            prevItem.querySelector('a').addEventListener('click', function(e) {
+                e.preventDefault();
+                showPage(currentPage - 1, totalPages, pageSize, allRows, paginationContainer, tableType);
+            });
+        }
+        paginationList.appendChild(prevItem);
+        
+        // 頁碼按鈕
+        for (var i = 1; i <= totalPages; i++) {
+            var pageItem = document.createElement('li');
+            pageItem.className = i === currentPage ? 'page-item active' : 'page-item';
+            pageItem.innerHTML = '<a class="page-link" href="#">' + i + '</a>';
+            
+            if (i !== currentPage) {
+                (function(pageNum) {
+                    pageItem.querySelector('a').addEventListener('click', function(e) {
+                        e.preventDefault();
+                        showPage(pageNum, totalPages, pageSize, allRows, paginationContainer, tableType);
+                    });
+                })(i);
+            }
+            paginationList.appendChild(pageItem);
+        }
+        
+        // 下一頁按鈕
+        var nextItem = document.createElement('li');
+        nextItem.className = currentPage === totalPages ? 'page-item disabled' : 'page-item';
+        nextItem.innerHTML = '<a class="page-link" href="#">下一頁</a>';
+        if (currentPage < totalPages) {
+            nextItem.querySelector('a').addEventListener('click', function(e) {
+                e.preventDefault();
+                showPage(currentPage + 1, totalPages, pageSize, allRows, paginationContainer, tableType);
+            });
+        }
+        paginationList.appendChild(nextItem);
+    }
+
+    // 顯示指定頁面
+    function showPage(pageNum, totalPages, pageSize, allRows, paginationContainer, tableType) {
+        // 隱藏所有行
+        allRows.forEach(function(row) {
+            row.style.display = 'none';
+        });
+        
+        // 顯示當前頁的行
+        showPageRows(allRows, pageNum, pageSize);
+        
+        // 更新分頁按鈕狀態
+        updatePagination(paginationContainer, pageNum, totalPages, pageSize, allRows, tableType);
     }
 });
 </script>
