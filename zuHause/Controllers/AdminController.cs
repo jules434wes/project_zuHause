@@ -66,7 +66,7 @@ namespace zuHause.Controllers
 
         public IActionResult admin_systemMessageNew()
         {
-            var viewModel = new AdminSystemMessageNewViewModel();
+            var viewModel = new AdminSystemMessageNewViewModel(_context);
             return View(viewModel);
         }
 
@@ -105,6 +105,18 @@ namespace zuHause.Controllers
             }
 
             return Json(templates);
+        }
+
+        [HttpGet]
+        public IActionResult GetCities()
+        {
+            var cities = _context.Cities
+                .Where(c => c.IsActive)
+                .OrderBy(c => c.CityId)
+                .Select(c => new { id = c.CityId, name = c.CityName })
+                .ToList();
+
+            return Json(cities);
         }
     }
 }

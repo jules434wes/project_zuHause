@@ -1,4 +1,4 @@
-<script>
+// 會員管理頁面 JavaScript
 // 全域函數：帳戶狀態切換 (供HTML onclick呼叫)
 function toggleAccountStatus(memberId, currentStatus) {
     var newStatus = currentStatus === 'active' ? '停用' : '啟用';
@@ -865,4 +865,3 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
 });
-</script>

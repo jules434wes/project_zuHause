@@ -22,7 +22,19 @@
 </div>
 
 @section Scripts {
-    <partial name="_AdminPartial/_SystemMessageNew/_SystemMessageNewScripts" />
+    <script src="~/js/admin_js/system-message-new.js"></script>
+    <script>
+        // 設定可用使用者資料
+        @if (Model.AvailableUsers != null)
+        {
+            <text>
+            window.availableUsersData = @Html.Raw(Json.Serialize(Model.AvailableUsers));
+            document.addEventListener('DOMContentLoaded', function() {
+                setAvailableUsers(window.availableUsersData);
+            });
+            </text>
+        }
+    </script>
 }
 
 <partial name="_AdminPartial/_SystemMessageNew/_SystemMessageNewModals" />
