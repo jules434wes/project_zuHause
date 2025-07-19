@@ -709,7 +709,21 @@ namespace zuHause.Controllers
 
             return Ok("✅ 已刪除");
         }
+        //抓取輪播分類
+        [HttpGet("GetCarouselCategories")]
+        public IActionResult GetCarouselCategories()
+        {
+            var categories = _context.Pages
+                .Where(p => p.ModuleScope == "carousel" && p.IsActive)
+                .OrderBy(p => p.DisplayOrder)
+                .Select(p => new {
+                    p.PageCode,
+                    p.PageName
+                })
+                .ToList();
 
+            return Json(categories);
+        }
 
 
 

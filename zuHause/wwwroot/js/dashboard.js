@@ -212,6 +212,8 @@ function openTab(tabKey) {
                         if (typeof initCarouselManager === "function") {
                             initCarouselManager(); // ✅ 執行初始化
                         }
+                        
+                       
                     }
                 };
 

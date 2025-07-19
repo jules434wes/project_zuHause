@@ -68,18 +68,19 @@
     window.fillEditForm = fillEditForm;
     // 編輯填入表單
     async function fillEditForm(id) {
+        console.log("進入編輯");
         const list = await fetchCarouselImages();
-        const item = list.find(x => x.carouselImageId === id);
+        const item = list.find(x => x.CarouselImageId === id);
         if (!item) return;
-
-        document.getElementById("carouselImageId").value = item.carouselImageId;
-        document.getElementById("imagesName").value = item.imagesName;
-        document.getElementById("category").value = item.category;
-        document.getElementById("displayOrder").value = item.displayOrder;
-        document.getElementById("pageCode").value = item.pageCode ?? "";
-        document.getElementById("startAt").value = item.startAt?.slice(0, 16);
-        document.getElementById("endAt").value = item.endAt?.slice(0, 16);
-        document.getElementById("imagePreview").src = item.imageUrl;
+        console.log("帶入編輯");
+        document.getElementById("carouselImageId").value = item.CarouselImageId;
+        document.getElementById("imagesName").value = item.ImagesName;
+        document.getElementById("category").value = item.Category;
+        document.getElementById("displayOrder").value = item.DisplayOrder;
+        document.getElementById("pageCode").value = item.PageCode ?? "";
+        document.getElementById("startAt").value = item.StartAt?.slice(0, 16);
+        document.getElementById("endAt").value = item.EndAt?.slice(0, 16);
+        document.getElementById("imagePreview").src = item.ImageUrl;
         document.getElementById("imagePreview").classList.remove("d-none");
     }
     window.updateCarouselImage = updateCarouselImage;
@@ -90,7 +91,7 @@
 
         const body = {
             carouselImageId: parseInt(id),
-            imagesName: document.getElementById("imagesName").value,
+            tmagesName: document.getElementById("imagesName").value,
             category: document.getElementById("category").value,
             displayOrder: parseInt(document.getElementById("displayOrder").value),
             pageCode: document.getElementById("pageCode").value,
@@ -130,7 +131,22 @@
             alert("❌ 刪除失敗");
         }
     }
+    //輪播分類選擇
+    async function loadCategoryOptions() {
+        const res = await fetch('/Dashboard/GetCarouselCategories');
+        const list = await res.json();
 
+        const select = document.getElementById("category");
+        select.innerHTML = "";
+
+        list.forEach(item => {
+            const opt = document.createElement("option");
+            opt.value = item.PageCode;
+            opt.textContent = item.PageName;
+            select.appendChild(opt);
+        });
+    }
+    window.resetCarouselForm = resetCarouselForm
     // 清空表單
     function resetCarouselForm() {
         document.getElementById("carouselImageId").value = "";
@@ -153,9 +169,9 @@
     
     // 初始化
     window.initCarouselManager = () => {
+        loadCategoryOptions(); //載入分類
         renderCarouselList();
-        // 你可以加入額外初始化邏輯，例如：
-        // resetCarouselForm();
+         resetCarouselForm();
     };
 
 })();
