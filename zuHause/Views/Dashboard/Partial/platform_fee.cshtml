@@ -1,0 +1,90 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+}
+<div class="container mt-4">
+ 
+    
+    <!-- 上方狀態區 -->
+    <div class="container bg-light p-3 rounded border mb-4" id="activePlanContainer">
+        <h5 class="mb-3 fw-bold">目前費用設定</h5>
+        <!-- 動態插入的 row 將加在這 -->
+    </div>
+
+    <hr class="my-4 border border-dark border-2 opacity-50">
+
+    <div class="container bg-light p-3 rounded border mb-4">
+        <h5 class="mb-3 fw-bold">已排程費用設定</h5>
+        <div id="scheduledPlanContainer"></div>
+    </div>
+
+    <hr class="my-4 border border-dark border-2 opacity-50">
+    <div class="card mt-4">
+        <div class="card-header bg-success text-white">
+            新增刊登費方案
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label for="planName" class="form-label">方案名稱</label>
+                    <input type="text" class="form-control" id="planName" />
+                </div>
+                <div class="col-md-4">
+                    <label for="pricePerDay" class="form-label">每日刊登費</label>
+                    <input type="number" class="form-control" id="pricePerDay" />
+                </div>
+                <div class="col-md-4">
+                    <label for="minListingDays" class="form-label">最小天數</label>
+                    <input type="number" class="form-control" id="minListingDays" />
+                </div>
+                <div class="col-md-4">
+                    <label for="CurrencyCode" class="form-label">幣別</label>
+                    <input type="text" class="form-control" id="currencyCode" value="TWD" />
+                </div>
+                <div class="col-md-4">
+                    <label for="startAt" class="form-label">開始日期</label>
+                    <input type="datetime-local" class="form-control" id="startAt" />
+                </div>
+                <div class="col-md-4">
+                    <label for="endAt" class="form-label">結束日期（可空）</label>
+                    <input type="datetime-local" class="form-control" id="endAt" />
+                </div>
+            </div>
+            <div class="mt-3 d-flex align-items-center">
+                <button class="btn btn-success" onclick="submitListingPlan()">💾 儲存方案</button>
+                <button id="cancelEditBtn" class="btn btn-outline-secondary ms-2 d-none" onclick="clearListingPlanForm()">❌ 取消編輯</button>
+            </div>
+        </div>
+    </div>
+    <div class="card mb-4">
+        <div class="card-header">
+            📋 刊登費方案清單
+        </div>
+
+        <div class="card-body p-2">
+            <table class="table table-bordered table-sm text-center" id="listingPlansTable">
+                <thead class="table-light">
+                    <tr>
+                        <th>方案ID</th>
+                        <th>方案名稱</th>
+                        <th>每日刊登費</th>
+                        <th>上架天數</th>
+                        <th>生效期間</th>
+                        <th>狀態</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- 由 JS 動態載入 -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Toast 容器 -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" id="toastArea" style="z-index: 9999;">
+    </div>
+
+</div>
+
+
