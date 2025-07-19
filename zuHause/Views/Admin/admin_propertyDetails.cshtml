@@ -42,4 +42,12 @@
     <partial name="_AdminPartial/_PropertyDetails/_PropertyDetailsModals" />
 </div>
 
-<partial name="_AdminPartial/_PropertyDetails/_PropertyDetailsScripts" />
+<script src="~/js/admin_js/property-details.js"></script>
+<script>
+    // 設定當前房源ID
+    var currentPropertyId = '@propertyData.PropertyId';
+    // 頁面載入完成後設定
+    document.addEventListener('DOMContentLoaded', function() {
+        setCurrentPropertyId(currentPropertyId);
+    });
+</script>

@@ -64,7 +64,9 @@ namespace zuHause.AdminViewModels
                     Member = m,
                     HasPendingApproval = context.Approvals.Any(a => a.ApplicantMemberId == m.MemberId && 
                                                                    a.ModuleCode == "IDENTITY" && 
-                                                                   a.StatusCode == "PENDING")
+                                                                   a.StatusCode == "PENDING"),
+                    ResidenceCity = context.Cities.FirstOrDefault(c => c.CityId == m.ResidenceCityId),
+                    PrimaryRentalCity = context.Cities.FirstOrDefault(c => c.CityId == m.PrimaryRentalCityId)
                 })
                 .Select(x => new MemberData
                 {
@@ -78,7 +80,14 @@ namespace zuHause.AdminViewModels
                                        (x.HasPendingApproval ? "pending" : "unverified"),
                     IsLandlord = x.Member.IsLandlord,
                     RegistrationDate = x.Member.CreatedAt.ToString("yyyy-MM-dd"),
-                    LastLoginTime = x.Member.LastLoginAt.HasValue ? x.Member.LastLoginAt.Value.ToString("yyyy-MM-dd") : "--"
+                    LastLoginTime = x.Member.LastLoginAt.HasValue ? x.Member.LastLoginAt.Value.ToString("yyyy-MM-dd") : "--",
+                    
+                    // 進階篩選屬性
+                    Gender = (int)x.Member.Gender,
+                    ResidenceCityID = x.Member.ResidenceCityId ?? 0,
+                    PrimaryRentalCityID = x.Member.PrimaryRentalCityId ?? 0,
+                    ResidenceCityName = x.ResidenceCity != null ? x.ResidenceCity.CityName : "",
+                    PrimaryRentalCityName = x.PrimaryRentalCity != null ? x.PrimaryRentalCity.CityName : ""
                 })
                 .ToList();
 
@@ -314,6 +323,13 @@ namespace zuHause.AdminViewModels
         public AdminSystemMessageNewViewModel()
         {
             PageTitle = "新增系統訊息";
+            AvailableUsers = new List<UserSelectData>();
+        }
+
+        public AdminSystemMessageNewViewModel(ZuHauseContext context)
+        {
+            PageTitle = "新增系統訊息";
+            AvailableUsers = LoadAvailableUsers(context);
         }
 
         [Required(ErrorMessage = "訊息標題為必填")]
@@ -331,6 +347,23 @@ namespace zuHause.AdminViewModels
         public string? SelectedUserId { get; set; }
         public bool IsScheduled { get; set; } = false;
         public string? ScheduledDate { get; set; }
+        
+        public List<UserSelectData> AvailableUsers { get; set; }
+
+        private List<UserSelectData> LoadAvailableUsers(ZuHauseContext context)
+        {
+            return context.Members
+                .Where(m => m.IsActive)
+                .OrderBy(m => m.MemberName)
+                .Select(m => new UserSelectData
+                {
+                    MemberId = m.MemberId.ToString(),
+                    MemberName = m.MemberName,
+                    Email = m.Email,
+                    NationalNo = m.NationalIdNo ?? ""
+                })
+                .ToList();
+        }
     }
 
     // 資料模型類別
@@ -348,6 +381,13 @@ namespace zuHause.AdminViewModels
         public string LastLoginTime { get; set; } = string.Empty;
         public string ApplyTime { get; set; } = string.Empty;
         public bool HasIdentityUploads { get; set; } = false;
+        
+        // 進階篩選屬性
+        public int Gender { get; set; }
+        public int ResidenceCityID { get; set; }
+        public int PrimaryRentalCityID { get; set; }
+        public string ResidenceCityName { get; set; } = string.Empty;
+        public string PrimaryRentalCityName { get; set; } = string.Empty;
         
         // 額外屬性用於UI顯示
         public bool IsActive => AccountStatus == "active";
@@ -386,5 +426,13 @@ namespace zuHause.AdminViewModels
         public string AdminName { get; set; } = string.Empty;
         public string SendDate { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;
+    }
+
+    public class UserSelectData
+    {
+        public string MemberId { get; set; } = string.Empty;
+        public string MemberName { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string NationalNo { get; set; } = string.Empty;
     }
 }

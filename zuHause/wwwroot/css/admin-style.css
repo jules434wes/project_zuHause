@@ -661,7 +661,14 @@ h1, h2, h3, h4, h5, h6 {
 /* 用戶詳情頁面特定樣式 */
 .table-hover tbody tr:hover {
     background-color: rgba(var(--bs-primary-rgb), 0.05);
-    cursor: pointer;
+    cursor: default;
+    transition: all 0.3s ease;
+}
+
+/* 用戶管理表格行懸停效果 */
+.table-striped tbody tr:hover {
+    background-color: rgba(var(--bs-primary-rgb), 0.03);
+    cursor: default;
     transition: all 0.3s ease;
 }
 
@@ -682,4 +689,117 @@ h1, h2, h3, h4, h5, h6 {
 .key-value-list dd {
     margin-left: 1.5rem;
     color: var(--bs-body-color);
+}
+
+/* 表格內下拉選單層級修正 */
+.table .dropdown {
+    position: relative;
+}
+
+.table .dropdown-menu {
+    z-index: 1050 !important;
+    position: absolute !important;
+    transform: none !important;
+    min-width: 160px;
+    box-shadow: var(--apple-shadow-lg);
+    border: 1px solid var(--bs-border-color);
+    border-radius: var(--bs-border-radius-sm);
+}
+
+/* 確保表格容器不會限制下拉選單顯示 */
+.table-responsive {
+    overflow: visible !important;
+}
+
+/* 針對有下拉選單的表格行，確保不被遮蔽 */
+.table-responsive .table tbody tr:has(.dropdown.show) {
+    z-index: 1040;
+    position: relative;
+}
+
+/* 更具體的表格下拉選單定位 */
+.card .table-responsive .dropdown-menu {
+    z-index: 1055 !important;
+}
+
+/* 當下拉選單打開時，調整父元素的 overflow */
+.table tbody tr td {
+    position: relative;
+}
+
+.table .dropdown.show {
+    z-index: 1050;
+}
+
+/* 下拉選單項目樣式優化 */
+.table .dropdown-menu .dropdown-item {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s ease;
+}
+
+.table .dropdown-menu .dropdown-item:hover {
+    background-color: rgba(var(--bs-primary-rgb), 0.1);
+    color: var(--bs-primary);
+}
+
+.table .dropdown-menu .dropdown-item i {
+    width: 16px;
+    font-size: 0.875rem;
+}
+
+/* 下拉選單分隔線樣式 */
+.table .dropdown-menu .dropdown-divider {
+    margin: 0.25rem 0;
+    border-color: var(--bs-border-color);
+}
+
+/* 下拉選單標題樣式 */
+.table .dropdown-menu .dropdown-header {
+    padding: 0.5rem 1rem 0.25rem 1rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--bs-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--bs-border-color);
+    margin-bottom: 0.25rem;
+    pointer-events: none; /* 防止意外點擊 */
+    cursor: default;
+}
+
+/* 安全操作項目樣式 */
+.table .dropdown-menu .safe-action {
+    color: var(--bs-body-color);
+}
+
+.table .dropdown-menu .safe-action:hover {
+    background-color: rgba(var(--bs-info-rgb), 0.1);
+    color: var(--bs-info);
+}
+
+/* 危險操作項目樣式 */
+.table .dropdown-menu .danger-action {
+    color: #dc3545;
+    font-weight: 500;
+}
+
+.table .dropdown-menu .danger-action:hover {
+    background-color: rgba(220, 53, 69, 0.1);
+    color: #dc3545;
+}
+
+.table .dropdown-menu .danger-action:focus {
+    background-color: rgba(220, 53, 69, 0.1);
+    color: #dc3545;
+    outline: 2px solid rgba(220, 53, 69, 0.3);
+    outline-offset: -2px;
+}
+
+/* 防止第一個項目被意外選中 */
+.table .dropdown-menu .dropdown-item:first-of-type {
+    margin-top: 0.25rem;
 }
