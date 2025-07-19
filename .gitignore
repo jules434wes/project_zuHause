@@ -43,6 +43,9 @@ project.nuget.cache
 
 # MCP and temporary files
 .claude/
+.claude-credentials
+.vscode/
+CLAUDE.schema.json
 wsl-dotnet-setup.sh
 ~/.nuget/
 /~/.nuget/packages
