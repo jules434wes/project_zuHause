@@ -1,6 +1,6 @@
 /**
  * 圖片管理器主控制器 - 協調所有子模組的運作
- * 整合 ImagePreviewManager, ImageSelectionManager, ImageSortManager, ImageModalManager
+ * 整合 ImagePreviewManager, ImageSelectionManager, ImageSortManager, ImageModalManager, ImageButtonManager
  */
 class ImageManagerController {
     constructor(container) {
@@ -12,6 +12,7 @@ class ImageManagerController {
         this.selectionManager = null;
         this.sortManager = null;
         this.modalManager = null;
+        this.buttonManager = null;
         
         // 狀態管理
         this.isInitialized = false;
@@ -100,6 +101,9 @@ class ImageManagerController {
         if (this.config.enableDragSort) {
             this.sortManager = new ImageSortManager(this.container);
         }
+        
+        // 初始化按鈕管理器 (Phase 3)
+        this.buttonManager = new ImageButtonManager(this.container, this.previewManager, this.modalManager);
         
         console.log('所有子模組初始化完成');
     }

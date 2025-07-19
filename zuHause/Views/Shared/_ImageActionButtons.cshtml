@@ -1,0 +1,229 @@
+@model zuHause.Models.ViewModels.ImageManagerViewComponentModel
+
+<div class="image-action-buttons" 
+     role="toolbar" 
+     aria-label="圖片管理操作工具列"
+     data-keyboard-shortcuts="true">
+    
+    <div class="button-group" role="group" aria-label="新增操作">
+        <!-- 選擇圖片按鈕 (需求 7) -->
+        <button type="button" 
+                class="btn btn-outline-primary btn-select-files"
+                data-action="add-files"
+                data-shortcut="ctrl+o"
+                aria-describedby="add-files-help"
+                accesskey="a">
+            <i class="fas fa-plus" aria-hidden="true"></i>
+            添加更多圖片
+            <kbd class="keyboard-hint">Ctrl+O</kbd>
+        </button>
+        
+        <!-- 確認上傳按鈕 (需求 7: 圖片數 == 0 時不可點選) -->
+        <button type="button" 
+                class="btn btn-success btn-upload-confirm" 
+                disabled
+                data-action="confirm-upload"
+                data-shortcut="ctrl+enter"
+                aria-describedby="upload-help"
+                accesskey="u">
+            <i class="fas fa-cloud-upload-alt" aria-hidden="true"></i>
+            確認上傳 (<span class="upload-count" aria-live="polite">0</span>)
+            <kbd class="keyboard-hint">Ctrl+Enter</kbd>
+        </button>
+    </div>
+    
+    <div class="button-group" role="group" aria-label="選擇操作">
+        <!-- 全選按鈕 (鍵盤導航增強) -->
+        <button type="button" 
+                class="btn btn-outline-secondary btn-select-all"
+                data-action="select-all"
+                data-shortcut="ctrl+a"
+                aria-describedby="select-all-help"
+                accesskey="s"
+                style="display: none;">
+            <i class="fas fa-check-square" aria-hidden="true"></i>
+            <span class="btn-text">全選</span>
+            <kbd class="keyboard-hint">Ctrl+A</kbd>
+        </button>
+    </div>
+    
+    <div class="button-group" role="group" aria-label="刪除操作">
+        <!-- 全部刪除按鈕 (需求 7: 圖片數 == 0 時不可點選) -->
+        <button type="button" 
+                class="btn btn-outline-danger btn-clear-all" 
+                disabled
+                data-action="delete-all"
+                data-shortcut="ctrl+shift+delete"
+                aria-describedby="delete-all-help"
+                accesskey="d">
+            <i class="fas fa-trash-alt" aria-hidden="true"></i>
+            全部刪除
+            <kbd class="keyboard-hint">Ctrl+Shift+Del</kbd>
+        </button>
+        
+        <!-- 刪除選中按鈕 (需求 7: 有勾選圖片時才會出現) -->
+        <button type="button" 
+                class="btn btn-danger btn-delete-selected" 
+                style="display: none;"
+                data-action="delete-selected"
+                data-shortcut="delete"
+                aria-describedby="delete-selected-help"
+                accesskey="x">
+            <i class="fas fa-trash" aria-hidden="true"></i>
+            刪除選中 (<span class="selected-count" aria-live="polite">0</span>)
+            <kbd class="keyboard-hint">Delete</kbd>
+        </button>
+    </div>
+</div>
+
+<!-- 鍵盤快捷鍵說明 (可選顯示) -->
+<div class="keyboard-shortcuts-help d-none" id="keyboard-help">
+    <div class="help-content">
+        <h6>鍵盤快捷鍵</h6>
+        <ul>
+            <li><kbd>Ctrl+O</kbd> - 新增圖片</li>
+            <li><kbd>Ctrl+Enter</kbd> - 確認上傳</li>
+            <li><kbd>Ctrl+A</kbd> - 全選圖片</li>
+            <li><kbd>Delete</kbd> - 刪除選中</li>
+            <li><kbd>Ctrl+Shift+Del</kbd> - 全部刪除</li>
+            <li><kbd>?</kbd> - 顯示/隱藏此說明</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ARIA 說明文字 -->
+<div class="sr-only">
+    <div id="add-files-help">新增更多圖片到待上傳清單</div>
+    <div id="upload-help">將所有待上傳圖片送到服務器</div>
+    <div id="select-all-help">選擇或取消選擇所有圖片</div>
+    <div id="delete-all-help">刪除所有待上傳圖片</div>
+    <div id="delete-selected-help">刪除已選中的圖片</div>
+</div>
+
+<style>
+.image-action-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    padding: 1rem;
+    background: var(--bs-light);
+    border-radius: 0.375rem;
+    border: 1px solid var(--bs-border-color);
+}
+
+.image-action-buttons .button-group {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.image-action-buttons .btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.image-action-buttons .btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.image-action-buttons .btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.keyboard-hint {
+    font-size: 0.75rem;
+    background: rgba(0,0,0,0.1);
+    padding: 0.125rem 0.25rem;
+    border-radius: 0.25rem;
+    margin-left: 0.25rem;
+}
+
+.btn:hover .keyboard-hint {
+    background: rgba(255,255,255,0.2);
+}
+
+.keyboard-shortcuts-help {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    z-index: 1050;
+    max-width: 300px;
+}
+
+.keyboard-shortcuts-help h6 {
+    margin-bottom: 0.5rem;
+    color: var(--bs-primary);
+}
+
+.keyboard-shortcuts-help ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.keyboard-shortcuts-help li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.25rem 0;
+    border-bottom: 1px solid var(--bs-border-color-translucent);
+}
+
+.keyboard-shortcuts-help li:last-child {
+    border-bottom: none;
+}
+
+.keyboard-shortcuts-help kbd {
+    font-size: 0.75rem;
+}
+
+/* 響應式設計 */
+@@media (max-width: 768px) {
+    .image-action-buttons {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .image-action-buttons .button-group {
+        justify-content: center;
+    }
+    
+    .keyboard-hint {
+        display: none;
+    }
+}
+
+/* 無障礙功能增強 */
+@@media (prefers-reduced-motion: reduce) {
+    .image-action-buttons .btn {
+        transition: none;
+    }
+    
+    .image-action-buttons .btn:hover:not(:disabled) {
+        transform: none;
+    }
+}
+
+/* 高對比度模式支援 */
+@@media (prefers-contrast: high) {
+    .image-action-buttons {
+        border: 2px solid;
+    }
+    
+    .image-action-buttons .btn {
+        border-width: 2px;
+    }
+}
+</style>
