@@ -1,6 +1,6 @@
 /**
  * 圖片管理器主控制器 - 協調所有子模組的運作
- * 整合 ImagePreviewManager, ImageSelectionManager, ImageSortManager, ImageModalManager
+ * 整合 ImagePreviewManager, ImageSelectionManager, ImageSortManager, ImageModalManager, ImageButtonManager, ImageUploadManager, ImageGalleryManager
  */
 class ImageManagerController {
     constructor(container) {
@@ -12,6 +12,9 @@ class ImageManagerController {
         this.selectionManager = null;
         this.sortManager = null;
         this.modalManager = null;
+        this.buttonManager = null;
+        this.uploadManager = null;
+        this.galleryManager = null;
         
         // 狀態管理
         this.isInitialized = false;
@@ -101,6 +104,28 @@ class ImageManagerController {
             this.sortManager = new ImageSortManager(this.container);
         }
         
+        // 初始化按鈕管理器 (Phase 3)
+        this.buttonManager = new ImageButtonManager(this.container, this.previewManager, this.modalManager);
+        
+        // 初始化上傳管理器 (Phase 3)
+        this.uploadManager = new ImageUploadManager(this.container, this.previewManager, {
+            entityType: this.config.entityType,
+            entityId: this.config.entityId,
+            category: this.config.category,
+            uploadEndpoint: '/ImageManager/Upload',
+            apiUploadEndpoint: '/api/imagemanager/upload'
+        });
+        
+        // 初始化圖片庫管理器 (Phase 3)
+        this.galleryManager = new ImageGalleryManager(this.container, {
+            entityType: this.config.entityType,
+            entityId: this.config.entityId,
+            category: this.config.category,
+            apiListUrl: this.config.apiListUrl || '/ImageManager/List',
+            apiDeleteUrl: this.config.apiDeleteUrl || '/ImageManager/Delete',
+            apiReorderUrl: this.config.apiReorderUrl || '/ImageManager/Reorder'
+        });
+        
         console.log('所有子模組初始化完成');
     }
     
@@ -187,25 +212,19 @@ class ImageManagerController {
     }
     
     setupModalEvents() {
-        // 開始上傳事件
-        this.container.addEventListener('startUpload', (e) => {
-            this.handleStartUpload();
-        });
+        // Modal 相關事件監聽
+        // 上傳事件由 ImageUploadManager 處理
     }
     
     setupUploadEvents() {
-        // 上傳相關事件監聽
-        this.container.addEventListener('uploadStarted', (e) => {
-            // Modal 管理器會自動處理
-        });
-        
+        // 上傳相關事件監聽 - 由 ImageUploadManager 處理
         this.container.addEventListener('uploadCompleted', (e) => {
-            const { results } = e.detail;
-            this.handleUploadCompleted(results);
+            // 重新載入已上傳的圖片列表
+            this.refreshUploadedImages();
         });
         
-        this.container.addEventListener('uploadFailed', (e) => {
-            // Modal 管理器會自動處理錯誤顯示
+        this.container.addEventListener('reloadExistingImages', (e) => {
+            this.refreshUploadedImages();
         });
     }
     
@@ -274,82 +293,7 @@ class ImageManagerController {
         }
     }
     
-    // 上傳處理方法
-    async handleStartUpload() {
-        if (!this.previewManager) return;
-        
-        const selectedFiles = this.previewManager.getSelectedFiles();
-        if (selectedFiles.size === 0) {
-            this.modalManager?.showError('沒有選擇要上傳的圖片');
-            return;
-        }
-        
-        try {
-            this.dispatchEvent('uploadStarted', { 
-                fileCount: selectedFiles.size 
-            });
-            
-            const results = await this.uploadFiles(selectedFiles);
-            
-            this.dispatchEvent('uploadCompleted', { 
-                results: results 
-            });
-            
-        } catch (error) {
-            console.error('上傳失敗:', error);
-            
-            this.dispatchEvent('uploadFailed', { 
-                error: error 
-            });
-        }
-    }
-    
-    async uploadFiles(selectedFiles) {
-        const formData = new FormData();
-        const fileArray = Array.from(selectedFiles.values());
-        
-        // 添加檔案到 FormData
-        fileArray.forEach((fileData, index) => {
-            formData.append('files', fileData.file);
-            formData.append(`displayOrders`, fileData.displayOrder);
-        });
-        
-        // 添加設定參數
-        formData.append('entityType', this.config.entityType);
-        formData.append('entityId', this.config.entityId);
-        formData.append('category', this.config.category);
-        
-        // 發送到後端
-        const response = await fetch(this.config.apiUploadUrl, {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        });
-        
-        if (!response.ok) {
-            throw new Error(`上傳失敗: ${response.statusText}`);
-        }
-        
-        return await response.json();
-    }
-    
-    handleUploadCompleted(results) {
-        // 清空預覽區域的待上傳檔案
-        if (this.previewManager) {
-            this.previewManager.clearAllFiles();
-        }
-        
-        // 重新載入已上傳的圖片列表
-        this.refreshUploadedImages();
-        
-        // 顯示成功訊息
-        if (this.modalManager && results) {
-            const count = results.uploadedCount || 0;
-            this.modalManager.showSuccess(`成功上傳 ${count} 張圖片`);
-        }
-    }
+    // 上傳處理已由 ImageUploadManager 負責
     
     async refreshUploadedImages() {
         try {
@@ -508,6 +452,14 @@ class ImageManagerController {
         return this.modalManager;
     }
     
+    getUploadManager() {
+        return this.uploadManager;
+    }
+    
+    getGalleryManager() {
+        return this.galleryManager;
+    }
+    
     isReady() {
         return this.isInitialized;
     }
@@ -528,6 +480,14 @@ class ImageManagerController {
         
         if (this.modalManager) {
             // 清理 Modal 管理器
+        }
+        
+        if (this.uploadManager) {
+            this.uploadManager.destroy();
+        }
+        
+        if (this.galleryManager) {
+            this.galleryManager.destroy();
         }
         
         console.log(`圖片管理器 ${this.containerId} 已銷毀`);
