@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using zuHause.Models;
 using zuHause.ViewModels;
+using zuHause.AdminViewModels;
 
 namespace zuHause.Controllers
 {
@@ -22,10 +23,10 @@ namespace zuHause.Controllers
             ViewBag.Role = "超級管理員";
             ViewBag.EmployeeID = "9528";
             ViewBag.RoleAccess = new Dictionary<string, List<string>> {
-                { "超級管理員", new List<string>{ "overview", "monitor", "behavior", "orders", "system", "roles", "Backend_user_list", "contract_template", "platform_fee", "imgup", "furniture_fee", "Marquee_edit", "furniture_management" } },
-                { "管理員", new List<string>{ "overview", "behavior", "orders" } },
+                { "超級管理員", new List<string>{ "overview", "monitor", "behavior", "orders", "system", "roles", "Backend_user_list", "member_management", "contract_template", "platform_fee", "imgup", "furniture_fee", "Marquee_edit", "furniture_management" } },
+                { "管理員", new List<string>{ "overview", "behavior", "orders", "member_management" } },
                 { "房源審核員", new List<string>{ "monitor" } },
-                { "客服", new List<string>{ "behavior", "orders" } }
+                { "客服", new List<string>{ "behavior", "orders", "member_management" } }
                     };
             return View();
 
@@ -43,6 +44,16 @@ namespace zuHause.Controllers
                     .ToList();
 
                 return PartialView("~/Views/Dashboard/Partial/platform_fee.cshtml", plans);
+            }
+            if (id == "Backend_user_list")
+            {
+                var viewModel = new AdminUserListViewModel(_context);
+                return PartialView("~/Views/Dashboard/Partial/Backend_user_list.cshtml", viewModel);
+            }
+            if (id == "member_management")
+            {
+                var viewModel = new AdminUserListViewModel(_context);
+                return PartialView("~/Views/Dashboard/Partial/member_management.cshtml", viewModel);
             }
             if (id == "furniture_management")
             {
@@ -714,6 +725,74 @@ namespace zuHause.Controllers
 
 
 
+
+        // User Management API endpoints
+        [HttpPost("SearchUsers")]
+        public IActionResult SearchUsers(string keyword, string searchField)
+        {
+            if (string.IsNullOrWhiteSpace(keyword))
+            {
+                return Json(new object[] { });
+            }
+
+            var query = _context.Members.AsQueryable();
+
+            // 修復欄位名稱映射以匹配前端傳送的值
+            switch (searchField?.ToLower())
+            {
+                case "membername":
+                    query = query.Where(m => m.MemberName.Contains(keyword));
+                    break;
+                case "email":
+                    query = query.Where(m => m.Email.Contains(keyword));
+                    break;
+                case "phonenumber":
+                    query = query.Where(m => m.PhoneNumber.Contains(keyword));
+                    break;
+                case "memberid":
+                    query = query.Where(m => m.MemberId.ToString().Contains(keyword));
+                    break;
+                case "nationalidno":
+                    // 身分證字號儲存在 NationalIdNo 欄位
+                    query = query.Where(m => !string.IsNullOrEmpty(m.NationalIdNo) && m.NationalIdNo.Contains(keyword));
+                    break;
+                default:
+                    // 全域搜尋
+                    query = query.Where(m => 
+                        m.MemberName.Contains(keyword) || 
+                        m.Email.Contains(keyword) || 
+                        m.PhoneNumber.Contains(keyword) ||
+                        m.MemberId.ToString().Contains(keyword) ||
+                        (!string.IsNullOrEmpty(m.NationalIdNo) && m.NationalIdNo.Contains(keyword)));
+                    break;
+            }
+
+            var results = query
+                .Take(50) // 增加結果數量以便測試
+                .Select(m => new { 
+                    id = m.MemberId.ToString(), 
+                    name = m.MemberName, 
+                    email = m.Email,
+                    phone = m.PhoneNumber,
+                    memberId = m.MemberId,
+                    identityNumber = m.NationalIdNo ?? "未提供"
+                })
+                .ToList();
+
+            return Json(results);
+        }
+
+        [HttpGet("GetCities")]
+        public IActionResult GetCities()
+        {
+            var cities = _context.Cities
+                .Where(c => c.IsActive)
+                .OrderBy(c => c.CityId)
+                .Select(c => new { id = c.CityId, name = c.CityName })
+                .ToList();
+
+            return Json(cities);
+        }
 
     }
 

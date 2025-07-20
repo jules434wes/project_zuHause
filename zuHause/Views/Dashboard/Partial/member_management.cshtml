@@ -1,0 +1,107 @@
+@model AdminUserListViewModel
+
+<div class="admin-content">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="mb-0">@Model.PageTitle</h5>
+            </div>
+            
+            <ul class="nav nav-tabs" id="dashboard-userTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="dashboard-all-users-tab" data-bs-toggle="tab" data-bs-target="#dashboard-all-users" type="button" role="tab" aria-controls="dashboard-all-users" aria-selected="true">
+                        全部會員 <span class="badge badge-subtle-primary ms-2">@Model.TotalCount</span>
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="dashboard-pending-verification-tab" data-bs-toggle="tab" data-bs-target="#dashboard-pending-verification" type="button" role="tab" aria-controls="dashboard-pending-verification" aria-selected="false">
+                        等待身分證驗證 <span class="badge badge-subtle-warning ms-2">@Model.PendingVerificationUsers.Count</span>
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="dashboard-pending-landlord-tab" data-bs-toggle="tab" data-bs-target="#dashboard-pending-landlord" type="button" role="tab" aria-controls="dashboard-pending-landlord" aria-selected="false">
+                        申請成為房東 <span class="badge badge-subtle-warning ms-2">@Model.PendingLandlordUsers.Count</span>
+                    </button>
+                </li>
+            </ul>
+
+            <div class="tab-content" id="dashboard-userTabsContent">
+                <!-- 全部會員分頁 -->
+                <div class="tab-pane fade show active" id="dashboard-all-users" role="tabpanel" aria-labelledby="dashboard-all-users-tab">
+                    @{
+                        ViewData["TabId"] = "";
+                        ViewData["IdPrefix"] = "dashboard-";
+                        ViewData["HasLandlordFilter"] = true;
+                        ViewData["HasIdUpload"] = false;
+                        ViewData["HasApplyDate"] = false;
+                    }
+                    @await Html.PartialAsync("_AdminPartial/_UserManagement/_FilterSection")
+                    
+                    @{
+                        ViewData["TableType"] = "all";
+                        ViewData["IdPrefix"] = "dashboard-";
+                        ViewData["CheckboxClass"] = "dashboard-" + Model.BulkConfig.CheckboxClass;
+                        ViewData["BulkBtnId"] = "dashboard-" + Model.BulkConfig.BulkButtonId;
+                        ViewData["SelectAllId"] = "dashboard-" + Model.BulkConfig.SelectAllId;
+                        ViewData["PaginationLabel"] = "會員分頁";
+                        ViewData["Users"] = Model.Items;
+                    }
+                    @await Html.PartialAsync("_AdminPartial/_UserManagement/_UserTable")
+                </div>
+
+                <!-- 等待身分證驗證分頁 -->
+                <div class="tab-pane fade" id="dashboard-pending-verification" role="tabpanel" aria-labelledby="dashboard-pending-verification-tab">
+                    @{
+                        ViewData["TabId"] = "Pending";
+                        ViewData["IdPrefix"] = "dashboard-";
+                        ViewData["HasLandlordFilter"] = false;
+                        ViewData["HasIdUpload"] = false;
+                        ViewData["HasApplyDate"] = true;
+                        ViewData["HasAccountStatus"] = false;
+                        ViewData["HasVerificationStatus"] = false;
+                    }
+                    @await Html.PartialAsync("_AdminPartial/_UserManagement/_FilterSection")
+                    
+                    @{
+                        ViewData["TableType"] = "pending";
+                        ViewData["IdPrefix"] = "dashboard-";
+                        ViewData["CheckboxClass"] = "dashboard-user-checkbox-pending";
+                        ViewData["BulkBtnId"] = "dashboard-bulkMessageBtnPending";
+                        ViewData["SelectAllId"] = "dashboard-selectAllUsersPending";
+                        ViewData["PaginationLabel"] = "待驗證會員分頁";
+                        ViewData["Users"] = Model.PendingVerificationUsers;
+                    }
+                    @await Html.PartialAsync("_AdminPartial/_UserManagement/_UserTable")
+                </div>
+
+                <!-- 申請成為房東分頁 -->
+                <div class="tab-pane fade" id="dashboard-pending-landlord" role="tabpanel" aria-labelledby="dashboard-pending-landlord-tab">
+                    @{
+                        ViewData["TabId"] = "Landlord";
+                        ViewData["IdPrefix"] = "dashboard-";
+                        ViewData["HasLandlordFilter"] = false;
+                        ViewData["HasIdUpload"] = false;
+                        ViewData["HasApplyDate"] = true;
+                        ViewData["HasAccountStatus"] = false;
+                        ViewData["HasVerificationStatus"] = true;
+                        ViewData["VerificationStatusOptions"] = "limited";
+                    }
+                    @await Html.PartialAsync("_AdminPartial/_UserManagement/_FilterSection")
+                    
+                    @{
+                        ViewData["TableType"] = "landlord";
+                        ViewData["IdPrefix"] = "dashboard-";
+                        ViewData["CheckboxClass"] = "dashboard-user-checkbox-landlord";
+                        ViewData["BulkBtnId"] = "dashboard-bulkMessageBtnLandlord";
+                        ViewData["SelectAllId"] = "dashboard-selectAllUsersLandlord";
+                        ViewData["PaginationLabel"] = "申請房東分頁";
+                        ViewData["Users"] = Model.PendingLandlordUsers;
+                    }
+                    @await Html.PartialAsync("_AdminPartial/_UserManagement/_UserTable")
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@await Html.PartialAsync("_AdminPartial/_UserManagement/_UserModals")
