@@ -1,10 +1,12 @@
 ﻿(() => {
-   
+    let currentCategory = "tenant";
     // 取得圖片列表
     async function fetchCarouselImages() {
         const res = await fetch('/Dashboard/GetCarouselImages');
-        return await res.json();
+        const all = await res.json();
+        return all.filter(x => x.category === currentCategory); // 根據當前分類過濾
     }
+
     
     // 渲染圖片列表
     async function renderCarouselList() {
@@ -25,32 +27,48 @@
                         <p class="mb-1"><strong>編號：</strong>${img.carouselImageId}</p>
                         <p class="mb-1"><strong>名稱：</strong>${img.imagesName}</p>
                         <p class="mb-1"><strong>類別：</strong>${img.category}</p>
+                        <p class="mb-1"><strong>連結：</strong><a href="${img.webUrl}" target="_blank">${img.webUrl}</a></p>
                         <p class="mb-1"><strong>位置：</strong>${img.displayOrder}</p>
-                        <p class="mb-1"><strong>播放：</strong>${formatTime(img.startAt)} ~ ${formatTime(img.endAt)}</p>
-                        <div class="d-flex gap-2 mt-2">
+                         <p class="mb-1"><strong>狀態：</strong>${img.isActive ? '✅ 啟用' : '❌ 停用'}</p>
+                        <p class="mb-1"><strong>播放時間：</strong>${formatTime(img.startAt)} ~ ${img.endAt ? formatTime(img.endAt) : "無期限"}</p>
+
+                            <button class="btn btn-sm btn-secondary" onclick="moveUp(${img.carouselImageId})">↑</button>
+                            <button class="btn btn-sm btn-secondary" onclick="moveDown(${img.carouselImageId})">↓</button>
+                            <button class="btn btn-sm btn-warning" onclick="toggleActive(${img.carouselImageId})">
+                                ${img.isActive ? '停用' : '啟用'}
+                            </button>
                             <button class="btn btn-sm btn-primary" onclick="fillEditForm(${img.carouselImageId})">編輯</button>
                             <button class="btn btn-sm btn-danger" onclick="deleteCarouselImage(${img.carouselImageId})">刪除</button>
                         </div>
                     </div>
                 </div>
             </div>`;
+            
             container.appendChild(card);
+
         });
     }
     window.uploadCarouselImage = uploadCarouselImage;
+
     // 上傳圖片（含檔案）
     async function uploadCarouselImage() {
         const formData = new FormData();
         const imageFile = document.getElementById("imageFile").files[0];
         if (!imageFile) return alert("請選擇圖片");
 
+        // 🧩 根據分類選項 value 直接做為 PageCode 與 Category
+        const pageCode = document.getElementById("category").value;
+
+        formData.append("PageCode", pageCode);
+        formData.append("Category", pageCode); // 不要重複 append 了
+
         formData.append("imageFile", imageFile);
         formData.append("ImagesName", document.getElementById("imagesName").value);
-        formData.append("Category", document.getElementById("category").value);
         formData.append("DisplayOrder", document.getElementById("displayOrder").value);
-        //formData.append("PageCode", document.getElementById("pageCode").value);
+        formData.append("WebUrl", document.getElementById("webUrl").value);
         formData.append("StartAt", document.getElementById("startAt").value);
-        formData.append("EndAt", document.getElementById("endAt").value);
+        formData.append("EndAt", document.getElementById("endAt").value || "");
+        formData.append("IsActive", document.getElementById("isActive").value === "true");
 
         const res = await fetch("/Dashboard/UploadCarouselImage", {
             method: "POST",
@@ -65,24 +83,54 @@
             alert("❌ 上傳失敗");
         }
     }
+
     window.fillEditForm = fillEditForm;
     // 編輯填入表單
     async function fillEditForm(id) {
         console.log("進入編輯");
+
         const list = await fetchCarouselImages();
         const item = list.find(x => x.carouselImageId === id);
         if (!item) return;
-        console.log("帶入編輯");
+
+        // 填入表單欄位
         document.getElementById("carouselImageId").value = item.carouselImageId;
         document.getElementById("imagesName").value = item.imagesName;
+
+        // 🟩 category 與 pageCode 實際是同一值，只要填一個即可
         document.getElementById("category").value = item.category;
+
         document.getElementById("displayOrder").value = item.displayOrder;
-        //document.getElementById("pageCode").value = item.pageCode ?? "";
-        document.getElementById("startAt").value = item.startAt?.slice(0, 16);
-        document.getElementById("endAt").value = item.endAt?.slice(0, 16);
+        document.getElementById("webUrl").value = item.webUrl ?? "";
+
+        document.getElementById("startAt").value = item.startAt?.slice(0, 16) ?? "";
+        document.getElementById("endAt").value = item.endAt?.slice(0, 16) ?? "";
+
+        // 圖片預覽
         document.getElementById("imagePreview").src = item.imageUrl;
         document.getElementById("imagePreview").classList.remove("d-none");
+
+        // 是否啟用
+        document.getElementById("isActive").value = item.isActive ? "true" : "false";
     }
+
+    window.toggleActive = toggleActive;
+    async function toggleActive(id) {
+        const res = await fetch("/Dashboard/ToggleCarouselActive", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(id)
+        });
+
+        if (res.ok) {
+            const msg = await res.text();
+            alert("✅ " + msg);
+            renderCarouselList();
+        } else {
+            alert("❌ 切換啟用狀態失敗");
+        }
+    }
+
     window.updateCarouselImage = updateCarouselImage;
     // 更新（不包含圖片檔案）
     async function updateCarouselImage() {
@@ -94,10 +142,10 @@
             imagesName: document.getElementById("imagesName").value,
             category: document.getElementById("category").value,
             displayOrder: parseInt(document.getElementById("displayOrder").value),
-            //pageCode: document.getElementById("pageCode").value,
+            webUrl: document.getElementById("webUrl").value,
             startAt: document.getElementById("startAt").value,
-            endAt: document.getElementById("endAt").value,
-            isActive: true
+            endAt: document.getElementById("endAt").value || null, // 可空
+            isActive: document.getElementById("isActive").value === "true"
         };
 
         const res = await fetch("/Dashboard/UpdateCarouselImage", {
@@ -114,6 +162,56 @@
             alert("❌ 編輯失敗");
         }
     }
+    window.moveUp = moveUp;
+    async function moveUp(id) {
+        const list = await fetchCarouselImages();
+        const index = list.findIndex(x => x.carouselImageId === id);
+        if (index <= 0) return; // 已經在最上面
+
+        const targetId = list[index - 1].carouselImageId;
+        await swapOrder(id, targetId);
+    }
+    window.moveDown = moveDown;
+    async function moveDown(id) {
+        const list = await fetchCarouselImages();
+        const index = list.findIndex(x => x.carouselImageId === id);
+        if (index === -1 || index >= list.length - 1) return; // 已經最下面
+
+        const targetId = list[index + 1].carouselImageId;
+        await swapOrder(id, targetId);
+    }
+
+    async function swapOrder(id1, id2) {
+        const res = await fetch("/Dashboard/SwapCarouselOrder", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ imageId1: id1, imageId2: id2 })
+        });
+
+        if (res.ok) {
+            renderCarouselList(); // 重新載入排序後的列表
+        } else {
+            const msg = await res.text();
+            alert(msg || "❌ 順序交換失敗");
+        }
+    }
+
+    window.changeCategoryTab = function (btn) {
+        // 移除舊的 active
+        document.querySelectorAll("#carouselCategoryTabs .nav-link").forEach(tab => {
+            tab.classList.remove("active");
+        });
+
+        // 加上新的 active
+        btn.classList.add("active");
+
+        // 更新分類
+        currentCategory = btn.getAttribute("data-category");
+
+        // 重新渲染列表
+        renderCarouselList();
+    }
+
     window.deleteCarouselImage = deleteCarouselImage;
     // 刪除
     async function deleteCarouselImage(id) {
@@ -154,11 +252,13 @@
         document.getElementById("imagesName").value = "";
         document.getElementById("category").value = "";
         document.getElementById("displayOrder").value = "";
-        //document.getElementById("pageCode").value = "";
+        document.getElementById("webUrl").value = "";
         document.getElementById("startAt").value = "";
         document.getElementById("endAt").value = "";
         document.getElementById("imagePreview").classList.add("d-none");
         document.getElementById("imagePreview").src = "#";
+        document.getElementById("isActive").value = "true";
+
     }
 
     // 工具：格式化時間
@@ -171,7 +271,9 @@
     window.initCarouselManager = () => {
         loadCategoryOptions(); //載入分類
         renderCarouselList();
-         resetCarouselForm();
+        resetCarouselForm();
+       
+
     };
 
 })();

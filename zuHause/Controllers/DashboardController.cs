@@ -650,16 +650,52 @@ namespace zuHause.Controllers
         }
 
         [HttpPost("UploadCarouselImage")]
-        //上傳圖片
         public async Task<IActionResult> UploadCarouselImage([FromForm] IFormFile imageFile, [FromForm] CarouselImage model)
         {
             if (imageFile == null || imageFile.Length == 0)
                 return BadRequest("請選擇圖片");
 
+            var category = model.Category;
+            var requestedOrder = model.DisplayOrder;
+
+            // 取得此分類下目前最大順序
+            var maxOrder = _context.CarouselImages
+            .Where(c => c.Category == category && c.DeletedAt == null)
+            .Select(c => c.DisplayOrder)
+            .ToList() // ✅ 轉成記憶體集合
+            .DefaultIfEmpty(0)
+            .Max();
+
+
+            // 如果使用者沒輸入或輸入超過最大值 → 強制設為 max + 1
+            if (requestedOrder <= 0 || requestedOrder > maxOrder + 1)
+                model.DisplayOrder = maxOrder + 1;
+            else
+            {
+                // 插入指定位置，調整其他順序（後移）
+                var affected = _context.CarouselImages
+                    .Where(c => c.Category == category && c.DeletedAt == null && c.DisplayOrder >= requestedOrder)
+                    .ToList();
+
+                foreach (var img in affected)
+                {
+                    img.DisplayOrder += 1;
+                }
+            }
+
             // 儲存圖片
             var ext = Path.GetExtension(imageFile.FileName);
             var fileName = $"carousel_{Guid.NewGuid().ToString("N").Substring(0, 6)}{ext}";
             var savePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", fileName);
+            var startAtStr = Request.Form["StartAt"];
+            if (string.IsNullOrWhiteSpace(startAtStr))
+                return BadRequest("請選擇開始時間");
+
+            model.StartAt = DateTime.Parse(startAtStr);
+
+            // EndAt 可空
+            var endAtStr = Request.Form["EndAt"];
+            model.EndAt = string.IsNullOrWhiteSpace(endAtStr) ? null : DateTime.Parse(endAtStr);
 
             using (var stream = new FileStream(savePath, FileMode.Create))
             {
@@ -669,31 +705,56 @@ namespace zuHause.Controllers
             model.ImageUrl = $"/images/{fileName}";
             model.CreatedAt = DateTime.UtcNow;
             model.UpdatedAt = DateTime.UtcNow;
-            model.IsActive = true;
+            
 
             _context.CarouselImages.Add(model);
             await _context.SaveChangesAsync();
 
             return Ok("✅ 上傳成功");
         }
+
+
         //編輯圖片資訊
         [HttpPost("UpdateCarouselImage")]
         public async Task<IActionResult> UpdateCarouselImage([FromBody] CarouselImage model)
         {
             try
             {
-                var entity = _context.CarouselImages.FirstOrDefault(c => c.CarouselImageId == model.CarouselImageId);
+                var entity = _context.CarouselImages
+                    .FirstOrDefault(c => c.CarouselImageId == model.CarouselImageId);
                 if (entity == null) return NotFound("找不到圖片");
+
+                var sameCategory = model.Category;
+                var newOrder = model.DisplayOrder;
+
+                if (entity.DisplayOrder != newOrder)
+                {
+                    var target = _context.CarouselImages.FirstOrDefault(c =>
+                        c.Category == sameCategory &&
+                        c.DisplayOrder == newOrder &&
+                        c.CarouselImageId != model.CarouselImageId &&
+                        c.DeletedAt == null);
+
+                    if (target != null)
+                    {
+                        // 交換順序
+                        target.DisplayOrder = entity.DisplayOrder;
+                    }
+
+                    entity.DisplayOrder = newOrder;
+                }
+                if (model.StartAt == null)
+                    return BadRequest("請選擇開始時間");
 
                 entity.ImagesName = model.ImagesName;
                 entity.Category = model.Category;
-                //entity.PageCode = model.PageCode;
-                entity.DisplayOrder = model.DisplayOrder;
+                entity.WebUrl = model.WebUrl;
                 entity.StartAt = model.StartAt;
                 entity.EndAt = model.EndAt;
                 entity.IsActive = model.IsActive;
                 entity.UpdatedAt = DateTime.UtcNow;
-
+                // 若 PageCode 為空，自動用 Category 填補 目前只有首頁輪播 就先這樣存
+                entity.PageCode = string.IsNullOrWhiteSpace(model.PageCode) ? model.Category : model.PageCode;
                 await _context.SaveChangesAsync();
                 return Ok("✅ 編輯成功");
             }
@@ -701,8 +762,9 @@ namespace zuHause.Controllers
             {
                 return StatusCode(500, $"❌ 編輯失敗：{ex.Message} -- {ex.InnerException?.Message}");
             }
-
         }
+
+
 
         //刪除圖片
         [HttpPost("DeleteCarouselImage")]
@@ -711,12 +773,75 @@ namespace zuHause.Controllers
             var entity = _context.CarouselImages.FirstOrDefault(c => c.CarouselImageId == id);
             if (entity == null) return NotFound();
 
+            var category = entity.Category;
+            var deletedOrder = entity.DisplayOrder;
+
             entity.DeletedAt = DateTime.UtcNow;
             entity.IsActive = false;
+
+            // 找出同分類中比這個圖片順序高的，全部 -1
+            var others = _context.CarouselImages
+                .Where(c => c.Category == category && c.DisplayOrder > deletedOrder && c.DeletedAt == null)
+                .ToList();
+
+            foreach (var item in others)
+            {
+                item.DisplayOrder -= 1;
+            }
+
             _context.SaveChanges();
 
-            return Ok("✅ 已刪除");
+            return Ok("✅ 已刪除並調整順序");
         }
+        //交換順序
+        
+        [HttpPost("SwapCarouselOrder")]
+        public IActionResult SwapCarouselOrder([FromBody] SwapOrderDto dto)
+        {
+            if (dto.ImageId1 == dto.ImageId2)
+                return BadRequest("不能交換自己");
+
+            var image1 = _context.CarouselImages.FirstOrDefault(c => c.CarouselImageId == dto.ImageId1 && c.DeletedAt == null);
+            var image2 = _context.CarouselImages.FirstOrDefault(c => c.CarouselImageId == dto.ImageId2 && c.DeletedAt == null);
+
+            if (image1 == null || image2 == null)
+                return NotFound("找不到要交換的圖片");
+
+            if (image1.Category != image2.Category)
+                return BadRequest("只能交換相同分類的圖片");
+
+            // 交換順序
+            int temp = image1.DisplayOrder;
+            image1.DisplayOrder = image2.DisplayOrder;
+            image2.DisplayOrder = temp;
+
+            image1.UpdatedAt = DateTime.UtcNow;
+            image2.UpdatedAt = DateTime.UtcNow;
+
+            _context.SaveChanges();
+
+            return Ok("✅ 順序已交換");
+        }
+
+        public class SwapOrderDto
+        {
+            public int ImageId1 { get; set; }
+            public int ImageId2 { get; set; }
+        }
+        [HttpPost("ToggleCarouselActive")]
+        public IActionResult ToggleCarouselActive([FromBody] int id)
+        {
+            var image = _context.CarouselImages.FirstOrDefault(c => c.CarouselImageId == id && c.DeletedAt == null);
+            if (image == null) return NotFound("找不到圖片");
+
+            image.IsActive = !image.IsActive;
+            image.UpdatedAt = DateTime.UtcNow;
+
+            _context.SaveChanges();
+
+            return Ok($"已{(image.IsActive ? "啟用" : "停用")}");
+        }
+
         //抓取輪播分類
         [HttpGet("GetCarouselCategories")]
         public IActionResult GetCarouselCategories()

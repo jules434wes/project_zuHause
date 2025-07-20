@@ -67,6 +67,10 @@ public partial class CarouselImage
     /// 刪除時間
     /// </summary>
     public DateTime? DeletedAt { get; set; }
+    /// <summary>
+    /// 網頁連結
+    /// </summary>
+    public string? WebUrl { get; set; }
 
     public virtual Page? PageCodeNavigation { get; set; }
 }
