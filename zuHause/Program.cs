@@ -10,7 +10,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
-    options.JsonSerializerOptions.PropertyNamingPolicy = null;
+    //options.JsonSerializerOptions.PropertyNamingPolicy = null;
     options.JsonSerializerOptions.Encoder = JavaScriptEncoder.Create(UnicodeRanges.BasicLatin, UnicodeRanges.Cyrillic,
                 UnicodeRanges.CjkUnifiedIdeographs);
     options.JsonSerializerOptions.WriteIndented = true;

@@ -680,22 +680,30 @@ namespace zuHause.Controllers
         [HttpPost("UpdateCarouselImage")]
         public async Task<IActionResult> UpdateCarouselImage([FromBody] CarouselImage model)
         {
-            var entity = _context.CarouselImages.FirstOrDefault(c => c.CarouselImageId == model.CarouselImageId);
-            if (entity == null) return NotFound("找不到圖片");
+            try
+            {
+                var entity = _context.CarouselImages.FirstOrDefault(c => c.CarouselImageId == model.CarouselImageId);
+                if (entity == null) return NotFound("找不到圖片");
 
-            // 更新欄位（不換圖的情況）
-            entity.ImagesName = model.ImagesName;
-            entity.Category = model.Category;
-            entity.PageCode = model.PageCode;
-            entity.DisplayOrder = model.DisplayOrder;
-            entity.StartAt = model.StartAt;
-            entity.EndAt = model.EndAt;
-            entity.IsActive = model.IsActive;
-            entity.UpdatedAt = DateTime.UtcNow;
+                entity.ImagesName = model.ImagesName;
+                entity.Category = model.Category;
+                //entity.PageCode = model.PageCode;
+                entity.DisplayOrder = model.DisplayOrder;
+                entity.StartAt = model.StartAt;
+                entity.EndAt = model.EndAt;
+                entity.IsActive = model.IsActive;
+                entity.UpdatedAt = DateTime.UtcNow;
 
-            await _context.SaveChangesAsync();
-            return Ok("✅ 編輯成功");
+                await _context.SaveChangesAsync();
+                return Ok("✅ 編輯成功");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"❌ 編輯失敗：{ex.Message} -- {ex.InnerException?.Message}");
+            }
+
         }
+
         //刪除圖片
         [HttpPost("DeleteCarouselImage")]
         public IActionResult DeleteCarouselImage([FromBody] int id)

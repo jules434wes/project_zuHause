@@ -18,18 +18,18 @@
             card.innerHTML = `
             <div class="row g-0 align-items-center">
                 <div class="col-auto">
-                    <img src="${img.ImageUrl}" class="img-thumbnail me-3" style="width: 80px; height: 60px; object-fit: cover;" />
+                    <img src="${img.imageUrl}" class="img-thumbnail me-3" style="width: 80px; height: 60px; object-fit: cover;" />
                 </div>
                 <div class="col">
                     <div class="card-body py-2 px-2">
-                        <p class="mb-1"><strong>編號：</strong>${img.CarouselImageId}</p>
-                        <p class="mb-1"><strong>名稱：</strong>${img.ImagesName}</p>
-                        <p class="mb-1"><strong>類別：</strong>${img.Category}</p>
-                        <p class="mb-1"><strong>位置：</strong>${img.DisplayOrder}</p>
-                        <p class="mb-1"><strong>播放：</strong>${formatTime(img.StartAt)} ~ ${formatTime(img.EndAt)}</p>
+                        <p class="mb-1"><strong>編號：</strong>${img.carouselImageId}</p>
+                        <p class="mb-1"><strong>名稱：</strong>${img.imagesName}</p>
+                        <p class="mb-1"><strong>類別：</strong>${img.category}</p>
+                        <p class="mb-1"><strong>位置：</strong>${img.displayOrder}</p>
+                        <p class="mb-1"><strong>播放：</strong>${formatTime(img.startAt)} ~ ${formatTime(img.endAt)}</p>
                         <div class="d-flex gap-2 mt-2">
-                            <button class="btn btn-sm btn-primary" onclick="fillEditForm(${img.CarouselImageId})">編輯</button>
-                            <button class="btn btn-sm btn-danger" onclick="deleteCarouselImage(${img.CarouselImageId})">刪除</button>
+                            <button class="btn btn-sm btn-primary" onclick="fillEditForm(${img.carouselImageId})">編輯</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteCarouselImage(${img.carouselImageId})">刪除</button>
                         </div>
                     </div>
                 </div>
@@ -48,7 +48,7 @@
         formData.append("ImagesName", document.getElementById("imagesName").value);
         formData.append("Category", document.getElementById("category").value);
         formData.append("DisplayOrder", document.getElementById("displayOrder").value);
-        formData.append("PageCode", document.getElementById("pageCode").value);
+        //formData.append("PageCode", document.getElementById("pageCode").value);
         formData.append("StartAt", document.getElementById("startAt").value);
         formData.append("EndAt", document.getElementById("endAt").value);
 
@@ -70,17 +70,17 @@
     async function fillEditForm(id) {
         console.log("進入編輯");
         const list = await fetchCarouselImages();
-        const item = list.find(x => x.CarouselImageId === id);
+        const item = list.find(x => x.carouselImageId === id);
         if (!item) return;
         console.log("帶入編輯");
-        document.getElementById("carouselImageId").value = item.CarouselImageId;
-        document.getElementById("imagesName").value = item.ImagesName;
-        document.getElementById("category").value = item.Category;
-        document.getElementById("displayOrder").value = item.DisplayOrder;
-        document.getElementById("pageCode").value = item.PageCode ?? "";
-        document.getElementById("startAt").value = item.StartAt?.slice(0, 16);
-        document.getElementById("endAt").value = item.EndAt?.slice(0, 16);
-        document.getElementById("imagePreview").src = item.ImageUrl;
+        document.getElementById("carouselImageId").value = item.carouselImageId;
+        document.getElementById("imagesName").value = item.imagesName;
+        document.getElementById("category").value = item.category;
+        document.getElementById("displayOrder").value = item.displayOrder;
+        //document.getElementById("pageCode").value = item.pageCode ?? "";
+        document.getElementById("startAt").value = item.startAt?.slice(0, 16);
+        document.getElementById("endAt").value = item.endAt?.slice(0, 16);
+        document.getElementById("imagePreview").src = item.imageUrl;
         document.getElementById("imagePreview").classList.remove("d-none");
     }
     window.updateCarouselImage = updateCarouselImage;
@@ -91,10 +91,10 @@
 
         const body = {
             carouselImageId: parseInt(id),
-            tmagesName: document.getElementById("imagesName").value,
+            imagesName: document.getElementById("imagesName").value,
             category: document.getElementById("category").value,
             displayOrder: parseInt(document.getElementById("displayOrder").value),
-            pageCode: document.getElementById("pageCode").value,
+            //pageCode: document.getElementById("pageCode").value,
             startAt: document.getElementById("startAt").value,
             endAt: document.getElementById("endAt").value,
             isActive: true
@@ -141,8 +141,8 @@
 
         list.forEach(item => {
             const opt = document.createElement("option");
-            opt.value = item.PageCode;
-            opt.textContent = item.PageName;
+            opt.value = item.pageCode;
+            opt.textContent = item.pageName;
             select.appendChild(opt);
         });
     }
@@ -154,7 +154,7 @@
         document.getElementById("imagesName").value = "";
         document.getElementById("category").value = "";
         document.getElementById("displayOrder").value = "";
-        document.getElementById("pageCode").value = "";
+        //document.getElementById("pageCode").value = "";
         document.getElementById("startAt").value = "";
         document.getElementById("endAt").value = "";
         document.getElementById("imagePreview").classList.add("d-none");
