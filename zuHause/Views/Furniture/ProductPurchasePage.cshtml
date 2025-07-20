@@ -124,7 +124,7 @@
                     <p>目前沒有綁定房源資訊。</p>
                 }
             </div>
-                    }
+                    
 
             <h4>選擇綁定房源</h4>
             <form>
@@ -135,12 +135,25 @@
                         {
                             foreach (var p in propertyList)
                             {
-                                <option value="@p.Item1"
-                                        data-enddate="@(p.Item3?.ToString("yyyy-MM-dd"))"
-                                        data-propertyid="@p.Item1">
-                                    @(p.Item1 == ViewBag.CurrentProperty?.Item1 ? "selected" : "")>
-                                    @p.Item2
-                                </option>
+                                var isSelected = p.Item1 == currentProperty?.Item1 ? "selected" : "";
+                                @if (p.Item1 == currentProperty?.Item1)
+                                {
+                                    <option value="@p.Item1"
+                                            data-enddate="@(p.Item3?.ToString("yyyy-MM-dd"))"
+                                            data-propertyid="@p.Item1"
+                                            selected>
+                                        @p.Item2
+                                    </option>
+                                }
+                                else
+                                {
+                                    <option value="@p.Item1"
+                                            data-enddate="@(p.Item3?.ToString("yyyy-MM-dd"))"
+                                            data-propertyid="@p.Item1">
+                                        @p.Item2
+                                    </option>
+                                }
+
                             }
                         }
                         else
@@ -165,8 +178,10 @@
             
             <form id="addToCartForm" action="/Furniture/AddToCart" method="post">
                 <input type="hidden" name="productId" value="@Model.FurnitureProductId" />
-                <input type="hidden" name="propertyId" id="selectedPropertyIdInput" value="@(currentProperty?.Item1)" /> @* 儲存選中的房源 ID * 後面 JS 會更新*@
-                <button type="submit" class="btn btn-primary">加入租借清單</button>
+                <input type="hidden" name="selectedPropertyId" id="selectedPropertyIdInput" value="@(currentProperty?.Item1)" />
+                <input type="hidden" name="rentalDays" id="rentalDaysInput" value="@(rentalDays ?? 0)" />
+                <input type="hidden" name="quantity" value="1" /> <!-- 固定數量為 1，也可讓用戶輸入 -->
+                <button type="submit" class="btn btn-primary">加入購物車</button>
             </form>
 
         </div>
@@ -224,6 +239,10 @@
                     contractEndDateSpan.textContent = selectedEndDate;
                     var remainingDays = calculateRemainingDays(selectedEndDate);
                     rentalDaysSpan.textContent = remainingDays;
+
+                    //  新增這段：更新隱藏欄位
+                   document.getElementById("selectedPropertyIdInput").value = selectedPropertyId;
+                   document.getElementById("rentalDaysInput").value = remainingDays;
 
                     // ---- 更新「租期總天數」和「總租金」 ----
                     totalDaysDisplay.textContent = remainingDays;

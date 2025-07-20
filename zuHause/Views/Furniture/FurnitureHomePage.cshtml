@@ -2,45 +2,19 @@
 
 @{
     ViewBag.Title = "租屋首頁";
-    Layout = "~/Views/Shared/_NavigationBar.cshtml";
+    Layout = "~/Views/Shared/_NavigationBar.cshtml"; // 確保這裡指向您的主佈局文件
 
     // 左側分類資料
     var categories = ViewBag.categories as List<zuHause.Models.FurnitureCategory>;
 
     // 輪播圖圖片路徑清單
-   
     var carouselImages = ViewBag.CarouselImages as List<zuHause.Models.CarouselImage>;
-    
-
-    @if (carouselImages != null && carouselImages.Any())
-    {
-        <div id="furnitureCarousel" class="carousel slide mb-4" data-bs-ride="carousel">
-            <div class="carousel-inner">
-                @for (int i = 0; i < carouselImages.Count; i++)
-                {
-                    <div class="carousel-item @(i == 0 ? "active" : "")">
-                        <img src="@carouselImages[i].ImageUrl" class="d-block w-100" alt="@carouselImages[i].ImagesName">
-                        <div class="carousel-caption d-none d-md-block">
-                            <h5>@carouselImages[i].ImagesName</h5>
-                        </div>
-                    </div>
-                }
-            </div>
-            <button class="carousel-control-prev" type="button" data-bs-target="#furnitureCarousel" data-bs-slide="prev">
-                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-            </button>
-            <button class="carousel-control-next" type="button" data-bs-target="#furnitureCarousel" data-bs-slide="next">
-                <span class="carousel-control-next-icon" aria-hidden="true"></span>
-            </button>
-        </div>
-    }
 
     // 熱門商品清單
     var hotProducts = ViewBag.hotProducts as List<zuHause.Models.FurnitureProduct>;
-    }
+}
 
 <div class="row">
-    <!-- 左側分類與租借須知 -->
     <div class="col-md-2">
         <h5>商品分類</h5>
         @Html.Partial("_FurnitureCategoryList", categories)
@@ -53,50 +27,57 @@
         </ul>
     </div>
 
-    <!-- 主內容區 -->
     <div class="col-md-10">
-        <!-- 輪播圖 -->
-        <div id="carouselExample" class="carousel slide mb-4" data-bs-ride="carousel">
-            <div class="carousel-inner">
-                @for (int i = 0; i < carouselImages?.Count; i++)
-                {
-                    <div class="carousel-item @(i == 0 ? "active" : "")">
-                        <img src="@carouselImages[i]" class="d-block w-100" style="height: 300px; object-fit: cover;" alt="輪播圖 @i" />
-                    </div>
-                }
+        @if (carouselImages != null && carouselImages.Any())
+        {
+            <div id="furnitureCarousel" class="carousel slide mb-4" data-bs-ride="carousel">
+                <div class="carousel-inner">
+                    @for (int i = 0; i < carouselImages.Count; i++)
+                    {
+                        <div class="carousel-item @(i == 0 ? "active" : "")">
+                            <img src="@carouselImages[i].ImageUrl" class="d-block w-100" style="height: 300px; object-fit: cover;" alt="@carouselImages[i].ImagesName">
+                            <div class="carousel-caption d-none d-md-block">
+                                <h5>@carouselImages[i].ImagesName</h5>
+                            </div>
+                        </div>
+                    }
+                </div>
+                <button class="carousel-control-prev" type="button" data-bs-target="#furnitureCarousel" data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Previous</span>
+                </button>
+                <button class="carousel-control-next" type="button" data-bs-target="#furnitureCarousel" data-bs-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Next</span>
+                </button>
             </div>
-            <button class="carousel-control-prev" type="button" data-bs-target="#carouselExample" data-bs-slide="prev">
-                <span class="carousel-control-prev-icon"></span>
-            </button>
-            <button class="carousel-control-next" type="button" data-bs-target="#carouselExample" data-bs-slide="next">
-                <span class="carousel-control-next-icon"></span>
-            </button>
-        </div>
+        }
 
-        <!-- 熱門商品區 -->
         <h5>熱門商品</h5>
         <div class="row">
             @if (hotProducts != null && hotProducts.Any())
             {
                 <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-3">
-                    @foreach (var product in ViewBag.hotProducts)
+                    @foreach (var product in hotProducts)
                     {
                         <div class="col">
-                            <div class="card h-100 d-flex flex-column">
-                                <img src="@product.ImageUrl" class="card-img-top" alt="@product.ProductName">
-                                <div class="card-body d-flex flex-column">
-                                    <h5 class="card-title text-center">@product.ProductName</h5>
+                            <a href="@Url.Action("ProductPurchasePage", "Furniture", new { id = product.FurnitureProductId })" class="card-link-wrapper text-decoration-none text-dark">
+                                <div class="card h-100 shadow-sm">
+                                    <img src="@product.ImageUrl" class="card-img-top w-100" alt="@product.ProductName" style="height: auto; max-height: 250px; object-fit: contain;">
 
-                                    <p class="text-danger text-center mb-1">租金: NT$@product.DailyRental/天</p>
-                                    <p class="text-muted text-center" style="font-size: 0.9rem;">原價: NT$@product.ListPrice</p>
+                                    <div class="card-body d-flex flex-column justify-content-between">
+                                        <h6 class="card-title text-center">@product.ProductName</h6>
 
-                                    <!-- 空白推到底部 -->
-                                    <div class="mt-auto text-center">
-                                        <a href="@Url.Action("ProductPurchasePage", "Furniture", new { id = product.FurnitureProductId })"
-                                           class="btn btn-primary w-100">查看商品</a>
+                                        <div class="text-center mt-2">
+                                            <p class="text-danger mb-1">租金: NT$@product.DailyRental/天</p>
+                                            <p class="text-muted small mb-2">原價: NT$@product.ListPrice</p>
+                                            <a href="@Url.Action("ProductPurchasePage", "Furniture", new { id = product.FurnitureProductId })" class="btn btn-success btn-sm w-100 mt-auto">
+                                                查看商品詳情
+                                            </a>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            </a>
                         </div>
                     }
                 </div>
@@ -108,3 +89,9 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        // 移除原有的 AJAX 加入購物車腳本
+    </script>
+}
