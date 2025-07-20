@@ -215,7 +215,15 @@ function openTab(tabKey) {
                         
                        
                     }
+                    if (tabKey === "Marquee_edit") {
+                        if (typeof initMarqueeManager === "function") {
+                            initMarqueeManager();
+                        }
+                    }
+
+                    //onloadx內
                 };
+
 
                 document.body.appendChild(script);
             }

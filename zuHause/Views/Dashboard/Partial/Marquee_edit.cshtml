@@ -9,11 +9,17 @@
         <!-- 主內容 -->
         <div class="col-md-10">
             <div class="panel">
-                <div class="mb-3 d-flex gap-2">
-                    <button class="btn btn-outline-primary">調整租客首頁跑馬燈</button>
-                    <button class="btn btn-outline-primary">調整房東首頁跑馬燈</button>
-                    <button class="btn btn-outline-primary">調整家具租借首頁跑馬燈</button>
-                </div>
+                <ul class="nav nav-tabs mb-3" id="marqueeTabs">
+                    <li class="nav-item">
+                        <button class="nav-link active" data-scope="TENANT" onclick="changeMarqueeTab(this)">租客首頁</button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" data-scope="LANDLORD" onclick="changeMarqueeTab(this)">房東首頁</button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" data-scope="FURNITURE" onclick="changeMarqueeTab(this)">家具首頁</button>
+                    </li>
+                </ul>
 
                 <h5 class="my-3">租客首頁跑馬燈預覽</h5>
                 <div class="panel mt-4">
@@ -28,28 +34,13 @@
                             <th>播放內容</th>
                             <th>播放開始時間</th>
                             <th>播放結束時間</th>
-                            <th>文字顏色</th>
+                           
                             <th>啟用狀態</th>
-                            <th>編輯</th>
+                            <th>操作</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <tr>
-                            <td>1</td>
-                            <td><input type="text" class="form-control" value="歡迎使用本平台"></td>
-                            <td><input type="datetime-local" class="form-control"></td>
-                            <td><input type="datetime-local" class="form-control"></td>
-                            <td><input type="color" class="form-control form-control-color" value="#000000"></td>
-                            <td><input class="form-check-input" type="checkbox" checked></td>
-                            <td>
-                                <button class="btn btn-success btn-sm">確認</button>
-                                <button class="btn btn-danger btn-sm">取消</button>
-                            </td>
-                        </tr>
-                        <tr><td>2</td><td></td><td></td><td></td><td><input type="color" class="form-control form-control-color" value="#000000"></td><td><input class="form-check-input" type="checkbox"></td><td></td></tr>
-                        <tr><td>3</td><td></td><td></td><td></td><td><input type="color" class="form-control form-control-color" value="#000000"></td><td><input class="form-check-input" type="checkbox"></td><td></td></tr>
-                        <tr><td>4</td><td></td><td></td><td></td><td><input type="color" class="form-control form-control-color" value="#000000"></td><td><input class="form-check-input" type="checkbox"></td><td></td></tr>
-                        <tr><td>5</td><td></td><td></td><td></td><td><input type="color" class="form-control form-control-color" value="#000000"></td><td><input class="form-check-input" type="checkbox"></td><td></td></tr>
+                    <tbody id="marquee-tbody">
+                        <!-- 這裡由 JS 動態產生 -->
                     </tbody>
                 </table>
 
@@ -61,22 +52,20 @@
                             <th>播放內容</th>
                             <th>播放開始時間</th>
                             <th>播放結束時間</th>
-                            <th>文字顏色</th>
                             <th>啟用狀態</th>
                             <th>操作</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td>1</td>
-                            <td><input type="text" class="form-control"></td>
-                            <td><input type="datetime-local" class="form-control"></td>
-                            <td><input type="datetime-local" class="form-control"></td>
-                            <td><input type="color" class="form-control form-control-color" value="#000000"></td>
-                            <td><input class="form-check-input" type="checkbox" checked></td>
+                        <tr id="marquee-add-row">
+                            <td><span id="next-order">1</span></td> <!-- 排序僅顯示 -->
+                            <td><input type="text" class="form-control" id="new-content"></td>
+                            <td><input type="datetime-local" class="form-control" id="new-start"></td>
+                            <td><input type="datetime-local" class="form-control" id="new-end"></td>
+                            <td><input type="checkbox" class="form-check-input" id="new-active" checked></td>
                             <td>
-                                <button class="btn btn-success btn-sm">確認</button>
-                                <button class="btn btn-danger btn-sm">取消</button>
+                                <button class="btn btn-success btn-sm" onclick="addNewMarquee()">確認</button>
+                                <button class="btn btn-danger btn-sm" onclick="resetNewForm()">取消</button>
                             </td>
                         </tr>
                     </tbody>

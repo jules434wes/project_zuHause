@@ -2775,7 +2775,8 @@ public partial class ZuHauseContext : DbContext
             entity.Property(e => e.SiteMessagesId)
                 .ValueGeneratedNever()
                 .HasComment("訊息ID")
-                .HasColumnName("siteMessagesId");
+                .HasColumnName("siteMessagesId")
+                .ValueGeneratedOnAdd(); // <-- 強制告訴 EF：這是 Identity 欄位
             entity.Property(e => e.AttachmentUrl)
                 .HasMaxLength(255)
                 .HasComment("圖片/附件URL")

@@ -857,6 +857,96 @@ namespace zuHause.Controllers
 
             return Json(categories);
         }
+        //取得訊息表的跑馬燈
+        [HttpGet("GetMarquees")]
+        public IActionResult GetMarquees(string scope)
+        {
+            var messages = _context.SiteMessages
+                .Where(m =>
+                    m.Category == "MARQUEE" &&
+                    m.ModuleScope == scope &&
+                    m.DeletedAt == null)
+                .OrderBy(m => m.DisplayOrder)
+                .Select(m => new {
+                    m.SiteMessagesId,
+                    m.Title,
+                    m.SiteMessageContent,
+                    m.DisplayOrder,
+                    m.StartAt,
+                    m.EndAt,
+                    m.IsActive,
+                    m.AttachmentUrl
+                })
+                .ToList();
+
+            return Json(messages);
+        }
+
+        [HttpPost("AddMarquee")]
+        public IActionResult AddMarquee([FromBody] MarqueeCreateViewModel dto)
+        {
+            var newMessage = new SiteMessage
+            {
+                // ❌ 千萬不要設定 SiteMessagesId
+                SiteMessageContent = dto.SiteMessageContent,
+                DisplayOrder = dto.DisplayOrder,
+                StartAt = dto.StartAt,
+                EndAt = dto.EndAt,
+                IsActive = dto.IsActive,
+                ModuleScope = dto.ModuleScope,
+                Category = "MARQUEE",
+                MessageType = "SYSTEM",
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now
+            };
+
+            _context.Entry(newMessage).State = EntityState.Added; // 🔧 可選保險
+            _context.SiteMessages.Add(newMessage);
+            _context.SaveChanges();
+
+            return Ok(new { success = true, newMessage.SiteMessagesId });
+        }
+
+
+        
+        [HttpPost("BatchUpdateMarquees")]
+        public IActionResult BatchUpdateMarquees([FromBody] List<MarqueeUpdateViewModel> updates)
+        {
+            foreach (var dto in updates)
+            {
+                var message = _context.SiteMessages
+                    .FirstOrDefault(m => m.SiteMessagesId == dto.SiteMessagesId && m.DeletedAt == null);
+
+                if (message != null)
+                {
+                    message.SiteMessageContent = dto.SiteMessageContent;
+                    message.DisplayOrder = dto.DisplayOrder;
+                    message.StartAt = dto.StartAt;
+                    message.EndAt = dto.EndAt;
+                    message.IsActive = dto.IsActive;
+                    message.UpdatedAt = DateTime.Now;
+                }
+            }
+
+            _context.SaveChanges();
+            return Ok(new { success = true });
+        }
+
+
+        [HttpPost("DeleteMarquee")]
+        public IActionResult DeleteMarquee([FromBody] int id)
+        {
+            var message = _context.SiteMessages.FirstOrDefault(m => m.SiteMessagesId == id && m.DeletedAt == null);
+            if (message == null) return NotFound();
+
+            message.DeletedAt = DateTime.Now;
+            message.UpdatedAt = DateTime.Now;
+            _context.SaveChanges();
+
+            return Ok(new { success = true });
+        }
+
+
 
 
 
