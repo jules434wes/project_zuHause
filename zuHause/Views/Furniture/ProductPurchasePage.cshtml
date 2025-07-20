@@ -44,38 +44,190 @@
                     <p><strong>總租金：</strong class="text-danger">NT$@(Model.DailyRental * rentalDays)</p>
                     <p>@Model.Description</p>
 
-                    <!-- 綁定中的房源卡片 -->
-                    @if (currentProperty != null)
-                    {
-                        <div class="bg-light p-3 mb-3 rounded border">
-                            <h5 class="text-danger mb-2">目前綁定房源</h5>
-                            <p><strong>房源 ID：</strong>@currentProperty.PropertyId</p>
-                            <p><strong>標題：</strong>@currentProperty.Title</p>
-                            <p><strong>到期日：</strong>@contractEndDate</p>
-                        </div>
-                    }
+            @* 租金資訊區塊 *@
+            <h4 class="price-info">每日租金：NT$<strong id="dailyRentalAmount">@Model.DailyRental</strong></h4>
+            <h4 class="price-info">租期總天數：<strong id="totalDaysDisplay">@(rentalDays != null ? rentalDays.ToString() : "N/A")</strong> 天</h4>
+            <h4 class="price-info">總租金：NT$<strong id="totalRentalAmountDisplay">@(totalRentalAmount != null ? totalRentalAmount.ToString("N0") : "N/A")</strong></h4>
 
-                    <!-- 房源下拉選單 -->
-                    <form method="post" action="/Furniture/AddToCart">
-                        <div class="mb-3">
-                            <label for="PropertyId" class="form-label">選擇房源</label>
-                            <select name="PropertyId" class="form-select" required>
-                                <option value="">請選擇房源</option>
-                                @foreach (var p in ViewBag.PropertyList)
-                                    {
-                                        string endDate = p.ContractEndDate != null ? ((DateOnly)p.ContractEndDate).ToString("yyyy-MM-dd") : "無";
+            <hr />
 
-                                        <option value="@p.PropertyId">
-                                            標題：@p.Title - 截止：@endDate
-                                        </option>
-                                    }
-                            </select>
-                        </div>
-                        <input type="hidden" name="ProductId" value="@Model.FurnitureProductId" />
-                        <button type="submit" class="btn btn-info w-100">加入租借清單</button>
-                    </form>
-                </div>
+            @* 目前綁定房源區塊 *@
+            <h4>目前綁定房源</h4>
+            <div id="currentPropertyDisplay" class="info-box">
+                @if (currentProperty != null)
+                {
+                    <p>房屋編號：<span id="currentPropertyId">@currentProperty.Item1</span></p>
+                    <p>房源名稱：<span id="currentPropertyTitle">@currentProperty.Item2</span></p>
+                    <p>房屋到期日：<span id="currentPropertyEndDate">@(currentProperty.Item3?.ToString("yyyy-MM-dd"))</span></p>
+                }
+                else
+                {
+                    <p>目前沒有綁定房源資訊。</p>
+                }
             </div>
+                    
+
+            <h4>選擇綁定房源</h4>
+            <form>
+                <div class="mb-3">
+                    <label for="propertySelect" class="form-label">房源</label>
+                    <select id="propertySelect" class="form-select">
+                        @if (propertyList != null && propertyList.Any())
+                        {
+                            foreach (var p in propertyList)
+                            {
+                                var isSelected = p.Item1 == currentProperty?.Item1 ? "selected" : "";
+                                @if (p.Item1 == currentProperty?.Item1)
+                                {
+                                    <option value="@p.Item1"
+                                            data-enddate="@(p.Item3?.ToString("yyyy-MM-dd"))"
+                                            data-propertyid="@p.Item1"
+                                            selected>
+                                        @p.Item2
+                                    </option>
+                                }
+                                else
+                                {
+                                    <option value="@p.Item1"
+                                            data-enddate="@(p.Item3?.ToString("yyyy-MM-dd"))"
+                                            data-propertyid="@p.Item1">
+                                        @p.Item2
+                                    </option>
+                                }
+
+                            }
+                        }
+                        else
+                        {
+                            <option value="">目前沒有可用的綁定房源</option>
+                        }
+                    </select>
+                </div>
+
+                @* 這裡的合約到期日和剩餘可租天數，將由JS動態更新，保留ID *@
+                <div id="contractInfoDisplay" class="alert alert-info">
+                    合約到期日：<span id="contractEndDate"></span><br />
+                    剩餘可租天數：<span id="rentalDays"></span> 天
+                </div>
+                <div class="alert alert-warning" id="noContractInfo" style="display: none;">
+                    無合約到期日資訊
+                </div>
+            </form>
+
+            <hr />
+
+            
+            <form id="addToCartForm" action="/Furniture/AddToCart" method="post">
+                <input type="hidden" name="productId" value="@Model.FurnitureProductId" />
+                <input type="hidden" name="selectedPropertyId" id="selectedPropertyIdInput" value="@(currentProperty?.Item1)" />
+                <input type="hidden" name="rentalDays" id="rentalDaysInput" value="@(rentalDays ?? 0)" />
+                <input type="hidden" name="quantity" value="1" /> <!-- 固定數量為 1，也可讓用戶輸入 -->
+                <button type="submit" class="btn btn-primary">加入購物車</button>
+            </form>
+
         </div>
     </div>
-</div>
+
+    <script>
+        // 將 C# 傳來的 currentProperty.Item1 儲存為 JavaScript 變數
+        // 確保如果 currentProperty 是 null，這裡也安全地設為 null
+        var defaultSelectedPropertyId = @(currentProperty != null ? currentProperty.Item1.ToString() : "null");
+         var dailyRentalPrice = parseFloat('@Model.DailyRental.ToString(System.Globalization.CultureInfo.InvariantCulture)');
+
+        document.addEventListener('DOMContentLoaded', function() {
+            var propertySelect = document.getElementById('propertySelect');
+            var contractEndDateSpan = document.getElementById('contractEndDate');
+            var rentalDaysSpan = document.getElementById('rentalDays');
+            var totalDaysDisplay = document.getElementById('totalDaysDisplay');
+            var totalRentalAmountDisplay = document.getElementById('totalRentalAmountDisplay');
+            var contractInfoDisplay = document.getElementById('contractInfoDisplay');
+            var noContractInfoAlert = document.getElementById('noContractInfo');
+
+            // 目前綁定房源顯示區塊的元素 (用於在沒有選中時隱藏)
+            var currentPropertyDisplayDiv = document.getElementById('currentPropertyDisplay');
+            var currentPropertyIdSpan = document.getElementById('currentPropertyId');
+            var currentPropertyTitleSpan = document.getElementById('currentPropertyTitle');
+            var currentPropertyEndDateSpan = document.getElementById('currentPropertyEndDate');
+
+
+            // 計算剩餘天數的函數
+            function calculateRemainingDays(endDateString) {
+                if (!endDateString) return null;
+
+                var today = new Date();
+                today.setHours(0, 0, 0, 0);
+
+                var endDate = new Date(endDateString);
+                endDate.setHours(0, 0, 0, 0);
+
+                var diffTime = endDate - today;
+                var diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); // 向上取整
+
+                return Math.max(0, diffDays); // 確保天數不為負
+            }
+
+            // 更新所有合約相關資訊顯示的函數
+            function updateContractInfoAndTotals() {
+                var selectedOption = propertySelect.options[propertySelect.selectedIndex];
+                var selectedPropertyId = selectedOption.value;
+                var selectedEndDate = selectedOption.dataset.enddate;
+
+                // ---- 更新下方的「選擇綁定房源」區塊（也就是「合約到期日」和「剩餘可租天數」）----
+                if (selectedPropertyId && selectedEndDate) {
+                    contractInfoDisplay.style.display = 'block';
+                    noContractInfoAlert.style.display = 'none';
+
+                    contractEndDateSpan.textContent = selectedEndDate;
+                    var remainingDays = calculateRemainingDays(selectedEndDate);
+                    rentalDaysSpan.textContent = remainingDays;
+
+                    //  新增這段：更新隱藏欄位
+                   document.getElementById("selectedPropertyIdInput").value = selectedPropertyId;
+                   document.getElementById("rentalDaysInput").value = remainingDays;
+
+                    // ---- 更新「租期總天數」和「總租金」 ----
+                    totalDaysDisplay.textContent = remainingDays;
+                    var totalAmount = (remainingDays * dailyRentalPrice).toLocaleString('en-US'); // 格式化為貨幣字串
+                    totalRentalAmountDisplay.textContent = totalAmount;
+
+                    // ---- 更新「目前綁定房源」區塊 ----
+                    currentPropertyDisplayDiv.style.display = 'block'; // 確保顯示
+                    currentPropertyIdSpan.textContent = selectedPropertyId;
+                    currentPropertyTitleSpan.textContent = selectedOption.textContent; // 使用 option 的文本內容作為房源名稱
+                    currentPropertyEndDateSpan.textContent = selectedEndDate;
+
+                } else {
+                    // 如果沒有選擇有效房源或無合約到期日資訊
+                    contractInfoDisplay.style.display = 'none';
+                    noContractInfoAlert.style.display = 'block';
+
+                    // 同時清空並隱藏上方總計信息
+                    totalDaysDisplay.textContent = "N/A";
+                    totalRentalAmountDisplay.textContent = "N/A";
+
+                    // 隱藏「目前綁定房源」區塊或清空內容
+                    currentPropertyDisplayDiv.style.display = 'none';
+                }
+            }
+
+            // 頁面載入時，根據 defaultSelectedPropertyId 設置下拉選單並初始化顯示
+            if (defaultSelectedPropertyId !== null && propertySelect) {
+                // 遍歷所有選項，找到匹配的 value 並設置 selectedIndex
+                // 注意：這裡將 defaultSelectedPropertyId 轉為 String，確保與 option.value (通常為字串) 類型一致
+                for (var i = 0; i < propertySelect.options.length; i++) {
+                    if (propertySelect.options[i].value === String(defaultSelectedPropertyId)) {
+                        propertySelect.selectedIndex = i;
+                        break;
+                    }
+                }
+            }
+            updateContractInfoAndTotals(); // 初始化顯示
+
+            // 監聽下拉選單的變化事件
+            if (propertySelect) {
+                propertySelect.addEventListener('change', updateContractInfoAndTotals);
+            }
+        });
+    </script>
+</body>
+</html>

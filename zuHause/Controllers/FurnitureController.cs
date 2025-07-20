@@ -37,7 +37,7 @@ namespace zuHause.Controllers
             var hotProducts = _context.FurnitureProducts
                 .Where(p => p.Status) // 只抓上架的
                 .OrderByDescending(p => p.CreatedAt) // 按建立時間倒序
-                .Take(6) // 只抓前6筆
+                .Take(8) // 只抓前8筆
                 .ToList();
 
             ViewBag.hotProducts = hotProducts;
@@ -78,7 +78,6 @@ namespace zuHause.Controllers
             int memberId = _currentMemberId;
 
             var product = _context.FurnitureProducts.FirstOrDefault(p => p.FurnitureProductId == id);
-            if (product == null) return NotFound();
 
             // 取得該會員的房源清單（使用 Property 原始資料模型）
             var propertyList = _context.Properties
@@ -113,19 +112,49 @@ namespace zuHause.Controllers
         public IActionResult RentalCart()
         {
             SetCurrentMemberInfo();
-            int memberId = _currentMemberId;
 
-            // 查詢綁定房源（有 active 合約）
-            var propertyList = _context.Properties
-              .Where(p => p.LandlordMemberId == memberId)
-              .Select(p => new
+            if (ViewBag.CurrentMemberId == null)
+            {
+                return RedirectToAction("Login", "Member");
+            }
+
+            int memberId = (int)ViewBag.CurrentMemberId;
+
+            var cart = _context.FurnitureCarts
+                .Include(c => c.FurnitureCartItems)
+                    .ThenInclude(item => item.Product) // 確保 Product 關聯載入
+                .FirstOrDefault(c => c.MemberId == memberId);
+
+            if (cart == null)
+            {
+                // CS8604: Possible null reference argument for parameter 'entity'
+                // 確保 CartId 是非 null 的 string，假設您的 CartId 是 Guid 或類似的字串類型
+                cart = new FurnitureCart { FurnitureCartId = Guid.NewGuid().ToString(), MemberId = memberId, CreatedAt = DateTime.Now, Status = "IN_CART" };
+                _context.FurnitureCarts.Add(cart);
+                Console.WriteLine($"🟢 DEBUG: 新增購物車 Status = {cart.Status}");
+                _context.SaveChanges();
+            }
+
+            var propertyContracts = _context.Contracts
+                .Include(c => c.RentalApplication)
+                    .ThenInclude(ra => ra.Property)
+                // CS8602: Dereference of a possibly null reference.
+                // 檢查 c.RentalApplication 和 c.RentalApplication.Property 是否為 null
+                .Where(c => c.RentalApplication != null &&
+                            c.RentalApplication.MemberId == memberId &&
+                            c.Status == "ACTIVE" &&
+                            c.EndDate >= DateOnly.FromDateTime(DateTime.Today))
+                .ToList();
+
+            var propertySelectListItems = propertyContracts
+                // 檢查 c.RentalApplication.Property 和 c.EndDate 是否為 null
+                .Where(c => c.RentalApplication?.Property != null && c.EndDate.HasValue)
+                .Select(c => new SelectListItem
                 {
-                    p.PropertyId,
-                    p.Title,
-                    ContractEndDate = _context.Contracts
-                        .Where(c => c.RentalApplicationId == p.PropertyId && c.Status == "active")
-                        .Select(c => (DateOnly?)c.EndDate)
-                        .FirstOrDefault()
+                    // CS8602: Dereference of a possibly null reference.
+                    // 使用 ! 告訴編譯器，在 Where 條件下，這些不可能為 null
+                    Value = c.RentalApplication!.Property!.PropertyId.ToString(),
+                    Text = c.RentalApplication.Property.Title
                 })
                .ToList();
 
@@ -171,9 +200,6 @@ namespace zuHause.Controllers
                 return BadRequest("此房源無有效合約");
             }
 
-            int rentalDays = (contract.EndDate.Value.ToDateTime(new TimeOnly(0)) - DateTime.Now).Days;
-
-            // 找到或建立購物車
             var cart = _context.FurnitureCarts
                 .Include(c => c.FurnitureCartItems)
                 .FirstOrDefault(c => c.MemberId == memberId && c.PropertyId == propertyId && c.Status == "active" && c.DeletedAt == null);
@@ -184,12 +210,12 @@ namespace zuHause.Controllers
                 {
                     FurnitureCartId = Guid.NewGuid().ToString(),
                     MemberId = memberId,
-                    PropertyId = propertyId,
-                    Status = "active",
                     CreatedAt = DateTime.Now,
                     UpdatedAt = DateTime.Now
                 };
                 _context.FurnitureCarts.Add(cart);
+
+              
             }
 
             // 新增或更新明細
@@ -218,6 +244,17 @@ namespace zuHause.Controllers
 
             return RedirectToAction("RentalCart");
         }
+
+        //刪除購物車商品
+        [HttpPost]
+        public IActionResult RemoveCartItem(string cartItemId)
+        {
+            var item = _context.FurnitureCartItems.FirstOrDefault(i => i.CartItemId == cartItemId);
+            if (item != null)
+            {
+                _context.FurnitureCartItems.Remove(item);
+                _context.SaveChanges();
+            }
 
 
         // 租借說明頁面
@@ -256,14 +293,14 @@ namespace zuHause.Controllers
             return categories;
         }
 
-       
+
         //歷史訂單紀錄
         public IActionResult OrderHistory()
         {
             SetCurrentMemberInfo();
             int memberId = _currentMemberId;
 
-            // 進行中訂單（來源：FurnitureOrderItem）
+            // 查詢進行中訂單
             var ongoingOrders = _context.FurnitureOrderItems
                 .Where(item => item.Order.MemberId == memberId)
                 .OrderByDescending(item => item.CreatedAt)
@@ -277,11 +314,18 @@ namespace zuHause.Controllers
                     item.RentalDays,
                     item.SubTotal,
                     item.CreatedAt,
-                    item.Order.Status // 若 Order 有訂單狀態欄位
+                    item.Order.Status,
+                    // ✅ 新增 CurrentStage 狀態字串（連動庫存事件）
+                    CurrentStage =
+                        _context.InventoryEvents.Any(e => e.SourceId == item.OrderId && e.ProductId == item.ProductId && e.EventType == "RETURN") ? "RETURNED" :
+                        _context.InventoryEvents.Any(e => e.SourceId == item.OrderId && e.ProductId == item.ProductId && e.EventType == "OUT") ? "RENTED" :
+                        item.Order.Status == "SHIPPING" ? "SHIPPING" :
+                        item.Order.Status == "PROCESSING" ? "PROCESSING" :
+                        "PENDING"
                 })
                 .ToList();
 
-            // 歷史訂單（來源：FurnitureOrderHistory）
+            // 歷史訂單
             var completedOrders = _context.FurnitureOrderHistories
                 .Where(his => his.Order.MemberId == memberId)
                 .OrderByDescending(his => his.CreatedAt)
@@ -306,6 +350,8 @@ namespace zuHause.Controllers
             return View("OrderHistory");
         }
 
+
+
         // 客服聯繫頁面
         public IActionResult ContactRecords()
         {
@@ -323,8 +369,8 @@ namespace zuHause.Controllers
             ViewBag.MemberName = "XX先生 / 小姐"; // 實際應由登入資訊取得
             return View("ContactRecords", tickets);
         }
-
-       //客服表單畫面
+ 
+        //客服表單畫面
         public IActionResult ContactUsForm(string orderId)
         {
             SetCurrentMemberInfo();
@@ -352,7 +398,7 @@ namespace zuHause.Controllers
         [HttpPost]
         public IActionResult SubmitContactForm(string Subject, string TicketContent, int? PropertyId)
         {
-          
+
             int memberId = _currentMemberId;
             var ticket = new CustomerServiceTicket
             {
