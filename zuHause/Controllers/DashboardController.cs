@@ -794,6 +794,185 @@ namespace zuHause.Controllers
             return Json(cities);
         }
 
+        // 高級會員搜尋API
+        [HttpPost("AdvancedSearchUsers")]
+        public IActionResult AdvancedSearchUsers([FromBody] UserFilterRequest filterRequest)
+        {
+            try
+            {
+                var query = _context.Members.AsQueryable();
+
+                // 關鍵字搜尋
+                if (!string.IsNullOrWhiteSpace(filterRequest.Keyword))
+                {
+                    var keyword = filterRequest.Keyword.Trim();
+                    switch (filterRequest.SearchField?.ToLower())
+                    {
+                        case "memberid":
+                            query = query.Where(m => m.MemberId.ToString().Contains(keyword));
+                            break;
+                        case "membername":
+                            query = query.Where(m => m.MemberName.Contains(keyword));
+                            break;
+                        case "email":
+                            query = query.Where(m => m.Email.Contains(keyword));
+                            break;
+                        case "phonenumber":
+                            query = query.Where(m => m.PhoneNumber.Contains(keyword));
+                            break;
+                        case "nationalidno":
+                            query = query.Where(m => !string.IsNullOrEmpty(m.NationalIdNo) && m.NationalIdNo.Contains(keyword));
+                            break;
+                        default:
+                            // 全域搜尋
+                            query = query.Where(m => 
+                                m.MemberName.Contains(keyword) || 
+                                m.Email.Contains(keyword) || 
+                                m.PhoneNumber.Contains(keyword) ||
+                                m.MemberId.ToString().Contains(keyword) ||
+                                (!string.IsNullOrEmpty(m.NationalIdNo) && m.NationalIdNo.Contains(keyword)));
+                            break;
+                    }
+                }
+
+                // 身分證驗證狀態篩選
+                if (!string.IsNullOrWhiteSpace(filterRequest.VerificationStatus))
+                {
+                    switch (filterRequest.VerificationStatus.ToLower())
+                    {
+                        case "verified":
+                            query = query.Where(m => m.IdentityVerifiedAt != null);
+                            break;
+                        case "pending":
+                            query = query.Where(m => 
+                                _context.Approvals.Any(a => 
+                                    a.ApplicantMemberId == m.MemberId && 
+                                    a.ModuleCode == "IDENTITY" && 
+                                    a.StatusCode == "PENDING"));
+                            break;
+                        case "unverified":
+                            query = query.Where(m => 
+                                m.IdentityVerifiedAt == null &&
+                                !_context.Approvals.Any(a => 
+                                    a.ApplicantMemberId == m.MemberId && 
+                                    a.ModuleCode == "IDENTITY" && 
+                                    a.StatusCode == "PENDING"));
+                            break;
+                    }
+                }
+
+                // 帳戶狀態篩選
+                if (!string.IsNullOrWhiteSpace(filterRequest.AccountStatus))
+                {
+                    switch (filterRequest.AccountStatus.ToLower())
+                    {
+                        case "active":
+                            query = query.Where(m => m.IsActive == true);
+                            break;
+                        case "inactive":
+                            query = query.Where(m => m.IsActive == false);
+                            break;
+                    }
+                }
+
+                // 性別篩選
+                if (!string.IsNullOrWhiteSpace(filterRequest.Gender))
+                {
+                    if (filterRequest.Gender == "1")
+                        query = query.Where(m => m.Gender == 1);
+                    else if (filterRequest.Gender == "2")
+                        query = query.Where(m => m.Gender == 2);
+                    else if (filterRequest.Gender == "other")
+                        query = query.Where(m => m.Gender != 1 && m.Gender != 2);
+                }
+
+                // 房東身分篩選
+                if (filterRequest.IsLandlord.HasValue)
+                {
+                    if (filterRequest.IsLandlord.Value)
+                        query = query.Where(m => m.IsLandlord == true && m.MemberTypeId == 2);
+                    else
+                        query = query.Where(m => m.IsLandlord == false && m.MemberTypeId == 1);
+                }
+
+                // 地理位置篩選
+                if (filterRequest.ResidenceCityId.HasValue)
+                {
+                    query = query.Where(m => m.ResidenceCityId == filterRequest.ResidenceCityId.Value);
+                }
+
+                if (filterRequest.PrimaryRentalCityId.HasValue)
+                {
+                    query = query.Where(m => m.PrimaryRentalCityId == filterRequest.PrimaryRentalCityId.Value);
+                }
+
+                // 註冊日期範圍篩選
+                if (filterRequest.RegisterDateStart.HasValue)
+                {
+                    query = query.Where(m => m.CreatedAt >= filterRequest.RegisterDateStart.Value);
+                }
+                if (filterRequest.RegisterDateEnd.HasValue)
+                {
+                    var endDate = filterRequest.RegisterDateEnd.Value.AddDays(1); // 包含當天
+                    query = query.Where(m => m.CreatedAt < endDate);
+                }
+
+                // 最後登入日期範圍篩選
+                if (filterRequest.LastLoginDateStart.HasValue)
+                {
+                    query = query.Where(m => m.LastLoginAt >= filterRequest.LastLoginDateStart.Value);
+                }
+                if (filterRequest.LastLoginDateEnd.HasValue)
+                {
+                    var endDate = filterRequest.LastLoginDateEnd.Value.AddDays(1);
+                    query = query.Where(m => m.LastLoginAt < endDate);
+                }
+
+                // 執行查詢並返回結果
+                var results = query
+                    .Take(100) // 限制結果數量
+                    .Select(m => new { 
+                        id = m.MemberId.ToString(), 
+                        name = m.MemberName, 
+                        email = m.Email,
+                        phone = m.PhoneNumber,
+                        memberId = m.MemberId,
+                        identityNumber = m.NationalIdNo ?? "未提供",
+                        isActive = m.IsActive,
+                        isLandlord = m.IsLandlord,
+                        gender = m.Gender,
+                        createdAt = m.CreatedAt,
+                        lastLoginAt = m.LastLoginAt
+                    })
+                    .ToList();
+
+                return Json(results);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = "搜尋失敗", message = ex.Message });
+            }
+        }
+
+    }
+
+    // 篩選條件資料模型
+    public class UserFilterRequest 
+    {
+        public string? Keyword { get; set; }
+        public string? SearchField { get; set; }
+        public string? VerificationStatus { get; set; }
+        public string? AccountStatus { get; set; }
+        public string? Gender { get; set; }
+        public bool? IsLandlord { get; set; }
+        public int? ResidenceCityId { get; set; }
+        public int? PrimaryRentalCityId { get; set; }
+        public DateTime? RegisterDateStart { get; set; }
+        public DateTime? RegisterDateEnd { get; set; }
+        public DateTime? LastLoginDateStart { get; set; }
+        public DateTime? LastLoginDateEnd { get; set; }
+        public DateTime? ApplyDateStart { get; set; }
+        public DateTime? ApplyDateEnd { get; set; }
     }
 
 

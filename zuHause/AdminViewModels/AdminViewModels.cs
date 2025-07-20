@@ -44,6 +44,24 @@ namespace zuHause.AdminViewModels
             };
         }
 
+        public AdminUserListViewModel(ZuHauseContext context, bool landlordsOnly)
+        {
+            PageTitle = landlordsOnly ? "房東管理" : "會員管理";
+            Items = LoadUsersFromDatabase(context, landlordsOnly);
+            TotalCount = Items.Count;
+            PendingVerificationUsers = LoadPendingVerificationUsers(context, landlordsOnly);
+            PendingLandlordUsers = LoadPendingLandlordUsers(context, landlordsOnly);
+            
+            // 批量操作設定
+            BulkConfig = new BulkActionConfig
+            {
+                SelectAllId = "selectAllUsers",
+                CheckboxClass = "user-checkbox",
+                BulkButtonId = "bulkMessageBtn",
+                BulkButtonText = "批量發送訊息"
+            };
+        }
+
         public List<MemberData> PendingVerificationUsers { get; set; } = new List<MemberData>();
         public List<MemberData> PendingLandlordUsers { get; set; } = new List<MemberData>();
 
@@ -57,7 +75,19 @@ namespace zuHause.AdminViewModels
 
         private List<MemberData> LoadUsersFromDatabase(ZuHauseContext context)
         {
-            var members = context.Members
+            return LoadUsersFromDatabase(context, false);
+        }
+
+        private List<MemberData> LoadUsersFromDatabase(ZuHauseContext context, bool landlordsOnly)
+        {
+            var query = context.Members.AsQueryable();
+            
+            if (landlordsOnly)
+            {
+                query = query.Where(m => m.IsLandlord);
+            }
+            
+            var members = query
                 .OrderByDescending(m => m.CreatedAt)
                 .Select(m => new 
                 {
@@ -96,14 +126,26 @@ namespace zuHause.AdminViewModels
 
         private List<MemberData> LoadPendingVerificationUsers(ZuHauseContext context)
         {
-            var pendingUsers = context.Members
+            return LoadPendingVerificationUsers(context, false);
+        }
+
+        private List<MemberData> LoadPendingVerificationUsers(ZuHauseContext context, bool landlordsOnly)
+        {
+            var query = context.Members
                 .Join(context.Approvals,
                       m => m.MemberId,
                       a => a.ApplicantMemberId,
                       (m, a) => new { Member = m, Approval = a })
                 .Where(x => x.Member.IsActive && 
                            x.Approval.ModuleCode == "IDENTITY" && 
-                           x.Approval.StatusCode == "PENDING")
+                           x.Approval.StatusCode == "PENDING");
+
+            if (landlordsOnly)
+            {
+                query = query.Where(x => x.Member.IsLandlord);
+            }
+
+            var pendingUsers = query
                 .OrderBy(x => x.Approval.CreatedAt)
                 .Select(x => new MemberData
                 {
@@ -130,14 +172,26 @@ namespace zuHause.AdminViewModels
 
         private List<MemberData> LoadPendingLandlordUsers(ZuHauseContext context)
         {
-            var pendingLandlords = context.Members
+            return LoadPendingLandlordUsers(context, false);
+        }
+
+        private List<MemberData> LoadPendingLandlordUsers(ZuHauseContext context, bool landlordsOnly)
+        {
+            var query = context.Members
                 .Join(context.Approvals,
                       m => m.MemberId,
                       a => a.ApplicantMemberId,
                       (m, a) => new { Member = m, Approval = a })
                 .Where(x => x.Member.IsActive && 
                            x.Approval.ModuleCode == "LANDLORD" && 
-                           x.Approval.StatusCode == "PENDING")
+                           x.Approval.StatusCode == "PENDING");
+
+            if (landlordsOnly)
+            {
+                query = query.Where(x => x.Member.IsLandlord);
+            }
+
+            var pendingLandlords = query
                 .OrderBy(x => x.Approval.CreatedAt)
                 .Select(x => new MemberData
                 {
@@ -241,12 +295,12 @@ namespace zuHause.AdminViewModels
         }
     }
 
-    // 物業管理相關 ViewModels
+    // 房源管理相關 ViewModels
     public class AdminPropertyListViewModel : BaseListViewModel<PropertyData>
     {
         public AdminPropertyListViewModel()
         {
-            PageTitle = "物業管理";
+            PageTitle = "房源管理";
             Items = GenerateMockProperties();
             TotalCount = Items.Count;
             

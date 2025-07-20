@@ -10,6 +10,8 @@
     var tableTitle = ViewData["TableTitle"] as string ?? "會員列表";
     var paginationLabel = ViewData["PaginationLabel"] as string ?? "會員分頁";
     var users = ViewData["Users"] as IEnumerable<MemberData> ?? new List<MemberData>();
+    var hideVerificationStatus = ViewData["HideVerificationStatus"] as bool? ?? false;
+    var hideLandlordStatus = ViewData["HideLandlordStatus"] as bool? ?? false;
 }
 
 <div class="card mt-3">
@@ -67,8 +69,14 @@
                                 上次登入時間 
                                 <i class="bi bi-sort-up-alt sort-icon" data-direction="none"></i>
                             </th>
-                            <th>身分驗證狀態</th>
-                            <th>是否房東</th>
+                            @if (!hideVerificationStatus)
+                            {
+                                <th>身分驗證狀態</th>
+                            }
+                            @if (!hideLandlordStatus)
+                            {
+                                <th>是否房東</th>
+                            }
                         }
                         <th>帳號狀態</th>
                         <th>操作</th>
@@ -101,30 +109,36 @@
                                 </td>
                                 <td>@user.RegistrationDate</td>
                                 <td>@user.LastLoginTime</td>
-                                <td>
-                                    @if (user.VerificationStatus == "verified")
-                                    {
-                                        <span class="badge bg-success">已驗證</span>
-                                    }
-                                    else if (user.VerificationStatus == "pending")
-                                    {
-                                        <span class="badge bg-warning">等待驗證</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge bg-secondary">尚未驗證</span>
-                                    }
-                                </td>
-                                <td>
-                                    @if (user.IsLandlord)
-                                    {
-                                        <span class="badge bg-info">是</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge bg-secondary">否</span>
-                                    }
-                                </td>
+                                @if (!hideVerificationStatus)
+                                {
+                                    <td>
+                                        @if (user.VerificationStatus == "verified")
+                                        {
+                                            <span class="badge bg-success">已驗證</span>
+                                        }
+                                        else if (user.VerificationStatus == "pending")
+                                        {
+                                            <span class="badge bg-warning">等待驗證</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">尚未驗證</span>
+                                        }
+                                    </td>
+                                }
+                                @if (!hideLandlordStatus)
+                                {
+                                    <td>
+                                        @if (user.IsLandlord)
+                                        {
+                                            <span class="badge bg-info">是</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">否</span>
+                                        }
+                                    </td>
+                                }
                                 <td>
                                     @if (user.AccountStatus == "active")
                                     {

@@ -100,5 +100,5 @@ app.MapControllers();
 // 亂碼請修正 FurnitureController �� FurnitureHomePage
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Tenant}/{action=Search}/{id?}");
+    pattern: "{controller=admin}/{action=index}/{id?}");
 app.Run();

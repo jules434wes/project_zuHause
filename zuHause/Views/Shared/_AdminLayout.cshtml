@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - zuHause 管理平台</title>
+    
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Admin Styles -->
+    <link href="~/css/admin-style.css" rel="stylesheet" />
+    <!-- Site Styles -->
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/zuHause.styles.css" asp-append-version="true" />
+</head>
+<body class="admin-body">
+    <!-- 側邊導航欄 -->
+    <nav class="admin-sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-brand">
+                <i class="bi bi-house-gear"></i>
+                <span class="brand-text">zuHause</span>
+                <span class="brand-subtitle">管理平台</span>
+            </div>
+        </div>
+        
+        <div class="sidebar-content">
+            <ul class="sidebar-nav">
+                <li class="nav-section-title">
+                    <span>會員管理</span>
+                </li>
+                <li class="nav-item">
+                    <a href="@Url.Action("admin_userslist", "Admin")" class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "admin_userslist" ? "active" : "")">
+                        <i class="bi bi-people"></i>
+                        <span>會員列表</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="@Url.Action("admin_landlordList", "Admin")" class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "admin_landlordList" ? "active" : "")">
+                        <i class="bi bi-person-badge"></i>
+                        <span>房東管理</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="@Url.Action("admin_userDetails", "Admin", new { id = 1 })" class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "admin_userDetails" ? "active" : "")">
+                        <i class="bi bi-person-gear"></i>
+                        <span>會員詳情</span>
+                    </a>
+                </li>
+                
+                <li class="nav-section-title">
+                    <span>房源管理</span>
+                </li>
+                <li class="nav-item">
+                    <a href="@Url.Action("admin_propertiesList", "Admin")" class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "admin_propertiesList" ? "active" : "")">
+                        <i class="bi bi-buildings"></i>
+                        <span>房源列表</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="@Url.Action("admin_propertyDetails", "Admin")" class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "admin_propertyDetails" ? "active" : "")">
+                        <i class="bi bi-building"></i>
+                        <span>房源詳情</span>
+                    </a>
+                </li>
+                
+                <li class="nav-section-title">
+                    <span>客服管理</span>
+                </li>
+                <li class="nav-item">
+                    <a href="@Url.Action("admin_customerServiceList", "Admin")" class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "admin_customerServiceList" ? "active" : "")">
+                        <i class="bi bi-headset"></i>
+                        <span>客服案件</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="@Url.Action("admin_customerServiceDetails", "Admin")" class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "admin_customerServiceDetails" ? "active" : "")">
+                        <i class="bi bi-chat-dots"></i>
+                        <span>案件詳情</span>
+                    </a>
+                </li>
+                
+                <li class="nav-section-title">
+                    <span>系統管理</span>
+                </li>
+                <li class="nav-item">
+                    <a href="@Url.Action("admin_systemMessageList", "Admin")" class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "admin_systemMessageList" ? "active" : "")">
+                        <i class="bi bi-envelope"></i>
+                        <span>系統訊息</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="@Url.Action("admin_systemMessageNew", "Admin")" class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "admin_systemMessageNew" ? "active" : "")">
+                        <i class="bi bi-plus-circle"></i>
+                        <span>新增訊息</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+        
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar">
+                    <i class="bi bi-person-circle"></i>
+                </div>
+                <div class="user-details">
+                    <div class="user-name">管理員</div>
+                    <div class="user-role">系統管理員</div>
+                </div>
+            </div>
+            <div class="logout-section">
+                <a href="@Url.Action("Index", "Home")" class="logout-link">
+                    <i class="bi bi-box-arrow-right"></i>
+                    <span>登出</span>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主要內容區域 -->
+    <main class="admin-main">
+        <!-- 頂部導航欄 -->
+        <header class="admin-header">
+            <div class="header-left">
+                <button class="sidebar-toggle" id="sidebarToggle">
+                    <i class="bi bi-list"></i>
+                </button>
+                <div class="breadcrumb-section">
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item">
+                                <a href="@Url.Action("Index", "Admin")">
+                                    <i class="bi bi-house"></i> 首頁
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">
+                                @ViewData["Title"]
+                            </li>
+                        </ol>
+                    </nav>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="header-actions">
+                    <button class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-bell"></i>
+                        <span class="badge bg-warning">3</span>
+                    </button>
+                    <div class="dropdown">
+                        <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-gear"></i> 設定
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-person"></i> 個人設定</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-shield-check"></i> 安全設定</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-question-circle"></i> 說明</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- 頁面內容 -->
+        <div class="admin-content">
+            @RenderBody()
+        </div>
+    </main>
+
+    <!-- JavaScript -->
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    
+    <!-- Admin Layout Script -->
+    <script>
+        $(document).ready(function() {
+            // 側邊欄切換功能
+            $('#sidebarToggle').click(function() {
+                $('.admin-sidebar').toggleClass('collapsed');
+                $('.admin-main').toggleClass('sidebar-collapsed');
+            });
+            
+            // 響應式處理
+            function handleResize() {
+                if ($(window).width() <= 768) {
+                    $('.admin-sidebar').addClass('mobile-hidden');
+                } else {
+                    $('.admin-sidebar').removeClass('mobile-hidden');
+                }
+            }
+            
+            $(window).resize(handleResize);
+            handleResize();
+            
+            // 行動版側邊欄點擊外部關閉
+            $(document).click(function(e) {
+                if ($(window).width() <= 768) {
+                    if (!$(e.target).closest('.admin-sidebar, #sidebarToggle').length) {
+                        $('.admin-sidebar').addClass('mobile-hidden');
+                    }
+                }
+            });
+            
+            // 行動版側邊欄切換
+            $('#sidebarToggle').click(function(e) {
+                e.stopPropagation();
+                if ($(window).width() <= 768) {
+                    $('.admin-sidebar').toggleClass('mobile-hidden');
+                }
+            });
+        });
+    </script>
+    
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

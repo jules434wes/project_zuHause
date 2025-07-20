@@ -162,6 +162,55 @@
         }, duration + 500);
     }
 
+    // 收集篩選條件函數
+    function collectFilterConditions(tabId) {
+        // 處理 isLandlord 欄位值轉換
+        const isLandlordValue = document.getElementById(PREFIX + 'isLandlord' + tabId)?.value || '';
+        let isLandlord = null;
+        if (isLandlordValue === 'true') isLandlord = true;
+        else if (isLandlordValue === 'false') isLandlord = false;
+        
+        // 處理城市ID轉換
+        const residenceCityIdStr = document.getElementById(PREFIX + 'residenceCityID' + tabId)?.value || '';
+        const primaryRentalCityIdStr = document.getElementById(PREFIX + 'primaryRentalCityID' + tabId)?.value || '';
+        
+        return {
+            keyword: document.getElementById(PREFIX + 'searchInput' + tabId)?.value?.trim() || '',
+            searchField: document.getElementById(PREFIX + 'searchField' + tabId)?.value || '',
+            verificationStatus: document.getElementById(PREFIX + 'verificationStatus' + tabId)?.value || '',
+            accountStatus: document.getElementById(PREFIX + 'accountStatus' + tabId)?.value || '',
+            gender: document.getElementById(PREFIX + 'gender' + tabId)?.value || '',
+            isLandlord: isLandlord,
+            residenceCityId: residenceCityIdStr ? parseInt(residenceCityIdStr) : null,
+            primaryRentalCityId: primaryRentalCityIdStr ? parseInt(primaryRentalCityIdStr) : null,
+            registerDateStart: document.getElementById(PREFIX + 'registerDateStart' + tabId)?.value || null,
+            registerDateEnd: document.getElementById(PREFIX + 'registerDateEnd' + tabId)?.value || null,
+            lastLoginDateStart: document.getElementById(PREFIX + 'lastLoginDateStart' + tabId)?.value || null,
+            lastLoginDateEnd: document.getElementById(PREFIX + 'lastLoginDateEnd' + tabId)?.value || null,
+            applyDateStart: document.getElementById(PREFIX + 'applyDateStart' + tabId)?.value || null,
+            applyDateEnd: document.getElementById(PREFIX + 'applyDateEnd' + tabId)?.value || null
+        };
+    }
+
+    // 檢查是否有任何篩選條件
+    function hasAnyFilterConditions(conditions) {
+        return !!(
+            conditions.keyword ||
+            conditions.verificationStatus ||
+            conditions.accountStatus ||
+            conditions.gender ||
+            conditions.isLandlord !== null ||
+            conditions.residenceCityId ||
+            conditions.primaryRentalCityId ||
+            conditions.registerDateStart ||
+            conditions.registerDateEnd ||
+            conditions.lastLoginDateStart ||
+            conditions.lastLoginDateEnd ||
+            conditions.applyDateStart ||
+            conditions.applyDateEnd
+        );
+    }
+
     // Dashboard 專用函數 - 搜尋功能
     function handleSearch() {
         // 執行搜尋的共用函數
@@ -174,31 +223,32 @@
                 const keyword = searchInput.value.trim();
                 const field = searchField.value;
                 
-                if (!keyword) {
-                    showToast('請輸入搜尋關鍵字', 'error');
+                // 收集所有篩選條件
+                const filterConditions = collectFilterConditions(tabId);
+                
+                // 檢查是否有任何篩選條件
+                if (!hasAnyFilterConditions(filterConditions)) {
+                    showToast('請輸入搜尋關鍵字或選擇篩選條件', 'error');
                     searchInput.focus();
                     return;
                 }
                 
                 console.log('[Dashboard] 搜尋請求:', {
                     tabId: tabId,
-                    keyword: keyword,
-                    field: field,
-                    searchInputId: searchInput.id,
-                    searchFieldId: searchField.id
+                    filterConditions: filterConditions
                 });
                 
                 // 顯示載入狀態
                 showLoadingState(searchBtn, '搜尋中...');
                 
-                // 調用 Dashboard API
-                fetch('/Dashboard/SearchUsers', {
+                // 調用新的高級搜尋 API
+                fetch('/Dashboard/AdvancedSearchUsers', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
                     },
-                    body: JSON.stringify({ keyword: keyword, searchField: field })
+                    body: JSON.stringify(filterConditions)
                 })
                 .then(response => {
                     if (!response.ok) {
@@ -276,19 +326,33 @@
         resetBtns.forEach(btn => {
             btn.addEventListener('click', function() {
                 const tabId = this.id.replace(PREFIX + 'resetBtn', '');
-                // 重置所有輸入欄位
-                const inputs = document.querySelectorAll(`[id^="${PREFIX}"][id*="${tabId}"]`);
-                inputs.forEach(input => {
-                    if (input.type === 'text' || input.type === 'date') {
-                        input.value = '';
-                    } else if (input.tagName === 'SELECT') {
-                        input.selectedIndex = 0;
-                    }
-                });
-                console.log('[Dashboard] 已重置搜尋條件');
+                performReset(tabId);
             });
         });
     }
+
+    // 執行完整重置
+    function performReset(tabId) {
+        // 1. 重置所有表單元素
+        const inputs = document.querySelectorAll(`[id^="${PREFIX}"][id*="${tabId}"]`);
+        inputs.forEach(input => {
+            if (input.type === 'text' || input.type === 'date') {
+                input.value = '';
+            } else if (input.tagName === 'SELECT') {
+                input.selectedIndex = 0;
+            } else if (input.type === 'checkbox') {
+                input.checked = false;
+            }
+        });
+
+        // 2. 清除搜尋結果並恢復原始表格內容
+        window[PREFIX + 'clearSearchResults'](tabId);
+
+        // 3. 顯示重置完成提示
+        showToast('已重置所有篩選條件', 'info');
+        console.log('[Dashboard] 已完整重置搜尋條件和結果');
+    }
+
 
     // Dashboard 專用函數 - 全選功能
     function handleSelectAll() {
@@ -410,7 +474,7 @@
     window[PREFIX + 'clearSearchResults'] = function(tabId) {
         console.log('[Dashboard] 清除搜尋結果:', tabId);
         
-        // 清空搜尋輸入框
+        // 清空所有輸入欄位（但不影響其他篩選條件，除非是重置按鈕調用）
         const searchInput = document.getElementById(PREFIX + 'searchInput' + tabId);
         if (searchInput) {
             searchInput.value = '';
@@ -432,6 +496,8 @@
             const originalContent = targetTable.getAttribute('data-original-content');
             if (originalContent) {
                 targetTable.innerHTML = originalContent;
+                // 移除搜尋結果標記
+                targetTable.removeAttribute('data-search-active');
             }
         }
         
