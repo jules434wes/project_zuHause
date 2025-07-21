@@ -1,0 +1,146 @@
+@{
+    ViewData["Title"] = ViewBag.Title ?? "圖片管理器演示系統";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="text-center mb-5">
+                <h1 class="display-4 mb-3">
+                    <i class="fas fa-images text-primary me-3"></i>圖片管理器演示系統
+                </h1>
+                <p class="lead text-muted">
+                    連動真實資料庫的圖片管理功能測試平台
+                </p>
+            </div>
+
+            <div class="card shadow-lg">
+                <div class="card-header bg-primary text-white text-center">
+                    <h3 class="mb-0">
+                        <i class="fas fa-rocket me-2"></i>功能演示
+                    </h3>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row">
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100 border-0 shadow-sm">
+                                <div class="card-body text-center">
+                                    <div class="mb-3">
+                                        <i class="fas fa-tags fa-3x text-primary"></i>
+                                    </div>
+                                    <h5 class="card-title">Tag Helper 方式</h5>
+                                    <p class="card-text text-muted">
+                                        統一圖片管理組件<br>
+                                        支援拖拽排序、主圖設定、即時預覽
+                                    </p>
+                                    <div class="mb-3">
+                                        <div class="row text-center">
+                                            <div class="col-4">
+                                                <div class="p-2">
+                                                    <i class="fas fa-magic text-primary"></i>
+                                                    <small class="d-block">一鍵配置</small>
+                                                </div>
+                                            </div>
+                                            <div class="col-4">
+                                                <div class="p-2">
+                                                    <i class="fas fa-star text-warning"></i>
+                                                    <small class="d-block">主圖設定</small>
+                                                </div>
+                                            </div>
+                                            <div class="col-4">
+                                                <div class="p-2">
+                                                    <i class="fas fa-arrows-alt text-success"></i>
+                                                    <small class="d-block">拖拽排序</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <a href="@Url.Action("PureAPISimple")" class="btn btn-primary btn-lg w-100">
+                                        <i class="fas fa-rocket me-2"></i>體驗組件
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100 border-0 shadow-sm">
+                                <div class="card-body text-center">
+                                    <div class="mb-3">
+                                        <i class="fas fa-code fa-3x text-success"></i>
+                                    </div>
+                                    <h5 class="card-title">純 API 方式</h5>
+                                    <p class="card-text text-muted">
+                                        JavaScript + SortableJS + Bootstrap Modal<br>
+                                        連動真實 Azure Blob Storage 和 SQL Database
+                                    </p>
+                                    <div class="mb-3">
+                                        <div class="row text-center">
+                                            <div class="col-4">
+                                                <div class="p-2">
+                                                    <i class="fas fa-upload text-primary"></i>
+                                                    <small class="d-block">拖曳上傳</small>
+                                                </div>
+                                            </div>
+                                            <div class="col-4">
+                                                <div class="p-2">
+                                                    <i class="fas fa-sort text-warning"></i>
+                                                    <small class="d-block">拖曳排序</small>
+                                                </div>
+                                            </div>
+                                            <div class="col-4">
+                                                <div class="p-2">
+                                                    <i class="fas fa-trash text-danger"></i>
+                                                    <small class="d-block">批量刪除</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <a href="@Url.Action("PureAPI")" class="btn btn-success btn-lg w-100">
+                                        <i class="fas fa-play me-2"></i>開始測試
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="alert alert-info mt-4">
+                <h5 class="alert-heading">
+                    <i class="fas fa-info-circle me-2"></i>測試說明
+                </h5>
+                <ul class="mb-0">
+                    <li><strong>真實資料庫連動</strong>：所有操作都會實際影響資料庫記錄</li>
+                    <li><strong>Azure 整合</strong>：圖片上傳到真實的 Blob Storage</li>
+                    <li><strong>完整功能</strong>：符合 19 項需求規格的完整實作</li>
+                    <li><strong>安全機制</strong>：Modal 確認對話框防止誤刪除</li>
+                </ul>
+            </div>
+
+            <div class="alert alert-warning mt-3">
+                <h6 class="alert-heading">
+                    <i class="fas fa-exclamation-triangle me-2"></i>注意事項
+                </h6>
+                <p class="mb-0">
+                    此為開發測試環境，請使用測試圖片進行功能驗證。
+                    所有上傳的圖片都會保存在真實的存儲系統中。
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    transition: transform 0.2s ease-in-out;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+.text-primary { color: #007bff !important; }
+.text-success { color: #28a745 !important; }
+.text-warning { color: #ffc107 !important; }
+.text-danger { color: #dc3545 !important; }
+</style>

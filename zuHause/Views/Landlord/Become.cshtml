@@ -1,4 +1,3 @@
-@model zuHause.ViewModels.LandlordApplicationViewModel
 @{
     ViewData["Title"] = "成為房東";
 }
@@ -12,147 +11,71 @@
             <i class="bi bi-building text-teal fs-3"></i>
         </div>
         <h2 class="mt-3">成為 zuHause 房東</h2>
-        <p class="text-muted">您好，@Model.MemberName！加入我們的房東社群，開始您的租屋事業</p>
+        <p class="text-muted">加入我們的房東社群，開始您的租屋事業</p>
     </div>
-    
-    <!-- Status Messages -->
-    @if (TempData["SuccessMessage"] != null)
-    {
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="bi bi-check-circle me-2"></i>@TempData["SuccessMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    }
-    
-    @if (TempData["ErrorMessage"] != null)
-    {
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="bi bi-exclamation-triangle me-2"></i>@TempData["ErrorMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    }
 
-    @if (Model.IsAlreadyLandlord)
-    {
-        <!-- Already Landlord Status -->
-        <div class="alert alert-success text-center py-4 mb-5">
-            <div class="mx-auto rounded-circle d-flex align-items-center justify-content-center mb-3"
-                 style="width:60px;height:60px;background:#d4edda">
-                <i class="bi bi-check-circle text-success fs-3"></i>
-            </div>
-            <h4 class="text-success mb-2">您已經是房東身份</h4>
-            <p class="mb-3">您可以開始刊登房源或切換到房東模式管理您的房源</p>
-            <div class="d-flex gap-3 justify-content-center">
-                <a href="/Member/SwitchRole/landlord" class="btn btn-success">切換到房東模式</a>
-                <a href="/Property/Create" class="btn btn-outline-success">刊登房源</a>
+    <!-- Benefits -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-4">
+            <div class="card text-center p-4 h-100">
+                <div class="mx-auto bg-primary bg-opacity-25 rounded-circle d-flex align-items-center justify-content-center mb-3"
+                     style="width:60px;height:60px">
+                    <i class="bi bi-shield-lock text-primary fs-4"></i>
+                </div>
+                <h5 class="fw-semibold">安全保障</h5>
+                <p class="small text-muted">完善的身份驗證機制，確保租客品質</p>
             </div>
         </div>
-    }
-    else if (!Model.CanApply)
-    {
-        <!-- Eligibility Error -->
-        <div class="alert alert-warning text-center py-4 mb-5">
-            <div class="mx-auto rounded-circle d-flex align-items-center justify-content-center mb-3"
-                 style="width:60px;height:60px;background:#fff3cd">
-                <i class="bi bi-exclamation-triangle text-warning fs-3"></i>
-            </div>
-            <h4 class="text-warning mb-2">申請資格不符</h4>
-            <p class="mb-3">@Model.ErrorMessage</p>
-            @if (Model.ErrorMessage != null && Model.ErrorMessage.Contains("完善會員資料"))
-            {
-                <a href="/Member/Profile" class="btn btn-warning">前往完善資料</a>
-            }
-        </div>
-    }
-    else
-    {
-        <!-- Benefits -->
-        <div class="row g-4 mb-5">
-            <div class="col-md-4">
-                <div class="card text-center p-4 h-100">
-                    <div class="mx-auto bg-primary bg-opacity-25 rounded-circle d-flex align-items-center justify-content-center mb-3"
-                         style="width:60px;height:60px">
-                        <i class="bi bi-shield-lock text-primary fs-4"></i>
-                    </div>
-                    <h5 class="fw-semibold">安全保障</h5>
-                    <p class="small text-muted">完善的身份驗證機制，確保租客品質</p>
+        <div class="col-md-4">
+            <div class="card text-center p-4 h-100">
+                <div class="mx-auto bg-success bg-opacity-25 rounded-circle d-flex align-items-center justify-content-center mb-3"
+                     style="width:60px;height:60px">
+                    <i class="bi bi-star text-success fs-4"></i>
                 </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card text-center p-4 h-100">
-                    <div class="mx-auto bg-success bg-opacity-25 rounded-circle d-flex align-items-center justify-content-center mb-3"
-                         style="width:60px;height:60px">
-                        <i class="bi bi-star text-success fs-4"></i>
-                    </div>
-                    <h5 class="fw-semibold">優質服務</h5>
-                    <p class="small text-muted">專業客服團隊，全程協助租屋流程</p>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card text-center p-4 h-100">
-                    <div class="mx-auto bg-purple bg-opacity-25 rounded-circle d-flex align-items-center justify-content-center mb-3"
-                         style="width:60px;height:60px">
-                        <i class="bi bi-building text-purple fs-4"></i>
-                    </div>
-                    <h5 class="fw-semibold">輕鬆管理</h5>
-                    <p class="small text-muted">簡單易用的房源管理系統</p>
-                </div>
+                <h5 class="fw-semibold">優質服務</h5>
+                <p class="small text-muted">專業客服團隊，全程協助租屋流程</p>
             </div>
         </div>
+        <div class="col-md-4">
+            <div class="card text-center p-4 h-100">
+                <div class="mx-auto bg-purple bg-opacity-25 rounded-circle d-flex align-items-center justify-content-center mb-3"
+                     style="width:60px;height:60px">
+                    <i class="bi bi-building text-purple fs-4"></i>
+                </div>
+                <h5 class="fw-semibold">輕鬆管理</h5>
+                <p class="small text-muted">簡單易用的房源管理系統</p>
+            </div>
+        </div>
+    </div>
 
-        <!-- Terms -->
-        <div class="card mb-4">
-            <div class="card-header fw-semibold">房東服務條款</div>
-            <div class="card-body small" style="max-height:280px;overflow:auto">
-                <h6>一、服務內容</h6>
-                <p>zuHause 提供線上租屋媒合平台服務，協助房東刊登房源資訊，與潛在租客進行媒合。房東透過本平台可以：</p>
-                <ul>
-                    <li>刊登房源基本資訊、照片及租屋條件</li>
-                    <li>接收並管理租屋申請</li>
-                    <li>與潛在租客進行線上溝通</li>
-                    <li>使用平台提供的合約範本及簽約功能</li>
-                </ul>
-                
-                <h6>二、房東責任與義務</h6>
-                <p>作為 zuHause 平台的房東，您需要遵守以下規範：</p>
-                <ul>
-                    <li>提供真實、完整且最新的房源資訊</li>
-                    <li>確保房源符合相關建築及消防安全法規</li>
-                    <li>依法辦理租賃登記及繳納相關稅務</li>
-                    <li>不得有歧視性租屋條件或違反公平交易法之行為</li>
-                    <li>配合平台的審核機制，提供必要之證明文件</li>
-                </ul>
-                
-                <h6>三、平台規範</h6>
-                <ul>
-                    <li>禁止刊登不實資訊或使用他人房源照片</li>
-                    <li>禁止在平台外進行交易以規避平台服務費</li>
-                    <li>尊重租客隱私，合理使用租客個人資料</li>
-                    <li>遵守平台的溝通禮儀及爭議處理機制</li>
-                </ul>
-                
-                <h6>四、服務費用</h6>
-                <p>房東使用基本刊登服務為免費，進階服務及成功媒合後收取相關服務費用，詳細費用標準請參閱平台公告。</p>
-            </div>
+    <!-- Terms -->
+    <div class="card mb-4">
+        <div class="card-header fw-semibold">房東服務條款</div>
+        <div class="card-body small" style="max-height:280px;overflow:auto">
+            <p>zuHause 提供線上租屋媒合平台服務，協助房東刊登房源資訊…（此處省略示意內容）</p>
         </div>
-        
-        <!-- Agreement Form -->
-        <form method="post" action="/landlord/agreetotems">
-            <div class="border rounded-3 p-4 mb-4 d-flex align-items-start bg-white">
-                <input class="form-check-input me-3 mt-1" type="checkbox" id="agreeChk" required />
-                <label class="form-check-label small lh-lg" for="agreeChk">
-                    我已詳細閱讀並完全同意上述房東服務條款，了解作為房東的權利與義務，願意遵守平台相關規範。
-                </label>
-            </div>
-            
-            <div class="text-center">
-                <button type="submit" class="btn btn-teal px-5 py-2 fs-5 rounded-3" style="width:160px"
-                        disabled id="submitBtn">
-                    成為房東
-                </button>
-            </div>
-        </form>
-    }
+    </div>
+
+        <!-- Agree -->
+-    <div class="form-check mb-4">
+-        <input class="form-check-input" type="checkbox" id="agreeChk" />
+-        <label class="form-check-label small" for="agreeChk">我已閱讀並同意房東服務條款</label>
+-    </div>
+-
+-    <button class="btn btn-teal w-100" disabled id="submitBtn">成為房東</button>
++    <div class="border rounded-3 p-4 mb-4 d-flex align-items-start bg-white">
++        <input class="form-check-input me-3 mt-1" type="checkbox" id="agreeChk" />
++        <label class="form-check-label small lh-lg" for="agreeChk">
++            我已詳細閱讀並完全同意上述房東服務條款，了解作為房東的權利與義務，願意遵守平台相關規範。
++        </label>
++    </div>
++
++    <div class="text-center">
++        <button class="btn btn-teal px-5 py-2 fs-5 rounded-3" style="width:160px"
++                disabled id="submitBtn">
++            成為房東
++        </button>
++    </div>
 
 @section Styles {
     <style>
@@ -164,14 +87,9 @@
 }
 
 @section Scripts {
-    @if (Model.CanApply && !Model.IsAlreadyLandlord)
-    {
-        <script>
-            const chk=document.getElementById('agreeChk');
-            const btn=document.getElementById('submitBtn');
-            if (chk && btn) {
-                chk.addEventListener('change',()=>btn.disabled=!chk.checked);
-            }
-        </script>
-    }
+    <script>
+        const chk=document.getElementById('agreeChk');
+        const btn=document.getElementById('submitBtn');
+        chk.addEventListener('change',()=>btn.disabled=!chk.checked);
+    </script>
 } 
