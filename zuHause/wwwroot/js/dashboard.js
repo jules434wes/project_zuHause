@@ -15,6 +15,7 @@ const tabNames = {
     system: "🛠️ 系統通知與健康",
     roles: "🛡️ 身分權限列表",
     Backend_user_list: "👨‍💻 後臺使用者",
+    //member_management: "👥 前台會員管理",
     contract_template: "📄 合約範本管理",
     platform_fee: "💰 平台收費設定",
     imgup: "🖼️ 輪播圖片管理",
@@ -24,11 +25,16 @@ const tabNames = {
 };
 
 // ====== 分組設定 ======
+// 注意：分組順序會影響左側選單的顯示順序
 const tabGroups = {
     Dashboard: {
         title: "📊 儀表板",
         keys: ['overview', 'monitor', 'behavior', 'orders', 'system']
     },
+    //Platform: {
+    //    title: "🏢 平台功能管理",
+    //    keys: ['member_management']
+    //},
     Permission: {
         title: "🛡️ 權限管理",
         keys: ['roles', 'Backend_user_list']
@@ -142,6 +148,7 @@ function openTab(tabKey) {
                 system: `/js/system.js?v=${timestamp}`,
                 roles: `/js/roles.js?v=${timestamp}`,
                 Backend_user_list: `/js/Backend_user_list.js?v=${timestamp}`,
+                //member_management: `/js/member_management.js?v=${timestamp}`,
                 contract_template: `/js/contract_template.js?v=${timestamp}`,
                 platform_fee: `/js/platform_fee.js?v=${timestamp}`,
                 imgup: `/js/imgup.js?v=${timestamp}`,
@@ -161,6 +168,9 @@ function openTab(tabKey) {
                     if (tabKey === "Backend_user_list" && typeof renderUserTable === "function") {
                         renderUserTable();
                     }
+                    //if (tabKey === "member_management" && typeof initMemberManagement === "function") {
+                    //    initMemberManagement();
+                    //}
                     if (tabKey === "contract_template") {
                         if (typeof renderTemplateList === "function") renderTemplateList();
                         if (typeof bindContractUploadEvents === "function") bindContractUploadEvents(); // 👈 這要新增

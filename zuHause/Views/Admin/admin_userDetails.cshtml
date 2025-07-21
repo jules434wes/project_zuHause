@@ -2,6 +2,7 @@
 @{
     ViewData["Title"] = Model.PageTitle;
     ViewData["MemberData"] = Model.Data;
+    Layout = "_AdminLayout";
 }
 
 <!-- Bootstrap Icons CDN -->
@@ -9,7 +10,7 @@
 <!-- Admin Styles -->
 <link href="~/css/admin-style.css" rel="stylesheet" />
 
-<div class="container-fluid fade-in">
+<div class="container-fluid fade-in" style="margin-bottom: 120px; padding-bottom: 40px;">
     @await Html.PartialAsync("_AdminPartial/_UserDetails/_HeaderSection")
     @await Html.PartialAsync("_AdminPartial/_UserDetails/_TabNavigation")
 

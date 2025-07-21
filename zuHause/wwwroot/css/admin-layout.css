@@ -1,0 +1,572 @@
+/* Admin Layout 專用樣式 - 避免與內容樣式衝突 */
+
+/* ========================== */
+/* Admin Layout 基礎設定      */
+/* ========================== */
+
+.admin-layout {
+    margin: 0;
+    padding: 0;
+    background-color: #f9fafb;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    overflow-x: hidden;
+}
+
+/* ========================== */
+/* 側邊導航欄                  */
+/* ========================== */
+
+.admin-layout .admin-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 280px;
+    height: 100vh;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    border-right: 1px solid #e5e7eb;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    z-index: 1040;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+.admin-layout .admin-sidebar.collapsed {
+    width: 80px;
+}
+
+.admin-layout .admin-sidebar.mobile-hidden {
+    transform: translateX(-100%);
+}
+
+/* 側邊欄標題區域 */
+.admin-layout .sidebar-header {
+    padding: 1.5rem 1.25rem;
+    border-bottom: 1px solid #e5e7eb;
+    background: rgba(37, 129, 100, 0.02);
+}
+
+.admin-layout .sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    transition: all 0.3s ease;
+}
+
+.admin-layout .sidebar-brand i {
+    font-size: 1.75rem;
+    color: #258164;
+    transition: all 0.3s ease;
+}
+
+.admin-layout .brand-text {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #258164;
+    line-height: 1;
+    transition: all 0.3s ease;
+}
+
+.admin-layout .brand-subtitle {
+    font-size: 0.75rem;
+    color: #4b5563;
+    margin-left: -0.5rem;
+    opacity: 0.8;
+    transition: all 0.3s ease;
+}
+
+.admin-layout .admin-sidebar.collapsed .brand-text,
+.admin-layout .admin-sidebar.collapsed .brand-subtitle {
+    opacity: 0;
+    transform: scale(0.8);
+}
+
+/* 側邊欄內容區域 */
+.admin-layout .sidebar-content {
+    flex: 1;
+    padding: 1rem 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.admin-layout .sidebar-nav {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+/* 導航區段標題 */
+.admin-layout .nav-section-title {
+    padding: 0.75rem 1.25rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #4b5563;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    transition: all 0.3s ease;
+}
+
+.admin-layout .admin-sidebar.collapsed .nav-section-title span {
+    opacity: 0;
+}
+
+.admin-layout .admin-sidebar.collapsed .nav-section-title::after {
+    content: '';
+    display: block;
+    width: 20px;
+    height: 1px;
+    background-color: #e5e7eb;
+    margin: 0.5rem auto;
+}
+
+/* 導航項目 - 僅限側邊欄 */
+.admin-layout .sidebar-nav .nav-item {
+    margin: 0 0.75rem 0.25rem;
+}
+
+.admin-layout .sidebar-nav .nav-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.875rem 1rem;
+    color: #4b5563;
+    text-decoration: none;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.admin-layout .sidebar-nav .nav-link i {
+    font-size: 1.125rem;
+    width: 1.25rem;
+    text-align: center;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+}
+
+.admin-layout .sidebar-nav .nav-link span {
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.admin-layout .admin-sidebar.collapsed .sidebar-nav .nav-link span {
+    opacity: 0;
+    transform: translateX(-10px);
+}
+
+.admin-layout .admin-sidebar.collapsed .sidebar-nav .nav-link {
+    justify-content: center;
+    padding: 0.875rem 0.5rem;
+}
+
+/* 導航項目懸停效果 */
+.admin-layout .sidebar-nav .nav-link:hover {
+    background: linear-gradient(135deg, rgba(37, 129, 100, 0.08), rgba(37, 129, 100, 0.12));
+    color: #258164;
+    transform: translateX(2px);
+}
+
+.admin-layout .sidebar-nav .nav-link:hover i {
+    transform: scale(1.1);
+    color: #258164;
+}
+
+/* 活動狀態 */
+.admin-layout .sidebar-nav .nav-link.active {
+    background: linear-gradient(135deg, rgba(37, 129, 100, 0.15), rgba(37, 129, 100, 0.1));
+    color: #258164;
+    font-weight: 600;
+    box-shadow: inset 3px 0 0 #258164;
+}
+
+.admin-layout .sidebar-nav .nav-link.active i {
+    color: #258164;
+}
+
+/* 側邊欄底部 */
+.admin-layout .sidebar-footer {
+    border-top: 1px solid #e5e7eb;
+    padding: 1rem 1.25rem;
+    background: rgba(37, 129, 100, 0.02);
+}
+
+.admin-layout .user-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.admin-layout .user-avatar i {
+    font-size: 1.75rem;
+    color: #4b5563;
+}
+
+.admin-layout .user-details {
+    flex: 1;
+    transition: all 0.3s ease;
+}
+
+.admin-layout .user-name {
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: #374151;
+    line-height: 1.2;
+}
+
+.admin-layout .user-role {
+    font-size: 0.75rem;
+    color: #4b5563;
+    opacity: 0.8;
+}
+
+.admin-layout .admin-sidebar.collapsed .user-details {
+    opacity: 0;
+    transform: scale(0.8);
+}
+
+.admin-layout .logout-section {
+    transition: all 0.3s ease;
+}
+
+.admin-layout .logout-link {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    color: #4b5563;
+    text-decoration: none;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+    font-size: 0.875rem;
+    justify-content: center;
+}
+
+.admin-layout .logout-link:hover {
+    background-color: rgba(234, 84, 85, 0.1);
+    color: #ea5455;
+}
+
+.admin-layout .logout-link i {
+    font-size: 1rem;
+}
+
+.admin-layout .admin-sidebar.collapsed .logout-link span {
+    opacity: 0;
+}
+
+/* ========================== */
+/* 主要內容區域                */
+/* ========================== */
+
+.admin-layout .admin-main {
+    margin-left: 280px;
+    min-height: 100vh;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+.admin-layout .admin-main.sidebar-collapsed {
+    margin-left: 80px;
+}
+
+/* 頂部導航欄 */
+.admin-layout .admin-header {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid #e5e7eb;
+    padding: 1rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 1030;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.admin-layout .header-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.admin-layout .sidebar-toggle {
+    background: none;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    padding: 0.5rem;
+    color: #4b5563;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.admin-layout .sidebar-toggle:hover {
+    background-color: rgba(37, 129, 100, 0.1);
+    border-color: #258164;
+    color: #258164;
+}
+
+.admin-layout .sidebar-toggle i {
+    font-size: 1.25rem;
+}
+
+.admin-layout .breadcrumb-section {
+    margin: 0;
+}
+
+.admin-layout .breadcrumb {
+    margin: 0;
+    padding: 0;
+    background: none;
+    font-size: 0.875rem;
+}
+
+.admin-layout .breadcrumb-item {
+    display: flex;
+    align-items: center;
+}
+
+.admin-layout .breadcrumb-item a {
+    color: #4b5563;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.admin-layout .breadcrumb-item a:hover {
+    color: #258164;
+}
+
+.admin-layout .breadcrumb-item.active {
+    color: #374151;
+    font-weight: 500;
+}
+
+.admin-layout .breadcrumb-item + .breadcrumb-item::before {
+    content: ">";
+    padding: 0 0.5rem;
+    color: #4b5563;
+    opacity: 0.6;
+}
+
+.admin-layout .header-right {
+    display: flex;
+    align-items: center;
+}
+
+.admin-layout .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.admin-layout .header-actions .btn {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    position: relative;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border: none;
+}
+
+.admin-layout .header-actions .btn:hover {
+    transform: translateY(-1px);
+}
+
+.admin-layout .header-actions .badge {
+    position: absolute;
+    top: -0.25rem;
+    right: -0.25rem;
+    font-size: 0.65rem;
+    min-width: 1.25rem;
+    height: 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* 頁面內容區域 */
+.admin-layout .admin-content {
+    flex: 1;
+    padding: 1.5rem;
+    background-color: #f9fafb;
+}
+
+/* ========================== */
+/* 響應式設計                  */
+/* ========================== */
+
+@media (max-width: 1200px) {
+    .admin-layout .admin-sidebar {
+        width: 260px;
+    }
+    
+    .admin-layout .admin-main {
+        margin-left: 260px;
+    }
+    
+    .admin-layout .admin-main.sidebar-collapsed {
+        margin-left: 80px;
+    }
+}
+
+@media (max-width: 992px) {
+    .admin-layout .admin-sidebar {
+        width: 240px;
+    }
+    
+    .admin-layout .admin-main {
+        margin-left: 240px;
+    }
+}
+
+@media (max-width: 768px) {
+    .admin-layout .admin-sidebar {
+        width: 280px;
+        transform: translateX(-100%);
+    }
+    
+    .admin-layout .admin-sidebar.mobile-show {
+        transform: translateX(0);
+    }
+    
+    .admin-layout .admin-main {
+        margin-left: 0;
+    }
+    
+    .admin-layout .admin-main.sidebar-collapsed {
+        margin-left: 0;
+    }
+    
+    .admin-layout .admin-header {
+        padding: 1rem;
+    }
+    
+    .admin-layout .admin-content {
+        padding: 1rem;
+    }
+    
+    .admin-layout .sidebar-toggle {
+        display: flex;
+    }
+}
+
+@media (max-width: 576px) {
+    .admin-layout .header-left {
+        gap: 0.5rem;
+    }
+    
+    .admin-layout .breadcrumb {
+        font-size: 0.75rem;
+    }
+    
+    .admin-layout .header-actions {
+        gap: 0.5rem;
+    }
+    
+    .admin-layout .header-actions .btn {
+        padding: 0.375rem 0.5rem;
+        font-size: 0.75rem;
+    }
+}
+
+/* ========================== */
+/* 動畫效果                    */
+/* ========================== */
+
+@keyframes slideInLeft {
+    from {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.admin-layout .admin-sidebar {
+    animation: slideInLeft 0.3s ease-out;
+}
+
+/* 捲軸樣式自訂 */
+.admin-layout .sidebar-content::-webkit-scrollbar {
+    width: 4px;
+}
+
+.admin-layout .sidebar-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.admin-layout .sidebar-content::-webkit-scrollbar-thumb {
+    background: rgba(75, 85, 99, 0.3);
+    border-radius: 2px;
+}
+
+.admin-layout .sidebar-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(75, 85, 99, 0.5);
+}
+
+/* 工具提示針對收縮狀態 */
+.admin-layout .admin-sidebar.collapsed .sidebar-nav .nav-link {
+    position: relative;
+}
+
+.admin-layout .admin-sidebar.collapsed .sidebar-nav .nav-link::after {
+    content: attr(title);
+    position: absolute;
+    left: calc(100% + 0.5rem);
+    top: 50%;
+    transform: translateY(-50%);
+    background: #374151;
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.5rem;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.3s ease;
+    z-index: 1050;
+}
+
+.admin-layout .admin-sidebar.collapsed .sidebar-nav .nav-link:hover::after {
+    opacity: 1;
+}
+
+/* 下拉選單增強 */
+.admin-layout .header-actions .dropdown-menu {
+    border: none;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    border-radius: 0.875rem;
+    margin-top: 0.5rem;
+    min-width: 200px;
+}
+
+.admin-layout .header-actions .dropdown-item {
+    padding: 0.75rem 1rem;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.admin-layout .header-actions .dropdown-item:hover {
+    background-color: rgba(37, 129, 100, 0.1);
+    color: #258164;
+}
+
+.admin-layout .header-actions .dropdown-item i {
+    width: 1rem;
+    font-size: 0.875rem;
+}

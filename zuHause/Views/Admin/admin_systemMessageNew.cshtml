@@ -1,7 +1,7 @@
 @model AdminSystemMessageNewViewModel
 @{
     ViewData["Title"] = Model.PageTitle;
-    Layout = "~/Views/Shared/_Layout.cshtml";
+    Layout = "_AdminLayout";
 }
 
 <!-- Bootstrap Icons CDN -->
@@ -9,7 +9,7 @@
 <!-- Admin Styles -->
 <link href="~/css/admin-style.css" rel="stylesheet" />
 
-<div class="container-fluid fade-in">
+<div class="container-fluid fade-in" style="margin-bottom: 120px; padding-bottom: 40px;">
     <div class="row">
         <div class="col-12">
             <!-- Header Section -->

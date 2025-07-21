@@ -1,0 +1,413 @@
+@model AdminUserListViewModel
+@{
+    ViewData["Title"] = "房東管理";
+    Layout = "_AdminLayout";
+
+}
+
+<!-- Bootstrap Icons CDN -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+<!-- Admin Styles -->
+<link href="~/css/admin-style.css" rel="stylesheet" />
+
+<div class="container-fluid fade-in" style="margin-bottom: 120px; padding-bottom: 40px;">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0">房東管理</h2>
+            </div>
+            
+            <ul class="nav nav-tabs" id="landlordTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="all-landlords-tab" data-bs-toggle="tab" data-bs-target="#all-landlords" type="button" role="tab" aria-controls="all-landlords" aria-selected="true">
+                        全部房東 <span class="badge badge-subtle-primary ms-2">@Model.TotalCount</span>
+                    </button>
+                </li>
+            </ul>
+
+            <div class="tab-content" id="landlordTabsContent">
+                <!-- 全部房東分頁 -->
+                <div class="tab-pane fade show active" id="all-landlords" role="tabpanel" aria-labelledby="all-landlords-tab">
+                    <!-- 房東管理自定義篩選區 -->
+                    <div class="card mt-3">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">房東篩選</h5>
+                            <button type="button" class="btn btn-outline-info btn-sm" id="advancedSearchBtn">
+                                <i class="fas fa-chevron-down"></i> 進階篩選
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <form>
+                                <!-- 基本搜尋列 -->
+                                <div class="row g-3 mb-3">
+                                    <!-- 關鍵字搜尋 8/12 -->
+                                    <div class="col-md-8">
+                                        <label for="searchInput" class="form-label">關鍵字搜尋</label>
+                                        <div class="input-group">
+                                            <input type="text" class="form-control" placeholder="搜尋關鍵字..." id="searchInput">
+                                            <select class="form-select" id="searchField" style="max-width: 150px;">
+                                                <option value="memberID">會員ID</option>
+                                                <option value="memberName">姓名</option>
+                                                <option value="email">電子郵件</option>
+                                                <option value="phoneNumber">手機號碼</option>
+                                                <option value="nationalIdNo">身分證字號</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- 帳戶狀態 2/12 -->
+                                    <div class="col-md-2">
+                                        <label for="accountStatus" class="form-label">帳戶狀態</label>
+                                        <select class="form-select" id="accountStatus">
+                                            <option value="">全部</option>
+                                            <option value="active">啟用中</option>
+                                            <option value="inactive">停用</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <!-- 按鈕區域 2/12 -->
+                                    <div class="col-md-2">
+                                        <label class="form-label d-block">&nbsp;</label>
+                                        <div class="d-flex gap-2">
+                                            <button type="button" class="btn btn-primary" id="searchBtn">
+                                                <i class="bi bi-search"></i> 搜尋
+                                            </button>
+                                            <button type="button" class="btn btn-outline-secondary" id="resetBtn">
+                                                <i class="bi bi-arrow-clockwise"></i> 重置
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- 進階搜尋摺疊區域 -->
+                                <div class="collapse" id="advancedSearchCollapse">
+                                    <div class="border-top pt-3">
+                                        <div class="row g-3">
+                                            <div class="col-md-2">
+                                                <label for="gender" class="form-label">性別</label>
+                                                <select class="form-select" id="gender">
+                                                    <option value="">全部</option>
+                                                    <option value="1">男性</option>
+                                                    <option value="2">女性</option>
+                                                    <option value="other">其他</option>
+                                                </select>
+                                            </div>
+                                            
+                                            <div class="col-md-2">
+                                                <label for="residenceCityID" class="form-label">居住縣市</label>
+                                                <select class="form-select" id="residenceCityID">
+                                                    <option value="">全部</option>
+                                                </select>
+                                            </div>
+                                            
+                                            <div class="col-md-4">
+                                                <label class="form-label">註冊日期範圍</label>
+                                                <div class="input-group">
+                                                    <input type="date" class="form-control" id="registerDateStart" placeholder="開始日期">
+                                                    <span class="input-group-text">至</span>
+                                                    <input type="date" class="form-control" id="registerDateEnd" placeholder="結束日期">
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="col-md-4">
+                                                <label class="form-label">最後登入日期範圍</label>
+                                                <div class="input-group">
+                                                    <input type="date" class="form-control" id="lastLoginDateStart" placeholder="開始日期">
+                                                    <span class="input-group-text">至</span>
+                                                    <input type="date" class="form-control" id="lastLoginDateEnd" placeholder="結束日期">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    @{
+                        ViewData["TableType"] = "all";
+                        ViewData["CheckboxClass"] = Model.BulkConfig.CheckboxClass;
+                        ViewData["BulkBtnId"] = Model.BulkConfig.BulkButtonId;
+                        ViewData["SelectAllId"] = Model.BulkConfig.SelectAllId;
+                        ViewData["PaginationLabel"] = "房東分頁";
+                        ViewData["Users"] = Model.Items;
+                        ViewData["HideVerificationStatus"] = true;
+                        ViewData["HideLandlordStatus"] = true;
+                    }
+                    @await Html.PartialAsync("_AdminPartial/_UserManagement/_UserTable")
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/admin_js/user-management.js"></script>
+    <script>
+        $(document).ready(function() {
+            // 進階篩選摺疊功能
+            $('#advancedSearchBtn').click(function() {
+                var collapse = $('#advancedSearchCollapse');
+                var icon = $(this).find('i');
+                
+                collapse.collapse('toggle');
+                
+                collapse.on('shown.bs.collapse', function() {
+                    icon.removeClass('fa-chevron-down').addClass('fa-chevron-up');
+                });
+                
+                collapse.on('hidden.bs.collapse', function() {
+                    icon.removeClass('fa-chevron-up').addClass('fa-chevron-down');
+                });
+            });
+
+            // 載入縣市資料
+            loadCityData();
+            
+            // 搜尋功能
+            $('#searchBtn').click(function() {
+                performSearch();
+            });
+            
+            // 重置功能
+            $('#resetBtn').click(function() {
+                resetFilters();
+            });
+            
+            // Enter 鍵搜尋
+            $('#searchInput').keypress(function(e) {
+                if (e.which == 13) {
+                    performSearch();
+                    return false;
+                }
+            });
+
+            // 頁面大小變更
+            $(document).on('change', '.page-size-selector', function() {
+                performSearch();
+            });
+
+            // 頁面載入時執行初始搜尋
+            performSearch();
+        });
+
+        function loadCityData() {
+            $.get('/Admin/GetCities', function(data) {
+                var select = $('#residenceCityID');
+                select.empty().append('<option value="">全部</option>');
+                
+                $.each(data, function(index, city) {
+                    select.append('<option value="' + city.id + '">' + city.name + '</option>');
+                });
+            }).fail(function() {
+                console.log('載入縣市資料失敗');
+            });
+        }
+
+        function performSearch() {
+            var formData = {
+                keyword: $('#searchInput').val().trim(),
+                searchField: $('#searchField').val(),
+                accountStatus: $('#accountStatus').val(),
+                gender: $('#gender').val() ? parseInt($('#gender').val()) : null,
+                residenceCityID: $('#residenceCityID').val() ? parseInt($('#residenceCityID').val()) : null,
+                registerDateStart: $('#registerDateStart').val() || null,
+                registerDateEnd: $('#registerDateEnd').val() || null,
+                lastLoginDateStart: $('#lastLoginDateStart').val() || null,
+                lastLoginDateEnd: $('#lastLoginDateEnd').val() || null,
+                page: 1,
+                pageSize: parseInt($('.page-size-selector').val()) || 10
+            };
+
+            // 顯示載入狀態
+            showLoadingState();
+
+            $.ajax({
+                url: '/Admin/FilterLandlords',
+                type: 'POST',
+                data: formData,
+                success: function(response) {
+                    if (response.success) {
+                        updateTable(response.data);
+                        updatePagination(response);
+                        updateResultInfo(response);
+                    } else {
+                        showErrorMessage(response.message);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    showErrorMessage('搜尋請求失敗：' + error);
+                },
+                complete: function() {
+                    hideLoadingState();
+                }
+            });
+        }
+
+        function resetFilters() {
+            // 重置所有篩選器
+            $('#searchInput').val('');
+            $('#searchField').val('memberID');
+            $('#accountStatus').val('');
+            $('#gender').val('');
+            $('#residenceCityID').val('');
+            $('#registerDateStart').val('');
+            $('#registerDateEnd').val('');
+            $('#lastLoginDateStart').val('');
+            $('#lastLoginDateEnd').val('');
+            
+            // 重置後自動執行搜尋
+            performSearch();
+        }
+
+        function updateTable(data) {
+            var tbody = $('.table tbody');
+            tbody.empty();
+
+            if (data.length === 0) {
+                tbody.append('<tr><td colspan="6" class="text-center">沒有找到符合條件的房東資料</td></tr>');
+                return;
+            }
+
+            $.each(data, function(index, landlord) {
+                var statusBadge = landlord.AccountStatus === 'active' 
+                    ? '<span class="badge bg-success">啟用中</span>'
+                    : '<span class="badge bg-danger">停用</span>';
+
+                var row = `
+                    <tr>
+                        <td><input type="checkbox" class="form-check-input user-checkbox" value="${landlord.MemberID}"></td>
+                        <td>${landlord.MemberID}</td>
+                        <td style="max-width: 200px;">
+                            <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${landlord.MemberName}">
+                                <a href="/Admin/admin_userDetails/${landlord.MemberID}" target="_blank" class="text-decoration-none">${landlord.MemberName}</a>
+                            </div>
+                            <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${landlord.PhoneNumber}">
+                                <small class="text-muted"><a href="/Admin/admin_userDetails/${landlord.MemberID}" target="_blank" class="text-decoration-none text-muted">${landlord.PhoneNumber}</a></small>
+                            </div>
+                            <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${landlord.Email}">
+                                <small class="text-muted"><a href="/Admin/admin_userDetails/${landlord.MemberID}" target="_blank" class="text-decoration-none text-muted">${landlord.Email}</a></small>
+                            </div>
+                        </td>
+                        <td>${landlord.RegistrationDate}</td>
+                        <td>${landlord.LastLoginTime}</td>
+                        <td>${statusBadge}</td>
+                        <td>
+                            <div class="dropdown d-inline">
+                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                    管理操作
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><h6 class="dropdown-header"><i class="bi bi-person-gear"></i> 會員ID: ${landlord.MemberID}</h6></li>
+                                    <li><a class="dropdown-item" href="#" onclick="openAdminNotesModal('${landlord.MemberID}')">
+                                        <i class="bi bi-sticky"></i> 管理備註
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="viewUserActivityLog('${landlord.MemberID}')">
+                                        <i class="bi bi-clock-history"></i> 查看操作記錄
+                                    </a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item danger-action" href="#" onclick="toggleAccountStatus('${landlord.MemberID}', '${landlord.AccountStatus}')">
+                                        <i class="bi bi-${landlord.AccountStatus === 'active' ? 'pause-circle' : 'play-circle'}"></i>
+                                        ${landlord.AccountStatus === 'active' ? '停用帳戶' : '啟用帳戶'}
+                                    </a></li>
+                                </ul>
+                            </div>
+                            <a href="/Admin/admin_userDetails/${landlord.MemberID}" class="btn btn-sm btn-outline-primary" target="_blank">查看</a>
+                        </td>
+                    </tr>
+                `;
+                tbody.append(row);
+            });
+        }
+
+        function updatePagination(response) {
+            var pagination = $('.pagination');
+            pagination.empty();
+
+            var currentPage = response.currentPage;
+            var totalPages = response.totalPages;
+
+            // 上一頁
+            var prevClass = currentPage <= 1 ? 'disabled' : '';
+            pagination.append(`<li class="page-item ${prevClass}">
+                <a class="page-link" href="#" onclick="changePage(${currentPage - 1})" tabindex="-1">上一頁</a>
+            </li>`);
+
+            // 頁碼
+            var startPage = Math.max(1, currentPage - 2);
+            var endPage = Math.min(totalPages, currentPage + 2);
+
+            for (var i = startPage; i <= endPage; i++) {
+                var activeClass = i === currentPage ? 'active' : '';
+                pagination.append(`<li class="page-item ${activeClass}">
+                    <a class="page-link" href="#" onclick="changePage(${i})">${i}</a>
+                </li>`);
+            }
+
+            // 下一頁
+            var nextClass = currentPage >= totalPages ? 'disabled' : '';
+            pagination.append(`<li class="page-item ${nextClass}">
+                <a class="page-link" href="#" onclick="changePage(${currentPage + 1})">下一頁</a>
+            </li>`);
+        }
+
+        function updateResultInfo(response) {
+            var badge = $('.badge.badge-subtle-primary');
+            badge.text(response.totalCount);
+        }
+
+        function changePage(page) {
+            if (page < 1) return;
+            
+            var formData = getCurrentFilters();
+            formData.page = page;
+
+            showLoadingState();
+
+            $.ajax({
+                url: '/Admin/FilterLandlords',
+                type: 'POST',
+                data: formData,
+                success: function(response) {
+                    if (response.success) {
+                        updateTable(response.data);
+                        updatePagination(response);
+                    }
+                },
+                complete: function() {
+                    hideLoadingState();
+                }
+            });
+        }
+
+        function getCurrentFilters() {
+            return {
+                keyword: $('#searchInput').val().trim(),
+                searchField: $('#searchField').val(),
+                accountStatus: $('#accountStatus').val(),
+                gender: $('#gender').val() ? parseInt($('#gender').val()) : null,
+                residenceCityID: $('#residenceCityID').val() ? parseInt($('#residenceCityID').val()) : null,
+                registerDateStart: $('#registerDateStart').val() || null,
+                registerDateEnd: $('#registerDateEnd').val() || null,
+                lastLoginDateStart: $('#lastLoginDateStart').val() || null,
+                lastLoginDateEnd: $('#lastLoginDateEnd').val() || null,
+                pageSize: parseInt($('.page-size-selector').val()) || 10
+            };
+        }
+
+        function showLoadingState() {
+            $('.table tbody').html('<tr><td colspan="6" class="text-center"><i class="fas fa-spinner fa-spin"></i> 載入中...</td></tr>');
+            $('#searchBtn').prop('disabled', true);
+        }
+
+        function hideLoadingState() {
+            $('#searchBtn').prop('disabled', false);
+        }
+
+        function showErrorMessage(message) {
+            $('.table tbody').html(`<tr><td colspan="6" class="text-center text-danger">${message}</td></tr>`);
+        }
+    </script>
+}
+
+@await Html.PartialAsync("_AdminPartial/_UserManagement/_UserModals")
