@@ -359,10 +359,76 @@ namespace zuHause.Controllers
                 contractName = contractName
             });
         }
+        public async Task<IActionResult> Preview(int contractId)
+        {
+            var html = await GenerateContractHtml(contractId);
+            ViewBag.ContractHtml = html;
+            return View();
+        }
+        private async Task<string> GenerateContractHtml(int contractId)
+        {
+            var contract = await _context.Contracts
+                .Include(c => c.ContractFurnitureItems)
+                .Include(c => c.ContractComments)
+                .Include(c => c.ContractSignatures)
+                .Include(c => c.RentalApplication).ThenInclude(a => a.Property).ThenInclude(p => p.LandlordMember)
+                .Include(c => c.Template)
+                .FirstOrDefaultAsync(c => c.ContractId == contractId);
+
+            if (contract == null || contract.Template == null)
+                return "<p>合約不存在或無範本</p>";
+
+            // ✅ 使用資料庫中 TemplateContent，不用再從檔案讀取
+            string templateHtml = contract.Template.TemplateContent;
+
+            var landlord = contract.RentalApplication?.Property?.LandlordMember;
+
+            var fields = new Dictionary<string, string>
+    {
+        { "{{甲方姓名}}", landlord?.MemberName ?? "" },
+        { "{{甲方地址}}", contract.LandlordHouseholdAddress ?? "" },
+        { "{{甲方身分證}}", landlord?.NationalIdNo ?? "" },
+        { "{{甲方生日}}", landlord?.BirthDate.ToString("yyyy/MM/dd") ?? "" },
+        { "{{租賃起日}}", contract.StartDate.ToString("yyyy/MM/dd") },
+        { "{{租賃迄日}}", contract.EndDate?.ToString("yyyy/MM/dd") ?? "" },
+        { "{{月租金}}", contract.RentalApplication?.Property?.MonthlyRent.ToString("N0") ?? "" },
+        { "{{押金}}", contract.DepositAmount?.ToString("N0") ?? "" },
+        { "{{使用目的}}", contract.UsagePurpose ?? "" },
+        { "{{糾紛法院}}", contract.CourtJurisdiction ?? "" },
+        { "{{違約金}}", contract.PenaltyAmount?.ToString("N0") ?? "" },
+        { "{{家具清單}}", GenerateFurnitureHtml(contract.ContractFurnitureItems.ToList()) },
+        { "{{甲方簽名圖}}", contract.ContractSignatures.FirstOrDefault(s => s.SignerRole == "LANDLORD")?.SignatureFileUrl ?? "" }
+    };
+
+            foreach (var kv in fields)
+            {
+                templateHtml = templateHtml.Replace(kv.Key, kv.Value);
+            }
+
+            return templateHtml;
+        }
+
+
+        private string GenerateFurnitureHtml(List<ContractFurnitureItem> items)
+        {
+            if (items == null || items.Count == 0) return "<p>無提供家具</p>";
+            var sb = new System.Text.StringBuilder("<ul>");
+            foreach (var item in items)
+            {
+                sb.Append($"<li>{item.FurnitureName}（數量：{item.Quantity}，狀況：{item.FurnitureCondition}，責任：{item.RepairResponsibility}）</li>");
+            }
+            sb.Append("</ul>");
+            return sb.ToString();
+        }
+
     }
     public class ContractNameDto
     {
         public int ContractId { get; set; }
         public string? ContractName { get; set; }
     }
+
+
+
+
 }
