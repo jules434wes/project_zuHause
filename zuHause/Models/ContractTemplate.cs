@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace zuHause.Models;
 
@@ -11,6 +12,7 @@ public partial class ContractTemplate
     /// <summary>
     /// 範本ID
     /// </summary>
+    [Key]
     public int ContractTemplateId { get; set; }
 
     /// <summary>

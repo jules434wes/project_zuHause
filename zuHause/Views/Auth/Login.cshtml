@@ -1,0 +1,24 @@
+﻿@{
+    ViewData["Title"] = "後台登入";
+}
+
+<div class="container mt-5" style="max-width: 400px;">
+    <h3 class="mb-4 text-center">🔐 後台登入</h3>
+
+    @if (ViewBag.Error != null)
+    {
+        <div class="alert alert-danger">@ViewBag.Error</div>
+    }
+
+    <form method="post">
+        <div class="mb-3">
+            <label>帳號</label>
+            <input type="text" name="account" class="form-control" required />
+        </div>
+        <div class="mb-3">
+            <label>密碼</label>
+            <input type="password" name="password" class="form-control" required />
+        </div>
+        <button class="btn btn-primary w-100">登入</button>
+    </form>
+</div>

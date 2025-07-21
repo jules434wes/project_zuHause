@@ -1,13 +1,4 @@
-﻿// ====== 角色權限對應功能頁籤 ======
-//const roleAccess = {
-//    '超級管理員': ['overview', 'monitor', 'behavior', 'orders', 'system', 'roles', 'Backend_user_list', 'contract_template', 'platform_fee', "imgup", 'furniture_fee', 'Marquee_edit', 'furniture_management'],
-//    '管理員': ['overview', 'behavior', 'orders'],
-//    '房源審核員': ['monitor'],
-//    '客服': ['behavior', 'orders']
-//};
-
-// ====== 頁籤名稱對應表 ======
-const tabNames = {
+﻿const tabNames = {
     overview: "📊 平台整體概況",
     monitor: "🧭 商品與房源監控",
     behavior: "👣 用戶行為監控",
@@ -51,9 +42,20 @@ const tabGroups = {
 window.onload = () => {
     initSidebar();
     const role = currentUserRole;
-    const firstTab = roleAccess[role]?.[0];
+    const permissions = roleAccess[role];
+
+    let firstTab = null;
+
+    // ✅ 如果是 all:true，就預設跳第一個
+    if (permissions?.all === true) {
+        firstTab = Object.keys(tabNames)[0];
+    } else if (Array.isArray(permissions)) {
+        firstTab = permissions[0];
+    }
     if (firstTab) openTab(firstTab);
+
 };
+
 
 // ====== 左側選單生成 ======
 function initSidebar() {
@@ -62,6 +64,9 @@ function initSidebar() {
 
     const menu = document.getElementById("menuButtons");
     menu.innerHTML = "";
+
+    const rolePermission = roleAccess[currentUserRole] || {};
+    const isAllAccess = rolePermission.all === true;
 
     for (const groupKey in tabGroups) {
         const { title, keys } = tabGroups[groupKey];
@@ -74,7 +79,7 @@ function initSidebar() {
         groupWrapper.appendChild(groupTitle);
 
         keys.forEach(key => {
-            if (!roleAccess[currentUserRole]?.includes(key)) return;
+            if (!isAllAccess && !rolePermission.includes?.(key)) return;
             const btn = document.createElement("button");
             btn.className = "btn btn-outline-secondary w-100 my-1 text-start";
             btn.textContent = tabNames[key];
@@ -87,6 +92,7 @@ function initSidebar() {
         }
     }
 }
+
 
 // ====== 開啟分頁 ======
 function openTab(tabKey) {

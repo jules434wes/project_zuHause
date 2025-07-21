@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using zuHause.Models;
 using zuHause.ViewModels;
+using System.Text.Json;
 
 namespace zuHause.Controllers
 {
@@ -16,21 +17,52 @@ namespace zuHause.Controllers
             _context = context;
         }
 
+
         [HttpGet("")]
         public IActionResult Index()
         {
-            ViewBag.Role = "超級管理員";
-            ViewBag.EmployeeID = "9528";
-            ViewBag.RoleAccess = new Dictionary<string, List<string>> {
-                { "超級管理員", new List<string>{ "overview", "monitor", "behavior", "orders", "system", "roles", "Backend_user_list", "contract_template", "platform_fee", "imgup", "furniture_fee", "Marquee_edit", "furniture_management" } },
-                { "管理員", new List<string>{ "overview", "behavior", "orders" } },
-                { "房源審核員", new List<string>{ "monitor" } },
-                { "客服", new List<string>{ "behavior", "orders" } }
-                    };
+            if (string.IsNullOrEmpty(HttpContext.Session.GetString("adminID")))
+                return RedirectToAction("Login", "Auth");
+
+            ViewBag.EmployeeID = HttpContext.Session.GetString("adminID");
+            ViewBag.Role = HttpContext.Session.GetString("roleName");
+
+            var permissionsJSON = HttpContext.Session.GetString("permissionsJSON") ?? "{}";
+            var permissions = JsonSerializer.Deserialize<Dictionary<string, bool>>(permissionsJSON);
+
+            var allKeys = new List<string>
+    {
+        "overview", "monitor", "behavior", "orders", "system",
+        "roles", "Backend_user_list", "contract_template",
+        "platform_fee", "imgup", "furniture_fee", "Marquee_edit", "furniture_management"
+    };
+
+            // 根據是否為 all 權限決定要塞什麼資料格式
+            if (permissions.TryGetValue("all", out bool isAll) && isAll)
+            {
+                ViewBag.RoleAccess = new Dictionary<string, object>
+                {
+                    [ViewBag.Role] = new { all = true }
+                };
+            }
+            else
+            {
+                var grantedKeys = permissions
+                    .Where(p => p.Value && allKeys.Contains(p.Key))
+                    .Select(p => p.Key)
+                    .ToList();
+
+                ViewBag.RoleAccess = new Dictionary<string, object>
+                {
+                    [ViewBag.Role] = grantedKeys
+                };
+            }
+
             return View();
-
-
         }
+
+
+
         //家具管理分頁
         [HttpGet("{id}")]
         public IActionResult LoadTab(string id)
@@ -597,8 +629,12 @@ namespace zuHause.Controllers
             if (string.IsNullOrWhiteSpace(vm.TemplateName) || string.IsNullOrWhiteSpace(vm.TemplateContent))
                 return BadRequest("請填寫完整資料");
 
+            // ✅ 取得目前最大 ID，並 +1 當作新 ID
+            int nextId = (_context.ContractTemplates.Max(t => (int?)t.ContractTemplateId) ?? 0) + 1;
+
             var entity = new ContractTemplate
             {
+                ContractTemplateId = nextId, // ✅ 手動指定
                 TemplateName = vm.TemplateName,
                 TemplateContent = vm.TemplateContent,
                 UploadedAt = DateTime.UtcNow
@@ -609,6 +645,7 @@ namespace zuHause.Controllers
 
             return Ok(entity);
         }
+
 
         // 刪除範本
         [HttpPost("DeleteContractTemplate")]
