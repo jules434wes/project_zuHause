@@ -4,6 +4,7 @@ using zuHause.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace zuHause.Controllers
 {
@@ -15,6 +16,70 @@ namespace zuHause.Controllers
         public AdminController(ZuHauseContext context)
         {
             _context = context;
+        }
+
+        /// <summary>
+        /// 取得當前登入管理員ID
+        /// </summary>
+        protected string? GetCurrentAdminId()
+        {
+            return HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        }
+
+        /// <summary>
+        /// 取得當前登入管理員姓名
+        /// </summary>
+        protected string? GetCurrentAdminName()
+        {
+            return HttpContext.User.FindFirst(ClaimTypes.Name)?.Value;
+        }
+
+        /// <summary>
+        /// 取得當前登入管理員帳號
+        /// </summary>
+        protected string? GetCurrentAdminAccount()
+        {
+            return HttpContext.User.FindFirst("Account")?.Value;
+        }
+
+        /// <summary>
+        /// 取得當前登入管理員角色代碼
+        /// </summary>
+        protected string? GetCurrentAdminRoleCode()
+        {
+            return HttpContext.User.FindFirst("RoleCode")?.Value;
+        }
+
+        /// <summary>
+        /// 取得當前登入管理員角色名稱
+        /// </summary>
+        protected string? GetCurrentAdminRoleName()
+        {
+            return HttpContext.User.FindFirst("RoleName")?.Value;
+        }
+
+        /// <summary>
+        /// 取得當前登入管理員權限JSON
+        /// </summary>
+        protected string? GetCurrentAdminPermissions()
+        {
+            return HttpContext.User.FindFirst("PermissionsJSON")?.Value;
+        }
+
+        /// <summary>
+        /// 取得當前登入管理員完整資訊
+        /// </summary>
+        protected object GetCurrentAdminInfo()
+        {
+            return new
+            {
+                AdminId = GetCurrentAdminId(),
+                Name = GetCurrentAdminName(),
+                Account = GetCurrentAdminAccount(),
+                RoleCode = GetCurrentAdminRoleCode(),
+                RoleName = GetCurrentAdminRoleName(),
+                Permissions = GetCurrentAdminPermissions()
+            };
         }
         public IActionResult Index()
         {
@@ -63,6 +128,12 @@ namespace zuHause.Controllers
         public IActionResult admin_customerServiceDetails(string id = "CS001")
         {
             var viewModel = new AdminCustomerServiceDetailsViewModel(id);
+            
+            // 示範：取得當前管理員資訊
+            ViewBag.CurrentAdminId = GetCurrentAdminId();
+            ViewBag.CurrentAdminName = GetCurrentAdminName();
+            ViewBag.CurrentAdminAccount = GetCurrentAdminAccount();
+            
             return View(viewModel);
         }
 

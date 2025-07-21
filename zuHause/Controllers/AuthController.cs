@@ -49,6 +49,8 @@ namespace zuHause.Controllers
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, admin.AdminId.ToString()),
+                new Claim(ClaimTypes.Name, admin.Name),
+                new Claim("Account", admin.Account),
                 new Claim("RoleCode", admin.RoleCode),
                 new Claim("RoleName", role.RoleName),
                 new Claim("PermissionsJSON", role.PermissionsJson ?? "{}")
