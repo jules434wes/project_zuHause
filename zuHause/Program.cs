@@ -101,10 +101,14 @@ app.MapControllers();
 app.MapControllerRoute(
     name: "default",
 
-  pattern: "{controller=Furniture}/{action=FurnitureHomePage}/{id?}");
+//家具首頁路由
+//pattern: "{controller=Furniture}/{action=FurnitureHomePage}/{id?}");
 
 //pattern: "{controller=Home}/{action=Index}/{id?}");
 //pattern: "{controller=Dashboard}/{action=Index}/{id?}");
+
+//租屋首頁路由
+pattern: "{controller=Tenant}/{action=FrontPage}/{id?}");
 
 
 
