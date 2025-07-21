@@ -20,6 +20,104 @@
     <link rel="stylesheet" href="~/css/variables.css" />
     <!-- Property Detail CSS -->
     <link rel="stylesheet" href="~/css/property-detail.css" />
+    
+    <style>
+        /* 圖片模態框樣式 */
+        #modalImage {
+            transition: opacity 0.25s ease;
+            max-height: 80vh;
+            object-fit: contain;
+        }
+        
+        /* 主圖區域樣式 */
+        .main-image-container {
+            position: relative;
+            overflow: hidden;
+            border-radius: 0.5rem;
+        }
+        
+        .main-image {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        
+        /* 圖片容器樣式 */
+        .modal-image-container {
+            position: relative;
+            width: 100%;
+            height: 70vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        
+        /* 淡入淡出效果 */
+        .fade-in {
+            animation: fadeIn 0.25s ease forwards;
+        }
+        
+        .fade-out {
+            animation: fadeOut 0.25s ease forwards;
+        }
+        
+        @@keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @@keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+        
+        .modal-prev, .modal-next {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            z-index: 1050;
+            background-color: rgba(255, 255, 255, 0.8);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            border: none;
+        }
+        
+        .modal-prev:hover, .modal-next:hover {
+            background-color: rgba(255, 255, 255, 1);
+            transform: scale(1.15);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+        }
+        
+        .modal-prev i, .modal-next i {
+            font-size: 1.25rem;
+            color: #333;
+        }
+        
+        #modalImageCounter {
+            font-size: 0.9rem;
+            padding: 5px 10px;
+            border-radius: 15px;
+        }
+        
+        @@media (max-width: 576px) {
+            .modal-prev, .modal-next {
+                width: 40px;
+                height: 40px;
+            }
+            
+            .modal-prev i, .modal-next i {
+                font-size: 1rem;
+            }
+            
+            .modal-image-container {
+                height: 50vh;
+            }
+        }
+    </style>
 
         <link rel="stylesheet" href="~/css/_LoginPartialShared.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/zuHause.styles.css" asp-append-version="true" />
@@ -135,37 +233,44 @@
                             <div class="main-image-container position-relative mb-3">
                                 <img src="@Model.Images.FirstOrDefault()?.ImagePath" 
                                      alt="@Model.Images.FirstOrDefault()?.ImageDescription" 
-                                     class="main-image w-100 rounded-3" 
+                                     class="main-image w-100 rounded-3 fade-in" 
                                      id="mainImage" 
                                      data-bs-toggle="modal" 
                                      data-bs-target="#imageModal">
                                 <div class="image-overlay position-absolute top-0 start-0 p-3">
                                     <span class="image-label bg-dark bg-opacity-50 text-white px-2 py-1 rounded small">
-                                        房子總覽圖
+                                        @(Model.Images.FirstOrDefault()?.Category ?? "房子總覽圖")
                                     </span>
                                 </div>
+                                <!-- 左右切換按鈕 -->
+                                <button class="modal-prev gallery-prev position-absolute top-50 start-0 translate-middle-y ms-3" style="width:45px; height:45px"><i class="fas fa-chevron-left"></i></button>
+                                <button class="modal-next gallery-next position-absolute top-50 end-0 translate-middle-y me-3" style="width:45px; height:45px"><i class="fas fa-chevron-right"></i></button>
                             </div>
 
                             <!-- 縮圖 -->
                             @if (Model.Images.Count > 1)
                             {
-                                <div class="row g-2">
-                                    @foreach (var image in Model.Images.Skip(1).Take(4))
-                                    {
-                                        <div class="col-3">
-                                            <div class="thumbnail-container position-relative">
-                                                <img src="@image.ImagePath" 
-                                                     alt="@image.ImageDescription" 
-                                                     class="thumbnail-image w-100 rounded-2" 
-                                                     data-image-src="@image.ImagePath">
-                                                <div class="thumbnail-overlay position-absolute bottom-0 start-0 p-1">
-                                                    <span class="thumbnail-label bg-dark bg-opacity-70 text-white px-1 rounded small" style="font-size: 0.7rem;">
-                                                        @image.ImageDescription
-                                                    </span>
+                                <div class="d-flex align-items-center">
+                                    <button class="modal-prev thumb-prev me-2" style="width:32px; height:32px; min-width:32px"><i class="fas fa-chevron-left" style="font-size:0.8rem"></i></button>
+                                    <div class="row g-2 flex-nowrap overflow-auto thumbnails-wrapper" style="scroll-behavior:smooth;">
+                                        @foreach (var image in Model.Images.Skip(1))
+                                        {
+                                            <div class="col-3 flex-shrink-0">
+                                                <div class="thumbnail-container position-relative">
+                                                    <img src="@image.ImagePath" 
+                                                         alt="@image.ImageDescription" 
+                                                         class="thumbnail-image w-100 rounded-2" 
+                                                         data-image-src="@image.ImagePath">
+                                                    <div class="thumbnail-overlay position-absolute bottom-0 start-0 p-1">
+                                                        <span class="thumbnail-label bg-dark bg-opacity-70 text-white px-1 rounded small" style="font-size: 0.7rem;">
+                                                            @(image.Category ?? image.ImageDescription)
+                                                        </span>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    }
+                                        }
+                                    </div>
+                                    <button class="modal-next thumb-next ms-2" style="width:32px; height:32px; min-width:32px"><i class="fas fa-chevron-right" style="font-size:0.8rem"></i></button>
                                 </div>
                             }
                         }
@@ -306,10 +411,10 @@
                                 <div class="amenity-category mb-4">
                                     <h3 class="amenity-title">建物設施</h3>
                                     <div class="row g-2">
-                                        <div class="col-md-4">‧ 游泳池</div>
-                                        <div class="col-md-4">‧ 健身房</div>
-                                        <div class="col-md-4">‧ 會議室</div>
-                                        <div class="col-md-4">‧ KTV</div>
+                                        <div class="col-md-4 amenity-item">游泳池</div>
+                                        <div class="col-md-4 amenity-item">健身房</div>
+                                        <div class="col-md-4 amenity-item">會議室</div>
+                                        <div class="col-md-4 amenity-item">KTV</div>
                                     </div>
                                 </div>
                                 <hr class="amenity-divider">
@@ -318,9 +423,9 @@
                                 <div class="amenity-category mb-4">
                                     <h3 class="amenity-title">物業服務</h3>
                                     <div class="row g-2">
-                                        <div class="col-md-4">‧ 收發包裹</div>
-                                        <div class="col-md-4">‧ 24小時管理</div>
-                                        <div class="col-md-4">‧ 垃圾子母車</div>
+                                        <div class="col-md-4 amenity-item">收發包裹</div>
+                                        <div class="col-md-4 amenity-item">24小時管理</div>
+                                        <div class="col-md-4 amenity-item">垃圾子母車</div>
                                     </div>
                                 </div>
                                 <hr class="amenity-divider">
@@ -333,7 +438,7 @@
                                         <div class="row g-2">
                                             @foreach (var equipment in category)
                                             {
-                                                <div class="col-md-4">‧ @equipment.EquipmentName</div>
+                                                <div class="col-md-4 amenity-item">@equipment.EquipmentName</div>
                                             }
                                         </div>
                                     </div>
@@ -352,20 +457,20 @@
                                                     <div class="fw-semibold text-muted mb-2">寵物</div>
                                                     <div class="ms-3">
                                                         <div class="fw-medium">貓咪</div>
-                                                        <div class="ms-3">‧ @(Model.RulesAndFees.AllowPets ? "允許" : "不允許")</div>
+                                                        <div class="ms-3 amenity-item">@(Model.RulesAndFees.AllowPets ? "允許" : "不允許")</div>
                                                         <div class="fw-medium mt-2">狗</div>
-                                                        <div class="ms-3">‧ 不允許</div>
+                                                        <div class="ms-3 amenity-item">不允許</div>
                                                     </div>
                                                 </div>
                                             </div>
                                             <div class="col-md-6">
                                                 <div class="other-group">
                                                     <div class="fw-semibold text-muted mb-2">神明廳</div>
-                                                    <div class="ms-3">‧ 不允許</div>
+                                                    <div class="ms-3 amenity-item">不允許</div>
                                                 </div>
                                                 <div class="other-group mt-3">
                                                     <div class="fw-semibold text-muted mb-2">租屋補助</div>
-                                                    <div class="ms-3">‧ 可申請</div>
+                                                    <div class="ms-3 amenity-item">可申請</div>
                                                 </div>
                                             </div>
                                         </div>
@@ -528,8 +633,20 @@
                 <div class="modal-header border-0 bg-transparent">
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body p-0">
-                    <img src="" alt="" class="w-100 rounded" id="modalImage">
+                <div class="modal-body p-0 position-relative">
+                    <div class="modal-image-container">
+                        <img src="" alt="" class="rounded fade-in" id="modalImage">
+                    </div>
+                    <!-- 左右切換按鈕 -->
+                    <button type="button" id="modalPrevBtn" class="modal-prev modal-control position-absolute top-50 start-0 translate-middle-y ms-4">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <button type="button" id="modalNextBtn" class="modal-next modal-control position-absolute top-50 end-0 translate-middle-y me-4">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+                <div class="modal-footer border-0 bg-transparent justify-content-center">
+                    <span class="text-white bg-dark bg-opacity-50 px-3 py-1 rounded small" id="modalImageCounter"></span>
                 </div>
             </div>
         </div>

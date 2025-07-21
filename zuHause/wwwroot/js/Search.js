@@ -29,13 +29,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
     // 為動態生成的收藏按鈕添加事件監聽器 (使用事件委派)
-    searchResultsContainer.addEventListener('click', function (event) {
-        const favoriteIcon = event.target.closest('.favorite-icon');
-        if (favoriteIcon) {
-            const propertyId = favoriteIcon.dataset.propertyId;
-            toggleFavorite(propertyId, favoriteIcon); // 調用處理收藏邏輯的函數
-        }
-    });
+    if (searchResultsContainer) {
+        searchResultsContainer.addEventListener('click', function (event) {
+            const favoriteIcon = event.target.closest('.favorite-icon');
+            if (favoriteIcon) {
+                const propertyId = favoriteIcon.dataset.propertyId;
+                toggleFavorite(propertyId, favoriteIcon); // 調用處理收藏邏輯的函數
+            }
+        });
+    }
 
     // --- 輔助函數：獲取所有選中的篩選條件 ---
     function getFilterParams() {

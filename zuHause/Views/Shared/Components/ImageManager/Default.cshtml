@@ -27,7 +27,7 @@
         </h3>
         <div class="image-manager-info">
             <span class="current-count" aria-live="polite">
-                已選擇: <span class="count-number">@Model.ExistingImages.Count</span> 張
+                已上傳: <span class="count-number">@Model.ExistingImages.Count</span> 張
             </span>
             <span class="max-limit text-muted">
                 / 最多 @Model.MaxFiles 張 (單檔最大 @Model.GetMaxFileSizeFormatted())
@@ -75,20 +75,6 @@
             <button type="button" class="btn btn-success btn-upload-confirm" disabled>
                 <i class="fas fa-check me-2" aria-hidden="true"></i>
                 確認上傳 (<span class="pending-count">0</span>)
-            </button>
-            <button type="button" class="btn btn-outline-danger btn-delete-selected d-none">
-                <i class="fas fa-trash me-2" aria-hidden="true"></i>
-                刪除選取 (<span class="selected-count">0</span>)
-            </button>
-        </div>
-        <div class="action-buttons-right">
-            <button type="button" class="btn btn-outline-secondary btn-select-all" disabled>
-                <i class="fas fa-check-square me-2" aria-hidden="true"></i>
-                全選
-            </button>
-            <button type="button" class="btn btn-outline-danger btn-clear-all" disabled>
-                <i class="fas fa-times me-2" aria-hidden="true"></i>
-                全部清除
             </button>
         </div>
     </div>
@@ -162,14 +148,6 @@
 
                             <!-- 操作按鈕 -->
                             <div class="image-actions">
-                                <label class="image-checkbox">
-                                    <input type="checkbox" 
-                                           value="@image.ImageId"
-                                           aria-label="選擇圖片 @image.FileName">
-                                    <span class="checkmark">
-                                        <i class="fas fa-check" aria-hidden="true"></i>
-                                    </span>
-                                </label>
                                 <button type="button" 
                                         class="btn btn-sm btn-outline-danger btn-delete-single"
                                         data-image-id="@image.ImageId"

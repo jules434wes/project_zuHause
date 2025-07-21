@@ -64,7 +64,7 @@ builder.Services.AddScoped<MemberService>();
 
 var app = builder.Build();
 
-// 在開發環境自動執行資料重置和播種
+// 在開發環境確保基礎資料存在
 if (app.Environment.IsDevelopment())
 {
     using (var scope = app.Services.CreateScope())
@@ -72,12 +72,12 @@ if (app.Environment.IsDevelopment())
         var seeder = scope.ServiceProvider.GetRequiredService<RealDataSeeder>();
         try
         {
-            await seeder.ResetTestDataAsync();
+            await seeder.EnsureDataAsync();
         }
         catch (Exception ex)
         {
             var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-            logger.LogError(ex, "資料播種失敗");
+            logger.LogError(ex, "確保基礎資料失敗");
         }
     }
 }

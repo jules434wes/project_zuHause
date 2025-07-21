@@ -19,53 +19,26 @@ namespace zuHause.Data
         }
 
         /// <summary>
-        /// 重置測試資料 - 清除所有測試資料並重新播種
+        /// 確保基礎資料存在 - 只新增缺失的資料，不刪除現有資料
         /// </summary>
-        public async Task ResetTestDataAsync()
+        public async Task EnsureDataAsync()
         {
-            _logger.LogInformation("開始重置測試資料...");
+            _logger.LogInformation("開始確保基礎資料存在...");
 
             try
             {
-                // 清除現有測試資料 (保持資料表結構)
-                await ClearTestDataAsync();
+                // 確保基礎參考資料存在
+                await EnsureReferenceDataAsync();
 
-                // 重新播種基礎資料
-                await SeedBaseDataAsync();
-
-                await _context.SaveChangesAsync();
-                _logger.LogInformation("測試資料重置完成");
+                _logger.LogInformation("基礎資料確保完成");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "重置測試資料時發生錯誤");
+                _logger.LogError(ex, "確保基礎資料時發生錯誤");
                 throw;
             }
         }
 
-        /// <summary>
-        /// 清除測試資料
-        /// </summary>
-        private async Task ClearTestDataAsync()
-        {
-            // 按照外鍵關係順序清除資料
-            _context.RentalApplications.RemoveRange(_context.RentalApplications);
-            _context.PropertyImages.RemoveRange(_context.PropertyImages);
-            _context.Favorites.RemoveRange(_context.Favorites);
-            _context.Properties.RemoveRange(_context.Properties);
-            _context.Members.RemoveRange(_context.Members);
-
-            await _context.SaveChangesAsync();
-        }
-
-        /// <summary>
-        /// 播種基礎資料
-        /// </summary>
-        private async Task SeedBaseDataAsync()
-        {
-            // 確保基礎參考資料存在
-            await EnsureReferenceDataAsync();
-        }
 
         /// <summary>
         /// 確保參考資料存在 (城市、區域、會員類型等)
@@ -182,6 +155,43 @@ namespace zuHause.Data
             }
 
             await _context.SaveChangesAsync();
+
+            // === 確保房源 2001 至少有一筆設備關聯 ===
+            try
+            {
+                var targetProperty = await _context.Properties
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(p => p.PropertyId == 2001);
+
+                // 只在房源存在且關聯尚未建立時插入
+                if (targetProperty != null &&
+                    !await _context.PropertyEquipmentRelations.AnyAsync(r => r.PropertyId == 2001))
+                {
+                    // 取任一啟用中的設備分類作為示範；若無則跳過
+                    var firstCategory = await _context.PropertyEquipmentCategories
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(c => c.IsActive);
+
+                    if (firstCategory != null)
+                    {
+                        _context.PropertyEquipmentRelations.Add(new PropertyEquipmentRelation
+                        {
+                            PropertyId = 2001,
+                            CategoryId = firstCategory.CategoryId,
+                            Quantity   = 1,
+                            CreatedAt  = DateTime.Now,
+                            UpdatedAt  = DateTime.Now
+                        });
+
+                        await _context.SaveChangesAsync();
+                        _logger.LogInformation("已為房源 2001 新增設備分類 {CategoryName} (ID: {CategoryId})", firstCategory.CategoryName, firstCategory.CategoryId);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "嘗試為房源 2001 新增設備關聯時發生非致命錯誤");
+            }
         }
 
         /// <summary>

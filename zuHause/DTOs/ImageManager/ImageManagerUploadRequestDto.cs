@@ -23,6 +23,8 @@ namespace zuHause.DTOs.ImageManager
 
         public bool SetAsMainImage { get; set; } = false;
 
+        public bool SkipEntityValidation { get; set; } = false;
+
         public Dictionary<string, object>? AdditionalData { get; set; }
     }
 

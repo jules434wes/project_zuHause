@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Http;
 using zuHause.DTOs;
 using zuHause.Models;
+using zuHause.Enums;
 
 namespace zuHause.Interfaces
 {
@@ -74,5 +75,13 @@ namespace zuHause.Interfaces
         /// <param name="imageIds">重新排序後的圖片ID清單</param>
         /// <returns>是否排序成功</returns>
         Task<bool> ReorderPropertyImagesAsync(int propertyId, List<long> imageIds);
+
+        /// <summary>
+        /// 產生房源圖片 URL（封裝 ImageQueryService）
+        /// </summary>
+        /// <param name="storedFileName">儲存檔名</param>
+        /// <param name="size">尺寸</param>
+        /// <returns>完整 URL</returns>
+        string GeneratePropertyImageUrl(string storedFileName, ImageSize size = ImageSize.Original);
     }
 }

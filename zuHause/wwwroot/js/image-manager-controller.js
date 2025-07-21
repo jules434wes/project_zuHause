@@ -1,6 +1,6 @@
 /**
  * 圖片管理器主控制器 - 協調所有子模組的運作
- * 整合 ImagePreviewManager, ImageSelectionManager, ImageSortManager, ImageModalManager, ImageButtonManager, ImageUploadManager, ImageGalleryManager
+ * 整合 ImagePreviewManager, ImageSortManager, ImageModalManager, ImageButtonManager, ImageUploadManager, ImageGalleryManager
  */
 class ImageManagerController {
     constructor(container) {
@@ -9,7 +9,6 @@ class ImageManagerController {
         
         // 子模組實例
         this.previewManager = null;
-        this.selectionManager = null;
         this.sortManager = null;
         this.modalManager = null;
         this.buttonManager = null;
@@ -96,8 +95,6 @@ class ImageManagerController {
         // 初始化預覽管理器
         this.previewManager = new ImagePreviewManager(this.container);
         
-        // 初始化選擇管理器
-        this.selectionManager = new ImageSelectionManager(this.container);
         
         // 初始化排序管理器 (如果啟用)
         if (this.config.enableDragSort) {
@@ -132,7 +129,6 @@ class ImageManagerController {
     setupEventListeners() {
         // 跨模組事件協調
         this.setupPreviewEvents();
-        this.setupSelectionEvents();
         this.setupSortEvents();
         this.setupModalEvents();
         this.setupUploadEvents();
@@ -144,9 +140,6 @@ class ImageManagerController {
             const { files, count } = e.detail;
             
             // 通知其他模組更新狀態
-            if (this.selectionManager) {
-                // 選擇管理器會自動處理 filesChanged 事件
-            }
             
             if (this.sortManager) {
                 // 排序管理器會自動處理 filesChanged 事件
@@ -157,42 +150,6 @@ class ImageManagerController {
         });
     }
     
-    setupSelectionEvents() {
-        // 選擇狀態變更事件
-        this.container.addEventListener('selectionChanged', (e) => {
-            const { selectedItems, count } = e.detail;
-            
-            // 更新刪除按鈕狀態
-            this.updateDeleteButtonState(count);
-        });
-        
-        // 刪除選中檔案確認事件
-        this.container.addEventListener('confirmDeleteSelected', (e) => {
-            this.handleDeleteSelectedFiles();
-        });
-        
-        // 清空所有檔案確認事件
-        this.container.addEventListener('confirmClearAll', (e) => {
-            this.handleClearAllFiles();
-        });
-        
-        // 刪除單個檔案確認事件
-        this.container.addEventListener('confirmDeleteSingle', (e) => {
-            const { imageId } = e.detail;
-            this.handleDeleteSingleFile(imageId);
-        });
-        
-        // 刪除檔案事件（由選擇管理器觸發）
-        this.container.addEventListener('deleteSelectedFiles', (e) => {
-            const { fileIds } = e.detail;
-            this.processFileDeletion(fileIds);
-        });
-        
-        // 清空檔案事件
-        this.container.addEventListener('clearAllFiles', (e) => {
-            this.processClearAllFiles();
-        });
-    }
     
     setupSortEvents() {
         if (!this.sortManager) return;
@@ -233,10 +190,6 @@ class ImageManagerController {
         document.addEventListener('keydown', (e) => {
             if (!this.container.contains(document.activeElement)) return;
             
-            // Escape 鍵清除選擇
-            if (e.key === 'Escape' && this.selectionManager) {
-                this.selectionManager.clearAllSelections();
-            }
         });
         
         // 視窗調整大小事件
@@ -246,15 +199,6 @@ class ImageManagerController {
     }
     
     // 檔案操作處理方法
-    handleDeleteSelectedFiles() {
-        if (!this.selectionManager) return;
-        
-        const selectedItems = this.selectionManager.getSelectedItems();
-        if (selectedItems.size === 0) return;
-        
-        this.processFileDeletion(Array.from(selectedItems));
-    }
-    
     handleClearAllFiles() {
         if (!this.previewManager) return;
         
@@ -368,21 +312,6 @@ class ImageManagerController {
         }
     }
     
-    updateDeleteButtonState(selectedCount) {
-        const deleteBtn = this.container.querySelector('.btn-delete-selected');
-        if (deleteBtn) {
-            if (selectedCount > 0) {
-                deleteBtn.classList.remove('d-none');
-            } else {
-                deleteBtn.classList.add('d-none');
-            }
-            
-            const countSpan = deleteBtn.querySelector('.selected-count');
-            if (countSpan) {
-                countSpan.textContent = selectedCount;
-            }
-        }
-    }
     
     handleResize() {
         // 處理視窗調整大小時的重新佈局
@@ -440,9 +369,6 @@ class ImageManagerController {
         return this.previewManager;
     }
     
-    getSelectionManager() {
-        return this.selectionManager;
-    }
     
     getSortManager() {
         return this.sortManager;
@@ -470,9 +396,6 @@ class ImageManagerController {
             // 清理預覽管理器
         }
         
-        if (this.selectionManager) {
-            // 清理選擇管理器
-        }
         
         if (this.sortManager) {
             // 清理排序管理器

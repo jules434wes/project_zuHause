@@ -26,10 +26,10 @@ namespace zuHause.Controllers
         }
 
         /// <summary>
-        /// 手動重置測試資料
+        /// 手動確保基礎資料存在
         /// </summary>
-        [HttpPost("reset")]
-        public async Task<IActionResult> ResetTestData()
+        [HttpPost("ensure")]
+        public async Task<IActionResult> EnsureData()
         {
             // 僅在開發環境允許執行
             if (!_environment.IsDevelopment())
@@ -39,12 +39,12 @@ namespace zuHause.Controllers
 
             try
             {
-                await _seeder.ResetTestDataAsync();
-                _logger.LogInformation("手動重置測試資料成功");
+                await _seeder.EnsureDataAsync();
+                _logger.LogInformation("手動確保基礎資料成功");
                 
                 return Ok(new { 
                     success = true, 
-                    message = "測試資料重置成功",
+                    message = "基礎資料確保成功",
                     timestamp = DateTime.Now
                 });
             }

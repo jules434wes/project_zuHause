@@ -1,0 +1,375 @@
+/* zuHause 圖片管理器樣式 */
+
+.zh-image-manager-wrapper {
+    border: 1px solid #dee2e6;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    background: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.image-manager-header {
+    border-bottom: 1px solid #e9ecef;
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+}
+
+/* 拖拽上傳區域 */
+.drop-zone {
+    border: 2px dashed #dee2e6;
+    border-radius: 0.5rem;
+    padding: 2rem 1rem;
+    text-align: center;
+    transition: all 0.3s ease;
+    background: #fafafa;
+    margin-bottom: 1.5rem;
+    cursor: pointer;
+}
+
+/* 當沒有圖片時，拖拽區域更明顯的點擊提示 */
+.zh-image-manager-wrapper:not(.has-images) .drop-zone {
+    border-color: #007bff;
+    background: #f8f9ff;
+}
+
+.zh-image-manager-wrapper:not(.has-images) .drop-zone:hover {
+    border-color: #0056b3;
+    background: #e6f3ff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,123,255,0.1);
+}
+
+.drop-zone:hover,
+.drop-zone.drag-over {
+    border-color: #007bff;
+    background: #f0f8ff;
+    transform: translateY(-2px);
+}
+
+.drop-zone-content {
+    pointer-events: none;
+}
+
+/* 圖片網格容器 */
+.image-grid {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1rem;
+    min-height: 200px;
+}
+
+.image-item {
+    position: relative;
+    background: white;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    border: 2px solid transparent;
+}
+
+.image-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+
+/* 拖拽時的選中效果 */
+.image-item.sortable-chosen {
+    border-color: #ffc107 !important;
+    box-shadow: 0 0 0 3px rgba(255,193,7,0.6) !important;
+}
+
+.image-wrapper {
+    position: relative;
+    width: 100%;
+    height: 140px;
+    overflow: hidden;
+}
+
+.image-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.image-item:hover .image-wrapper img {
+    transform: scale(1.05);
+}
+
+/* 圖片標記 */
+.image-order-badge {
+    position: absolute;
+    top: 0.5rem;
+    left: 0.5rem;
+    background: rgba(0,123,255,0.9);
+    color: white;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: bold;
+    z-index: 10;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+
+
+/* 刪除按鈕 - 右上角內側 */
+.image-delete-btn {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(220, 53, 69, 0.9);
+    color: white;
+    font-size: 0.75rem;
+    cursor: pointer;
+    z-index: 15;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.image-item:hover .image-delete-btn {
+    opacity: 1;
+}
+
+.image-delete-btn:hover {
+    background: rgba(220, 53, 69, 1);
+    transform: scale(1.1);
+}
+
+/* 主圖按鈕 - 右下角內側 */
+.zh-image-manager .image-main-btn {
+    position: absolute !important;
+    bottom: 0.5rem !important;
+    right: 0.5rem !important;
+    width: 28px !important;
+    height: 28px !important;
+    border: 2px solid #ffc107 !important;
+    border-radius: 50% !important;
+    background: transparent !important;
+    color: #ffc107 !important;
+    font-size: 0.75rem !important;
+    cursor: pointer !important;
+    z-index: 15 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: all 0.3s ease !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2) !important;
+    opacity: 0 !important; /* 預設隱藏 */
+}
+
+/* 圖片項目 hover 時顯示主圖按鈕（僅限非主圖） */
+.zh-image-manager .image-item:hover .image-main-btn:not(.is-main) {
+    opacity: 1 !important;
+}
+
+.zh-image-manager .image-main-btn:hover {
+    transform: scale(1.1) !important;
+}
+
+/* 主圖按鈕 - 已設定為主圖的樣式 */
+.zh-image-manager .image-main-btn.is-main {
+    background: #ffc107 !important;
+    color: white !important;
+    border-color: #ffc107 !important;
+    opacity: 1 !important; /* 主圖按鈕常態顯示 */
+}
+
+/* 預覽按鈕 - hover時顯示 */
+.image-preview-btn {
+    position: absolute;
+    bottom: 0.5rem;
+    left: 0.5rem;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(0, 123, 255, 0.9);
+    color: white;
+    font-size: 0.75rem;
+    cursor: pointer;
+    z-index: 15;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.image-item:hover .image-preview-btn {
+    opacity: 1;
+}
+
+.image-preview-btn:hover {
+    background: rgba(0, 123, 255, 1);
+    transform: scale(1.1);
+}
+
+/* 圖片資訊 */
+.image-info {
+    padding: 0.5rem;
+    background: white;
+    border-top: 1px solid #e9ecef;
+}
+
+.image-info small {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 空狀態 */
+.empty-state {
+    grid-column: 1 / -1;
+    padding: 3rem 1rem;
+}
+
+.loading-placeholder {
+    grid-column: 1 / -1;
+    padding: 3rem 1rem;
+}
+
+/* 狀態列 */
+.status-bar {
+    border-top: 1px solid #e9ecef;
+    padding-top: 1rem;
+}
+
+/* SortableJS 樣式 */
+.sortable-ghost {
+    opacity: 0.5;
+    background: #f8f9fa;
+    border: 2px dashed #007bff;
+}
+
+.sortable-chosen {
+    transform: scale(1.02);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+    z-index: 9999;
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+    .zh-image-manager-wrapper {
+        padding: 1rem;
+    }
+    
+    .image-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 0.75rem;
+    }
+    
+    .drop-zone {
+        padding: 1.5rem 1rem;
+    }
+    
+    .image-manager-header .btn-group {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .image-manager-header .btn-group .btn {
+        margin-bottom: 0.25rem;
+    }
+}
+
+/* 動畫效果 */
+.fade-in {
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* 通知樣式增強 */
+.alert.position-fixed {
+    animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes slideInRight {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+/* 拖拽排序樣式 */
+.image-item.sortable-drag {
+    transform: rotate(5deg);
+    z-index: 9999;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+}
+
+/* 主圖特殊樣式 */
+.image-item.main-image {
+    border-color: #ffc107;
+    box-shadow: 0 0 0 2px rgba(255,193,7,0.3);
+}
+
+.image-item.main-image .image-order-badge {
+    background: rgba(255,193,7,0.9);
+    color: #000;
+}
+
+/* 載入狀態 */
+.zh-image-manager-wrapper.loading {
+    pointer-events: none;
+    opacity: 0.7;
+}
+
+.zh-image-manager-wrapper.loading::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    z-index: 1000;
+}
+
+@keyframes spin {
+    0% { transform: translate(-50%, -50%) rotate(0deg); }
+    100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* 圖片狀態標記 - 移到頂部右側避免與排序標籤重疊 */
+.image-status-badge {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    z-index: 10;
+}
+
+.image-status-badge .badge {
+    font-size: 0.7rem;
+    padding: 0.25rem 0.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* 預覽和已上傳圖片的區別樣式 */
+.image-item.preview {
+    border-left: 4px solid #17a2b8;
+}

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using zuHause.ViewModels;
 using zuHause.Models;
+using zuHause.Interfaces;
 
 namespace zuHause.Controllers
 {
@@ -9,11 +10,13 @@ namespace zuHause.Controllers
     {
         private readonly ZuHauseContext _context;
         private readonly ILogger<PropertyController> _logger;
+        private readonly IPropertyImageService _propertyImageService;
 
-        public PropertyController(ZuHauseContext context, ILogger<PropertyController> logger)
+        public PropertyController(ZuHauseContext context, ILogger<PropertyController> logger, IPropertyImageService propertyImageService)
         {
             _context = context;
             _logger = logger;
+            _propertyImageService = propertyImageService;
         }
 
         /// <summary>
@@ -26,12 +29,15 @@ namespace zuHause.Controllers
         public async Task<IActionResult> Detail(int id)
         {
             try
-            {
-                // 從資料庫載入房源詳細資訊
+        {
+                // 從資料庫載入房源詳細資訊，包含設備分類
                 var property = await _context.Properties
                     .Include(p => p.LandlordMember)
                     .Include(p => p.PropertyImages)
                     .Include(p => p.PropertyEquipmentRelations)
+                        .ThenInclude(r => r.Category)
+                            .ThenInclude(c => c.ParentCategory)
+                    .AsNoTracking()
                     .FirstOrDefaultAsync(p => p.PropertyId == id);
 
                 if (property == null)
@@ -39,39 +45,56 @@ namespace zuHause.Controllers
                     return NotFound("找不到指定的房源");
                 }
 
+                // 取得縣市/區域名稱
+                var cityName = await _context.Cities
+                    .Where(c => c.CityId == property.CityId)
+                    .Select(c => c.CityName)
+                    .FirstOrDefaultAsync() ?? string.Empty;
+
+                var districtName = await _context.Districts
+                    .Where(d => d.DistrictId == property.DistrictId)
+                    .Select(d => d.DistrictName)
+                    .FirstOrDefaultAsync() ?? string.Empty;
+
+                // 取得圖片 (使用統一圖片管理系統)
+                var images = await _propertyImageService.GetPropertyImagesAsync(id);
+
                 // 建立 ViewModel
                 var viewModel = new PropertyDetailViewModel
                 {
                     PropertyId = property.PropertyId,
                     Title = property.Title,
-                    Description = property.Description ?? "",
+                    Description = property.Description ?? string.Empty,
                     Price = property.MonthlyRent,
-                    Address = property.AddressLine ?? "",
-                    CityName = "台北市",
-                    DistrictName = "大安區",
-                    LandlordName = property.LandlordMember?.MemberName ?? "未提供",
-                    LandlordPhone = "02-2345-6789",
-                    LandlordEmail = "landlord@example.com",
+                    Address = property.AddressLine ?? string.Empty,
+                    CityName = cityName,
+                    DistrictName = districtName,
+                    LandlordName = property.LandlordMember?.MemberName ?? string.Empty,
+                    LandlordPhone = property.LandlordMember?.PhoneNumber ?? string.Empty,
+                    LandlordEmail = property.LandlordMember?.Email ?? string.Empty,
                     CreatedDate = property.CreatedAt,
                     IsActive = true,
                     IsFavorite = false,
                     ViewCount = 158,
                     FavoriteCount = 23,
                     ApplicationCount = 7,
-                    Images = property.PropertyImages.Select(img => new PropertyImageViewModel
+                    Images = images
+                        .OrderBy(img => img.DisplayOrder ?? int.MaxValue)
+                        .ThenBy(img => img.ImageId)
+                        .Select(img => new PropertyImageViewModel
                     {
-                        PropertyImageId = img.ImageId,
-                        ImagePath = img.ImagePath,
-                        ImageDescription = "",
+                        PropertyImageId = (int)img.ImageId,
+                        ImagePath = _propertyImageService.GeneratePropertyImageUrl(img.StoredFileName!),
+                        ImageDescription = img.OriginalFileName,
                         IsMainImage = img.DisplayOrder == 1,
-                        SortOrder = img.DisplayOrder
+                        SortOrder = img.DisplayOrder ?? 0
                     }).ToList(),
                     Equipment = property.PropertyEquipmentRelations.Select(eq => new PropertyEquipmentViewModel
                     {
-                        EquipmentName = "設備項目",
-                        EquipmentType = "基本設備",
+                        EquipmentName = eq.Category.CategoryName,
+                        EquipmentType = eq.Category.ParentCategory?.CategoryName ?? eq.Category.CategoryName,
                         Quantity = eq.Quantity,
-                        Condition = "良好"
+                        Condition = string.Empty
                     }).ToList(),
                     HouseInfo = new PropertyInfoSection
                     {
@@ -81,7 +104,7 @@ namespace zuHause.Controllers
                         Rooms = $"{property.RoomCount}房",
                         Bathrooms = $"{property.BathroomCount}衛",
                         Balcony = "1個",
-                        Parking = "無",
+                        Parking = property.ParkingAvailable ? "有" : "無",
                         Direction = "朝南",
                         Age = 15
                     },
@@ -89,14 +112,14 @@ namespace zuHause.Controllers
                     {
                         MonthlyRent = property.MonthlyRent,
                         Deposit = property.DepositAmount,
-                        ManagementFee = 2000,
+                        ManagementFee = property.ManagementFeeAmount ?? 0,
                         UtilityDeposit = 3000,
                         LeaseMinimum = "一年",
                         PaymentTerms = "押二付一",
-                        HouseRules = new List<string> { "禁止吸菸", "可養寵物", "可開伙" },
-                        AllowPets = true,
-                        AllowSmoking = false,
-                        AllowCooking = true
+                        HouseRules = new List<string>(),
+                        AllowPets = property.SpecialRules?.Contains("寵物") ?? false,
+                        AllowSmoking = property.SpecialRules?.Contains("吸菸") ?? false,
+                        AllowCooking = property.SpecialRules?.Contains("開伙") ?? false
                     },
                     Location = new PropertyLocationSection
                     {

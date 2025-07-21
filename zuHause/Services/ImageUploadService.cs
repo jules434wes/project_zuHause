@@ -4,6 +4,7 @@ using zuHause.DTOs;
 using zuHause.Enums;
 using zuHause.Interfaces;
 using zuHause.Models;
+using Microsoft.Extensions.Hosting;
 
 namespace zuHause.Services
 {
@@ -17,6 +18,7 @@ namespace zuHause.Services
         private readonly IEntityExistenceChecker _entityExistenceChecker;
         private readonly IDisplayOrderManager _displayOrderManager;
         private readonly ILogger<ImageUploadService> _logger;
+        private readonly IWebHostEnvironment _env;
 
         // 上傳限制常數
         private const int MaxFileSize = 10 * 1024 * 1024; // 10MB
@@ -29,13 +31,15 @@ namespace zuHause.Services
             IImageProcessor imageProcessor,
             IEntityExistenceChecker entityExistenceChecker,
             IDisplayOrderManager displayOrderManager,
-            ILogger<ImageUploadService> logger)
+            ILogger<ImageUploadService> logger,
+            IWebHostEnvironment env)
         {
             _context = context;
             _imageProcessor = imageProcessor;
             _entityExistenceChecker = entityExistenceChecker;
             _displayOrderManager = displayOrderManager;
             _logger = logger;
+            _env = env;
         }
 
         /// <summary>
@@ -46,7 +50,8 @@ namespace zuHause.Services
             EntityType entityType, 
             int entityId, 
             ImageCategory category, 
-            int? uploadedByMemberId = null)
+            int? uploadedByMemberId = null,
+            bool skipEntityValidation = false)
         {
             var results = new List<ImageUploadResult>();
 
@@ -59,12 +64,15 @@ namespace zuHause.Services
                     return validationResult;
                 }
 
-                // 2. 實體存在性驗證
-                var entityExists = await _entityExistenceChecker.ExistsAsync(entityType, entityId);
-                if (!entityExists)
+                // 2. 實體存在性驗證 (可選)
+                if (!skipEntityValidation)
                 {
-                    results.Add(ImageUploadResult.CreateFailure("", $"{entityType} ID {entityId} 不存在"));
-                    return results;
+                    var entityExists = await _entityExistenceChecker.ExistsAsync(entityType, entityId);
+                    if (!entityExists)
+                    {
+                        results.Add(ImageUploadResult.CreateFailure("", $"{entityType} ID {entityId} 不存在"));
+                        return results;
+                    }
                 }
 
                 // 3. 檢查目前圖片數量
@@ -161,10 +169,11 @@ namespace zuHause.Services
             EntityType entityType, 
             int entityId, 
             ImageCategory category, 
-            int? uploadedByMemberId = null)
+            int? uploadedByMemberId = null,
+            bool skipEntityValidation = false)
         {
             var files = new FormFileCollection { file };
-            var results = await UploadImagesAsync(files, entityType, entityId, category, uploadedByMemberId);
+            var results = await UploadImagesAsync(files, entityType, entityId, category, uploadedByMemberId, skipEntityValidation);
             return results.FirstOrDefault() ?? ImageUploadResult.CreateFailure(file.FileName, "無法處理圖片");
         }
 
@@ -177,15 +186,19 @@ namespace zuHause.Services
             EntityType entityType, 
             int entityId, 
             ImageCategory category, 
-            int? uploadedByMemberId = null)
+            int? uploadedByMemberId = null,
+            bool skipEntityValidation = false)
         {
             try
             {
-                // 實體存在性驗證
-                var entityExists = await _entityExistenceChecker.ExistsAsync(entityType, entityId);
-                if (!entityExists)
+                // 實體存在性驗證 (可選)
+                if (!skipEntityValidation)
                 {
-                    return ImageUploadResult.EntityNotFound(originalFileName, entityType, entityId);
+                    var entityExists = await _entityExistenceChecker.ExistsAsync(entityType, entityId);
+                    if (!entityExists)
+                    {
+                        return ImageUploadResult.EntityNotFound(originalFileName, entityType, entityId);
+                    }
                 }
 
                 // 處理圖片
@@ -539,14 +552,34 @@ namespace zuHause.Services
             {
                 // 生成唯一識別碼
                 var imageGuid = Guid.NewGuid();
-                var fileExtension = Path.GetExtension(originalFileName).ToLowerInvariant();
-                var storedFileName = $"{imageGuid}{fileExtension}";
+
+                // 寫檔前先處理圖片
 
                 // 使用圖片處理器將圖片轉換為 WebP
                 var processingResult = await _imageProcessor.ConvertToWebPAsync(imageStream, 1200, 90);
                 if (!processingResult.Success)
                 {
                     return ImageUploadResult.CreateFailure(originalFileName, $"圖片處理失敗: {processingResult.ErrorMessage}");
+                }
+
+                var processedFormat = processingResult.ProcessedFormat.ToLowerInvariant(); // webp
+                var storedFileName = $"{imageGuid}.{processedFormat}";
+
+                // === 將處理後的串流寫入 wwwroot/images/original ===
+                try
+                {
+                    var originalFolder = Path.Combine(_env.WebRootPath, "images", "original");
+                    Directory.CreateDirectory(originalFolder);
+                    var filePath = Path.Combine(originalFolder, storedFileName);
+
+                    await using var fs = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None);
+                    processingResult.ProcessedStream!.Position = 0;
+                    await processingResult.ProcessedStream.CopyToAsync(fs);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "寫入圖片檔案失敗: {FileName}", storedFileName);
+                    return ImageUploadResult.CreateFailure(originalFileName, "儲存圖片檔案失敗");
                 }
 
                 // 儲存到資料庫
@@ -558,6 +591,7 @@ namespace zuHause.Services
                     Category = category,
                     MimeType = $"image/{processingResult.ProcessedFormat}",
                     OriginalFileName = originalFileName,
+                    StoredFileName = storedFileName,
                     FileSizeBytes = processingResult.SizeBytes,
                     Width = processingResult.Width,
                     Height = processingResult.Height,
