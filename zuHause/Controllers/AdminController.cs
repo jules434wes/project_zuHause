@@ -3,9 +3,11 @@ using zuHause.AdminViewModels;
 using zuHause.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
+using Microsoft.AspNetCore.Authorization;
 
 namespace zuHause.Controllers
 {
+    [Authorize(AuthenticationSchemes = "AdminCookies")]
     public class AdminController : Controller
     {
         private readonly ZuHauseContext _context;

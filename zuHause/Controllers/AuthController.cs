@@ -2,6 +2,8 @@
 using Microsoft.AspNetCore.Http;
 using System.Text.Json;
 using zuHause.Models;
+using Microsoft.AspNetCore.Authentication;
+using System.Security.Claims;
 
 namespace zuHause.Controllers
 {
@@ -21,7 +23,7 @@ namespace zuHause.Controllers
         }
 
         [HttpPost]
-        public IActionResult Login(string account, string password)
+        public async Task<IActionResult> Login(string account, string password)
         {
             var admin = _context.Admins.FirstOrDefault(a => a.Account == account && a.DeletedAt == null);
             if (admin == null || !admin.IsActive)
@@ -43,19 +45,26 @@ namespace zuHause.Controllers
                 return View();
             }
 
-            // 設定 Session
-            HttpContext.Session.SetString("adminID", admin.AdminId.ToString()); // ✅ 正確屬性名稱
-            HttpContext.Session.SetString("roleCode", admin.RoleCode);
-            HttpContext.Session.SetString("roleName", role.RoleName);
-            HttpContext.Session.SetString("permissionsJSON", role.PermissionsJson ?? "{}"); // ✅ 注意 Json 結尾 J 要小寫
+            // 設定 Cookie Authentication Claims
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, admin.AdminId.ToString()),
+                new Claim("RoleCode", admin.RoleCode),
+                new Claim("RoleName", role.RoleName),
+                new Claim("PermissionsJSON", role.PermissionsJson ?? "{}")
+            };
 
+            var claimsIdentity = new ClaimsIdentity(claims, "AdminCookies");
+            var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
+
+            await HttpContext.SignInAsync("AdminCookies", claimsPrincipal);
 
             return RedirectToAction("Index", "Dashboard");
         }
 
-        public IActionResult Logout()
+        public async Task<IActionResult> Logout()
         {
-            HttpContext.Session.Clear();
+            await HttpContext.SignOutAsync("AdminCookies");
             return RedirectToAction("Login");
         }
     }

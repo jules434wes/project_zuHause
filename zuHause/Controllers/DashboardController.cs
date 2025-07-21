@@ -4,11 +4,14 @@ using Microsoft.EntityFrameworkCore;
 using zuHause.Models;
 using zuHause.ViewModels;
 using System.Text.Json;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace zuHause.Controllers
 {
 
     [Route("Dashboard")]
+    [Authorize(AuthenticationSchemes = "AdminCookies")]
     public class DashboardController : Controller
     {
         private readonly ZuHauseContext _context;
@@ -21,13 +24,11 @@ namespace zuHause.Controllers
         [HttpGet("")]
         public IActionResult Index()
         {
-            if (string.IsNullOrEmpty(HttpContext.Session.GetString("adminID")))
-                return RedirectToAction("Login", "Auth");
+            // 從 Cookie Claims 獲取管理員資訊
+            ViewBag.EmployeeID = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            ViewBag.Role = HttpContext.User.FindFirst("RoleName")?.Value;
 
-            ViewBag.EmployeeID = HttpContext.Session.GetString("adminID");
-            ViewBag.Role = HttpContext.Session.GetString("roleName");
-
-            var permissionsJSON = HttpContext.Session.GetString("permissionsJSON") ?? "{}";
+            var permissionsJSON = HttpContext.User.FindFirst("PermissionsJSON")?.Value ?? "{}";
             var permissions = JsonSerializer.Deserialize<Dictionary<string, bool>>(permissionsJSON);
 
             var allKeys = new List<string>

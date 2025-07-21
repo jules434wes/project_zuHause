@@ -23,6 +23,16 @@ builder.Services.AddAuthentication("MemberCookieAuth").AddCookie("MemberCookieAu
     options.AccessDeniedPath = "/Member/AccessDenied";
 });
 
+// 管理員登入驗證
+builder.Services.AddAuthentication("AdminCookies")
+    .AddCookie("AdminCookies", options =>
+    {
+        options.LoginPath = "/Auth/Login";
+        options.LogoutPath = "/Auth/Logout";
+        options.ExpireTimeSpan = TimeSpan.FromHours(8);
+        options.SlidingExpiration = true;
+    });
+
 
 builder.Services.AddDbContext<ZuHauseContext>(
             options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
