@@ -2,6 +2,7 @@
 @{
     ViewData["Title"] = Model.PageTitle;
     ViewData["MemberData"] = Model.Data;
+    Layout = "_AdminLayout";
 }
 
 <!-- Bootstrap Icons CDN -->
@@ -9,7 +10,7 @@
 <!-- Admin Styles -->
 <link href="~/css/admin-style.css" rel="stylesheet" />
 
-<div class="container-fluid fade-in">
+<div class="container-fluid fade-in" style="margin-bottom: 120px; padding-bottom: 40px;">
     @await Html.PartialAsync("_AdminPartial/_UserDetails/_HeaderSection")
     @await Html.PartialAsync("_AdminPartial/_UserDetails/_TabNavigation")
 
@@ -17,7 +18,15 @@
 </div>
 
 @section Scripts {
-    @await Html.PartialAsync("_AdminPartial/_UserDetails/_UserDetailsScripts")
+    <script src="~/js/admin_js/user-details.js"></script>
+    <script>
+        // 設定當前會員ID
+        var currentMemberId = '@Model.Data.MemberID';
+        // 頁面載入完成後設定
+        document.addEventListener('DOMContentLoaded', function() {
+            setCurrentMemberId(currentMemberId);
+        });
+    </script>
 }
 
 @await Html.PartialAsync("_AdminPartial/_UserDetails/_UserDetailsModals")

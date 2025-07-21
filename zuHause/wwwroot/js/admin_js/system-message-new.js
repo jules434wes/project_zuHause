@@ -1,10 +1,20 @@
-<script>
+// 新增系統訊息頁面 JavaScript
 // 全域變數
 let selectedUser = null;
-let availableUsers = @Html.Raw(Json.Serialize(ViewData["AvailableUsers"]));
+let availableUsers = [];
 
 // 頁面載入後初始化
 document.addEventListener('DOMContentLoaded', function() {
+    // 嘗試從 ViewData 獲取使用者資料
+    try {
+        if (typeof window.availableUsersData !== 'undefined') {
+            availableUsers = window.availableUsersData;
+        }
+    } catch (e) {
+        console.warn('無法載入使用者資料');
+        availableUsers = [];
+    }
+    
     initializeAudienceSelector();
     initializeUserSearch();
     initializeConfirmCheckbox();
@@ -39,6 +49,10 @@ function initializeUserSearch() {
     const userSearchField = document.getElementById('userSearchField');
     const userSearchResults = document.getElementById('userSearchResults');
 
+    if (!userSearchInput || !userSearchField || !userSearchResults) {
+        return;
+    }
+
     userSearchInput.addEventListener('input', function() {
         const query = this.value.toLowerCase().trim();
         const searchField = userSearchField.value;
@@ -51,11 +65,11 @@ function initializeUserSearch() {
         const filteredUsers = availableUsers.filter(user => {
             switch(searchField) {
                 case 'memberName':
-                    return user.memberName.toLowerCase().includes(query);
+                    return user.memberName && user.memberName.toLowerCase().includes(query);
                 case 'memberID':
-                    return user.memberId.toLowerCase().includes(query);
+                    return user.memberId && user.memberId.toLowerCase().includes(query);
                 case 'email':
-                    return user.email.toLowerCase().includes(query);
+                    return user.email && user.email.toLowerCase().includes(query);
                 case 'nationalNo':
                     return user.nationalNo && user.nationalNo.toLowerCase().includes(query);
                 default:
@@ -86,13 +100,15 @@ function initializeUserSearch() {
 function showUserSearchResults(users) {
     const userSearchResults = document.getElementById('userSearchResults');
     
+    if (!userSearchResults) return;
+    
     if (users.length === 0) {
         userSearchResults.innerHTML = '<div class="dropdown-item text-muted">找不到符合條件的用戶</div>';
     } else {
         userSearchResults.innerHTML = users.map(user => `
-            <div class="dropdown-item user-result-item" onclick="selectUser('${user.memberId}', '${user.memberName}', '${user.email}', '${user.nationalNo || ''}')">
-                <div><strong>${user.memberName}</strong> (${user.memberId})</div>
-                <div class="small text-muted">${user.email}</div>
+            <div class="dropdown-item user-result-item" onclick="selectUser('${user.memberId || ''}', '${user.memberName || ''}', '${user.email || ''}', '${user.nationalNo || ''}')">
+                <div><strong>${user.memberName || ''}</strong> (${user.memberId || ''})</div>
+                <div class="small text-muted">${user.email || ''}</div>
                 ${user.nationalNo ? `<div class="small text-muted">身分證：${user.nationalNo}</div>` : ''}
             </div>
         `).join('');
@@ -104,14 +120,23 @@ function showUserSearchResults(users) {
 // 隱藏用戶搜尋結果
 function hideUserSearchResults() {
     const userSearchResults = document.getElementById('userSearchResults');
-    userSearchResults.style.display = 'none';
+    if (userSearchResults) {
+        userSearchResults.style.display = 'none';
+    }
 }
 
 // 選擇用戶
 function selectUser(memberId, memberName, email, nationalNo = '') {
     selectedUser = { memberId, memberName, email, nationalNo };
-    document.getElementById('userSearch').value = `${memberName} (${memberId})`;
-    document.getElementById('selectedUserId').value = memberId;
+    const userSearchInput = document.getElementById('userSearch');
+    const selectedUserIdInput = document.getElementById('selectedUserId');
+    
+    if (userSearchInput) {
+        userSearchInput.value = `${memberName} (${memberId})`;
+    }
+    if (selectedUserIdInput) {
+        selectedUserIdInput.value = memberId;
+    }
     hideUserSearchResults();
 }
 
@@ -120,9 +145,11 @@ function initializeConfirmCheckbox() {
     const confirmCheckbox = document.getElementById('confirmCheckbox');
     const finalSendBtn = document.getElementById('finalSendBtn');
 
-    confirmCheckbox.addEventListener('change', function() {
-        finalSendBtn.disabled = !this.checked;
-    });
+    if (confirmCheckbox && finalSendBtn) {
+        confirmCheckbox.addEventListener('change', function() {
+            finalSendBtn.disabled = !this.checked;
+        });
+    }
 }
 
 // 顯示確認發送Modal
@@ -133,24 +160,32 @@ function showConfirmSendModal() {
     }
 
     const selectedAudienceRadio = document.querySelector('input[name="audienceType"]:checked');
-    const audienceLabel = document.querySelector(`label[for="${selectedAudienceRadio.id}"]`).textContent;
+    const audienceLabel = document.querySelector(`label[for="${selectedAudienceRadio.id}"]`);
     const confirmAudienceText = document.getElementById('confirmAudienceText');
     const confirmUserDetails = document.getElementById('confirmUserDetails');
     
-    confirmAudienceText.textContent = audienceLabel;
+    if (confirmAudienceText && audienceLabel) {
+        confirmAudienceText.textContent = audienceLabel.textContent;
+    }
 
     // 如果是個別用戶，顯示用戶詳細資訊
-    if (selectedAudienceRadio.value === 'individual' && selectedUser) {
-        document.getElementById('confirmUserName').textContent = selectedUser.memberName;
-        document.getElementById('confirmUserId').textContent = selectedUser.memberId;
-        confirmUserDetails.style.display = 'block';
+    if (selectedAudienceRadio && selectedAudienceRadio.value === 'individual' && selectedUser) {
+        const confirmUserName = document.getElementById('confirmUserName');
+        const confirmUserId = document.getElementById('confirmUserId');
+        
+        if (confirmUserName) confirmUserName.textContent = selectedUser.memberName;
+        if (confirmUserId) confirmUserId.textContent = selectedUser.memberId;
+        if (confirmUserDetails) confirmUserDetails.style.display = 'block';
     } else {
-        confirmUserDetails.style.display = 'none';
+        if (confirmUserDetails) confirmUserDetails.style.display = 'none';
     }
 
     // 重置確認checkbox
-    document.getElementById('confirmCheckbox').checked = false;
-    document.getElementById('finalSendBtn').disabled = true;
+    const confirmCheckbox = document.getElementById('confirmCheckbox');
+    const finalSendBtn = document.getElementById('finalSendBtn');
+    
+    if (confirmCheckbox) confirmCheckbox.checked = false;
+    if (finalSendBtn) finalSendBtn.disabled = true;
 
     const modal = new bootstrap.Modal(document.getElementById('confirmSendModal'));
     modal.show();
@@ -158,27 +193,27 @@ function showConfirmSendModal() {
 
 // 表單驗證
 function validateForm() {
-    const messageTitle = document.getElementById('messageTitle').value.trim();
-    const messageContent = document.getElementById('messageContent').value.trim();
-    const messageCategory = document.getElementById('messageCategory').value;
-    const selectedAudience = document.querySelector('input[name="audienceType"]:checked').value;
+    const messageTitle = document.getElementById('messageTitle');
+    const messageContent = document.getElementById('messageContent');
+    const messageCategory = document.getElementById('messageCategory');
+    const selectedAudience = document.querySelector('input[name="audienceType"]:checked');
 
-    if (!messageTitle) {
+    if (!messageTitle || !messageTitle.value.trim()) {
         alert('請輸入訊息標題');
         return false;
     }
 
-    if (!messageContent) {
+    if (!messageContent || !messageContent.value.trim()) {
         alert('請輸入訊息內容');
         return false;
     }
 
-    if (!messageCategory) {
+    if (!messageCategory || !messageCategory.value) {
         alert('請選擇訊息分類');
         return false;
     }
 
-    if (selectedAudience === 'individual' && !selectedUser) {
+    if (selectedAudience && selectedAudience.value === 'individual' && !selectedUser) {
         alert('請選擇個別用戶');
         return false;
     }
@@ -189,12 +224,17 @@ function validateForm() {
 // 發送訊息
 function sendMessage() {
     // 收集表單資料
+    const selectedAudience = document.querySelector('input[name="audienceType"]:checked');
+    const messageCategory = document.getElementById('messageCategory');
+    const messageTitle = document.getElementById('messageTitle');
+    const messageContent = document.getElementById('messageContent');
+    
     const formData = {
-        audienceType: document.querySelector('input[name="audienceType"]:checked').value,
+        audienceType: selectedAudience ? selectedAudience.value : '',
         receiverId: selectedUser ? selectedUser.memberId : null,
-        messageCategory: document.getElementById('messageCategory').value,
-        messageTitle: document.getElementById('messageTitle').value,
-        messageContent: document.getElementById('messageContent').value
+        messageCategory: messageCategory ? messageCategory.value : '',
+        messageTitle: messageTitle ? messageTitle.value : '',
+        messageContent: messageContent ? messageContent.value : ''
     };
 
     // 這裡將來會調用後端API
@@ -204,7 +244,8 @@ function sendMessage() {
     alert('訊息發送成功！');
     
     // 關閉Modal並導向列表頁
-    bootstrap.Modal.getInstance(document.getElementById('confirmSendModal')).hide();
+    const modal = bootstrap.Modal.getInstance(document.getElementById('confirmSendModal'));
+    if (modal) modal.hide();
     window.location.href = '/Admin/admin_systemMessageList';
 }
 
@@ -212,9 +253,11 @@ function sendMessage() {
 function initializeTemplateModal() {
     const templateCategoryFilter = document.getElementById('templateCategoryFilter');
     
-    templateCategoryFilter.addEventListener('change', function() {
-        filterTemplates(this.value);
-    });
+    if (templateCategoryFilter) {
+        templateCategoryFilter.addEventListener('change', function() {
+            filterTemplates(this.value);
+        });
+    }
 }
 
 // 開啟模板Modal
@@ -241,9 +284,18 @@ function filterTemplates(category) {
 // 選擇模板
 function selectTemplate(templateElement) {
     const content = templateElement.getAttribute('data-template-content');
-    document.getElementById('messageContent').value = content;
+    const messageContent = document.getElementById('messageContent');
+    
+    if (messageContent) {
+        messageContent.value = content;
+    }
     
     // 關閉Modal
-    bootstrap.Modal.getInstance(document.getElementById('templateModal')).hide();
+    const modal = bootstrap.Modal.getInstance(document.getElementById('templateModal'));
+    if (modal) modal.hide();
 }
-</script>
+
+// 設定可用使用者資料的函數（供從外部呼叫）
+function setAvailableUsers(users) {
+    availableUsers = users;
+}

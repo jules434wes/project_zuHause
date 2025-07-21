@@ -1,4 +1,57 @@
-<script>
+// 會員管理頁面 JavaScript
+// 全域函數：帳戶狀態切換 (供HTML onclick呼叫)
+function toggleAccountStatus(memberId, currentStatus) {
+    var newStatus = currentStatus === 'active' ? '停用' : '啟用';
+    var actionText = currentStatus === 'active' ? '停用此帳戶' : '啟用此帳戶';
+    
+    // 危險操作需要延遲確認，防止誤點擊
+    setTimeout(function() {
+        var confirmMessage = '危險操作確認\n\n' +
+                           '會員ID: ' + memberId + '\n' +
+                           '操作: ' + actionText + '\n\n' +
+                           '此操作將會影響會員的登入權限。\n' +
+                           '確定要繼續嗎？';
+        
+        if (confirm(confirmMessage)) {
+            // 二次確認
+            var secondConfirm = '最後確認:\n\n確定要' + actionText + '嗎？\n\n' +
+                              '請輸入會員ID "' + memberId + '" 以確認操作:';
+            var userInput = prompt(secondConfirm);
+            
+            if (userInput === memberId) {
+                console.log('切換會員 ' + memberId + ' 帳戶狀態為: ' + newStatus);
+                // TODO: 實作後端API呼叫
+                alert('帳戶狀態已' + newStatus + ' (開發中...)');
+            } else if (userInput !== null) {
+                alert('輸入的會員ID不正確，操作已取消');
+            }
+        }
+    }, 300); // 延遲300ms避免誤點擊
+}
+
+// 全域函數：開啟管理備註Modal (供HTML onclick呼叫)
+function openAdminNotesModal(memberId) {
+    console.log('開啟會員 ' + memberId + ' 管理備註');
+    // TODO: 實作管理備註Modal
+    alert('管理備註功能開發中...');
+}
+
+// 全域函數：重置驗證狀態 (供HTML onclick呼叫)
+function resetVerificationStatus(memberId) {
+    if (confirm('確定要重置會員 ' + memberId + ' 的驗證狀態嗎？此操作會清除現有驗證記錄。')) {
+        console.log('重置會員 ' + memberId + ' 驗證狀態');
+        // TODO: 實作後端API呼叫
+        alert('驗證狀態已重置 (開發中...)');
+    }
+}
+
+// 全域函數：查看用戶操作記錄 (供HTML onclick呼叫)
+function viewUserActivityLog(memberId) {
+    console.log('查看會員 ' + memberId + ' 操作記錄');
+    // TODO: 實作操作記錄查看功能
+    alert('操作記錄查看功能開發中...');
+}
+
 // 全域函數：載入會員證件 (供HTML onclick呼叫)
 function loadDocuments(memberId) {
     console.log('載入會員ID ' + memberId + ' 的證件');
@@ -62,6 +115,9 @@ document.addEventListener('DOMContentLoaded', function() {
     initTabEvents('', 'user-checkbox', 'bulkMessageBtn', 'selectAllUsers', '全部會員');
     initTabEvents('Pending', 'user-checkbox-pending', 'bulkMessageBtnPending', 'selectAllUsersPending', '等待驗證會員');
     initTabEvents('Landlord', 'user-checkbox-landlord', 'bulkMessageBtnLandlord', 'selectAllUsersLandlord', '申請房東會員');
+
+    // 動態載入城市資料
+    loadCityData();
 
     // 初始化排序功能
     initSortingEvents();
@@ -164,7 +220,7 @@ document.addEventListener('DOMContentLoaded', function() {
         var searchBtn = document.getElementById('searchBtn' + suffix);
         if (searchBtn) {
             searchBtn.addEventListener('click', function() {
-                console.log('搜尋' + tabName);
+                performSearch(suffix, tabName);
             });
         }
 
@@ -173,6 +229,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (resetBtn) {
             resetBtn.addEventListener('click', function() {
                 resetFormFields(suffix);
+                performSearch(suffix, tabName);
                 console.log('重置' + tabName + '搜尋條件');
             });
         }
@@ -261,7 +318,7 @@ document.addEventListener('DOMContentLoaded', function() {
             var element = document.getElementById(fieldId);
             if (element) {
                 if (element.type === 'select-one') {
-                    element.value = element.id.includes('searchField') ? 'all' : '';
+                    element.value = element.id.includes('searchField') ? 'memberID' : '';
                 } else {
                     element.value = '';
                 }
@@ -517,5 +574,294 @@ document.addEventListener('DOMContentLoaded', function() {
         // 更新分頁按鈕狀態
         updatePagination(paginationContainer, pageNum, totalPages, pageSize, allRows, tableType);
     }
+
+    // 執行搜尋篩選
+    function performSearch(suffix, tabName) {
+        var searchInput = document.getElementById('searchInput' + suffix);
+        var searchField = document.getElementById('searchField' + suffix);
+        var verificationStatus = document.getElementById('verificationStatus' + suffix);
+        var accountStatus = document.getElementById('accountStatus' + suffix);
+        var gender = document.getElementById('gender' + suffix);
+        var isLandlord = document.getElementById('isLandlord' + suffix);
+        var primaryRentalCityID = document.getElementById('primaryRentalCityID' + suffix);
+        var residenceCityID = document.getElementById('residenceCityID' + suffix);
+        var registerDateStart = document.getElementById('registerDateStart' + suffix);
+        var registerDateEnd = document.getElementById('registerDateEnd' + suffix);
+        var lastLoginDateStart = document.getElementById('lastLoginDateStart' + suffix);
+        var lastLoginDateEnd = document.getElementById('lastLoginDateEnd' + suffix);
+        var applyDateStart = document.getElementById('applyDateStart' + suffix);
+        var applyDateEnd = document.getElementById('applyDateEnd' + suffix);
+
+        // 獲取篩選條件
+        var filters = {
+            searchText: searchInput ? searchInput.value.trim() : '',
+            searchField: searchField ? searchField.value : 'memberID',
+            verificationStatus: verificationStatus ? verificationStatus.value : '',
+            accountStatus: accountStatus ? accountStatus.value : '',
+            gender: gender ? gender.value : '',
+            isLandlord: isLandlord ? isLandlord.value : '',
+            primaryRentalCityID: primaryRentalCityID ? primaryRentalCityID.value : '',
+            residenceCityID: residenceCityID ? residenceCityID.value : '',
+            registerDateStart: registerDateStart ? registerDateStart.value : '',
+            registerDateEnd: registerDateEnd ? registerDateEnd.value : '',
+            lastLoginDateStart: lastLoginDateStart ? lastLoginDateStart.value : '',
+            lastLoginDateEnd: lastLoginDateEnd ? lastLoginDateEnd.value : '',
+            applyDateStart: applyDateStart ? applyDateStart.value : '',
+            applyDateEnd: applyDateEnd ? applyDateEnd.value : ''
+        };
+
+        // 獲取對應的表格
+        var tableId = getTableId(getTableTypeFromSuffix(suffix));
+        var table = document.querySelector(tableId + ' table tbody');
+        
+        if (!table) return;
+
+        var allRows = Array.from(table.querySelectorAll('tr'));
+        var filteredRows = allRows.filter(function(row) {
+            return matchesFilters(row, filters);
+        });
+
+        // 隱藏所有行
+        allRows.forEach(function(row) {
+            row.style.display = 'none';
+        });
+
+        // 顯示符合條件的行
+        filteredRows.forEach(function(row) {
+            row.style.display = '';
+        });
+
+        // 更新分頁顯示
+        var tableType = getTableTypeFromSuffix(suffix);
+        var paginationContainer = document.querySelector(tableId + ' nav[aria-label*="分頁"]');
+        var pageSizeSelector = document.querySelector('#pageSize' + tableType);
+        var currentPageSize = pageSizeSelector ? parseInt(pageSizeSelector.value) : 10;
+        
+        updatePaginationForFiltered(paginationContainer, filteredRows, currentPageSize, tableType);
+
+        console.log('搜尋' + tabName + '，找到 ' + filteredRows.length + ' 筆符合條件的資料');
+    }
+
+    // 檢查行是否符合篩選條件
+    function matchesFilters(row, filters) {
+        var cells = row.querySelectorAll('td');
+        if (cells.length === 0) return false;
+
+        // 關鍵字搜尋
+        if (filters.searchText) {
+            var searchValue = getSearchValue(row, filters.searchField);
+            if (!searchValue.toLowerCase().includes(filters.searchText.toLowerCase())) {
+                return false;
+            }
+        }
+
+        // 身分證驗證狀態
+        if (filters.verificationStatus) {
+            var verificationCell = cells[5]; // 身分證驗證狀態欄位
+            if (verificationCell) {
+                var verificationText = verificationCell.textContent.trim();
+                var matches = false;
+                
+                switch(filters.verificationStatus) {
+                    case 'verified':
+                        matches = verificationText.includes('已驗證') || verificationText.includes('通過');
+                        break;
+                    case 'pending':
+                        matches = verificationText.includes('等待驗證');
+                        break;
+                    case 'unverified':
+                        matches = verificationText.includes('尚未驗證');
+                        break;
+                }
+                
+                if (!matches) return false;
+            }
+        }
+
+        // 帳戶狀態
+        if (filters.accountStatus) {
+            var statusCell = cells[7]; // 帳戶狀態欄位 (修正為第7個欄位)
+            if (statusCell) {
+                var statusText = statusCell.textContent.trim();
+                var matches = false;
+                
+                switch(filters.accountStatus) {
+                    case 'active':
+                        matches = statusText.includes('啟用');
+                        break;
+                    case 'inactive':
+                        matches = statusText.includes('停用');
+                        break;
+                }
+                
+                if (!matches) return false;
+            }
+        }
+
+        // 進階篩選條件
+        // 性別篩選
+        if (filters.gender) {
+            var gender = row.getAttribute('data-gender');
+            if (filters.gender === 'other') {
+                if (gender === '1' || gender === '2') return false;
+            } else {
+                if (gender !== filters.gender) return false;
+            }
+        }
+
+        // 房東身分篩選
+        if (filters.isLandlord !== '') {
+            var isLandlord = row.getAttribute('data-is-landlord');
+            if (isLandlord !== filters.isLandlord) return false;
+        }
+
+        // 居住縣市篩選
+        if (filters.residenceCityID) {
+            var residenceCity = row.getAttribute('data-residence-city');
+            if (residenceCity !== filters.residenceCityID) return false;
+        }
+
+        // 偏好租賃縣市篩選
+        if (filters.primaryRentalCityID) {
+            var primaryRentalCity = row.getAttribute('data-primary-rental-city');
+            if (primaryRentalCity !== filters.primaryRentalCityID) return false;
+        }
+
+        // 註冊日期範圍篩選
+        if (filters.registerDateStart || filters.registerDateEnd) {
+            var registrationDate = row.getAttribute('data-registration-date');
+            if (registrationDate && registrationDate !== '--') {
+                var regDate = new Date(registrationDate);
+                if (filters.registerDateStart) {
+                    var startDate = new Date(filters.registerDateStart);
+                    if (regDate < startDate) return false;
+                }
+                if (filters.registerDateEnd) {
+                    var endDate = new Date(filters.registerDateEnd);
+                    if (regDate > endDate) return false;
+                }
+            }
+        }
+
+        // 最後登入日期範圍篩選
+        if (filters.lastLoginDateStart || filters.lastLoginDateEnd) {
+            var lastLoginDate = row.getAttribute('data-last-login');
+            if (lastLoginDate && lastLoginDate !== '--') {
+                var loginDate = new Date(lastLoginDate);
+                if (filters.lastLoginDateStart) {
+                    var startDate = new Date(filters.lastLoginDateStart);
+                    if (loginDate < startDate) return false;
+                }
+                if (filters.lastLoginDateEnd) {
+                    var endDate = new Date(filters.lastLoginDateEnd);
+                    if (loginDate > endDate) return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    // 獲取搜尋值
+    function getSearchValue(row, searchField) {
+        var cells = row.querySelectorAll('td');
+        
+        switch(searchField) {
+            case 'memberID':
+                return cells[1] ? cells[1].textContent.trim() : '';
+            case 'memberName':
+                return cells[2] ? cells[2].textContent.trim() : '';
+            case 'email':
+                return cells[3] ? cells[3].textContent.trim() : '';
+            case 'phoneNumber':
+                return cells[4] ? cells[4].textContent.trim() : '';
+            case 'nationalIdNo':
+                // 身分證字號可能在不同欄位，需要根據實際表格結構調整
+                return cells[7] ? cells[7].textContent.trim() : '';
+            default:
+                return '';
+        }
+    }
+
+    // 從後綴獲取表格類型
+    function getTableTypeFromSuffix(suffix) {
+        switch(suffix) {
+            case '':
+                return 'all';
+            case 'Pending':
+                return 'pending';
+            case 'Landlord':
+                return 'landlord';
+            default:
+                return 'all';
+        }
+    }
+
+    // 為篩選結果更新分頁
+    function updatePaginationForFiltered(paginationContainer, filteredRows, pageSize, tableType) {
+        if (!paginationContainer) return;
+        
+        var totalRows = filteredRows.length;
+        var totalPages = Math.ceil(totalRows / pageSize);
+        
+        // 如果只有一頁或沒有資料，隱藏分頁
+        if (totalPages <= 1) {
+            paginationContainer.style.display = 'none';
+            return;
+        } else {
+            paginationContainer.style.display = 'block';
+        }
+        
+        // 顯示第一頁的篩選結果
+        showFilteredPageRows(filteredRows, 1, pageSize);
+        
+        // 更新分頁按鈕
+        updatePagination(paginationContainer, 1, totalPages, pageSize, filteredRows, tableType);
+    }
+
+    // 顯示篩選結果的指定頁面
+    function showFilteredPageRows(filteredRows, currentPage, pageSize) {
+        // 先隱藏所有篩選結果
+        filteredRows.forEach(function(row) {
+            row.style.display = 'none';
+        });
+        
+        // 顯示當前頁的行
+        var startIndex = (currentPage - 1) * pageSize;
+        var endIndex = Math.min(startIndex + pageSize, filteredRows.length);
+        
+        for (var i = startIndex; i < endIndex; i++) {
+            if (filteredRows[i]) {
+                filteredRows[i].style.display = '';
+            }
+        }
+    }
+
+    // 動態載入城市資料
+    function loadCityData() {
+        fetch('/Admin/GetCities')
+            .then(response => response.json())
+            .then(cities => {
+                // 更新所有城市下拉選單
+                document.querySelectorAll('[id^="residenceCityID"], [id^="primaryRentalCityID"]').forEach(function(select) {
+                    // 保留「全部」選項
+                    var defaultOption = select.querySelector('option[value=""]');
+                    select.innerHTML = '';
+                    if (defaultOption) {
+                        select.appendChild(defaultOption.cloneNode(true));
+                    }
+                    
+                    // 添加城市選項
+                    cities.forEach(function(city) {
+                        var option = document.createElement('option');
+                        option.value = city.id;
+                        option.textContent = city.name;
+                        select.appendChild(option);
+                    });
+                });
+            })
+            .catch(error => {
+                console.error('載入城市資料失敗:', error);
+            });
+    }
 });
-</script>

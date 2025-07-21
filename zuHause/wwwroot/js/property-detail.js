@@ -22,6 +22,7 @@ class PropertyDetail {
         this.setupSectionObserver();
         this.setupAnchorNavigation();
         this.setupImageGallery();
+        this.setupGalleryNavigation();
         this.setupActionButtons();
         this.initializeNavigation();
     }
@@ -219,48 +220,253 @@ class PropertyDetail {
 
     // 設置圖片畫廊
     setupImageGallery() {
+        // 獲取主要元素
         const mainImage = document.getElementById('mainImage');
-        const modalImage = document.getElementById('modalImage');
         const thumbnails = document.querySelectorAll('.thumbnail-image');
-
+        
+        // 獲取模態框元素
+        const imageModal = document.getElementById('imageModal');
+        const modalImage = document.getElementById('modalImage');
+        const modalCounter = document.getElementById('modalImageCounter');
+        const modalPrevBtn = document.getElementById('modalPrevBtn');
+        const modalNextBtn = document.getElementById('modalNextBtn');
+        
+        // 獲取主圖區域的按鈕
+        const galleryPrev = document.querySelector('.gallery-prev');
+        const galleryNext = document.querySelector('.gallery-next');
+        
+        if (!mainImage || !imageModal || !modalImage) return;
+        
+        // 創建 Bootstrap 模態框實例
+        const modalInstance = new bootstrap.Modal(imageModal);
+        
+        // 圖片來源陣列：主圖 + 所有縮圖
+        const allImages = [
+            { src: mainImage.src, alt: mainImage.alt || '房源圖片' },
+            ...Array.from(thumbnails).map(thumb => ({
+                src: thumb.getAttribute('data-image-src'),
+                alt: thumb.alt || '房源圖片'
+            }))
+        ].filter(img => img.src); // 過濾掉沒有 src 的項目
+        
+        // 模態框圖片索引
+        let currentModalIndex = 0;
+        
+        // 模態框顯示時的處理
+        imageModal.addEventListener('show.bs.modal', () => {
+            // 設置初始圖片
+            modalImage.src = allImages[currentModalIndex].src;
+            modalImage.alt = allImages[currentModalIndex].alt;
+            
+            // 更新計數器
+            if (modalCounter) {
+                modalCounter.textContent = `${currentModalIndex + 1} / ${allImages.length}`;
+            }
+        });
+        
+        // 更新模態框圖片函數
+        const updateModalImage = (newIndex) => {
+            if (!modalImage || allImages.length === 0) return;
+            
+            // 計算新索引（循環）
+            currentModalIndex = (newIndex + allImages.length) % allImages.length;
+            
+            // 添加淡出效果
+            modalImage.classList.remove('fade-in');
+            modalImage.classList.add('fade-out');
+            
+            // 使用動畫結束事件來確保平滑過渡
+            const handleAnimationEnd = () => {
+                // 更換圖片源
+                modalImage.src = allImages[currentModalIndex].src;
+                modalImage.alt = allImages[currentModalIndex].alt;
+                
+                // 添加淡入效果
+                modalImage.classList.remove('fade-out');
+                modalImage.classList.add('fade-in');
+                
+                // 更新計數器
+                if (modalCounter) {
+                    modalCounter.textContent = `${currentModalIndex + 1} / ${allImages.length}`;
+                }
+                
+                // 移除事件監聽器
+                modalImage.removeEventListener('animationend', handleAnimationEnd);
+            };
+            
+            // 監聽動畫結束事件
+            modalImage.addEventListener('animationend', handleAnimationEnd, { once: true });
+        };
+        
+        // 更新主圖函數
+        const updateMainImage = (src, alt) => {
+            if (!mainImage || !src) return;
+            
+            // 添加淡出效果
+            mainImage.classList.remove('fade-in');
+            mainImage.classList.add('fade-out');
+            
+            // 使用動畫結束事件來確保平滑過渡
+            const handleMainImageAnimationEnd = () => {
+                mainImage.src = src;
+                mainImage.alt = alt || '';
+                
+                // 添加淡入效果
+                mainImage.classList.remove('fade-out');
+                mainImage.classList.add('fade-in');
+                
+                // 移除事件監聽器
+                mainImage.removeEventListener('animationend', handleMainImageAnimationEnd);
+            };
+            
+            // 監聽動畫結束事件
+            mainImage.addEventListener('animationend', handleMainImageAnimationEnd, { once: true });
+        };
+        
         // 主圖點擊放大
-        if (mainImage && modalImage) {
-            mainImage.addEventListener('click', () => {
-                modalImage.src = mainImage.src;
-                modalImage.alt = mainImage.alt;
-            });
-        }
-
+        mainImage.addEventListener('click', () => {
+            currentModalIndex = 0; // 重置為主圖
+            modalInstance.show();
+        });
+        
         // 縮圖點擊切換主圖
-        thumbnails.forEach(thumbnail => {
+        thumbnails.forEach((thumbnail, idx) => {
             thumbnail.addEventListener('click', () => {
                 const newSrc = thumbnail.getAttribute('data-image-src');
                 const newAlt = thumbnail.alt;
                 
-                if (mainImage && newSrc) {
-                    // 添加淡出效果
-                    mainImage.style.opacity = '0.5';
-                    
-                    setTimeout(() => {
-                        mainImage.src = newSrc;
-                        mainImage.alt = newAlt;
-                        mainImage.style.opacity = '1';
-                    }, 150);
-                }
-
+                // 更新主圖
+                updateMainImage(newSrc, newAlt);
+                
                 // 更新縮圖活躍狀態
                 thumbnails.forEach(t => t.parentElement.classList.remove('active'));
                 thumbnail.parentElement.classList.add('active');
+                
+                // 更新模態框索引，這樣點擊縮圖後打開模態框時會顯示正確的圖片
+                currentModalIndex = idx + 1; // +1 因為主圖是 index 0
+            });
+            
+            // 縮圖雙擊直接打開模態框
+            thumbnail.addEventListener('dblclick', () => {
+                currentModalIndex = idx + 1;
+                modalInstance.show();
+            });
+        });
+        
+        // 模態框中的左右切換按鈕
+        if (modalPrevBtn) {
+            modalPrevBtn.addEventListener('click', () => {
+                updateModalImage(currentModalIndex - 1);
+            });
+        }
+        
+        if (modalNextBtn) {
+            modalNextBtn.addEventListener('click', () => {
+                updateModalImage(currentModalIndex + 1);
+            });
+        }
+        
+        // 主圖區域的左右切換按鈕
+        if (galleryPrev) {
+            galleryPrev.addEventListener('click', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                
+                // 使用 setupGalleryNavigation 中的方法來切換主圖
+                const prevEvent = new Event('gallery:prev');
+                document.dispatchEvent(prevEvent);
+            });
+        }
+        
+        if (galleryNext) {
+            galleryNext.addEventListener('click', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                
+                // 使用 setupGalleryNavigation 中的方法來切換主圖
+                const nextEvent = new Event('gallery:next');
+                document.dispatchEvent(nextEvent);
+            });
+        }
+        
+        // 鍵盤導航
+        document.addEventListener('keydown', (e) => {
+            // 模態框開啟時的鍵盤導航
+            if (imageModal.classList.contains('show')) {
+                if (e.key === 'Escape') {
+                    modalInstance.hide();
+                } else if (e.key === 'ArrowLeft') {
+                    updateModalImage(currentModalIndex - 1);
+                } else if (e.key === 'ArrowRight') {
+                    updateModalImage(currentModalIndex + 1);
+                }
+            }
+        });
+    }
+
+    // 設置主圖與縮圖左右切換
+    setupGalleryNavigation() {
+        const prevBtn = document.querySelector('.gallery-prev');
+        const nextBtn = document.querySelector('.gallery-next');
+        const thumbPrev = document.querySelector('.thumb-prev');
+        const thumbNext = document.querySelector('.thumb-next');
+        const thumbnailsWrapper = document.querySelector('.thumbnails-wrapper');
+
+        const mainImg = document.getElementById('mainImage');
+        const thumbs = Array.from(document.querySelectorAll('.thumbnail-image'));
+        if(!prevBtn || !nextBtn || thumbs.length === 0 || !mainImg) return;
+
+        // 圖片來源陣列：index 0 = 主圖，之後依縮圖順序
+        const sources = [mainImg.getAttribute('src'), ...thumbs.map(t=>t.getAttribute('data-image-src'))];
+
+        let currentIdx = 0; // 對應 sources
+
+        const updateMain = ()=>{
+            mainImg.src = sources[currentIdx];
+            // 更新縮圖高亮（currentIdx 0 代表主圖，無對應縮圖）
+            thumbs.forEach(t=>t.parentElement.classList.remove('active'));
+            if(currentIdx>0){
+                thumbs[currentIdx-1].parentElement.classList.add('active');
+            }
+        };
+
+        // 主圖區域左右切換按鈕點擊
+        prevBtn.addEventListener('click',()=>{
+            currentIdx = (currentIdx -1 + sources.length)%sources.length;
+            updateMain();
+        });
+        nextBtn.addEventListener('click',()=>{
+            currentIdx = (currentIdx +1)%sources.length;
+            updateMain();
+        });
+        
+        // 監聽自定義事件
+        document.addEventListener('gallery:prev', () => {
+            currentIdx = (currentIdx -1 + sources.length)%sources.length;
+            updateMain();
+        });
+        document.addEventListener('gallery:next', () => {
+            currentIdx = (currentIdx +1)%sources.length;
+            updateMain();
+        });
+
+        // 點縮圖
+        thumbs.forEach((t,idx)=>{
+            t.addEventListener('click',()=>{
+                currentIdx = idx+1; // 因主圖在 index0
+                updateMain();
             });
         });
 
-        // 鍵盤導航
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                const modal = bootstrap.Modal.getInstance(document.getElementById('imageModal'));
-                if (modal) modal.hide();
-            }
-        });
+        // 縮圖橫向滾動按鈕
+        if(thumbnailsWrapper){
+            thumbPrev?.addEventListener('click',()=>{
+                thumbnailsWrapper.scrollBy({left:-150,behavior:'smooth'});
+            });
+            thumbNext?.addEventListener('click',()=>{
+                thumbnailsWrapper.scrollBy({left:150,behavior:'smooth'});
+            });
+        }
     }
 
     // 設置操作按鈕

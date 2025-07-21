@@ -1,5 +1,10 @@
+@using zuHause.AdminViewModels
 @{
-    dynamic memberData = ViewData["MemberData"];
+    MemberData memberData = ViewData["MemberData"] as MemberData;
+    if (memberData == null)
+    {
+        return;
+    }
 }
 
 <!-- 頂部標題區 & 快速操作區 -->

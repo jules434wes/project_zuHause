@@ -262,23 +262,10 @@ namespace zuHause.Services
             }
         }
 
-        /// <summary>
-        /// 生成房源圖片 URL - Facade 方法，委託給統一圖片查詢服務
-        /// </summary>
-        /// <param name="storedFileName">儲存檔名</param>
-        /// <param name="size">圖片尺寸</param>
-        /// <returns>圖片 URL</returns>
+        /// <inheritdoc />
         public string GeneratePropertyImageUrl(string storedFileName, ImageSize size = ImageSize.Original)
         {
-            try
-            {
-                return _imageQueryService.GenerateImageUrl(storedFileName, size);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "生成房源圖片 URL 失敗，檔名: {FileName}", storedFileName);
-                return string.Empty;
-            }
+            return _imageQueryService.GenerateImageUrl(storedFileName, size);
         }
 
         // === 私有輔助方法 ===

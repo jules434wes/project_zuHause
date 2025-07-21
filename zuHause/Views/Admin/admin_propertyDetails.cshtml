@@ -1,7 +1,7 @@
 @{
     ViewData["Title"] = "個別屋源詳情";
-    Layout = "_Layout";
-    
+    Layout = "_AdminLayout";
+
     // 模擬屋源資料 (後續將由Controller傳入)
     var propertyData = new {
         PropertyId = "P001",
@@ -34,7 +34,7 @@
 
 <link href="~/css/admin-style.css" rel="stylesheet" />
 
-<div class="container-fluid fade-in">
+<div class="container-fluid fade-in" style="margin-bottom: 120px; padding-bottom: 40px;">
     <!-- 引入各個部分 -->
     <partial name="_AdminPartial/_PropertyDetails/_HeaderSection" />
     <partial name="_AdminPartial/_PropertyDetails/_TabNavigation" />
@@ -42,4 +42,12 @@
     <partial name="_AdminPartial/_PropertyDetails/_PropertyDetailsModals" />
 </div>
 
-<partial name="_AdminPartial/_PropertyDetails/_PropertyDetailsScripts" />
+<script src="~/js/admin_js/property-details.js"></script>
+<script>
+    // 設定當前房源ID
+    var currentPropertyId = '@propertyData.PropertyId';
+    // 頁面載入完成後設定
+    document.addEventListener('DOMContentLoaded', function() {
+        setCurrentPropertyId(currentPropertyId);
+    });
+</script>

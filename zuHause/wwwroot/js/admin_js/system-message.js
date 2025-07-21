@@ -1,4 +1,4 @@
-<script>
+// 系統訊息管理頁面 JavaScript
 // 檢視訊息 Modal 函數
 function viewMessage(messageId, title, content) {
     const modal = document.getElementById('viewMessageModal');
@@ -74,4 +74,3 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('已重置所有搜尋條件');
     });
 });
-</script>

@@ -53,7 +53,8 @@ namespace zuHause.Controllers.Api
                             request.EntityType,
                             request.EntityId,
                             request.Category,
-                            request.StartDisplayOrder
+                            null, // uploadedByMemberId - 演示用途暫不指定
+                            request.SkipEntityValidation
                         );
 
                         if (uploadResult.Success)
@@ -122,12 +123,12 @@ namespace zuHause.Controllers.Api
 
                 var response = new ImageManagerListResponseDto
                 {
-                    Images = images.Select(MapToResponseDto).ToList(),
+                    Images = images.Select(img => MapToResponseDto(img, mainImage?.ImageId)).ToList(),
                     TotalCount = images.Count,
                     EntityType = entityType,
                     EntityId = entityId,
                     Category = category,
-                    MainImage = mainImage != null ? MapToResponseDto(mainImage) : null
+                    MainImage = mainImage != null ? MapToResponseDto(mainImage, mainImage?.ImageId) : null
                 };
 
                 return Ok(ApiResponseWrapper<ImageManagerListResponseDto>.SuccessResponse(response));
@@ -172,12 +173,12 @@ namespace zuHause.Controllers.Api
                         AffectedImageIds = new List<long> { imageId },
                         UpdatedImageList = new ImageManagerListResponseDto
                         {
-                            Images = updatedImages.Select(MapToResponseDto).ToList(),
+                            Images = updatedImages.Select(img => MapToResponseDto(img, mainImage?.ImageId)).ToList(),
                             TotalCount = updatedImages.Count,
                             EntityType = image.EntityType,
                             EntityId = image.EntityId,
                             Category = image.Category,
-                            MainImage = mainImage != null ? MapToResponseDto(mainImage) : null
+                            MainImage = mainImage != null ? MapToResponseDto(mainImage, mainImage?.ImageId) : null
                         }
                     };
 
@@ -195,6 +196,66 @@ namespace zuHause.Controllers.Api
                 _logger.LogError(ex, "刪除圖片時發生錯誤: {ImageId}", imageId);
                 return StatusCode(500, ApiResponseWrapper<ImageManagerOperationResultDto>.ErrorResponse(
                     "刪除圖片失敗", 500
+                ));
+            }
+        }
+
+        [HttpPost("setMain")]
+        public async Task<ActionResult<ApiResponseWrapper<ImageManagerOperationResultDto>>> SetMainImage(
+            [FromBody] SetMainImageRequestDto request)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    var errors = ModelState
+                        .SelectMany(x => x.Value!.Errors)
+                        .Select(x => x.ErrorMessage)
+                        .ToList();
+                    return BadRequest(ApiResponseWrapper<ImageManagerOperationResultDto>.ValidationErrorResponse(errors));
+                }
+
+                // 執行設定主圖
+                var setMainResult = await _imageUploadService.SetMainImageAsync(request.ImageId);
+
+                if (setMainResult)
+                {
+                    // 獲取更新後的圖片列表
+                    var updatedImages = request.Category.HasValue 
+                        ? await _imageQueryService.GetImagesByCategoryAsync(request.EntityType, request.EntityId, request.Category.Value)
+                        : await _imageQueryService.GetImagesByEntityAsync(request.EntityType, request.EntityId);
+                    var mainImage = await _imageQueryService.GetMainImageAsync(request.EntityType, request.EntityId);
+
+                    var result = new ImageManagerOperationResultDto
+                    {
+                        Success = true,
+                        Message = "主圖設定成功",
+                        AffectedImageIds = new List<long> { request.ImageId },
+                        UpdatedImageList = new ImageManagerListResponseDto
+                        {
+                            Images = updatedImages.Select(img => MapToResponseDto(img, mainImage?.ImageId)).ToList(),
+                            TotalCount = updatedImages.Count,
+                            EntityType = request.EntityType,
+                            EntityId = request.EntityId,
+                            Category = request.Category,
+                            MainImage = mainImage != null ? MapToResponseDto(mainImage, mainImage?.ImageId) : null
+                        }
+                    };
+
+                    return Ok(ApiResponseWrapper<ImageManagerOperationResultDto>.SuccessResponse(result));
+                }
+                else
+                {
+                    return BadRequest(ApiResponseWrapper<ImageManagerOperationResultDto>.ErrorResponse(
+                        "設定主圖失敗", 400
+                    ));
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "設定主圖時發生錯誤: {ImageId}", request.ImageId);
+                return StatusCode(500, ApiResponseWrapper<ImageManagerOperationResultDto>.ErrorResponse(
+                    "設定主圖失敗", 500
                 ));
             }
         }
@@ -231,11 +292,11 @@ namespace zuHause.Controllers.Api
                         AffectedImageIds = request.ImageDisplayOrders.Keys.Select(k => (long)k).ToList(),
                         UpdatedImageList = new ImageManagerListResponseDto
                         {
-                            Images = updatedImages.Select(MapToResponseDto).ToList(),
+                            Images = updatedImages.Select(img => MapToResponseDto(img, mainImage?.ImageId)).ToList(),
                             TotalCount = updatedImages.Count,
                             EntityType = request.EntityType,
                             EntityId = request.EntityId,
-                            MainImage = mainImage != null ? MapToResponseDto(mainImage) : null
+                            MainImage = mainImage != null ? MapToResponseDto(mainImage, mainImage?.ImageId) : null
                         }
                     };
 
@@ -257,7 +318,35 @@ namespace zuHause.Controllers.Api
             }
         }
 
-        private ImageManagerResponseDto MapToResponseDto(zuHause.Models.Image image)
+        private async Task<ImageManagerResponseDto> MapToResponseDtoAsync(zuHause.Models.Image image)
+        {
+            // 獲取主圖來判斷是否為主圖
+            var mainImage = await _imageQueryService.GetMainImageAsync(image.EntityType, image.EntityId);
+            
+            return new ImageManagerResponseDto
+            {
+                ImageId = image.ImageId,
+                ImageGuid = image.ImageGuid,
+                FileName = image.OriginalFileName,
+                StoredFileName = image.StoredFileName,
+                MimeType = image.MimeType,
+                FileSize = image.FileSizeBytes,
+                EntityType = image.EntityType,
+                EntityId = image.EntityId,
+                Category = image.Category,
+                IsMainImage = mainImage?.ImageId == image.ImageId,
+                DisplayOrder = image.DisplayOrder ?? 0,
+                IsActive = image.IsActive,
+                CreatedAt = image.UploadedAt,
+                UpdatedAt = null, // 現有模型沒有 UpdatedAt
+                OriginalUrl = _imageQueryService.GenerateImageUrl(image.StoredFileName, ImageSize.Original),
+                LargeUrl = _imageQueryService.GenerateImageUrl(image.StoredFileName, ImageSize.Large),
+                MediumUrl = _imageQueryService.GenerateImageUrl(image.StoredFileName, ImageSize.Medium),
+                ThumbnailUrl = _imageQueryService.GenerateImageUrl(image.StoredFileName, ImageSize.Thumbnail)
+            };
+        }
+        
+        private ImageManagerResponseDto MapToResponseDto(zuHause.Models.Image image, long? mainImageId = null)
         {
             return new ImageManagerResponseDto
             {
@@ -270,7 +359,7 @@ namespace zuHause.Controllers.Api
                 EntityType = image.EntityType,
                 EntityId = image.EntityId,
                 Category = image.Category,
-                IsMainImage = false, // 需要額外計算主圖邏輯
+                IsMainImage = mainImageId.HasValue && image.ImageId == mainImageId.Value,
                 DisplayOrder = image.DisplayOrder ?? 0,
                 IsActive = image.IsActive,
                 CreatedAt = image.UploadedAt,
@@ -306,6 +395,22 @@ namespace zuHause.Controllers.Api
                 ThumbnailUrl = _imageQueryService.GenerateImageUrl(uploadResult.StoredFileName, ImageSize.Thumbnail)
             };
         }
+    }
+
+    public class SetMainImageRequestDto
+    {
+        [Required(ErrorMessage = "圖片 ID 為必填")]
+        [Range(1, long.MaxValue, ErrorMessage = "圖片 ID 必須大於 0")]
+        public long ImageId { get; set; }
+
+        [Required(ErrorMessage = "實體類型為必填")]
+        public EntityType EntityType { get; set; }
+
+        [Required(ErrorMessage = "實體 ID 為必填")]
+        [Range(1, int.MaxValue, ErrorMessage = "實體 ID 必須大於 0")]
+        public int EntityId { get; set; }
+
+        public ImageCategory? Category { get; set; }
     }
 
     public class ImageReorderRequestDto

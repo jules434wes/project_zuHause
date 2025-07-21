@@ -17,13 +17,15 @@ namespace zuHause.Interfaces
         /// <param name="entityId">實體ID</param>
         /// <param name="category">圖片分類</param>
         /// <param name="uploadedByMemberId">上傳者會員ID (可選)</param>
+        /// <param name="skipEntityValidation">是否略過實體存在性驗證 (預設為 false)</param>
         /// <returns>上傳結果列表</returns>
         Task<List<ImageUploadResult>> UploadImagesAsync(
             IFormFileCollection files, 
             EntityType entityType, 
             int entityId, 
             ImageCategory category, 
-            int? uploadedByMemberId = null);
+            int? uploadedByMemberId = null,
+            bool skipEntityValidation = false);
 
         /// <summary>
         /// 單一圖片上傳 - 便利方法
@@ -33,13 +35,15 @@ namespace zuHause.Interfaces
         /// <param name="entityId">實體ID</param>
         /// <param name="category">圖片分類</param>
         /// <param name="uploadedByMemberId">上傳者會員ID (可選)</param>
+        /// <param name="skipEntityValidation">是否略過實體存在性驗證 (預設為 false)</param>
         /// <returns>上傳結果</returns>
         Task<ImageUploadResult> UploadImageAsync(
             IFormFile file, 
             EntityType entityType, 
             int entityId, 
             ImageCategory category, 
-            int? uploadedByMemberId = null);
+            int? uploadedByMemberId = null,
+            bool skipEntityValidation = false);
 
         /// <summary>
         /// 從串流上傳圖片 - 進階方法，支援非 Web 環境
@@ -50,6 +54,7 @@ namespace zuHause.Interfaces
         /// <param name="entityId">實體ID</param>
         /// <param name="category">圖片分類</param>
         /// <param name="uploadedByMemberId">上傳者會員ID (可選)</param>
+        /// <param name="skipEntityValidation">是否略過實體存在性驗證 (預設為 false)</param>
         /// <returns>上傳結果</returns>
         Task<ImageUploadResult> UploadImageFromStreamAsync(
             Stream imageStream, 
@@ -57,7 +62,8 @@ namespace zuHause.Interfaces
             EntityType entityType, 
             int entityId, 
             ImageCategory category, 
-            int? uploadedByMemberId = null);
+            int? uploadedByMemberId = null,
+            bool skipEntityValidation = false);
 
         /// <summary>
         /// 刪除圖片 - 軟刪除或硬刪除

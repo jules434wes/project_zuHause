@@ -1,4 +1,4 @@
-<script>
+// 房源管理頁面 JavaScript
 // 全域變數
 var currentPropertyId = null;
 
@@ -20,6 +20,7 @@ function openDocumentModal(propertyId) {
     });
     documentModal.show();
 }
+
 document.addEventListener('DOMContentLoaded', function() {
     var triggerTabList = [].slice.call(document.querySelectorAll('#propertyTabs button'))
     triggerTabList.forEach(function (triggerEl) {
@@ -282,4 +283,3 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 });
-</script>

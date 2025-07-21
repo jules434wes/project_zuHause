@@ -50,6 +50,7 @@ namespace zuHause.ViewModels
         public int PropertyImageId { get; set; }
         public string ImagePath { get; set; } = string.Empty;
         public string ImageDescription { get; set; } = string.Empty;
+        public string? Category { get; set; }
         public bool IsMainImage { get; set; }
         public int SortOrder { get; set; }
     }

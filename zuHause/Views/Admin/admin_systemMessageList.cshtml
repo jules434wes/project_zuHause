@@ -1,6 +1,8 @@
 @model AdminSystemMessageListViewModel
 @{
     ViewData["Title"] = Model.PageTitle;
+    Layout = "_AdminLayout";
+
 }
 
 <!-- Bootstrap Icons CDN -->
@@ -8,7 +10,7 @@
 <!-- Admin Styles -->
 <link href="~/css/admin-style.css" rel="stylesheet" />
 
-<div class="container-fluid fade-in">
+<div class="container-fluid fade-in" style="margin-bottom: 120px; padding-bottom: 40px;">
     <div class="row">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
@@ -33,7 +35,7 @@
 </div>
 
 @section Scripts {
-    <partial name="_AdminPartial/_SystemMessage/_SystemMessageScripts" />
+    <script src="~/js/admin_js/system-message.js"></script>
 }
 
 <partial name="_AdminPartial/_SystemMessage/_SystemMessageModals" />
