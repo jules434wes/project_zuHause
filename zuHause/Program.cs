@@ -27,10 +27,10 @@ builder.Services.AddAuthentication("MemberCookieAuth").AddCookie("MemberCookieAu
 builder.Services.AddAuthentication("AdminCookies")
     .AddCookie("AdminCookies", options =>
     {
-        options.LoginPath = "/Auth/Login";
-        options.LogoutPath = "/Auth/Logout";
-        options.ExpireTimeSpan = TimeSpan.FromHours(8);
-        options.SlidingExpiration = true;
+        options.LoginPath = "/Auth/Login"; // 登入路徑
+        options.LogoutPath = "/Auth/Logout"; // 登出路徑
+        options.ExpireTimeSpan = TimeSpan.FromHours(8); // Cookie 有效時間 8 小時
+        options.SlidingExpiration = true; // 滑動期限（有活動就延長）
     });
 
 
