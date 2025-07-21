@@ -1,5 +1,10 @@
+@using zuHause.AdminViewModels
 @{
-    dynamic memberData = ViewData["MemberData"];
+    MemberData memberData = ViewData["MemberData"] as MemberData;
+    if (memberData == null)
+    {
+        return;
+    }
 }
 
 <!-- 手動驗證身分 Modal -->

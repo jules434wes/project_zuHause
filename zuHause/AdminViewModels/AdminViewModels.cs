@@ -246,7 +246,10 @@ namespace zuHause.AdminViewModels
 
         private MemberData LoadMemberFromDatabase(ZuHauseContext context, int memberId)
         {
-            var member = context.Members.FirstOrDefault(m => m.MemberId == memberId);
+            var member = context.Members
+                .Include(m => m.ResidenceCity)
+                .Include(m => m.PrimaryRentalCity)
+                .FirstOrDefault(m => m.MemberId == memberId);
             
             if (member == null)
             {
@@ -260,7 +263,7 @@ namespace zuHause.AdminViewModels
             var verificationStatus = member.IdentityVerifiedAt.HasValue ? "verified" : 
                                    (hasPendingApproval ? "pending" : "unverified");
 
-            return new MemberData 
+            var memberData = new MemberData 
             { 
                 MemberID = member.MemberId.ToString(), 
                 MemberName = member.MemberName, 
@@ -270,8 +273,39 @@ namespace zuHause.AdminViewModels
                 AccountStatus = member.IsActive ? "active" : "inactive", 
                 VerificationStatus = verificationStatus, 
                 IsLandlord = member.IsLandlord, 
-                RegistrationDate = member.CreatedAt.ToString("yyyy-MM-dd") 
+                RegistrationDate = member.CreatedAt.ToString("yyyy-MM-dd"),
+                LastLoginTime = member.LastLoginAt?.ToString("yyyy-MM-dd HH:mm") ?? "--",
+                
+                // 詳細資料
+                BirthDate = member.BirthDate != default(DateOnly) ? member.BirthDate.ToDateTime(TimeOnly.MinValue) : null,
+                Gender = (int)member.Gender,
+                ResidenceCityID = member.ResidenceCityId ?? 0,
+                ResidenceCityName = member.ResidenceCity?.CityName ?? "",
+                PrimaryRentalCityID = member.PrimaryRentalCityId ?? 0,
+                PrimaryRentalCityName = member.PrimaryRentalCity?.CityName ?? "",
+                DetailedAddress = member.AddressLine ?? "",
+                PreferredRentalAreas = GetPreferredRentalAreas(context, memberId),
+                
+                // 驗證時間
+                PhoneVerifiedAt = member.PhoneVerifiedAt,
+                EmailVerifiedAt = member.EmailVerifiedAt,
+                IdentityVerifiedAt = member.IdentityVerifiedAt,
+                
+                HasIdentityUploads = context.UserUploads.Any(u => u.MemberId == memberId && 
+                                                                  u.ModuleCode == "MemberInfo" && 
+                                                                  u.IsActive &&
+                                                                  (u.UploadTypeCode == "USER_ID_FRONT" || u.UploadTypeCode == "USER_ID_BACK"))
             };
+
+            // 載入活動相關資料
+            memberData.RentalContracts = LoadRentalContracts(context, memberId);
+            memberData.OwnedProperties = LoadOwnedProperties(context, memberId);
+            memberData.ReceivedComplaints = LoadReceivedComplaints(context, memberId);
+            memberData.FurnitureOrders = LoadFurnitureOrders(context, memberId);
+            memberData.CustomerServiceTickets = LoadCustomerServiceTickets(context, memberId);
+            memberData.SubmittedComplaints = LoadSubmittedComplaints(context, memberId);
+
+            return memberData;
         }
 
         private int GetRenterActivityCount(ZuHauseContext context, int memberId)
@@ -292,6 +326,131 @@ namespace zuHause.AdminViewModels
         private int GetSupportHistoryCount(ZuHauseContext context, int memberId)
         {
             return context.CustomerServiceTickets.Count(cst => cst.MemberId == memberId);
+        }
+
+        private string GetPreferredRentalAreas(ZuHauseContext context, int memberId)
+        {
+            var areas = context.RenterPosts
+                .Where(rp => rp.MemberId == memberId)
+                .Join(context.Districts, rp => rp.DistrictId, d => d.DistrictId, (rp, d) => d.DistrictName)
+                .Distinct()
+                .ToList();
+            
+            return string.Join("、", areas);
+        }
+
+        private List<RentalContractData> LoadRentalContracts(ZuHauseContext context, int memberId)
+        {
+            return context.Contracts
+                .Include(c => c.RentalApplication)
+                .ThenInclude(ra => ra.Property)
+                .ThenInclude(p => p.LandlordMember)
+                .Where(c => c.RentalApplication.MemberId == memberId)
+                .Select(c => new RentalContractData
+                {
+                    ContractId = c.ContractId.ToString(),
+                    PropertyTitle = c.RentalApplication.Property.Title,
+                    LandlordName = c.RentalApplication.Property.LandlordMember.MemberName,
+                    RentPeriod = c.StartDate.ToString("yyyy-MM-dd") + " ~ " + (c.EndDate.HasValue ? c.EndDate.Value.ToString("yyyy-MM-dd") : "--"),
+                    Status = c.Status == "ACTIVE" ? "生效中" : "已結束",
+                    PropertyUrl = $"/Property/Details/{c.RentalApplication.Property.PropertyId}",
+                    LandlordUrl = $"/Admin/admin_userDetails/{c.RentalApplication.Property.LandlordMember.MemberId}"
+                })
+                .OrderByDescending(c => c.ContractId)
+                .ToList();
+        }
+
+        private List<PropertyData> LoadOwnedProperties(ZuHauseContext context, int memberId)
+        {
+            return context.Properties
+                .Where(p => p.LandlordMemberId == memberId)
+                .Select(p => new PropertyData
+                {
+                    PropertyID = p.PropertyId.ToString(),
+                    PropertyTitle = p.Title,
+                    Address = p.AddressLine ?? "",
+                    Status = p.StatusCode == "ACTIVE" ? "已上架" : "未上架",
+                    ExpiryDate = p.ExpireAt.HasValue ? p.ExpireAt.Value.ToString("yyyy-MM-dd") : "-"
+                })
+                .OrderByDescending(p => p.PropertyID)
+                .ToList();
+        }
+
+        private List<ComplaintData> LoadReceivedComplaints(ZuHauseContext context, int memberId)
+        {
+            return context.PropertyComplaints
+                .Include(pc => pc.Property)
+                .Where(pc => pc.Property.LandlordMemberId == memberId)
+                .Select(pc => new ComplaintData
+                {
+                    ComplaintId = pc.ComplaintId.ToString(),
+                    Subject = "房源投訴",
+                    Summary = pc.ComplaintContent.Length > 20 ? pc.ComplaintContent.Substring(0, 20) + "..." : pc.ComplaintContent,
+                    TargetProperty = pc.Property.Title,
+                    ComplaintDate = pc.CreatedAt,
+                    Status = pc.StatusCode == "RESOLVED" ? "已回覆" : "處理中",
+                    ComplaintUrl = $"/Admin/ComplaintDetails/{pc.ComplaintId}",
+                    PropertyUrl = $"/Property/Details/{pc.PropertyId}"
+                })
+                .OrderByDescending(c => c.ComplaintDate)
+                .ToList();
+        }
+
+        private List<OrderData> LoadFurnitureOrders(ZuHauseContext context, int memberId)
+        {
+            return context.FurnitureOrders
+                .Where(fo => fo.MemberId == memberId)
+                .Select(fo => new OrderData
+                {
+                    OrderId = fo.FurnitureOrderId,
+                    TotalAmount = fo.TotalAmount,
+                    OrderStatus = fo.Status == "PREPARING" ? "準備中" :
+                                 fo.Status == "COMPLETED" ? "已完成" :
+                                 fo.Status == "CANCELLED" ? "已取消" : "未知",
+                    PaymentStatus = fo.PaymentStatus == "PAID" ? "已付款" : "未付款",
+                    OrderDate = fo.CreatedAt,
+                    OrderUrl = $"/Furniture/OrderDetails/{fo.FurnitureOrderId}"
+                })
+                .OrderByDescending(o => o.OrderDate)
+                .ToList();
+        }
+
+        private List<CustomerServiceData> LoadCustomerServiceTickets(ZuHauseContext context, int memberId)
+        {
+            return context.CustomerServiceTickets
+                .Where(cst => cst.MemberId == memberId)
+                .Select(cst => new CustomerServiceData
+                {
+                    TicketId = cst.TicketId.ToString(),
+                    Subject = cst.Subject,
+                    RelatedItem = cst.ContractId.HasValue ? $"合約 C{cst.ContractId:000}" : "一般諮詢",
+                    Status = cst.StatusCode == "OPEN" ? "處理中" : "已關閉",
+                    LastReplyTime = cst.ReplyAt.HasValue ? cst.ReplyAt.Value : cst.CreatedAt,
+                    TicketUrl = $"/Admin/CustomerServiceDetails/{cst.TicketId}",
+                    RelatedItemUrl = cst.ContractId.HasValue ? $"/Contract/Details/{cst.ContractId}" : "#"
+                })
+                .OrderByDescending(c => c.LastReplyTime)
+                .ToList();
+        }
+
+        private List<ComplaintData> LoadSubmittedComplaints(ZuHauseContext context, int memberId)
+        {
+            return context.PropertyComplaints
+                .Include(pc => pc.Property)
+                .Where(pc => pc.ComplainantId == memberId)
+                .Select(pc => new ComplaintData
+                {
+                    ComplaintId = pc.ComplaintId.ToString(),
+                    Subject = "房源投訴",
+                    Summary = pc.ComplaintContent.Length > 20 ? pc.ComplaintContent.Substring(0, 20) + "..." : pc.ComplaintContent,
+                    TargetProperty = pc.Property.Title,
+                    ComplaintDate = pc.CreatedAt,
+                    Status = pc.StatusCode == "RESOLVED" ? "已處理" : "處理中",
+                    ComplaintUrl = $"/Admin/ComplaintDetails/{pc.ComplaintId}",
+                    PropertyUrl = $"/Property/Details/{pc.PropertyId}"
+                })
+                .OrderByDescending(c => c.ComplaintDate)
+                .ToList();
         }
     }
 
@@ -443,6 +602,28 @@ namespace zuHause.AdminViewModels
         public string ResidenceCityName { get; set; } = string.Empty;
         public string PrimaryRentalCityName { get; set; } = string.Empty;
         
+        // 詳情頁面專用屬性
+        public DateTime? BirthDate { get; set; }
+        public string DetailedAddress { get; set; } = string.Empty;
+        public string PreferredRentalAreas { get; set; } = string.Empty;
+        public DateTime? PhoneVerifiedAt { get; set; }
+        public DateTime? EmailVerifiedAt { get; set; }
+        public DateTime? IdentityVerifiedAt { get; set; }
+        public string GenderDisplay => Gender switch 
+        {
+            1 => "男",
+            2 => "女", 
+            _ => "其他"
+        };
+        
+        // 活動相關資料
+        public List<RentalContractData> RentalContracts { get; set; } = new();
+        public List<PropertyData> OwnedProperties { get; set; } = new();
+        public List<ComplaintData> ReceivedComplaints { get; set; } = new();
+        public List<OrderData> FurnitureOrders { get; set; } = new();
+        public List<CustomerServiceData> CustomerServiceTickets { get; set; } = new();
+        public List<ComplaintData> SubmittedComplaints { get; set; } = new();
+        
         // 額外屬性用於UI顯示
         public bool IsActive => AccountStatus == "active";
         public bool IsIdentityVerified => VerificationStatus == "verified";
@@ -457,6 +638,8 @@ namespace zuHause.AdminViewModels
         public int RentPrice { get; set; }
         public string Status { get; set; } = string.Empty;
         public string SubmissionDate { get; set; } = string.Empty;
+        public string Address { get; set; } = string.Empty;
+        public string ExpiryDate { get; set; } = string.Empty;
     }
 
     public class CustomerServiceCase
@@ -488,5 +671,50 @@ namespace zuHause.AdminViewModels
         public string MemberName { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public string NationalNo { get; set; } = string.Empty;
+    }
+
+    // 會員詳情頁面專用資料模型
+    public class RentalContractData
+    {
+        public string ContractId { get; set; } = string.Empty;
+        public string PropertyTitle { get; set; } = string.Empty;
+        public string LandlordName { get; set; } = string.Empty;
+        public string RentPeriod { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+        public string PropertyUrl { get; set; } = string.Empty;
+        public string LandlordUrl { get; set; } = string.Empty;
+    }
+
+    public class ComplaintData
+    {
+        public string ComplaintId { get; set; } = string.Empty;
+        public string Subject { get; set; } = string.Empty;
+        public string Summary { get; set; } = string.Empty;
+        public string TargetProperty { get; set; } = string.Empty;
+        public DateTime ComplaintDate { get; set; }
+        public string Status { get; set; } = string.Empty;
+        public string ComplaintUrl { get; set; } = string.Empty;
+        public string PropertyUrl { get; set; } = string.Empty;
+    }
+
+    public class OrderData
+    {
+        public string OrderId { get; set; } = string.Empty;
+        public decimal TotalAmount { get; set; }
+        public string OrderStatus { get; set; } = string.Empty;
+        public string PaymentStatus { get; set; } = string.Empty;
+        public DateTime OrderDate { get; set; }
+        public string OrderUrl { get; set; } = string.Empty;
+    }
+
+    public class CustomerServiceData
+    {
+        public string TicketId { get; set; } = string.Empty;
+        public string Subject { get; set; } = string.Empty;
+        public string RelatedItem { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+        public DateTime LastReplyTime { get; set; }
+        public string TicketUrl { get; set; } = string.Empty;
+        public string RelatedItemUrl { get; set; } = string.Empty;
     }
 }

@@ -1,5 +1,10 @@
+@using zuHause.AdminViewModels
 @{
-    dynamic memberData = ViewData["MemberData"];
+    MemberData memberData = ViewData["MemberData"] as MemberData;
+    if (memberData == null)
+    {
+        return;
+    }
 }
 
 <!-- 內容顯示區 -->
@@ -17,14 +22,14 @@
                     </div>
                     <div class="card-body">
                         <dl class="row key-value-list">
-                            <dt class="col-sm-4">姓名</dt><dd class="col-sm-8">王大明</dd>
-                            <dt class="col-sm-4">性別</dt><dd class="col-sm-8">男</dd>
-                            <dt class="col-sm-4">生日</dt><dd class="col-sm-8">1990-05-20</dd>
-                            <dt class="col-sm-4">手機號碼</dt><dd class="col-sm-8">0912-345-678</dd>
-                            <dt class="col-sm-4">電子信箱</dt><dd class="col-sm-8">wang.daming@email.com</dd>
-                            <dt class="col-sm-4">居住地區</dt><dd class="col-sm-8">台北市 / 中正區</dd>
-                            <dt class="col-sm-4">詳細地址</dt><dd class="col-sm-8">信義路一段123號4樓</dd>
-                            <dt class="col-sm-4">偏好承租區域</dt><dd class="col-sm-8">台北市信義區、大安區</dd>
+                            <dt class="col-sm-4">姓名</dt><dd class="col-sm-8">@memberData.MemberName</dd>
+                            <dt class="col-sm-4">性別</dt><dd class="col-sm-8">@memberData.GenderDisplay</dd>
+                            <dt class="col-sm-4">生日</dt><dd class="col-sm-8">@(memberData.BirthDate?.ToString("yyyy-MM-dd") ?? "未設定")</dd>
+                            <dt class="col-sm-4">手機號碼</dt><dd class="col-sm-8">@memberData.PhoneNumber</dd>
+                            <dt class="col-sm-4">電子信箱</dt><dd class="col-sm-8">@memberData.Email</dd>
+                            <dt class="col-sm-4">居住地區</dt><dd class="col-sm-8">@(!string.IsNullOrEmpty(memberData.ResidenceCityName) ? memberData.ResidenceCityName : "未設定")</dd>
+                            <dt class="col-sm-4">詳細地址</dt><dd class="col-sm-8">@(!string.IsNullOrEmpty(memberData.DetailedAddress) ? memberData.DetailedAddress : "未填寫")</dd>
+                            <dt class="col-sm-4">偏好承租區域</dt><dd class="col-sm-8">@(!string.IsNullOrEmpty(memberData.PreferredRentalAreas) ? memberData.PreferredRentalAreas : "未設定")</dd>
                         </dl>
                     </div>
                 </div>
@@ -36,9 +41,9 @@
                     </div>
                     <div class="card-body">
                         <dl class="row key-value-list">
-                            <dt class="col-sm-5">手機驗證時間</dt><dd class="col-sm-7">2024-01-15 10:28:00</dd>
-                            <dt class="col-sm-5">Email驗證時間</dt><dd class="col-sm-7">2024-01-18 14:00:00</dd>
-                            <dt class="col-sm-5">身分驗證時間</dt><dd class="col-sm-7">2024-02-01 11:45:00</dd>
+                            <dt class="col-sm-5">手機驗證時間</dt><dd class="col-sm-7">@(memberData.PhoneVerifiedAt?.ToString("yyyy-MM-dd HH:mm:ss") ?? "未驗證")</dd>
+                            <dt class="col-sm-5">Email驗證時間</dt><dd class="col-sm-7">@(memberData.EmailVerifiedAt?.ToString("yyyy-MM-dd HH:mm:ss") ?? "未驗證")</dd>
+                            <dt class="col-sm-5">身分驗證時間</dt><dd class="col-sm-7">@(memberData.IdentityVerifiedAt?.ToString("yyyy-MM-dd HH:mm:ss") ?? "未驗證")</dd>
                             <dt class="col-sm-5">身分證檔案</dt>
                             <dd class="col-sm-7">
                                 <span class="badge bg-info">已上傳</span>
@@ -80,20 +85,34 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td>C001</td>
-                                <td><a href="#" target="_blank" class="text-decoration-none">台北車站旁精美套房</a></td>
-                                <td><a href="#" target="_blank" class="text-decoration-none">陳小姐</a></td>
-                                <td>2023-03-01 ~ 2024-02-29</td>
-                                <td><span class="badge bg-secondary">已結束</span></td>
-                            </tr>
-                            <tr>
-                                <td>C008</td>
-                                <td><a href="#" target="_blank" class="text-decoration-none">信義區景觀三房</a></td>
-                                <td><a href="#" target="_blank" class="text-decoration-none">林先生</a></td>
-                                <td>2024-05-01 ~ 2025-04-30</td>
-                                <td><span class="badge bg-success">生效中</span></td>
-                            </tr>
+                            @if (memberData.RentalContracts != null && memberData.RentalContracts.Any())
+                            {
+                                @foreach (var contract in memberData.RentalContracts)
+                                {
+                                    <tr>
+                                        <td>@contract.ContractId</td>
+                                        <td><a href="@contract.PropertyUrl" target="_blank" class="text-decoration-none">@contract.PropertyTitle</a></td>
+                                        <td><a href="@contract.LandlordUrl" target="_blank" class="text-decoration-none">@contract.LandlordName</a></td>
+                                        <td>@contract.RentPeriod</td>
+                                        <td>
+                                            @if (contract.Status == "生效中")
+                                            {
+                                                <span class="badge bg-success">@contract.Status</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary">@contract.Status</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">尚無租約記錄</td>
+                                </tr>
+                            }
                         </tbody>
                     </table>
                 </div>
@@ -125,20 +144,38 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td>P001</td>
-                                <td><a href="#" target="_blank" class="text-decoration-none">市府捷運站溫馨兩房</a></td>
-                                <td>台北市信義區信義路五段150號</td>
-                                <td><span class="badge bg-success">已上架</span></td>
-                                <td>2025-08-15</td>
-                            </tr>
-                            <tr>
-                                <td>P007</td>
-                                <td><a href="#" target="_blank" class="text-decoration-none">板橋車站旁全新裝潢</a></td>
-                                <td>新北市板橋區文化路二段88號</td>
-                                <td><span class="badge bg-warning">待付款</span></td>
-                                <td>-</td>
-                            </tr>
+                            @if (memberData.OwnedProperties != null && memberData.OwnedProperties.Any())
+                            {
+                                @foreach (var property in memberData.OwnedProperties)
+                                {
+                                    <tr>
+                                        <td>@property.PropertyID</td>
+                                        <td><a href="/Property/Details/@property.PropertyID" target="_blank" class="text-decoration-none">@property.PropertyTitle</a></td>
+                                        <td>@property.Address</td>
+                                        <td>
+                                            @if (property.Status == "已上架")
+                                            {
+                                                <span class="badge bg-success">@property.Status</span>
+                                            }
+                                            else if (property.Status == "待付款")
+                                            {
+                                                <span class="badge bg-warning">@property.Status</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary">@property.Status</span>
+                                            }
+                                        </td>
+                                        <td>@property.ExpiryDate</td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">尚無房源記錄</td>
+                                </tr>
+                            }
                         </tbody>
                     </table>
                 </div>
@@ -163,12 +200,33 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td>CMPL-0123</td>
-                                <td><a href="#" target="_blank" class="text-decoration-none">照片與實際屋況不符...</a></td>
-                                <td>2024-06-10 15:20:00</td>
-                                <td><span class="badge bg-success">已回覆</span></td>
-                            </tr>
+                            @if (memberData.ReceivedComplaints != null && memberData.ReceivedComplaints.Any())
+                            {
+                                @foreach (var complaint in memberData.ReceivedComplaints)
+                                {
+                                    <tr>
+                                        <td>@complaint.ComplaintId</td>
+                                        <td><a href="@complaint.ComplaintUrl" target="_blank" class="text-decoration-none">@complaint.Summary</a></td>
+                                        <td>@complaint.ComplaintDate.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                                        <td>
+                                            @if (complaint.Status == "已回覆")
+                                            {
+                                                <span class="badge bg-success">@complaint.Status</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-warning">@complaint.Status</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted">尚無投訴記錄</td>
+                                </tr>
+                            }
                         </tbody>
                     </table>
                 </div>
@@ -199,20 +257,47 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td>ORD-20240710-005</td>
-                                <td>NT$ 800</td>
-                                <td><span class="badge bg-primary">準備中</span></td>
-                                <td><span class="badge bg-success">已付款</span></td>
-                                <td>2024-07-10 09:10:00</td>
-                            </tr>
-                            <tr>
-                                <td>ORD-20240301-001</td>
-                                <td>NT$ 1,500</td>
-                                <td><span class="badge bg-success">已完成</span></td>
-                                <td><span class="badge bg-success">已付款</span></td>
-                                <td>2024-03-01 11:30:00</td>
-                            </tr>
+                            @if (memberData.FurnitureOrders != null && memberData.FurnitureOrders.Any())
+                            {
+                                @foreach (var order in memberData.FurnitureOrders)
+                                {
+                                    <tr>
+                                        <td><a href="@order.OrderUrl" target="_blank" class="text-decoration-none">@order.OrderId</a></td>
+                                        <td>NT$ @order.TotalAmount.ToString("N0")</td>
+                                        <td>
+                                            @if (order.OrderStatus == "準備中")
+                                            {
+                                                <span class="badge bg-primary">@order.OrderStatus</span>
+                                            }
+                                            else if (order.OrderStatus == "已完成")
+                                            {
+                                                <span class="badge bg-success">@order.OrderStatus</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary">@order.OrderStatus</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (order.PaymentStatus == "已付款")
+                                            {
+                                                <span class="badge bg-success">@order.PaymentStatus</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-warning">@order.PaymentStatus</span>
+                                            }
+                                        </td>
+                                        <td>@order.OrderDate.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">尚無訂單記錄</td>
+                                </tr>
+                            }
                         </tbody>
                     </table>
                 </div>
@@ -242,13 +327,34 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td>TKT-001</td>
-                                <td><a href="#" target="_blank" class="text-decoration-none">租約問題</a></td>
-                                <td><a href="#" target="_blank" class="text-decoration-none">合約 C008</a></td>
-                                <td><span class="badge bg-warning">處理中</span></td>
-                                <td>2024-07-11 18:00:00</td>
-                            </tr>
+                            @if (memberData.CustomerServiceTickets != null && memberData.CustomerServiceTickets.Any())
+                            {
+                                @foreach (var ticket in memberData.CustomerServiceTickets)
+                                {
+                                    <tr>
+                                        <td>@ticket.TicketId</td>
+                                        <td><a href="@ticket.TicketUrl" target="_blank" class="text-decoration-none">@ticket.Subject</a></td>
+                                        <td><a href="@ticket.RelatedItemUrl" target="_blank" class="text-decoration-none">@ticket.RelatedItem</a></td>
+                                        <td>
+                                            @if (ticket.Status == "處理中")
+                                            {
+                                                <span class="badge bg-warning">@ticket.Status</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-success">@ticket.Status</span>
+                                            }
+                                        </td>
+                                        <td>@ticket.LastReplyTime.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">尚無客服記錄</td>
+                                </tr>
+                            }
                         </tbody>
                     </table>
                 </div>
@@ -274,20 +380,34 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td>CMPL-0456</td>
-                                <td><a href="#" target="_blank" class="text-decoration-none">房源描述不實</a></td>
-                                <td><a href="#" target="_blank" class="text-decoration-none">台北市大安區優質套房</a></td>
-                                <td><span class="badge bg-success">已處理</span></td>
-                                <td>2024-06-25 14:30:00</td>
-                            </tr>
-                            <tr>
-                                <td>CMPL-0789</td>
-                                <td><a href="#" target="_blank" class="text-decoration-none">房東服務態度不佳</a></td>
-                                <td><a href="#" target="_blank" class="text-decoration-none">新北市板橋區溫馨雅房</a></td>
-                                <td><span class="badge bg-warning">處理中</span></td>
-                                <td>2024-07-02 09:15:00</td>
-                            </tr>
+                            @if (memberData.SubmittedComplaints != null && memberData.SubmittedComplaints.Any())
+                            {
+                                @foreach (var complaint in memberData.SubmittedComplaints)
+                                {
+                                    <tr>
+                                        <td>@complaint.ComplaintId</td>
+                                        <td><a href="@complaint.ComplaintUrl" target="_blank" class="text-decoration-none">@complaint.Subject</a></td>
+                                        <td><a href="@complaint.PropertyUrl" target="_blank" class="text-decoration-none">@complaint.TargetProperty</a></td>
+                                        <td>
+                                            @if (complaint.Status == "已處理")
+                                            {
+                                                <span class="badge bg-success">@complaint.Status</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-warning">@complaint.Status</span>
+                                            }
+                                        </td>
+                                        <td>@complaint.ComplaintDate.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">尚無投訴記錄</td>
+                                </tr>
+                            }
                         </tbody>
                     </table>
                 </div>
