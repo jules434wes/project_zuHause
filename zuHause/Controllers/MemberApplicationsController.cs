@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.IdentityModel.Tokens;
@@ -19,15 +20,75 @@ namespace zuHause.Controllers
         }
 
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-            return View();
+            if (User.Identity?.IsAuthenticated != true)
+                return RedirectToAction("Login", "Member");
+
+            int memberId = int.Parse(User.FindFirst("UserId")!.Value);
+
+
+            var viewModel = await _context.RentalApplications
+                .Where(app => app.MemberId == memberId && app.IsActive && app.DeletedAt == null)
+                .Include(app => app.ApplicationStatusLogs)
+                .Include(app => app.Contracts)
+                .Include(app => app.Property)
+                .AsSplitQuery()
+                .Select(app => new ApplicationRecordViewModel
+                {
+                    ApplicationId = app.ApplicationId,
+                    ApplicationType = app.ApplicationType,
+                    CreatedAt = app.CreatedAt,
+                    ScheduleTime = app.ScheduleTime,
+                    RentalStartDate = app.RentalStartDate,
+                    RentalEndDate = app.RentalEndDate,
+
+                    // 房源資訊
+                    PropertyId = app.Property.PropertyId,
+                    LandlordMemberId = app.Property.LandlordMemberId,
+                    Title = app.Property.Title,
+                    AddressLine = app.Property.AddressLine,
+                    MonthlyRent = app.Property.MonthlyRent,
+
+                    // 只抓第一筆合約（若有）
+                    ContractId = app.Contracts
+                    .OrderByDescending(c => c.CreatedAt)
+                    .Select(c => (int?)c.ContractId)
+                    .FirstOrDefault(),
+
+                    // 狀態歷程，依照 ChangedAt 排序
+                    StatusLogs = app.ApplicationStatusLogs
+                        .OrderBy(log => log.ChangedAt)
+                        .Select(log => new ApplicationStatusLogViewModel
+                        {
+                            StatusLogId = log.StatusLogId,
+                            StatusCode = log.StatusCode,
+                            ChangedAt = log.ChangedAt
+                        }).ToList()
+                })
+                .ToListAsync();
+
+            // 查詢申請狀態代碼表
+            var applicationStatusCodes = await _context.SystemCodes
+                .Where(s => s.CodeCategory == "USER_APPLY_STATUS" && s.IsActive)
+                .OrderBy(s => s.DisplayOrder)
+                .ToListAsync();
+
+            // 使用 ViewBag 傳到 View
+            ViewBag.ApplicationStatusOptions = applicationStatusCodes;
+
+
+
+
+            return View(viewModel);
         }
+
         public IActionResult Test()
         {
             return View();
         }
 
+        // 申請看房
         [HttpPost]
         public async Task<IActionResult> CreateApplyHouse(ApplicationViewModel model)
         {
@@ -41,7 +102,7 @@ namespace zuHause.Controllers
             System.Diagnostics.Debug.WriteLine($"===={"11111111111"}===");
             if (!ModelState.IsValid)
             {
-            System.Diagnostics.Debug.WriteLine($"===={"2222222"}===");
+                System.Diagnostics.Debug.WriteLine($"===={"2222222"}===");
 
                 //確認房源會拿到的網址後跳轉
                 return Redirect(model.ReturnUrl ?? "/MemberApplications/Index");
@@ -71,9 +132,11 @@ namespace zuHause.Controllers
             _context.RentalApplications.Add(application);
             await _context.SaveChangesAsync();
 
-            return View("Index");
+            return RedirectToAction("Index");
         }
 
+
+        // 申請租賃
         [HttpPost]
         public async Task<IActionResult> ApplyRental(RentalApplicationViewModel model)
         {
@@ -112,7 +175,7 @@ namespace zuHause.Controllers
                 RentalStartDate = model.RentalStartDate,
                 RentalEndDate = model.RentalEndDate,
                 HouseholdAddress = fullAddress,
-                ScheduleTime = null, 
+                ScheduleTime = null,
                 ApplicationType = "RENTAL",
                 CurrentStatus = "APPLIED",
                 CreatedAt = DateTime.Now,
@@ -126,7 +189,7 @@ namespace zuHause.Controllers
 
             string folder = "rentalApply";
             string uploadPath = Path.Combine("wwwroot", "uploads", folder);
-            Directory.CreateDirectory(uploadPath); 
+            Directory.CreateDirectory(uploadPath);
 
             foreach (var file in model.UploadFiles)
             {
@@ -166,7 +229,7 @@ namespace zuHause.Controllers
 
             await _context.SaveChangesAsync();
 
-            return RedirectToAction("Index","MemberApplications"); 
+            return RedirectToAction("Index", "MemberApplications");
         }
 
 

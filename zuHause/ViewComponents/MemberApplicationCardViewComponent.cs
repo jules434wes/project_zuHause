@@ -5,10 +5,10 @@ namespace zuHause.ViewComponents
 {
     public class MemberApplicationCardViewComponent : ViewComponent
     {
-        public IViewComponentResult Invoke()
+        public IViewComponentResult Invoke(MemberApplicationCardInputViewModel model)
         {
 
-            return View();
+            return View(model);
         }
     }
 }

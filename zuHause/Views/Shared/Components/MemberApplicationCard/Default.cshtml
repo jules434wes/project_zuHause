@@ -1,47 +1,94 @@
-﻿<div class="card col-12 active-0">
+﻿@using zuHause.ViewModels.MemberViewModel
+@model MemberApplicationCardInputViewModel
+
+@{
+    var record = Model.Record;
+    var dict = Model.StatusCodeDict;
+    var latestStatus = record.StatusLogs.LastOrDefault()?.StatusCode;
+    var statusText = dict.ContainsKey(latestStatus ?? "") ? dict[latestStatus ?? ""] : "未知狀態";
+
+    string appType = record.ApplicationType ?? "RENTAL";
+    string? status = latestStatus ?? "";
+    string cardClass = status switch
+    {
+        "APPLIED" => "active-1",
+        "PENDING" => "active-2",
+        "APPROVED" => "active-3",
+        "REJECTED" => "active-2", // 共用
+        "VIEWING" when appType == "HOUSE_VIEWING" => "active-4",
+        "VIEWED" when appType == "HOUSE_VIEWING" => "active-5",
+        "SIGNING" when appType == "RENTAL" => "active-4",
+        "SIGNED" when appType == "RENTAL" => "active-5",
+        _ => "active-0"
+    };
+
+}
+
+<div class="card col-12 @cardClass">
     <div class="card-body p-3">
         <div class="row mb-2">
-            <div class="card-type col-auto border border-1 bg-aqua">合約簽署中</div>
-            <div class="card-property-id col-4">房源編號 A01</div>
-            <div class="card-property-id col-4">合約編號 B01</div>
+            <div class="card-type col-auto border border-1 bg-aqua">
+                @statusText
+            </div>
+            <div class="card-property-id col-4">房源編號：@record.PropertyId</div>
+            <div class="card-property-id col-4">
+                合約編號：@(record.ContractId?.ToString() ?? "尚未建立")
+            </div>
         </div>
         <div class="row">
             <div class="col-3 px-0">
-                <div class="property-img border ">
-                    <img src="@Url.Content(" ~/images/logo.png")" class="image-area" alt="">
-
+                <div class="property-img border">
+                    <img src="@Url.Content("~/images/logo.png")" class="image-area" alt="房源圖片">
                 </div>
             </div>
             <div class="col">
+                <h5 class="card-title">@record.Title</h5>
                 <div class="d-flex align-items-center gap-1">
-                    <i class="bi bi-file-earmark-text-fill"></i>
-                    <span class="fs-6" title="合約起訖日">合約起訖日：2024-08-07 - 2025-08-07</span>
+                    <i class="bi bi-geo-alt-fill"></i>
+                    <span class="fs-6" title="@record.AddressLine">@record.AddressLine</span>
                 </div>
                 <div class="d-flex align-items-center gap-1">
                     <i class="bi bi-house-fill"></i>
-                    <span class="fs-6" title="是否承租家具">是否承租家具：是</span>
+                    <span class="fs-6">房屋租金：@record.MonthlyRent 元 / 月</span>
                 </div>
-                <div class="d-flex align-items-center gap-1">
-                    <i class="bi bi-geo-alt-fill"></i>
-                    <span class="fs-6" title="台中市西屯區">承租地址：台中市西屯區...</span>
-                </div>
-                <div class="d-flex align-items-center gap-1">
-                    <i class="bi bi-calendar-week"></i>
-                    <span class="fs-6" title="房屋租金">房屋租金：10000元 / 月</span>
-                </div>
+
+                @if (record.ScheduleTime != null)
+                {
+                    <div class="d-flex align-items-center gap-1">
+                        <i class="bi bi-calendar-week"></i>
+                        <span class="fs-6">預約看房日：@record.ScheduleTime?.ToString("yyyy-MM-dd")</span>
+                    </div>
+                }
+                else
+                {
+                    <div class="d-flex align-items-center gap-1">
+                        <i class="bi bi-calendar-week"></i>
+                        <span class="fs-6">申請日期：@record.CreatedAt.ToString("yyyy-MM-dd")</span>
+                    </div>
+                }
             </div>
             <div class="col-auto d-flex flex-column align-items-start justify-content-start px-0 gap-2">
-                <a href="#" class="btn btn-aqua py-0 w-100">查看租賃合約</a>
-                <a href="#" class="btn btn-aqua py-0 w-100">查看家具租賃合約</a>
-                <a href="#" class="btn btn-aqua py-0 w-100">頁面快照</a>
-                <a href="#" class="btn btn-aqua py-0 w-100">傳送訊息給房東</a>
-                <a href="#" class="btn btn-aqua py-0 w-100" disabled>給予評價</a>
+                @if (record.ContractId != null)
+                {
+                    <a href="@Url.Action("Detail", "Contracts", new { id = record.ContractId })" class="btn btn-aqua py-0 w-100">查看租賃合約</a>
+                    <a href="@Url.Action("Sign", "Contracts", new { id = record.ContractId })" class="btn btn-aqua py-0 w-100">簽署合約</a>
+                }
+                else
+                {
+                    <span class="btn btn-secondary py-0 w-100 disabled">尚無合約</span>
+                }
+
+                <a href="@Url.Action("Message", "Chat", new { landlordId = record.LandlordMemberId })" class="btn btn-aqua py-0 w-100">傳送訊息給房東</a>
+
                 <button type="button" class="btn btn-aqua py-0 w-100" data-bs-toggle="modal"
-                        data-bs-target="#contactService">
+                        data-bs-target="#contactService@(record.ApplicationId)">
                     聯絡客服
                 </button>
             </div>
         </div>
+
+
+
         <ol class="row p-0 m-0 mt-2">
             <li class="col d-flex justify-content-center flex-column align-items-center px-0 step-area"
                 data-num="1" aria-current="step">
@@ -110,5 +157,48 @@
                 <div class="date">2025-08-05</div>
             </li>
         </ol>
+    
+    
+    
+    
+    
+    </div>
+</div>
+
+
+
+<!-- Modal -->
+<div class="modal fade" id="contactService@(record.ApplicationId)" data-bs-backdrop="static" data-bs-keyboard="false"
+     tabindex="-1" aria-labelledby="contactServiceLabe@(record.ApplicationId)" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="contactServiceLabel@(record.ApplicationId)">聯絡客服</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="關閉"></button>
+            </div>
+            <div class="modal-body p-3">
+                <form action="@Url.Action("ContactService", "Support")" method="post" class="w-100">
+                    <input type="hidden" name="applicationId" value="@record.ApplicationId" />
+
+                    <div class="mb-3">
+                        <label for="selectReason-@record.ApplicationId">事由</label>
+                        <select class="form-select" id="selectReason-@record.ApplicationId" name="reason">
+                            <option selected disabled>請選擇事由</option>
+                            <option value="1">合約已完成</option>
+                            <option value="2">合約簽署中</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="contactInstructions-@record.ApplicationId">說明</label>
+                        <textarea class="form-control" name="instructions" id="contactInstructions-@record.ApplicationId"
+                                  rows="3" style="resize:none;"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="submit" class="btn btn-aqua">送出</button>
+            </div>
+        </div>
     </div>
 </div>
