@@ -896,8 +896,10 @@ namespace zuHause.Controllers
                 ModuleScope = dto.ModuleScope,
                 Category = "MARQUEE",
                 MessageType = "SYSTEM",
+                AttachmentUrl = dto.AttachmentUrl,
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now
+
             };
 
             _context.Entry(newMessage).State = EntityState.Added; // 🔧 可選保險
@@ -925,6 +927,7 @@ namespace zuHause.Controllers
                     message.EndAt = dto.EndAt;
                     message.IsActive = dto.IsActive;
                     message.UpdatedAt = DateTime.Now;
+                    message.AttachmentUrl = dto.AttachmentUrl;
                 }
             }
 
@@ -938,7 +941,7 @@ namespace zuHause.Controllers
         {
             var message = _context.SiteMessages.FirstOrDefault(m => m.SiteMessagesId == id && m.DeletedAt == null);
             if (message == null) return NotFound();
-
+            message.IsActive = false;
             message.DeletedAt = DateTime.Now;
             message.UpdatedAt = DateTime.Now;
             _context.SaveChanges();

@@ -9,5 +9,7 @@
         public bool IsActive { get; set; }
         public string ModuleScope { get; set; } = null!;
         public string Category { get; set; } = "MARQUEE";
+        public string? AttachmentUrl { get; set; }
+
     }
 }
