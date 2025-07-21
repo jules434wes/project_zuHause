@@ -7,6 +7,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Folder Include="wwwroot\uploads\contracts\" />
+    <Folder Include="wwwroot\uploads\signatures\" />
     <Folder Include="wwwroot\uploads\userPhoto\" />
   </ItemGroup>
 
