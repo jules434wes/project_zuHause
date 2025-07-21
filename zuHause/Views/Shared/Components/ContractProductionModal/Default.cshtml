@@ -1,86 +1,57 @@
-﻿@using zuHause.ViewModels.MemberViewModel
-@model ContractFormViewModel
-
-<form asp-controller="MemberContracts" asp-action="ContractProduction" method="post" class="w-100 apply-rental-form" enctype="multipart/form-data">
+﻿<form action="" method="post" class="w-100">
     <div class="row w-100 gx-5">
         <div class="col-12 d-flex justify-content-start flex-column
           align-items-center">
             <div class="row w-100">
                 <h1 class="fs-3 text-white px-0">合約製作</h1>
-                <div class="col-12 mt-3 bg-white rounded-1 p-3" id="applyRental">
+                <div class="col-12 mt-3 bg-white rounded-1 p-3">
                     <div class="tab-content" id="ApplicationTypeContent">
                         <div class="tab-pane fade show active py-3 w-100 gap-2" id="allItemTab-pane" role="tabpanel"
                              aria-labelledby="allItemTab" tabindex="0">
                             <div class="row w-100 mx-0 gy-3">
-                                <h5 class="col-12 px-0 mb-0">合約範本</h5>
-                                <div class="col-12 mx-0 gy-3">
-                                    <div class="row m-0 gap-1 align-items-center">
-                                        <label asp-for="SelectedTemplateId" class="col-3 py-0"></label>
-                                        <div class="col-5 pe-0">
-                                            <select class="form-select form-select-sm" asp-for="SelectedTemplateId" asp-items="Model.TemplateOptions">
-                                                <option selected value="0">請選擇範本</option>
-                                            </select>
-                                        </div>
-                                        <span class="text-danger" asp-validation-for="SelectedTemplateId"></span>
-                                    </div>
-                                </div>
-                            </div>
-                            <hr />
-                            <div class="row w-100 mx-0 gy-3">
                                 <h5 class="col-12 px-0 mb-0">房源資訊</h5>
-                                <input type="hidden" asp-for="Title" />
-                                <input type="hidden" asp-for="PropertyId" />
-                                <input type="hidden" asp-for="LandlordName" />
-                                <input type="hidden" asp-for="LandlordNationalIdNo" />
-                                <input type="hidden" asp-for="LandlordBirthDate" />
-                                <input type="hidden" asp-for="MonthlyRent" />
-                                <input type="hidden" asp-for="AddressLine" />
-                                <input type="hidden" asp-for="RentalStartDate" />
-                                <input type="hidden" asp-for="RentalEndDate" />
-                                <input type="hidden" asp-for="RentalApplicationId" />
-
                                 <div class="col-9">
                                     <div class="row flex-column gap-2">
                                         <h6 class="col-12 m-0 me-2">
                                             <div class="row m-0">
                                                 <div class="col-3">房源名稱：</div>
-                                                <div class="col">@Model.Title</div>
+                                                <div class="col">台中市西屯區 電梯大套房</div>
                                             </div>
                                         </h6>
                                         <h6 class="col-12 m-0 me-2">
                                             <div class="row m-0">
                                                 <div class="col-3">房源編號：</div>
-                                                <div class="col">@Model.PropertyId</div>
+                                                <div class="col">B01</div>
                                             </div>
                                         </h6>
                                         <h6 class="col-12 m-0 me-2">
                                             <div class="row m-0">
                                                 <div class="col-3">地址：</div>
-                                                <div class="col">@Model.AddressLine</div>
+                                                <div class="col">台中市西屯XX里...</div>
                                             </div>
                                         </h6>
                                         <h6 class="col-12 m-0 me-2">
                                             <div class="row m-0">
                                                 <div class="col-3">出租人(甲方)：</div>
-                                                <div class="col">@Model.LandlordName</div>
+                                                <div class="col">王大迪</div>
                                             </div>
                                         </h6>
                                         <h6 class="col-12 m-0 me-2">
                                             <div class="row m-0">
                                                 <div class="col-3">甲方身分證字號：</div>
-                                                <div class="col">@Model.LandlordNationalIdNo</div>
+                                                <div class="col">F123456789</div>
                                             </div>
                                         </h6>
                                         <h6 class="col-12 m-0 me-2">
                                             <div class="row m-0">
                                                 <div class="col-3">甲方出生日期：</div>
-                                                <div class="col">@Model.LandlordBirthDate</div>
+                                                <div class="col">1990-08-06</div>
                                             </div>
                                         </h6>
                                         <h6 class="col-12 m-0 me-2">
                                             <div class="row m-0">
                                                 <div class="col-3">租金：</div>
-                                                <div class="col">NT$@Model.MonthlyRent.ToString("0") 元 / 月</div>
+                                                <div class="col">10000元 / 月</div>
                                             </div>
                                         </h6>
                                         <h6 class="col-12 m-0 me-2">
@@ -88,39 +59,42 @@
                                                 <div class="col-3 d-flex">租賃期間：</div>
                                                 <div class="col d-flex flex-column gap-2">
                                                     <div class="row align-items-center">
-                                                        <div class="col-12">@Model.RentalStartDate 至 @Model.RentalEndDate，<span id="rentalDayDiff" data-start="@Model.RentalStartDate" data-end="@Model.RentalEndDate" ></span></div>
+                                                        <div class="col-12">2025-07-02 至 2026-07-02，共1年0月0日</div>
                                                     </div>
                                                 </div>
                                             </div>
                                         </h6>
                                         <h6 class="col-12 m-0 me-2">
-                                            <div class="row m-0 gap-1 align-items-center address-area">
+                                            <div class="row m-0 gap-1 align-items-center">
                                                 <div class="col-3">甲方戶籍地址：</div>
-                                                <div class="col-auto pe-0 address-area-city">
-                                                    <label class="visually-hidden" asp-for="SelectedCityId">縣市</label>
-                                                    <select class="form-select form-select-sm" asp-for="SelectedCityId" asp-items="Model.CityOptions" required>
-                                                        <option selected value="0">縣市</option>
+                                                <div class="col-auto pe-0">
+                                                    <select class="form-select form-select-sm" aria-label="Small select example">
+                                                        <option selected>縣市</option>
+                                                        <option value="1">台北市</option>
+                                                        <option value="2">台中市</option>
+                                                        <option value="3">高雄市</option>
                                                     </select>
-
                                                 </div>
-                                                <div class="col-auto px-0 address-area-district">
-
-                                                    <label class="visually-hidden" asp-for="SelectedDistrictId">區域</label>
-                                                    <select class="form-select form-select-sm" asp-for="SelectedDistrictId" required>
-                                                        <option selected value="0">區域</option>
+                                                <div class="col-auto px-0">
+                                                    <select class="form-select form-select-sm" aria-label="Small select example">
+                                                        <option selected>區域</option>
+                                                        <option value="1">大安區</option>
+                                                        <option value="2">信義區</option>
+                                                        <option value="3">士林區</option>
                                                     </select>
-
                                                 </div>
                                                 <div class="col px-0">
-                                                    <input class="form-control form-control-sm" type="text" placeholder="地址" asp-for="AddressDetail">
+                                                    <input class="form-control form-control-sm" type="text" placeholder="地址"
+                                                           aria-label=".form-control-sm example">
                                                 </div>
                                             </div>
                                         </h6>
                                         <h6 class="col-12 m-0 me-2">
                                             <div class="row m-0 gap-1 align-items-center">
-                                                <label asp-for="DepositAmount" class="col-3 py-0"></label>
+                                                <label for="" class="col-3 py-0">押金：</label>
                                                 <div class="col-3 pe-0">
-                                                    <input class="form-control form-control-sm" type="text" placeholder="押金" asp-for="DepositAmount">
+                                                    <input class="form-control form-control-sm" type="text" placeholder="押金"
+                                                           aria-label=".form-control-sm example">
                                                 </div>
                                                 <div class="col">
                                                     <small class="text-danger p-0">
@@ -131,9 +105,10 @@
                                         </h6>
                                         <h6 class="col-12 m-0 me-2">
                                             <div class="row m-0 gap-1 align-items-center">
-                                                <label asp-for="ManagementFee" class="col-3 py-0"></label>
+                                                <label for="" class="col-3 py-0">管理費：</label>
                                                 <div class="col-3 pe-0">
-                                                    <input class="form-control form-control-sm" type="text" placeholder="管理費用" asp-for="ManagementFee">
+                                                    <input class="form-control form-control-sm" type="text" placeholder="管理費用"
+                                                           aria-label=".form-control-sm example">
                                                 </div>
                                                 <div class="col-auto">
                                                     / 月
@@ -142,9 +117,10 @@
                                         </h6>
                                         <h6 class="col-12 m-0 me-2">
                                             <div class="row m-0 gap-1 align-items-center">
-                                                <label asp-for="ParkingFee" class="col-3 py-0"></label>
+                                                <label for="" class="col-3 py-0">車位費：</label>
                                                 <div class="col-3 pe-0">
-                                                    <input class="form-control form-control-sm" type="text" placeholder="停車位費用" asp-for="ParkingFee">
+                                                    <input class="form-control form-control-sm" type="text" placeholder="停車位費用"
+                                                           aria-label=".form-control-sm example">
                                                 </div>
                                                 <div class="col-auto">
                                                     / 月
@@ -153,9 +129,10 @@
                                         </h6>
                                         <h6 class="col-12 m-0 me-2">
                                             <div class="row m-0 gap-1 align-items-center">
-                                                <label asp-for="CleaningFee" class="col-3 py-0"></label>
+                                                <label for="" class="col-3 py-0">清潔費：</label>
                                                 <div class="col-3 pe-0">
-                                                    <input class="form-control form-control-sm" type="text" placeholder="租期結束清潔費" asp-for="CleaningFee">
+                                                    <input class="form-control form-control-sm" type="text" placeholder="租期結束清潔費"
+                                                           aria-label=".form-control-sm example">
                                                 </div>
                                                 <div class="col-auto">
                                                     / 次
@@ -164,51 +141,48 @@
                                         </h6>
                                         <h6 class="col-12 m-0 me-2">
                                             <div class="row m-0 gap-1 align-items-center">
-                                                <label asp-for="UsagePurpose" class="col-3 py-0"></label>
+                                                <label for="" class="col-3 py-0">使用目的：</label>
                                                 <div class="col-3 pe-0">
-                                                    <input class="form-control form-control-sm" type="text" placeholder="例：住家/營業/其他" asp-for="UsagePurpose">
+                                                    <input class="form-control form-control-sm" type="text" placeholder="例：住家/營業/其他"
+                                                           aria-label=".form-control-sm example">
                                                 </div>
                                             </div>
                                         </h6>
                                         <div class="col-12 m-0 me-2">
                                             <div class="row m-0 align-items-center gap-1">
                                                 <h6 class="col-3 m-0">是否可轉租：</h6>
-
                                                 <div class="form-check-inline col-auto me-0">
-                                                    <input class="form-check-input"
-                                                           type="radio"
-                                                           asp-for="IsSublettable"
-                                                           id="IsSublettableTrue"
-                                                           value="true" />
-                                                    <label class="form-check-label" for="IsSublettableTrue">是</label>
+                                                    <input class="form-check-input" type="radio" name="inlineRadioOptions" id="inlineRadio1"
+                                                           value="option1">
+                                                    <label class="form-check-label" for="inlineRadio1">是</label>
                                                 </div>
-
                                                 <div class="form-check-inline col-auto me-0">
-                                                    <input class="form-check-input"
-                                                           type="radio"
-                                                           asp-for="IsSublettable"
-                                                           id="IsSublettableFalse"
-                                                           value="false" />
-                                                    <label class="form-check-label" for="IsSublettableFalse">否</label>
+                                                    <input class="form-check-input" type="radio" name="inlineRadioOptions" id="inlineRadio2"
+                                                           value="option2" checked>
+                                                    <label class="form-check-label" for="inlineRadio2">否</label>
                                                 </div>
                                             </div>
                                         </div>
-
                                         <div class="col-12 m-0 me-2">
                                             <div class="row m-0 gap-1 align-items-center">
-                                                <label asp-for="CourtJurisdiction" class="col-auto py-0"></label>
+                                                <label for="" class="col-auto py-0">若發生糾紛，以何法院為管轄法院：</label>
                                                 <div class="col-3 pe-0">
-                                                    <input class="form-control form-control-sm" type="text" placeholder="例：台北地方法院" asp-for="CourtJurisdiction">
+                                                    <input class="form-control form-control-sm" type="text" placeholder="例：台北地方法院"
+                                                           aria-label=".form-control-sm example">
+                                                </div>
+                                                <div class="col-auto">
+                                                    / 次
                                                 </div>
                                             </div>
                                         </div>
                                         <div class="col-12 m-0 me-2">
                                             <div class="row m-0 gap-1 align-items-center">
-                                                <label for="" class="col-auto py-0" asp-for="PenaltyAmount">
+                                                <label for="" class="col-auto py-0">
                                                     若提前解約，需另行給付甲方相當於：
                                                 </label>
                                                 <div class="col-3 pe-0">
-                                                    <input class="form-control form-control-sm" type="text" placeholder="違約金金額" asp-for="PenaltyAmount">
+                                                    <input class="form-control form-control-sm" type="text" placeholder="例：台北地方法院"
+                                                           aria-label=".form-control-sm example">
                                                 </div>
                                                 <div class="col-auto">
                                                     個月之租金金額
@@ -224,15 +198,9 @@
                                 </div>
                             </div>
                             <hr>
-
-
                             <div class="row w-100 mx-0 gy-3">
                                 <h5 class="col-12 px-0 mb-0">新增家具清單</h5>
-
-                                <div class="col-12 px-0 furniture-area">
-                                    <button type="button" class="btn p-0 add-furniture-btn mb-2">
-                                        <i class="bi bi-plus-square-fill"></i> 新增家具項目
-                                    </button>
+                                <div class="col-12 px-4">
                                     <table class="table table-bordered border">
                                         <thead>
                                             <tr class="table-success">
@@ -245,131 +213,114 @@
                                                 <th scope="col">移除此項目</th>
                                             </tr>
                                         </thead>
-                                        <tbody class="furniture-body">
-                                            <!-- 動態插入列 -->
+                                        <tbody>
+                                            <tr>
+                                                <th>1</th>
+                                                <td>桌子</td>
+                                                <td>1</td>
+                                                <td>全新</td>
+                                                <td>房客</td>
+                                                <td>房客分擔</td>
+                                                <td>
+                                                    <button type="button" class="btn p-0">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <th>2</th>
+                                                <td>衣櫃</td>
+                                                <td>2</td>
+                                                <td>堪用</td>
+                                                <td>無</td>
+                                                <td>無</td>
+
+                                                <td scope="col">
+                                                    <button type="button" class="btn p-0">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
                                         </tbody>
                                     </table>
                                 </div>
-
-                                <template id="furniture-template">
-                                    <tr class="furniture-row">
-                                        <td class="index-cell">1</td>
-                                        <td>
-                                            <input class="form-control form-control-sm" required data-name="FurnitureName" />
-                                        </td>
-                                        <td>
-                                            <input type="number" min="1" class="form-control form-control-sm" required data-name="Quantity" />
-                                        </td>
-                                        <td>
-                                            <input class="form-control form-control-sm" required data-name="FurnitureCondition" />
-                                        </td>
-                                        <td>
-                                            <input class="form-control form-control-sm" required data-name="RepairResponsibility" />
-                                        </td>
-                                        <td>
-                                            <input class="form-control form-control-sm" required data-name="RepairChargeOwner" />
-                                        </td>
-                                        <td>
-                                            <button type="button" class="btn p-0 del-furniture-btn">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                </template>
-
-
-
-
                             </div>
-
-
-
-
                             <hr>
-                            <div class="row g-0 align-items-center gap-2 note-area">
+                            <div class="row g-0 align-items-center gap-2">
                                 <h5 class="col-12">新增備註條件</h5>
                                 <div class="col-12">
-                                    <button type="button" class="col-auto btn p-0 add-note-btn">
-                                        <i class="bi bi-plus-square-fill"></i>
-                                    </button>
-                                </div>
-                                <div class="col-12 note-input-area">
-                                    <!-- 插入備註輸入欄 -->
-                                </div>
-
-                                <template id="note-template" class="d-none">
-                                    <div class="row m-0 align-items-start note-item w-100">
-                                        <h6 class="col-auto mb-0 px-0 py-2">備註：</h6>
-                                        <div class="col-9 gap-2 p-0 d-flex">
+                                    <div class="row m-0 align-items-start">
+                                        <label class="col-auto mb-0 px-0 py-1">備註一：</label>
+                                        <div class="col gap-2 py-0">
                                             <div class="row align-items-start">
                                                 <div class="col p-0">
-                                                    <textarea class="form-control w-100" placeholder="限100字內"
+                                                    <textarea class="form-control" placeholder="Leave a comment here" id="floatingTextarea2"
                                                               style="resize: none; height: 4rem;"></textarea>
-                                                    <input type="hidden" value="USER" />
                                                 </div>
-                                                <button type="button" class="col-auto btn p-0 del-note-btn">
-                                                    <i class="bi bi-dash-square-fill"></i>
-                                                </button>
-                                            </div>
-                                            <div class="row input-feedback mt-1">
-                                                <small class="text-danger col p-0"></small>
+                                                <small class="text-danger col-auto">限制內容為100字以內</small>
                                             </div>
                                         </div>
                                     </div>
-                                </template>
-
-                            </div>
-
-                            <hr>
-                            <div class="row g-0 align-items-center gap-2 upload-area">
-                                <h5 class="col-12">其餘資料上傳</h5>
+                                </div>
                                 <div class="col-12">
-                                    <button type="button" class="col-auto btn p-0 add-btn">
-                                        <i class="bi bi-plus-square-fill"></i>
-                                    </button>
+                                    <div class="row m-0 align-items-start">
+                                        <label class="col-auto mb-0 px-0 py-1">備註二：</label>
+                                        <div class="col gap-2 py-0">
+                                            <div class="row align-items-start">
+                                                <div class="col p-0">
+                                                    <textarea class="form-control" placeholder="Leave a comment here" id="floatingTextarea2"
+                                                              style="resize: none; height: 4rem;"></textarea>
+                                                </div>
+                                                <small class="text-danger col-auto">限制內容為100字以內</small>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-
-                                <style>
-                                    .text-muted {
-                                        color: #6c757d;
-                                    }
-                                </style>
-                                <div class="col-12 upload-input-area">
-                                    <!-- 插入input框 -->
-
-
-                                </div>
-
-                                <template id="upload-template" class="d-none">
-                                    <div class="row m-0 align-items-start input-item">
-                                        <h6 class="col-auto mb-0 px-0 py-2">檔案：</h6>
+                            </div>
+                            <hr>
+                            <div class="row g-0 align-items-center gap-2">
+                                <h5 class="col-12">附加檔案上傳</h5>
+                                <div class="col-12">
+                                    <div class="row m-0 align-items-start">
+                                        <h6 class="col-auto mb-0 px-0 py-2">檔案一：</h6>
                                         <div class="col-auto gap-2 py-0">
                                             <div class="row align-items-center">
-                                                <label for="" class="col-auto border border-1 px-2 py-1" role="button">選擇檔案</label>
-                                                <input type="file" name="UploadFiles" id="" class="col-auto col-auto d-none">
-                                                <div class="col-auto input-file-name col-auto"></div>
-                                                <button type="button" class="col-auto btn p-0 del-btn">
-                                                    <i class="bi bi-dash-square-fill"></i>
+                                                <label for="" class="col-auto border border-1 px-2 py-1">選擇檔案</label>
+                                                <input type="file" name="" id="" class="col-auto col-auto d-none">
+                                                <div class="col-auto input-file-name col-auto">image1234456.jpg</div>
+                                                <button type="button" class="col-auto btn p-0">
+                                                    <i class="bi bi-trash"></i>
                                                 </button>
                                             </div>
                                             <div class="row input-feedback mt-1">
-                                                <small class="text-danger col p-0"></small>
+                                                <small class="text-danger col p-0">請上傳.jpg、.png、.webp，且檔案大小於5MB以內</small>
                                             </div>
                                         </div>
                                     </div>
-                                </template>
-
-
-
-
-
-
-
+                                </div>
+                                <div class="col-12">
+                                    <div class="row m-0 align-items-start">
+                                        <h6 class="col-auto mb-0 px-0 py-2">檔案二：</h6>
+                                        <div class="col-auto gap-2 py-0">
+                                            <div class="row align-items-center">
+                                                <label for="" class="col-auto border border-1 px-2 py-1">選擇檔案</label>
+                                                <input type="file" name="" id="" class="col-auto col-auto d-none">
+                                                <div class="col-auto input-file-name col-auto">image1234456.jpg</div>
+                                                <button type="button" class="col-auto btn p-0">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </div>
+                                            <div class="row input-feedback mt-1">
+                                                <small class="text-danger col p-0">請上傳.jpg、.png、.webp，且檔案大小於5MB以內</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                             <hr>
                             <div class="row g-0 align-items-center gap-2 signature-type">
                                 <h5 class="col-12">簽署合約</h5>
-                                @* <div class="col-12">
+                                <div class="col-12">
                                     <div class="row m-0 align-items-center gap-1">
                                         <h6 class="col-auto m-0 p-0">請選擇一種簽署方式：</h6>
                                         <div class="form-check-inline col-auto me-0">
@@ -388,28 +339,26 @@
                                             <label class="form-check-label" for="phoneSignature">使用手機簽名</label>
                                         </div>
                                     </div>
-                                </div> *@
-                                @* <div class="col-12" data-sign-block="online-signature">
+                                </div>
+                                <div class="col-12" data-sign-block="online-signature">
                                     線上簽名
                                     canva
-                                </div> *@
-
-                                <div class="col-12" data-sign-block="upload-signature">
-                                    <div class="row m-0 align-items-start signature-upload-area">
+                                </div>
+                                <div class="col-12 d-none" data-sign-block="upload-signature">
+                                    <div class="row m-0 align-items-start">
                                         <h6 class="col-auto mb-0 px-0 py-2">上傳簽名檔：</h6>
                                         <div class="col-auto gap-2 py-0">
                                             <div class="row align-items-center">
-                                                <label asp-for="SignatureFile" class="col-auto border border-1 px-2 py-1" role="button">選擇檔案</label>
-                                                <input type="file" asp-for="SignatureFile" class="d-none">
-                                                <div class="col-auto input-file-name"></div>
+                                                <label for="" class="col-auto border border-1 px-2 py-1">選擇檔案</label>
+                                                <input type="file" name="" id="" class="col-auto col-auto d-none">
+                                                <div class="col-auto input-file-name col-auto">image1234456.jpg</div>
                                             </div>
                                             <div class="row input-feedback mt-1">
-                                                <small class="text-danger col p-0"></small>
+                                                <small class="text-danger col p-0">請上傳.jpg、.png、.webp，且檔案大小於5MB以內</small>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-
                                 <!-- <div class="col-12 d-none" data-sign-block="phone-signature-area">
                                   使用手機掃描QR Code進行電子簽名
                                   QRCODE
@@ -425,10 +374,11 @@
                                 </div>
                                 <div class="col d-flex justify-content-center gap-3">
 
-                                    @* <button type="button" class="btn btn-aqua px-5">儲存合約</button> *@
+                                    <button type="button" class="btn btn-aqua px-5">儲存合約</button>
+                                    <button type="button" class="btn btn-aqua px-5">瀏覽合約</button>
                                 </div>
                                 <div class="col-auto">
-                                    <button type="submit" class="btn btn-aqua px-5">儲存合約</button>
+                                    <button type="button" class="btn btn-aqua px-5">確定送出</button>
                                 </div>
                             </div>
                         </div>
@@ -458,80 +408,6 @@
     </div>
 </form>
 
-@section Scripts{
-    @* <script src="~/js/switchSignatureMode.js"></script> *@
-    <script src="~/js/selectDistrict.js"></script>
-    <script src="~/js/applyRentalInput.js"></script>
-    <script src="~/js/applyRentalNote.js"></script>
-    <script src="~/js/applyRentalTable.js"></script>
-
-    <script>
-        const signatureUploadArea = document.querySelector(".signature-upload-area");
-        if (signatureUploadArea) {
-            const input = signatureUploadArea.querySelector("input[type='file']");
-            const label = signatureUploadArea.querySelector("label");
-            const inputFileName = signatureUploadArea.querySelector(".input-file-name");
-            const feedback = signatureUploadArea.querySelector(".input-feedback small");
-
-            input.addEventListener("change", function () {
-                const file = this.files[0];
-                if (!file) {
-                    inputFileName.textContent = "";
-                    return;
-                }
-
-                inputFileName.textContent = file.name;
-
-                const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
-                const maxSize = 5 * 1024 * 1024;
-
-                if (!allowedTypes.includes(file.type)) {
-                    feedback.textContent = "檔案格式錯誤，只允許 jpg/png/webp";
-                    feedback.classList.remove("text-muted");
-                    feedback.classList.add("text-danger");
-                } else if (file.size > maxSize) {
-                    feedback.textContent = "檔案過大，請小於 5MB";
-                    feedback.classList.remove("text-muted");
-                    feedback.classList.add("text-danger");
-                } else {
-                    feedback.textContent = "檔案格式與大小正確";
-                    feedback.classList.remove("text-danger");
-                    feedback.classList.add("text-muted");
-                }
-            });
-        }
-
-                function getDateDiff(startStr, endStr) {
-            const start = new Date(startStr);
-            const end = new Date(endStr);
-
-            let years = end.getFullYear() - start.getFullYear();
-            let months = end.getMonth() - start.getMonth();
-            let days = end.getDate() - start.getDate();
-
-            if (days < 0) {
-                months--;
-                const prevMonth = new Date(end.getFullYear(), end.getMonth(), 0);
-                days += prevMonth.getDate();
-            }
-
-            if (months < 0) {
-                years--;
-                months += 12;
-            }
-
-            return { years, months, days };
-        }
-
-        const span = document.getElementById("rentalDayDiff");
-        const start = span.dataset.start;
-        const end = span.dataset.end;
-
-        const diff = getDateDiff(start, end);
-        span.textContent = `共 ${diff.years} 年 ${diff.months} 月 ${diff.days} 日`;
-
-    </script>
-
-
-
+@section Scripts {
+    <script src="~/js/switchSignatureMode.js"></script>
 }

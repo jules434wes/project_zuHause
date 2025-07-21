@@ -73,6 +73,11 @@ public partial class RentalApplication
     /// </summary>
     public bool IsActive { get; set; }
 
+    /// <summary>
+    /// 戶籍地址
+    /// </summary>
+    public string? HouseholdAddress { get; set; }
+
     public virtual ICollection<ApplicationStatusLog> ApplicationStatusLogs { get; set; } = new List<ApplicationStatusLog>();
 
     public virtual ICollection<Contract> Contracts { get; set; } = new List<Contract>();

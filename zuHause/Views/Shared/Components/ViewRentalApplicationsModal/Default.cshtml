@@ -1,6 +1,10 @@
-﻿<button type="button" class="btn btn-aqua py-0 col-auto" data-bs-toggle="modal"
-        data-bs-target="#landlordViewRentalApplication">
-    (房東)查看申請租賃
+﻿@* @using zuHause.ViewModels.MemberViewModel
+@model ContractsViewModel *@
+
+
+<button type="button" class="btn btn-aqua py-0 col-auto w-100" data-bs-toggle="modal"
+        data-bs-target="#tenantSignContract">
+    (房客)簽署合約
 </button>
 
 <div class="modal fade" id="tenantSignContract" data-bs-backdrop="static"
@@ -14,9 +18,9 @@
             </div>
             <div class="modal-body p-3">
                 <form action="" method="post" class="w-100 d-flex flex-column gap-2">
-                    <div class="row w-100 m-0">
+                    @* <div class="row w-100 m-0">
                         @await Html.PartialAsync("_PartialPropertyCard")
-                    </div>
+                    </div> *@
                     <hr>
                     <div class="row g-0 align-items-center gap-2">
                         <h5>申租資訊</h5>

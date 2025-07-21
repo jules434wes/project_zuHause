@@ -1,16 +1,14 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using zuHause.ViewModels.MemberViewModel;
 
 namespace zuHause.ViewComponents
 {
-    public class ApplyHouseModalViewComponent : ViewComponent
+    public class MemberApplicationCardViewComponent : ViewComponent
     {
-
         public IViewComponentResult Invoke()
         {
+
             return View();
         }
-
-
-
     }
 }

@@ -1,22 +1,23 @@
-﻿<div class="col">
-    <button type="button" class="btn btn-aqua py-0 col-auto" data-bs-toggle="modal"
-            data-bs-target="#landlordViewRentalApplication">
+﻿@using zuHause.ViewModels.MemberViewModel
+@model ContractsViewModel
+
+    <button type="button" class="btn btn-aqua py-0 w-100" data-bs-toggle="modal"
+        data-bs-target="#landlordViewRentalApplication@(Model.ContractId)">
         (房客)簽署合約
     </button>
-</div>
 
-<div class="modal fade" id="landlordViewRentalApplication" data-bs-backdrop="static"
-     data-bs-keyboard="false" tabindex="-1" aria-labelledby="landlordViewRentalApplicationLabel" aria-hidden="true">
+<div class="modal fade" id="landlordViewRentalApplication@(Model.ContractId)" data-bs-backdrop="static"
+     data-bs-keyboard="false" tabindex="-1" aria-labelledby="landlordViewRentalApplication@(Model.ContractId)Label" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg modal-fullscreen-lg-down">
         <div class="modal-content">
             <div class="modal-header">
-                <h1 class="modal-title fs-5" id="landlordViewRentalApplicationLabel">簽署合約</h1>
+                <h1 class="modal-title fs-5" id="landlordViewRentalApplication@(Model.ContractId)Label">簽署合約</h1>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-3">
                 <form action="" method="post" class="w-100 d-flex flex-column gap-2">
                     <div class="row w-100 m-0">
-                        @await Html.PartialAsync("_PartialPropertyCard")
+                        @await Html.PartialAsync("_PartialPropertyCard",@Model)
                     </div>
                     <hr>
                     <div class="row g-0 align-items-center gap-2">
@@ -24,19 +25,19 @@
                         <h6 class="col-12 m-0 me-2">
                             <div class="row m-0">
                                 <div class="col-3">房源編號：</div>
-                                <div class="col">B01</div>
+                                <div class="col">@Model.PropertyId</div>
                             </div>
                         </h6>
                         <h6 class="col-12 m-0 me-2">
                             <div class="row m-0">
                                 <div class="col-3">地址：</div>
-                                <div class="col">台中市西屯XX里...</div>
+                                <div class="col">@Model.AddressLine</div>
                             </div>
                         </h6>
                         <h6 class="col-12 m-0 me-2">
                             <div class="row m-0">
                                 <div class="col-3">承租人(乙方)：</div>
-                                <div class="col">金大明</div>
+                                <div class="col">@Model.ApplicantName</div>
                             </div>
                         </h6>
                         <!-- <h6 class="col-12 m-0 me-2">
@@ -48,13 +49,13 @@
                         <h6 class="col-12 m-0 me-2">
                             <div class="row m-0">
                                 <div class="col-3">乙方出生日期：</div>
-                                <div class="col">1990-08-06</div>
+                                <div class="col">@Model.ApplicantBathText</div>
                             </div>
                         </h6>
                         <h6 class="col-12 m-0 me-2">
                             <div class="row m-0">
                                 <div class="col-3">租金：</div>
-                                <div class="col">10000元 / 月</div>
+                                <div class="col">NT$@Model.MonthlyRent.ToString("0") 元 / 月</div>
                             </div>
                         </h6>
                         <h6 class="col-12 m-0 me-2">
@@ -62,7 +63,7 @@
                             <div class="row m-0">
                                 <div class="col-3 d-flex">租賃期間：</div>
                                 <div class="col d-flex flex-column gap-2">
-                                    2025-07-02 至 2026-07-02，共1年0月0日
+                                    @Model.StartDateText 至 @Model.EndDateText，共@(Model.DurationText)
                                 </div>
                             </div>
                         </h6>

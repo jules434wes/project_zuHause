@@ -1,4 +1,14 @@
-﻿@await Component.InvokeAsync("ApplyHouseModal")
-@await Component.InvokeAsync("ApplyRentalModal")
+﻿@* @await Component.InvokeAsync("ApplyHouseModal") *@
+@* @await Component.InvokeAsync("ApplyRentalModal", new { propertyId = 3032, userId = Convert.ToInt32(User.FindFirst("UserId")!.Value)}); *@
 @await Component.InvokeAsync("ViewRentalApplicationsModal")
-@await Component.InvokeAsync("SignContractModal")
+@* @await Component.InvokeAsync("SignContractModal") *@
+
+
+
+
+
+@section Scripts {
+    <script src="~/js/selectDistrict.js"></script>
+    <script src="~/js/applyRentalInput.js"></script>
+    <script src="~/js/rentalDateCount.js"></script>
+}

@@ -1,59 +1,65 @@
-﻿<button type="button" class="btn btn-aqua py-0 col-auto" data-bs-toggle="modal"
-        data-bs-target="#applyRental">
+﻿@using zuHause.ViewModels.MemberViewModel
+@model RentalApplicationViewModel
+
+<button type="button" class="btn btn-aqua py-0 col-auto" data-bs-toggle="modal" data-bs-target="#applyRental">
     (房客)申請租賃
 </button>
 
 
-<div class="modal fade" id="applyRental" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
-     aria-labelledby="applyRentalLabel" aria-hidden="true">
+<div class="modal fade show" id="applyRental" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+     style="display: block;" aria-labelledby="applyRentalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg modal-fullscreen-lg-down">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h1 class="modal-title fs-5" id="applyRentalLabel">申請租賃</h1>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body p-3">
-                <form action="" method="post" class="w-100 d-flex flex-column gap-2">
-                    <div class="row w-100 m-0">
-                        @await Html.PartialAsync("_PartialPropertyCard")
-                    </div>
-                    <hr>
+        <form asp-controller="MemberApplications" asp-action="ApplyRental" method="post" class="w-100 apply-rental-form" enctype="multipart/form-data">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="applyRentalLabel">申請租賃</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-3">
+
+                    @* <div class="row w-100 m-0">
+                      @await Html.PartialAsync("_PartialPropertyCard")
+                    </div> *@
+                    @*
+                    <hr> *@
                     <div class="row g-0 align-items-center gap-2">
                         <h5>申租資訊</h5>
                         <h6 class="col-12 m-0 me-2">
                             <div class="row m-0">
                                 <div class="col-3">房源編號：</div>
-                                <div class="col">B01</div>
+                                <input type="hidden" asp-for="PropertyId"/>
+                                <div class="col">@Model.PropertyId</div>
                             </div>
                         </h6>
                         <h6 class="col-12 m-0 me-2">
                             <div class="row m-0">
                                 <div class="col-3">地址：</div>
-                                <div class="col">台中市西屯XX里...</div>
+                                <div class="col">@Model.AddressLine</div>
                             </div>
                         </h6>
                         <h6 class="col-12 m-0 me-2">
                             <div class="row m-0">
                                 <div class="col-3">承租人(乙方)：</div>
-                                <div class="col">金大明</div>
+                                <input type="hidden" asp-for="MemberName" />
+                                <div class="col">@Model.MemberName</div>
                             </div>
                         </h6>
                         <h6 class="col-12 m-0 me-2">
                             <div class="row m-0">
                                 <div class="col-3">乙方身分證字號：</div>
-                                <div class="col">L123456789</div>
+                                <div class="col">@Model.NationalIdNo</div>
                             </div>
                         </h6>
                         <h6 class="col-12 m-0 me-2">
                             <div class="row m-0">
                                 <div class="col-3">乙方出生日期：</div>
-                                <div class="col">1990-08-06</div>
+                                <div class="col">@Model.BirthDate</div>
                             </div>
                         </h6>
                         <h6 class="col-12 m-0 me-2">
                             <div class="row m-0">
                                 <div class="col-3">租金：</div>
-                                <div class="col">10000元 / 月</div>
+                                <div class="col">NT$@Model.MonthlyRent.ToString("0") 元 / 月</div>
                             </div>
                         </h6>
                         <h6 class="col-12 m-0 me-2">
@@ -64,43 +70,44 @@
                                     <div class="row align-items-center">
                                         <div class="col-auto pe-0">租期開始日</div>
                                         <div class="col">
-                                            <input type="date" name="" id="">
+                                            <input type="date" asp-for="RentalStartDate" min="@DateTime.Today.ToString("yyyy-MM-dd")">
                                         </div>
                                     </div>
                                     <div class="row align-items-center">
                                         <div class="col-auto pe-0">租期結束日</div>
                                         <div class="col">
-                                            <input type="date" name="" id="">
+                                            <input type="date" asp-for="RentalEndDate" min="@DateTime.Today.ToString("yyyy-MM-dd")">
                                         </div>
                                     </div>
                                     <div class="row align-items-center">
-                                        <div class="col-12">2025-07-02 至 2026-07-02，共1年0月0日</div>
+                                        <div class="col-12" id="rentalDurationText">請選擇租期</div>
                                     </div>
                                 </div>
                             </div>
+
+
+
                         </h6>
                         <h6 class="col-12 m-0 me-2">
-                            <div class="row m-0 gap-1 align-items-center">
+                            <div class="row m-0 gap-1 align-items-center address-area">
                                 <div class="col-3">乙方戶籍地址：</div>
-                                <div class="col-auto pe-0">
-                                    <select class="form-select form-select-sm" aria-label="Small select example">
-                                        <option selected>縣市</option>
-                                        <option value="1">台北市</option>
-                                        <option value="2">台中市</option>
-                                        <option value="3">高雄市</option>
+                                <div class="col-auto pe-0 address-area-city">
+                                    <label class="visually-hidden" asp-for="SelectedCityId">縣市</label>
+                                    <select class="form-select form-select-sm" asp-for="SelectedCityId" asp-items="Model.CityOptions" required>
+                                        <option selected value="0">縣市</option>
                                     </select>
+
                                 </div>
-                                <div class="col-auto px-0">
-                                    <select class="form-select form-select-sm" aria-label="Small select example">
-                                        <option selected>區域</option>
-                                        <option value="1">大安區</option>
-                                        <option value="2">信義區</option>
-                                        <option value="3">士林區</option>
+                                <div class="col-auto px-0 address-area-district">
+
+                                    <label class="visually-hidden" asp-for="SelectedDistrictId">區域</label>
+                                    <select class="form-select form-select-sm" asp-for="SelectedDistrictId" required>
+                                        <option selected value="0">區域</option>
                                     </select>
+
                                 </div>
                                 <div class="col px-0">
-                                    <input class="form-control form-control-sm" type="text" placeholder="地址"
-                                           aria-label=".form-control-sm example">
+                                    <input class="form-control form-control-sm" type="text" placeholder="地址" asp-for="AddressDetail">
                                 </div>
                             </div>
                         </h6>
@@ -111,62 +118,68 @@
                             display: none;
                         }
                     </style>
-                    <div class="row g-0 align-items-center gap-2">
+                    <div class="row g-0 align-items-center gap-2 upload-area">
                         <h5 class="col-12">其餘資料上傳</h5>
                         <div class="col-12">
-                            <div class="row m-0 align-items-start">
-                                <h6 class="col-auto mb-0 px-0 py-2">檔案一：</h6>
+                            <button type="button" class="col-auto btn p-0 add-btn">
+                                <i class="bi bi-plus-square-fill"></i>
+                            </button>
+                        </div>
+
+                        <style>
+                            .text-muted {
+                                color: #6c757d;
+                            }
+                        </style>
+                        <div class="col-12 upload-input-area">
+                            <!-- 插入input框 -->
+
+
+                        </div>
+
+                        <template id="upload-template" class="d-none">
+                            <div class="row m-0 align-items-start input-item">
+                                <h6 class="col-auto mb-0 px-0 py-2">檔案：</h6>
                                 <div class="col-auto gap-2 py-0">
                                     <div class="row align-items-center">
-                                        <label for="" class="col-auto border border-1 px-2 py-1">選擇檔案</label>
-                                        <input type="file" name="" id="" class="col-auto col-auto d-none">
-                                        <div class="col-auto input-file-name col-auto">image1234456.jpg</div>
-                                        <button type="button" class="col-auto btn p-0">
+                                        <label for="" class="col-auto border border-1 px-2 py-1" role="button">選擇檔案</label>
+                                        <input type="file" name="UploadFiles" id="" class="col-auto col-auto d-none">
+                                        <div class="col-auto input-file-name col-auto"></div>
+                                        <button type="button" class="col-auto btn p-0 del-btn">
                                             <i class="bi bi-dash-square-fill"></i>
                                         </button>
                                     </div>
                                     <div class="row input-feedback mt-1">
-                                        <small class="text-danger col p-0">請上傳.jpg、.png、.webp，且檔案大小於5MB以內</small>
+                                        <small class="text-danger col p-0"></small>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="col-12">
-                            <div class="row m-0 align-items-start">
-                                <h6 class="col-auto mb-0 px-0 py-2">檔案二：</h6>
-                                <div class="col-auto gap-2 py-0">
-                                    <div class="row align-items-center">
-                                        <label for="" class="col-auto border border-1 px-2 py-1">選擇檔案</label>
-                                        <input type="file" name="" id="" class="col-auto col-auto d-none">
-                                        <div class="col-auto input-file-name col-auto">image1234456.jpg</div>
-                                        <button type="button" class="col-auto btn p-0">
-                                            <i class="bi bi-dash-square-fill"></i>
-                                        </button>
-                                    </div>
-                                    <div class="row input-feedback mt-1">
-                                        <small class="text-danger col p-0">請上傳.jpg、.png、.webp，且檔案大小於5MB以內</small>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        </template>
+
+
+
+
+
+
+
                     </div>
                     <hr>
                     <div class="row g-0 align-items-center gap-2">
                         <h5 class="col-12">訊息文字</h5>
                         <div class="col-12">
                             <div class="form-floating">
-                                <textarea class="form-control" placeholder="Leave a comment here" id="floatingTextarea2"
+                                <textarea class="form-control" placeholder="Leave a comment here" asp-for="Message"
                                           style="resize: none; height: 8rem;"></textarea>
-                                <label for="floatingTextarea2">想對房東說的話：</label>
+                                <label asp-for="Message">想對房東說的話：</label>
                             </div>
                         </div>
                     </div>
-                </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-aqua">送出</button>
+                </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                <button type="button" class="btn btn-aqua">送出</button>
-            </div>
-        </div>
+        </form>
     </div>
 </div>

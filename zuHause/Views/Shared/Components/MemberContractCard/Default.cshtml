@@ -1,130 +1,66 @@
-﻿<div class="card col-12">
+﻿@using zuHause.ViewModels.MemberViewModel
+@model ContractsViewModel
+
+
+<div class="card col-12 active-0">
     <div class="card-body p-3">
-        <div class="row mb-2">
-            <div class="card-type col-auto border border-1 bg-aqua">合約簽署中</div>
-            <div class="card-property-id col-4">房源編號 A01</div>
-            <div class="card-property-id col-4">合約編號 B01</div>
+        <div class="row mb-2 gap-3">
+            <div class="card-type col-auto border border-1 bg-aqua">@Model.StatusDisplayName</div>
+            <div class="card-property-id col-auto">房源編號 @Model.PropertyId</div>
+            <div class="card-property-id col-auto">合約編號 @Model.ContractId</div>
         </div>
         <div class="row">
             <div class="col-3 px-0">
-                <div class="property-img border ">
-                    <img src="@Url.Content("~/images/logo.png")" class="image-area" alt="">
+                <div class="property-img border ratio ratio-4x3">
+                    <img src="@Url.Content(Model.PreviewImageUrl)" class="w-100 h-100 object-fit-cover" alt="">
 
                 </div>
             </div>
-            <div class="col">
+            <div class="col card-area">
                 <div class="d-flex align-items-center">
-                    <input class="card-title mb-0 me-2 border-secondary border-1" value="我的合約1" disabled />
+                    <input class="card-title mb-0 me-2 rounded-1 border-0 " value="@(Model.CustomName ?? Model.Title)" disabled />
                     <div class="d-flex align-items-center gap-2">
                         <button type="button" class="btn btn-aqua py-0 btn-edit">
                             <i class="bi bi-pencil mx-1 fs-6"></i>
-                            </button>
-                        <button type="button" class="btn btn-aqua py-0">確定</button>
-                        <button type="button" class="btn btn-secondary py-0">取消</button>
+                        </button>
+                        <button type="button" class="btn btn-aqua py-0 btn-confirm d-none">確定</button>
+                        <button type="button" class="btn btn-secondary py-0 btn-cancel d-none">取消</button>
+                        <input type="hidden" class="input-contractId" asp-for="@Model.ContractId" value="@Model.ContractId" />
+                        <input type="hidden" class="input-contractName" value="@(Model.CustomName ?? Model.Title)" />
                     </div>
                 </div>
                 <div class="d-flex align-items-center gap-1">
                     <i class="bi bi-file-earmark-text-fill"></i>
-                    <span class="fs-6" title="合約起訖日">合約起訖日：2024-08-07 - 2025-08-07</span>
+                    <span class="fs-6" title="合約起訖日">合約起訖日：@Model.StartDateText 至 @Model.EndDateText</span>
                 </div>
                 <div class="d-flex align-items-center gap-1">
                     <i class="bi bi-house-fill"></i>
-                    <span class="fs-6" title="是否承租家具">是否承租家具：是</span>
+                    <span class="fs-6" title="是否承租家具">是否承租家具：@(string.IsNullOrEmpty(Model.HaveFurniture) ? "否" : "是")</span>
                 </div>
                 <div class="d-flex align-items-center gap-1">
                     <i class="bi bi-geo-alt-fill"></i>
-                    <span class="fs-6" title="台中市西屯區">承租地址：台中市西屯區...</span>
+                    <span class="fs-6" title="台中市西屯區">承租地址：@Model.AddressLine</span>
                 </div>
                 <div class="d-flex align-items-center gap-1">
                     <i class="bi bi-calendar-week"></i>
-                    <span class="fs-6" title="房屋租金">房屋租金：10000元 / 月</span>
+                    <span class="fs-6" title="房屋租金">房屋租金：NT$@Model.MonthlyRent.ToString("0") 元 / 月</span>
                 </div>
             </div>
             <div class="col-auto d-flex flex-column align-items-start justify-content-start px-0 gap-2">
-                <a href="#" class="btn btn-aqua py-0 w-100">查看租賃合約</a>
-                <a href="#" class="btn btn-aqua py-0 w-100">查看家具租賃合約</a>
-                <a href="#" class="btn btn-aqua py-0 w-100">頁面快照</a>
+                @* 接查看的API *@
+                <form asp-action="ViewContract" method="post" target="_blank" class="w-100">
+                    <input type="hidden" name="contractId" value="@Model.ContractId" />
+                    <button type="submit" class="btn btn-aqua py-0 w-100">查看租賃合約</button>
+                </form>
+                @await Html.PartialAsync("_PartialRentalApplicationsModal",Model)
+
+                @* <a href="#" class="btn btn-aqua py-0 w-100">頁面快照</a> *@
                 <a href="#" class="btn btn-aqua py-0 w-100">傳送訊息給房東</a>
-                <a href="#" class="btn btn-aqua py-0 w-100" disabled>給予評價</a>
                 <button type="button" class="btn btn-aqua py-0 w-100" data-bs-toggle="modal"
                         data-bs-target="#contactService">
                     聯絡客服
                 </button>
             </div>
         </div>
-        <ol class="row p-0 m-0 mt-2">
-            <li class="col d-flex justify-content-center flex-column align-items-center px-0 step-area step-area-active" data-num="1"
-                aria-current="step">
-                <div class="w-100 position-relative d-flex justify-content-center p-3">
-                    <div class="icon py-2 rounded-1 d-flex justify-content-center align-items-center position-relative z-1 border border-1"
-                         style="width: 2rem; height: 2rem;">
-                        1
-                    </div>
-                    <div class="bg position-absolute step-area-line step-area-line-after start-50 top-50 w-50 translate-middle-y"
-                         style="height: 0.5rem;"></div>
-                </div>
-                <div class="title">已申請</div>
-                <div class="date">2025-08-01</div>
-            </li>
-            <li class="col d-flex justify-content-center flex-column align-items-center px-0 step-area" data-num="2"
-                aria-current="step">
-                <div class="w-100 position-relative d-flex justify-content-center p-3">
-                    <div class="icon py-2 rounded-1 d-flex justify-content-center align-items-center position-relative z-1 border border-1"
-                         style="width: 2rem; height: 2rem;">
-                        2
-                    </div>
-                    <div class="bg position-absolute step-area-line step-area-line-before start-0 top-50 w-50 translate-middle-y"
-                         style="height: 0.5rem;"></div>
-                    <div class="bg position-absolute step-area-line step-area-line-after start-50 top-50 w-50 translate-middle-y"
-                         style="height: 0.5rem;"></div>
-                </div>
-                <div class="title">待審核</div>
-                <div class="date">2025-08-01</div>
-            </li>
-            <li class="col d-flex justify-content-center flex-column align-items-center px-0 step-area" data-num="3"
-                aria-current="step">
-                <div class="w-100 position-relative d-flex justify-content-center p-3">
-                    <div class="icon py-2 rounded-1 d-flex justify-content-center align-items-center position-relative z-1 border border-1"
-                         style="width: 2rem; height: 2rem;">
-                        3
-                    </div>
-                    <div class="bg position-absolute step-area-line step-area-line-before start-0 top-50 w-100 translate-middle-y"
-                         style="height: 0.5rem;"></div>
-                    <div class="bg position-absolute step-area-line step-area-line-after start-50 top-50 w-50 translate-middle-y"
-                         style="height: 0.5rem;"></div>
-                </div>
-                <div class="title">已同意申請</div>
-                <div class="date">2025-08-02</div>
-            </li>
-            <li class="col d-flex justify-content-center flex-column align-items-center px-0 step-area" data-num="4"
-                aria-current="step">
-                <div class="w-100 position-relative d-flex justify-content-center p-3">
-                    <div class="icon py-2 rounded-1 d-flex justify-content-center align-items-center position-relative z-1 border border-1"
-                         style="width: 2rem; height: 2rem;">
-                        4
-                    </div>
-                    <div class="bg position-absolute step-area-line step-area-line-before start-0 top-50 w-50 translate-middle-y"
-                         style="height: 0.5rem;"></div>
-                    <div class="bg position-absolute step-area-line step-area-line-after start-50 top-50 w-50 translate-middle-y"
-                         style="height: 0.5rem;"></div>
-                </div>
-                <div class="title">看房日</div>
-                <div class="date">2025-08-03</div>
-            </li>
-            <li class="col d-flex justify-content-center flex-column align-items-center px-0 step-area" data-num="5"
-                aria-current="step">
-                <div class="w-100 position-relative d-flex justify-content-center p-3">
-                    <div class="icon py-2 rounded-1 d-flex justify-content-center align-items-center position-relative z-1 border border-1"
-                         style="width: 2rem; height: 2rem;">
-                        5
-                    </div>
-                    <div class="bg position-absolute step-area-line start-0 top-50 w-50 translate-middle-y"
-                         style="height: 0.5rem;"></div>
-                </div>
-                <div class="title">看房已完成</div>
-                <div class="date">2025-08-05</div>
-            </li>
-        </ol>
     </div>
 </div>
-

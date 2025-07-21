@@ -1,0 +1,74 @@
+﻿.step-area .icon {
+    background-color: white;
+    --bs-border-color: #225e5d;
+    color: #225e5d;
+}
+
+
+.step-area .step-area-line {
+    background-color: #9ad8cd;
+}
+
+.step-area-active .step-area-line {
+    background-color: #40b0ae;
+}
+
+.step-area .icon{
+    width:2rem;
+    height:2rem;
+}
+.step-area .line {
+    height: 0.5rem;
+}
+/*2*/
+.active-2 [data-num="1"] .step-area-line-after,
+.active-2 [data-num="2"] .step-area-line-before,
+/*3*/
+.active-3 [data-num="1"] .step-area-line-after,
+.active-3 [data-num="2"] .step-area-line-before,
+.active-3 [data-num="2"] .step-area-line-after,
+.active-3 [data-num="3"] .step-area-line-before,
+/*4*/
+.active-4 [data-num="1"] .step-area-line-after,
+.active-4 [data-num="2"] .step-area-line-before,
+.active-4 [data-num="2"] .step-area-line-after,
+.active-4 [data-num="3"] .step-area-line-before,
+.active-4 [data-num="3"] .step-area-line-after,
+.active-4 [data-num="4"] .step-area-line-before,
+/*5*/
+.active-5 [data-num="1"] .step-area-line-after,
+.active-5 [data-num="2"] .step-area-line-before,
+.active-5 [data-num="2"] .step-area-line-after,
+.active-5 [data-num="3"] .step-area-line-before,
+.active-5 [data-num="3"] .step-area-line-after,
+.active-5 [data-num="4"] .step-area-line-before,
+.active-5 [data-num="4"] .step-area-line-after,
+.active-5 [data-num="5"] .step-area-line-before
+{
+    background-color: #40b0ae;
+}
+/*1*/
+.active-1 [data-num="1"] .icon,
+/*2*/
+.active-2 [data-num="1"] .icon,
+.active-2 [data-num="2"] .icon,
+/*3*/
+.active-3 [data-num="1"] .icon,
+.active-3 [data-num="2"] .icon,
+.active-3 [data-num="3"] .icon,
+/*4*/
+.active-4 [data-num="1"] .icon,
+.active-4 [data-num="2"] .icon,
+.active-4 [data-num="3"] .icon,
+.active-4 [data-num="4"] .icon,
+/*5*/
+.active-5 [data-num="1"] .icon,
+.active-5 [data-num="2"] .icon,
+.active-5 [data-num="3"] .icon,
+.active-5 [data-num="4"] .icon, 
+.active-5 [data-num="5"] .icon
+{
+    background-color: #225e5d;
+    --bs-border-color: #225e5d;
+    color: white;
+}

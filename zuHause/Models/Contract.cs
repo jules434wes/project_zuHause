@@ -93,6 +93,8 @@ public partial class Contract
     /// </summary>
     public string? CustomName { get; set; }
 
+    public string LandlordHouseholdAddress { get; set; } = null!;
+
     public virtual ICollection<ContractComment> ContractComments { get; set; } = new List<ContractComment>();
 
     public virtual ICollection<ContractCustomField> ContractCustomFields { get; set; } = new List<ContractCustomField>();
