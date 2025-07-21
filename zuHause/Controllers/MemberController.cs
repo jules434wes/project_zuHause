@@ -1,0 +1,829 @@
+﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
+using System.Net;
+using System.Security.Claims;
+using zuHause.Models;
+using zuHause.Services;
+using zuHause.ViewModels.MemberViewModel;
+
+namespace zuHause.Controllers
+{
+    public class MemberController : Controller
+    {
+        public readonly ZuHauseContext _context;
+        private readonly IMemoryCache _cache;
+        public readonly MemberService _memberService;
+        public MemberController(ZuHauseContext context, IMemoryCache cache, MemberService memberService)
+        {
+            _context = context;
+            _cache = cache;
+            _memberService = memberService;
+        }
+
+        public IActionResult Index()
+        {
+            return View();
+        }
+
+        [HttpGet]
+        public IActionResult Login(string? ReturnUrl = null)
+        {
+            if(User.Identity?.IsAuthenticated == true)
+            {
+                return RedirectToAction("Index");
+            }
+
+            var model = new LoginViewModel()
+            {
+                ReturnUrl = ReturnUrl
+            };
+            return View(model);
+        }
+
+
+        [HttpPost]
+        public async Task<IActionResult> Login(LoginViewModel model)
+        {
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                return RedirectToAction("Index");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            string? userPhoneNumber = model.PhoneNumber;
+            string? userPassword = model.UserPassword;
+            Member? member;
+
+            try
+            {
+                member = await _context.Members.SingleOrDefaultAsync((x) => (x.PhoneNumber
+             == userPhoneNumber));
+            }
+            catch (InvalidOperationException)
+            {
+                ModelState.AddModelError("LoginStatus", "資料異常，請聯絡客服");
+                return View(model);
+
+            }
+            catch (Exception)
+            {
+                ModelState.AddModelError("LoginStatus", "系統錯誤，請稍後再試");
+                return View(model);
+            }
+
+            // 嘗試用try/catch
+            if (member == null)
+            {
+                ModelState.AddModelError("LoginStatus", "帳號或密碼錯誤");
+
+                return View(model);
+            }
+
+            bool isValid;
+            try
+            {
+                isValid = _memberService.verifyPassword(member, model.UserPassword!);
+            }
+            catch (FormatException ex)
+            {
+                ModelState.AddModelError("LoginStatus", "帳號或密碼錯誤");
+                return View(model);
+            }
+
+            if (!isValid)
+            {
+
+                ModelState.AddModelError("LoginStatus", "帳號或密碼錯誤");
+
+                return View(model);
+            }
+
+            member.LastLoginAt = DateTime.Now;
+            _context.Entry(member).Property(m => m.LastLoginAt).IsModified = true;
+            await _context.SaveChangesAsync();
+
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Name, member.MemberName),
+                new Claim("Phone",member.PhoneNumber),
+                new Claim("UserId",member.MemberId.ToString())
+
+            };
+
+            if (member.MemberTypeId.HasValue)
+            {
+                claims.Add(new Claim(ClaimTypes.Role, member.MemberTypeId.Value.ToString()));
+            }
+
+            var claimsIdentity = new ClaimsIdentity(claims, "MemberCookieAuth");
+
+            var authProperties = new AuthenticationProperties
+            {
+                IsPersistent = true,
+                ExpiresUtc = DateTimeOffset.UtcNow.AddHours(72)
+
+            };
+
+            var photoPath = _context.Members.Join(_context.UserUploads,
+                m => new { m.MemberId },
+                u => new { u.MemberId },
+                (m, u) => new
+                {
+                    MemberId = m.MemberId,
+                    UploadId = u.UploadId,
+                    PhotoPath = u.FilePath,
+                    UploadTypeCode = u.UploadTypeCode,
+                }
+                ).Where((x) => x.MemberId == member.MemberId && x.UploadTypeCode == "USER_IMG")
+                .OrderByDescending(x => x.UploadId)
+                .FirstOrDefault()?.PhotoPath;
+
+            if (photoPath != null)
+            {
+                photoPath = $"~{photoPath}";
+            }
+            else
+            {
+                photoPath = "~/images/user-image.jpg";
+            }
+
+            _cache.Set($"Avatar_{member.MemberId.ToString()}", photoPath);
+
+            await HttpContext.SignInAsync("MemberCookieAuth",
+                new ClaimsPrincipal(claimsIdentity), authProperties);
+
+
+            TempData["SuccessMessageTitle"] = "通知";
+            TempData["SuccessMessageContent"] = "登入成功";
+
+            if (!string.IsNullOrEmpty(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl))
+            {
+                return Redirect(model.ReturnUrl);
+            }
+            else
+            {
+                return RedirectToAction("Index");
+            }
+
+        }
+        [HttpPost]
+        public async Task<IActionResult> Logout()
+        {
+            var memberId = User.FindFirst("UserId")?.Value;
+            await HttpContext.SignOutAsync("MemberCookieAuth");
+            _cache.Remove($"Avatar_{memberId}");
+
+
+            TempData["SuccessMessageTitle"] = "通知";
+            TempData["SuccessMessageContent"] = "您已登出";
+            return RedirectToAction("Index");
+        }
+        [HttpPost]
+        [Authorize(AuthenticationSchemes = "MemberCookieAuth")]
+        public async Task<IActionResult> EnableLandlordRole()
+        {
+            var userId = int.Parse(User.FindFirst("UserId")!.Value);
+            var member = await _context.Members.FindAsync(userId);
+            if (member == null) return Unauthorized();
+            member.IsLandlord = true;
+            member.UpdatedAt = DateTime.Now;
+
+            await _context.SaveChangesAsync();
+            return await SwitchRoleInternal(member, "landlord");
+        }
+        [HttpPost]
+        [Authorize(AuthenticationSchemes = "MemberCookieAuth")]
+        public async Task<IActionResult> SwitchRole(string targetRole)
+        {
+            string[] validRoles = new String[] { "landlord", "tenant" };
+            if (!validRoles.Contains(targetRole))
+            {
+                return BadRequest("無效的身分");
+            }
+
+            var userId = int.Parse(User.FindFirst("UserId")!.Value);
+            var member = await _context.Members.FindAsync(userId);
+            if (member == null)
+            {
+                return View("Login");
+            }
+
+            return await SwitchRoleInternal(member, targetRole);
+
+        }
+
+        public async Task<IActionResult> SwitchRoleInternal(Member member, string targetRole)
+        {
+
+
+            string nowRole = "房客";
+            string[] validRoles = new String[] { "landlord", "tenant" };
+            if (!validRoles.Contains(targetRole))
+            {
+                return BadRequest("無效的身分");
+            }
+
+            if ((targetRole == "landlord" && member.MemberTypeId == 2) ||
+                (targetRole == "tenant" && member.MemberTypeId == 1))
+            {
+                return RedirectToAction("MemberProfile");
+            }
+
+            if (targetRole == "landlord" && !member.IsLandlord)
+            {
+                return Forbid();
+            }
+
+            if (targetRole == "landlord")
+            {
+                member.MemberTypeId = 2;
+                nowRole = "房東";
+
+            }
+            else if (targetRole == "tenant")
+            {
+                member.MemberTypeId = 1;
+                nowRole = "房客";
+
+            }
+            member.UpdatedAt = DateTime.Now;
+            _context.Update(member);
+            await _context.SaveChangesAsync();
+
+
+
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Name, member.MemberName),
+                new Claim("Phone",member.PhoneNumber),
+                new Claim("UserId",member.MemberId.ToString())
+            };
+            if (member.MemberTypeId.HasValue)
+            {
+                claims.Add(new Claim(ClaimTypes.Role, member.MemberTypeId.Value.ToString()));
+            }
+
+            var claimsIdentity = new ClaimsIdentity(claims, "MemberCookieAuth");
+            var authProperties = new AuthenticationProperties
+            {
+                IsPersistent = true,
+                ExpiresUtc = DateTimeOffset.UtcNow.AddHours(72)
+
+            };
+
+            await HttpContext.SignOutAsync("MemberCookieAuth");
+            await HttpContext.SignInAsync("MemberCookieAuth",
+            new ClaimsPrincipal(claimsIdentity), authProperties);
+
+
+            TempData["SuccessMessageTitle"] = "切換成功";
+            TempData["SuccessMessageContent"] = $"您目前的身分為：{nowRole}";
+
+            return RedirectToAction("MemberProfile");
+
+        }
+
+
+        public IActionResult ResetPasswordVerifyPhone()
+        {
+            return View();
+        }
+        public IActionResult ResetPasswordSendCode()
+        {
+            return View();
+        }
+
+        [HttpGet]
+        [Authorize(AuthenticationSchemes = "MemberCookieAuth")]
+        public IActionResult ResetPasswordConfirmCode()
+        {
+
+            return View("ResetPasswordConfirmCode", new ForgotPasswordViewModel());
+        }
+
+        [HttpPost]
+        [Authorize(AuthenticationSchemes = "MemberCookieAuth")]
+        public async Task<IActionResult> ResetPassword(ForgotPasswordViewModel model)
+        {
+            if(model.ReturnUrl == null)
+            {
+                model.ReturnUrl = Url.Action("Index", "Member");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return View("ResetPasswordConfirmCode", model);
+            }
+
+            var member = await _context.Members.FindAsync(int.Parse(User.FindFirst("UserId")!.Value));
+
+            if(member == null) return View("ResetPasswordConfirmCode", model);
+            bool result = _memberService.verifyPassword(member, model.OriginalPassword!);
+
+            if (!result)
+            {
+                ModelState.AddModelError("OriginalPassword", "原密碼錯誤");
+                return View("ResetPasswordConfirmCode", model);
+            }
+
+
+            _memberService.ResetPassword(member, model.UserPassword!);
+
+
+            TempData["SuccessMessageTitle"] = "成功";
+            TempData["SuccessMessageContent"] = "密碼修改完成";
+
+            if(!string.IsNullOrEmpty(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl))
+            {
+                return Redirect(model.ReturnUrl);
+            }
+
+            return RedirectToAction("Index");
+        }
+
+        public IActionResult ResetPasswordChange()
+        {
+            return View();
+        }
+        [HttpGet]
+        public IActionResult RegisterVerifyPhone()
+        {
+
+            if(User.Identity?.IsAuthenticated == true)
+            {
+                return RedirectToAction("Index");
+            }
+
+            TempData["activePage"] = "VerifyPhone";
+            return View();
+        }
+        [HttpPost]
+        public async Task<IActionResult> RegisterVerifyPhone(VerifyPhoneViewModel member)
+        {
+            TempData["activePage"] = "VerifyPhone";
+
+
+            if (!ModelState.IsValid)
+            {
+                return View(member);
+            }
+
+
+            string phoneNumber = member.PhoneNumber!;
+            var result = await _context.Members.Where(m => m.PhoneNumber == phoneNumber).ToListAsync();
+            if (result.Count == 0)
+            {
+                TempData["phoneNumber"] = phoneNumber;
+                return RedirectToAction("RegisterSendCode");
+            }
+            else
+            {
+                ModelState.AddModelError("PhoneNumber", "此號碼已註冊過");
+                return View(member);
+            }
+        }
+        [HttpGet]
+        public IActionResult RegisterSendCode()
+        {
+
+            TempData["activePage"] = "SendCode";
+
+            if (!TempData.ContainsKey("phoneNumber"))
+            {
+                return RedirectToAction("RegisterVerifyPhone");
+            }
+            string? _phone = TempData["phoneNumber"]!.ToString();
+            VerifyCodeViewModel model = new VerifyCodeViewModel
+            {
+                PhoneNumber = _phone,
+                Verify = 555666,
+            };
+            return View(model);
+        }
+        [HttpPost]
+        public async Task<IActionResult> RegisteFillInfomation(VerifyCodeViewModel model)
+        {
+
+            TempData["activePage"] = "FillInfomation";
+
+            var cities = await _context.Cities.Select(c => new SelectListItem
+            {
+                Value = c.CityId.ToString(),
+                Text = c.CityName
+            }).ToListAsync();
+
+
+            RegisterViewModel memberInfo = new RegisterViewModel
+            {
+                PhoneNumber = model.PhoneNumber,
+                CityOptions = cities,
+            };
+            return View(memberInfo);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Registe(RegisterViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+
+                TempData["activePage"] = "FillInfomation";
+
+                model.CityOptions = await _context.Cities.Select(c => new SelectListItem
+                {
+                    Value = c.CityId.ToString(),
+                    Text = c.CityName
+                }).ToListAsync();
+
+                if (model.ResidenceCity.HasValue)
+                {
+                    model.ResidenceDistrictOptions = await _context.Districts
+                        .Where(d => d.CityId == model.ResidenceCity.Value)
+                        .Select(d => new SelectListItem
+                        {
+                            Value = d.DistrictId.ToString(),
+                            Text = d.DistrictName
+                        }).ToListAsync();
+                }
+
+                if (model.PrimaryRentalCityID.HasValue)
+                {
+                    model.PrimaryRentalDistrictOptions = await _context.Districts
+                        .Where(d => d.CityId == model.PrimaryRentalCityID.Value)
+                        .Select(d => new SelectListItem
+                        {
+                            Value = d.DistrictId.ToString(),
+                            Text = d.DistrictName
+                        }).ToListAsync();
+                }
+
+                return View("RegisteFillInfomation", model);
+
+            }
+
+            DateOnly BirthDate = DateOnly.Parse(model.Birthday!);
+
+            Member member = new Member
+            {
+                MemberName = model.UserName!,
+                Gender = model.Gender,
+                BirthDate = BirthDate,
+                PhoneNumber = model.PhoneNumber!,
+                Email = model.Email!,
+                PrimaryRentalCityId = model.PrimaryRentalCityID,
+                PrimaryRentalDistrictId = model.PrimaryRentalDistrictID,
+                ResidenceCityId = model.ResidenceCity,
+                ResidenceDistrictId = model.ResidenceDistrictID,
+                AddressLine = model.AddressLine,
+                IsActive = true,
+                IsLandlord = false,
+                MemberTypeId = 1,
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now,
+            };
+
+
+            _memberService.Register(member, model.UserPassword!);
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Name, member.MemberName),
+                new Claim("Phone",member.PhoneNumber),
+                new Claim("UserId",member.MemberId.ToString())
+
+            };
+
+            if (member.MemberTypeId.HasValue)
+            {
+                claims.Add(new Claim(ClaimTypes.Role, member.MemberTypeId.Value.ToString()));
+            }
+
+            var claimsIdentity = new ClaimsIdentity(claims, "MemberCookieAuth");
+            var authProperties = new AuthenticationProperties
+            {
+                IsPersistent = true,
+                ExpiresUtc = DateTimeOffset.UtcNow.AddHours(72)
+
+            };
+
+
+            var photoPath = _context.Members.Join(_context.UserUploads,
+                m => new { m.MemberId },
+                u => new { u.MemberId },
+                (m, u) => new
+                {
+                    MemberId = m.MemberId,
+                    UploadId = u.UploadId,
+                    PhotoPath = u.FilePath,
+                    UploadTypeCode = u.UploadTypeCode,
+                }
+                ).Where((x) => x.MemberId == member.MemberId && x.UploadTypeCode == "USER_IMG")
+                .OrderByDescending(x => x.UploadId)
+                .FirstOrDefault()?.PhotoPath;
+
+            if (photoPath != null)
+            {
+                photoPath = $"~{photoPath}";
+            }
+            else
+            {
+                photoPath = "~/images/user-image.jpg";
+            }
+
+            _cache.Set($"Avatar_{member.MemberId.ToString()}", photoPath);
+
+            await HttpContext.SignInAsync("MemberCookieAuth",
+                new ClaimsPrincipal(claimsIdentity), authProperties);
+
+
+            TempData["SuccessMessageTitle"] = "註冊成功";
+            TempData["SuccessMessageContent"] = "您可以開始體驗會員功能";
+            return RedirectToAction("RegisteSuccess");
+
+
+        }
+
+        [HttpGet]
+        public JsonResult GetDistrictsByCity(int cityId)
+        {
+            var districts = _context.Districts.Where(d => d.CityId == cityId).Select(d => new
+            {
+                value = d.DistrictId,
+                text = d.DistrictName
+            }).ToList();
+            return Json(districts);
+        }
+
+        [Authorize(Roles = "1", AuthenticationSchemes = "MemberCookieAuth")]
+        public IActionResult RegisteSuccess()
+        {
+            TempData["activePage"] = "RegisteSuccess";
+
+
+            TempData["SuccessMessageTitle"] = "成功";
+            TempData["SuccessMessageContent"] = "註冊成功";
+            return View();
+        }
+
+        [Authorize(AuthenticationSchemes = "MemberCookieAuth")]
+        [HttpGet]
+        public async Task<IActionResult> MemberProfile()
+        {
+
+            // 缺少審核身分證、電子信箱、手機
+
+            string photoPath = _cache.Get<string>($"Avatar_{User.FindFirst("UserId")?.Value}") ?? "~/images/user-image.jpg";
+
+            ViewBag.userPhoto = photoPath;
+
+            int userId = Convert.ToInt32(User.FindFirst("UserId")!.Value);
+
+            Member? member = await _context.Members.Where(m => m.MemberId == userId).FirstOrDefaultAsync();
+
+
+            if (member == null)
+            {
+                return View("Login");
+            }
+
+            var cities = await _context.Cities.Select(c => new SelectListItem
+            {
+                Value = c.CityId.ToString(),
+                Text = c.CityName
+            }).ToListAsync();
+
+
+            var residenceDistrict = await _context.Districts.Where(d => d.CityId == member.ResidenceCityId).Select(d => new SelectListItem
+            {
+                Value = d.DistrictId.ToString(),
+                Text = d.DistrictName
+            }).ToListAsync();
+            var primaryRentalDistrict = await _context.Districts.Where(d => d.CityId == member.PrimaryRentalCityId).Select(d => new SelectListItem
+            {
+                Value = d.DistrictId.ToString(),
+                Text = d.DistrictName
+            }).ToListAsync();
+
+
+            MemberProfileViewModel memberInfo = new MemberProfileViewModel
+            {
+                MemberName = member.MemberName,
+                Gender = member.Gender,
+                BirthDate = member.BirthDate,
+                PhoneNumber = member.PhoneNumber,
+                Email = member.Email,
+                IsLandlord = member.IsLandlord,
+                MemberTypeId = member.MemberTypeId,
+                PrimaryRentalCityId = member.PrimaryRentalCityId,
+                PrimaryRentalDistrictId = member.PrimaryRentalDistrictId,
+                ResidenceCityId = member.ResidenceCityId,
+                ResidenceDistrictId = member.ResidenceDistrictId,
+                AddressLine = member.AddressLine,
+                PhoneVerifiedAt = member.PhoneVerifiedAt,
+                EmailVerifiedAt = member.EmailVerifiedAt,
+                IdentityVerifiedAt = member.IdentityVerifiedAt,
+                NationalIdNo = member.NationalIdNo != null ? member.NationalIdNo : "尚未認證",
+                CreatedAt = member.CreatedAt,
+                CityOptions = cities,
+                ResidenceDistrictOptions = residenceDistrict,
+                PrimaryRentalDistrictOptions = primaryRentalDistrict,
+            };
+
+            return View(memberInfo);
+        }
+
+
+        [Authorize(AuthenticationSchemes = "MemberCookieAuth")]
+        [HttpPost]
+        public async Task<IActionResult> UpdatememberProfile(MemberProfileViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                model.CityOptions = await _context.Cities.Select(c => new SelectListItem
+                {
+                    Value = c.CityId.ToString(),
+                    Text = c.CityName
+                }).ToListAsync();
+
+
+                model.ResidenceDistrictOptions = await _context.Districts.Where(d => d.CityId == model.ResidenceCityId).Select(d => new SelectListItem
+                {
+                    Value = d.DistrictId.ToString(),
+                    Text = d.DistrictName
+                }).ToListAsync();
+                model.PrimaryRentalDistrictOptions = await _context.Districts.Where(d => d.CityId == model.PrimaryRentalCityId).Select(d => new SelectListItem
+                {
+                    Value = d.DistrictId.ToString(),
+                    Text = d.DistrictName
+                }).ToListAsync();
+
+
+                string photoPath = _cache.Get<string>($"Avatar_{User.FindFirst("UserId")?.Value}") ?? "~/images/user-image.jpg";
+
+                ViewBag.userPhoto = photoPath;
+
+            }
+
+            int userId = Convert.ToInt32(User.FindFirst("UserId")!.Value);
+
+            Member? member = await _context.Members.FindAsync(userId);
+
+
+            if (member == null)
+            {
+                return View("Login");
+            }
+
+            bool isVerified = model.IdentityVerifiedAt != null;
+
+            if (!isVerified)
+            {
+                member.MemberName = model.MemberName!;
+                member.BirthDate = model.BirthDate;
+                member.Gender = model.Gender;
+            }
+
+            if (!string.IsNullOrEmpty(model.Email) && model.Email != member.Email) // 修改Email 移除認證時間
+            {
+                member.Email = model.Email!;
+                member.EmailVerifiedAt = null;
+            }
+            member.UpdatedAt = DateTime.Now;
+            member.PrimaryRentalCityId = model.PrimaryRentalCityId;
+            member.PrimaryRentalDistrictId = model.PrimaryRentalDistrictId;
+            member.ResidenceCityId = model.ResidenceCityId;
+            member.ResidenceDistrictId = model.ResidenceDistrictId;
+            member.AddressLine = model.AddressLine;
+
+            await _context.SaveChangesAsync();
+            TempData["SuccessMessageTitle"] = "成功";
+            TempData["SuccessMessageContent"] = "會員資料已更新";
+            return RedirectToAction("MemberProfile");
+
+        }
+
+
+        public String AccessDenied()
+        {
+            return "權限不足";
+        }
+
+        [Authorize(AuthenticationSchemes = "MemberCookieAuth")]
+        public async Task<IActionResult> GetUploadStatus()
+        {
+
+            var member = await _context.Members.FindAsync(int.Parse(User.FindFirst("UserId")!.Value));
+            if (member == null) return BadRequest(new
+            {
+                status= "error",
+                message= "請先登入",
+            });
+
+            var frontLog = await _context.UserUploads.Where(u => u.MemberId == member.MemberId && u.UploadTypeCode == "USER_ID_FRONT").OrderByDescending(x=>x.UploadId).FirstOrDefaultAsync();
+
+
+
+            var backLog = await _context.UserUploads.Where(u => u.MemberId == member.MemberId && u.UploadTypeCode == "USER_ID_BACK").OrderByDescending(x=>x.UploadId).FirstOrDefaultAsync();
+
+            if(backLog == null && frontLog == null) return BadRequest(new
+            {
+                status = "error",
+                message = "無上傳紀錄",
+            });
+
+
+            return Ok(new {
+                status = "ok",
+                hasFront = frontLog != null,
+                hasBack = backLog != null,
+                frontUploadedAt = frontLog == null ? "" : frontLog!.UploadedAt.ToString("yyyy-MM-dd"),
+                backUploadedAt = backLog == null ? "" : backLog.UploadedAt.ToString("yyyy-MM-dd"),
+                frontFilePath = frontLog == null ? "" : frontLog.FilePath,
+                backFilePath = backLog == null ? "" : backLog.FilePath
+            });
+        }
+
+        public async Task<IActionResult> Upload([FromForm] UserUploadViewModel model)
+        {
+            string uploadFolderName = "";
+
+            if (User.FindFirst("UserId")?.Value == null)
+            {
+                return BadRequest("請先登入");
+            }
+            if (model.UploadFile == null || model.UploadFile.Length == 0)
+            {
+                return BadRequest("未上傳檔案");
+            }
+            string[] allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+
+            int maxSize = 5 * 1024 * 1024;
+
+            if (!allowedTypes.Contains(model.UploadFile.ContentType))
+            {
+                return BadRequest("檔案格式錯誤，只允許 jpg/png/webp");
+            }
+            if (model.UploadFile.Length > maxSize)
+            {
+                return BadRequest("檔案過大，請勿超過 5MB");
+            }
+
+            if (model.ModuleCode == "MemberInfo")
+            {
+                uploadFolderName = "userPhoto";
+            }
+
+            var ext = Path.GetExtension(model.UploadFile.FileName);
+            var storeFileName = Guid.NewGuid().ToString() + ext;
+            var storePath = $"/uploads/{uploadFolderName}/{storeFileName}";
+            var path = Path.Combine($"wwwroot/uploads/{uploadFolderName}", storeFileName);
+
+            try
+            {
+                using (var stream = new FileStream(path, FileMode.Create))
+                {
+                    await model.UploadFile.CopyToAsync(stream);
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "檔案儲存失敗，請稍後再試");
+            }
+
+            var uploadInfo = new UserUpload
+            {
+                MemberId = Convert.ToInt32(User.FindFirst("UserId")?.Value),
+                ModuleCode = model.ModuleCode ?? "",
+                SourceEntityId = Convert.ToInt32(User.FindFirst("UserId")?.Value),
+                UploadTypeCode = model.UploadTypeCode ?? "",
+                OriginalFileName = model.UploadFile.FileName,
+                StoredFileName = storeFileName,
+                FileExt = ext,
+                MimeType = model.UploadFile.ContentType,
+                FilePath = storePath,
+                FileSize = model.UploadFile.Length,
+                IsActive = true,
+                UploadedAt = DateTime.Now,
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now,
+            };
+            _context.UserUploads.Add(uploadInfo);
+            await _context.SaveChangesAsync();
+            _cache.Set($"Avatar_{User.FindFirst("UserId")?.Value}", $"~{storePath}");
+            return Ok(new
+            {
+                originalFileName = model.UploadFile.FileName,
+                storedFileName = storeFileName,
+                previewUrl = $"/uploads/{uploadFolderName}/{storeFileName}",
+            });
+        }
+    }
+}

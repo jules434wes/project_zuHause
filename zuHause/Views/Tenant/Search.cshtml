@@ -1,0 +1,546 @@
+﻿@{
+    ViewData["Title"] = "房屋搜尋";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/Search.css" asp-append-version="true" />
+}
+
+<div class="container-fluid main-content">
+   
+    <div class="search-panel">
+        <form asp-action="Search" asp-controller="Home" method="get">
+            <div class="row g-2 align-items-end mb-3">
+                <div class="col-auto">
+                    <select class="form-select" id="citySelect" name="city">
+                        <option value="台中市" selected>台中市</option>
+                        <option value="台北市">台北市</option>
+                        <option value="高雄市">高雄市</option>
+                    </select>
+                </div>
+                <div class="col-md-7 col-lg-8">
+                    <div class="input-group">
+                        <input type="text" class="form-control" placeholder="請輸入關鍵字 (社區名、街道名、捷運名稱等)"
+                               aria-label="關鍵字" name="keywords" value="@ViewData["CurrentKeywords"]">
+                        <button class="btn btn-primary" type="submit">搜尋</button>
+                    </div>
+                </div>
+            </div>
+
+
+            <h5>收合狀態 (預設)</h5>
+            <div class="filter-group row align-items-center">
+                <div class="col-auto">
+                    <label class="col-form-label">位置</label>
+                </div>
+                <div class="col-auto">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="button">不限</button>
+                </div>
+                <div class="col">
+                    <div class="d-flex flex-wrap">
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="distNorth" name="districts" value="北屯區">
+                            <label class="form-check-label" for="distNorth">北屯區</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="distWest" name="districts" value="西屯區">
+                            <label class="form-check-label" for="distWest">西屯區</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="distEast" name="districts" value="大里區">
+                            <label class="form-check-label" for="distEast">大里區</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="distTaiping" name="districts" value="太平區">
+                            <label class="form-check-label" for="distTaiping">太平區</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="distNantun" name="districts" value="南屯區">
+                            <label class="form-check-label" for="distNantun">南屯區</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="distNorthD" name="districts" value="北區">
+                            <label class="form-check-label" for="distNorthD">北區</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="distFengyuan" name="districts" value="豐原區">
+                            <label class="form-check-label" for="distFengyuan">豐原區</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="distShalu" name="districts" value="沙鹿區">
+                            <label class="form-check-label" for="distShalu">沙鹿區</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="distDajia" name="districts" value="大甲區">
+                            <label class="form-check-label" for="distDajia">大甲區</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="distQingshui" name="districts" value="清水區">
+                            <label class="form-check-label" for="distQingshui">清水區</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="distWuri" name="districts" value="烏日區">
+                            <label class="form-check-label" for="distWuri">烏日區</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="filter-group row align-items-center">
+                <div class="col-auto">
+                    <label class="col-form-label">類型</label>
+                </div>
+                <div class="col-auto">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="button">不限</button>
+                </div>
+                <div class="col">
+                    <div class="d-flex flex-wrap">
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="houseType" id="typeFullHouse" value="整層住家">
+                            <label class="form-check-label" for="typeFullHouse">整層住家</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="houseType" id="typeStudio" value="獨立套房">
+                            <label class="form-check-label" for="typeStudio">獨立套房</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="houseType" id="typeShared" value="分租套房">
+                            <label class="form-check-label" for="typeShared">分租套房</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="houseType" id="typeRoom" value="雅房">
+                            <label class="form-check-label" for="typeRoom">雅房</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="houseType" id="typeOther" value="其他">
+                            <label class="form-check-label" for="typeOther">其他</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="filter-group row align-items-center">
+                <div class="col-auto">
+                    <label class="col-form-label">租金</label>
+                </div>
+                <div class="col-auto">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="button">不限</button>
+                </div>
+                <div class="col">
+                    <div class="d-flex flex-wrap align-items-center">
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="rent5k" name="rentRange" value="0-5000">
+                            <label class="form-check-label" for="rent5k">5000元以下</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="rent5k10k" name="rentRange" value="5000-10000">
+                            <label class="form-check-label" for="rent5k10k">5000-10000元</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="rent10k20k" name="rentRange" value="10000-20000">
+                            <label class="form-check-label" for="rent10k20k">10000-20000元</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="rent20k30k" name="rentRange" value="20000-30000">
+                            <label class="form-check-label" for="rent20k30k">20000-30000元</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="rent30k40k" name="rentRange" value="30000-40000">
+                            <label class="form-check-label" for="rent30k40k">30000-40000元</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="rent40kPlus" name="rentRange" value="40000+">
+                            <label class="form-check-label" for="rent40kPlus">40000元以上</label>
+                        </div>
+                        <div class="input-group input-group-sm w-auto me-2">
+                            <input type="number" class="form-control" placeholder="最低價" aria-label="最低價" name="minRent" style="width: 80px;">
+                        </div>
+                        <span class="me-2">－</span>
+                        <div class="input-group input-group-sm w-auto">
+                            <input type="number" class="form-control" placeholder="最高價" aria-label="最高價" name="maxRent" style="width: 80px;">
+                            <span class="input-group-text">元</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="filter-group row align-items-center">
+                <div class="col-auto">
+                    <label class="col-form-label">格局</label>
+                </div>
+                <div class="col-auto">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="button">不限</button>
+                </div>
+                <div class="col">
+                    <div class="d-flex flex-wrap">
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="layout1R" name="layouts" value="1房">
+                            <label class="form-check-label" for="layout1R">1房</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="layout2R" name="layouts" value="2房">
+                            <label class="form-check-label" for="layout2R">2房</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="layout3R" name="layouts" value="3房">
+                            <label class="form-check-label" for="layout3R">3房</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="layout4R" name="layouts" value="4房">
+                            <label class="form-check-label" for="layout4R">4房以上</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="filter-group row align-items-center">
+                <div class="col-auto">
+                    <label class="col-form-label">特色</label>
+                </div>
+                <div class="col-auto">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="button">不限</button>
+                </div>
+                <div class="col">
+                    <div class="d-flex flex-wrap">
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="newListing" name="specialFeatures" value="新上架">
+                            <label class="form-check-label" for="newListing">新上架</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="nearMRTFeature" name="specialFeatures" value="近捷運">
+                            <label class="form-check-label" for="nearMRTFeature">近捷運</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="petFriendlyFeature" name="specialFeatures" value="可養寵物">
+                            <label class="form-check-label" for="petFriendlyFeature">可養寵物</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="openFire" name="specialFeatures" value="可開伙">
+                            <label class="form-check-label" for="openFire">可開伙</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="parkingSpot" name="specialFeatures" value="有車位">
+                            <label class="form-check-label" for="parkingSpot">有車位</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="elevator" name="specialFeatures" value="有電梯">
+                            <label class="form-check-label" for="elevator">有電梯</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="balcony" name="specialFeatures" value="有陽台">
+                            <label class="form-check-label" for="balcony">有陽台</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="shortTerm" name="specialFeatures" value="可短期租賃">
+                            <label class="form-check-label" for="shortTerm">可短期租賃</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="collapse" id="moreFilters">
+                <div class="filter-group row align-items-center">
+                    <div class="col-auto">
+                        <label class="col-form-label">型態</label>
+                    </div>
+                    <div class="col-auto">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="button">不限</button>
+                    </div>
+                    <div class="col">
+                        <div class="d-flex flex-wrap">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="typeCondo" name="buildingType" value="公寓">
+                                <label class="form-check-label" for="typeCondo">公寓</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="typeApartment" name="buildingType" value="電梯大樓">
+                                <label class="form-check-label" for="typeApartment">電梯大樓</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="typeVilla" name="buildingType" value="透天厝">
+                                <label class="form-check-label" for="typeVilla">透天厝</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="typeHouse" name="buildingType" value="別墅">
+                                <label class="form-check-label" for="typeHouse">別墅</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="filter-group row align-items-center">
+                    <div class="col-auto">
+                        <label class="col-form-label">坪數</label>
+                    </div>
+                    <div class="col-auto">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="button">不限</button>
+                    </div>
+                    <div class="col">
+                        <div class="d-flex flex-wrap align-items-center">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="size10p" name="areaRange" value="0-10">
+                                <label class="form-check-label" for="size10p">10坪以下</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="size1020p" name="areaRange" value="10-20">
+                                <label class="form-check-label" for="size1020p">10-20坪</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="size2030p" name="areaRange" value="20-30">
+                                <label class="form-check-label" for="size2030p">20-30坪</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="size3040p" name="areaRange" value="30-40">
+                                <label class="form-check-label" for="size3040p">30-40坪</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="size4050p" name="areaRange" value="40-50">
+                                <label class="form-check-label" for="size4050p">40-50坪</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="size50pPlus" name="areaRange" value="50+">
+                                <label class="form-check-label" for="size50pPlus">50坪以上</label>
+                            </div>
+                            <div class="input-group input-group-sm w-auto me-2">
+                                <input type="number" class="form-control" placeholder="最小坪" aria-label="最小坪" name="minArea" style="width: 80px;">
+                            </div>
+                            <span class="me-2">－</span>
+                            <div class="input-group input-group-sm w-auto">
+                                <input type="number" class="form-control" placeholder="最大坪" aria-label="最大坪" name="maxArea" style="width: 80px;">
+                                <span class="input-group-text">坪</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="filter-group row align-items-center">
+                    <div class="col-auto">
+                        <label class="col-form-label">樓層</label>
+                    </div>
+                    <div class="col-auto">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="button">不限</button>
+                    </div>
+                    <div class="col">
+                        <div class="d-flex flex-wrap">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="floor1" name="floors" value="1樓">
+                                <label class="form-check-label" for="floor1">1樓</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="floor2_6" name="floors" value="2-6樓">
+                                <label class="form-check-label" for="floor2_6">2-6樓</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="floor6_12" name="floors" value="6-12樓">
+                                <label class="form-check-label" for="floor6_12">6-12樓</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="floor12plus" name="floors" value="12樓以上">
+                                <label class="form-check-label" for="floor12plus">12樓以上</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="filter-group row align-items-center">
+                    <div class="col-auto">
+                        <label class="col-form-label">衛浴</label>
+                    </div>
+                    <div class="col-auto">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="button">不限</button>
+                    </div>
+                    <div class="col">
+                        <div class="d-flex flex-wrap">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="bath1" name="bathrooms" value="1衛">
+                                <label class="form-check-label" for="bath1">1衛</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="bath2" name="bathrooms" value="2衛">
+                                <label class="form-check-label" for="bath2">2衛</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="bath3" name="bathrooms" value="3衛">
+                                <label class="form-check-label" for="bath3">3衛</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="bath4plus" name="bathrooms" value="4衛及以上">
+                                <label class="form-check-label" for="bath4plus">4衛及以上</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="filter-group row align-items-center">
+                    <div class="col-auto">
+                        <label class="col-form-label">設備</label>
+                    </div>
+                    <div class="col-auto">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="button">不限</button>
+                    </div>
+                    <div class="col">
+                        <div class="d-flex flex-wrap">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="equipAC" name="equipment" value="冷氣">
+                                <label class="form-check-label" for="equipAC">冷氣</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="equipWasher" name="equipment" value="洗衣機">
+                                <label class="form-check-label" for="equipWasher">洗衣機</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="equipFridge" name="equipment" value="冰箱">
+                                <label class="form-check-label" for="equipFridge">冰箱</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="equipHeater" name="equipment" value="熱水器">
+                                <label class="form-check-label" for="equipHeater">熱水器</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="equipGas" name="equipment" value="天然瓦斯">
+                                <label class="form-check-label" for="equipGas">天然瓦斯</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="equipInternet" name="equipment" value="網路">
+                                <label class="form-check-label" for="equipInternet">網路</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="equipTV" name="equipment" value="第四台">
+                                <label class="form-check-label" for="equipTV">第四台</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="equipBed" name="equipment" value="床">
+                                <label class="form-check-label" for="equipBed">床</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="filter-group row align-items-center">
+                    <div class="col-auto">
+                        <label class="col-form-label">裝潢</label>
+                    </div>
+                    <div class="col-auto">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="button">不限</button>
+                    </div>
+                    <div class="col">
+                        <div class="d-flex flex-wrap">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="decoNew" name="decoration" value="新裝潢">
+                                <label class="form-check-label" for="decoNew">新裝潢</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="decoMid" name="decoration" value="中級裝潢">
+                                <label class="form-check-label" for="decoMid">中級裝潢</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="decoHigh" name="decoration" value="高級裝潢">
+                                <label class="form-check-label" for="decoHigh">高級裝潢</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="filter-group row align-items-center">
+                    <div class="col-auto">
+                        <label class="col-form-label">特殊</label>
+                    </div>
+                    <div class="col-auto">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="button">不限</button>
+                    </div>
+                    <div class="col">
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="specialTopFloor" name="special" value="排除頂樓加蓋">
+                            <label class="form-check-label" for="specialTopFloor">排除頂樓加蓋</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <button class="btn btn-link text-decoration-none expand-collapse-btn" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#moreFilters" aria-expanded="false" aria-controls="moreFilters">
+                    <span class="collapsed-text">展開選項 (型態/坪數/樓層/衛浴/設備/裝潢/特殊) <i class="bi bi-chevron-down"></i></span>
+                    <span class="expanded-text d-none">收合選項 <i class="bi bi-chevron-up"></i></span>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="container-fluid main-page-wrapper">
+
+        <div class="top-section-all-button">
+            <ul class="nav nav-tabs top-category-tabs mb-0">
+                <li class="nav-item">
+                    <a class="nav-link active" aria-current="page" disabled>全部</a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="summary-and-sort-section mt-3">
+            <div class="d-flex align-items-end justify-content-between">
+                <span class="result-count-text me-auto">已為您找到 18707 間房屋</span>
+                <div class="btn-group" role="group" aria-label="Sort options">
+                    <button type="button" class="btn btn-outline-dark sort-btn active" data-sort-field="ListingDate" data-sort-order="desc">上架時間 <i class="bi bi-sort-down-alt"></i></button>
+                    <button type="button" class="btn btn-outline-dark sort-btn" data-sort-field="Rent" data-sort-order="asc">租金 <i class="bi bi-sort-up"></i></button>
+                    <button type="button" class="btn btn-outline-dark sort-btn" data-sort-field="Area" data-sort-order="asc">坪數 <i class="bi bi-sort-up"></i></button>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12 ">
+                <div class="result-card d-flex align-items-center mb-3 p-3">
+                    <div class="img-placeholder me-3">
+                        <img src="https://via.placeholder.com/150" alt="房屋圖片" class="img-fluid rounded">
+                    </div>
+
+                    <div class="card-body flex-grow-1 p-0">
+                        <h5 class="card-title mb-1">
+                            <a href="#" class="text-dark text-decoration-none">標題: 西屯工業區 電梯套房...</a>
+
+                        </h5>
+                        <div class="location-info text-muted mb-1"><i class="bi bi-geo-alt-fill me-1"></i> 地址: 台中市西屯區</div>
+                        <div class="details-info text-muted mb-2">三房兩廳 | 9F/9F | 8坪</div>
+                        <div class="tags d-flex flex-wrap">
+                            <span class="badge bg-white me-1 mb-1">可養寵物</span>
+                            <span class="badge bg-white me-1 mb-1">有陽台</span>
+                            <span class="badge bg-white me-1 mb-1">近捷運</span>
+                        </div>
+                    </div>
+                    <div class="d-flex flex-column align-items-end ms-3">
+                        <i class="bi bi-heart favorite-icon mb-3"></i>
+                        <div class="price text-danger fw-bold fs-5">價格XXX元</div>
+                        <div class="last-updated text-muted mt-1">上架時間 [日期]</div>
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+
+    </div>
+</div>
+
+
+<nav aria-label="搜尋結果分頁">
+    <ul class="pagination justify-content-center mt-4">
+        <li class="page-item disabled">
+            <a class="page-link" href="#" aria-label="上一頁">上一頁</a>
+        </li>
+        <li class="page-item active" aria-current="page"><a class="page-link" href="#">1</a></li>
+        <li class="page-item"><a class="page-link" href="#">2</a></li>
+        <li class="page-item"><a class="page-link" href="#">3</a></li>
+        <li class="page-item"><a class="page-link" href="#">4</a></li>
+        <li class="page-item"><a class="page-link" href="#">5</a></li>
+        <li class="page-item">
+            <a class="page-link" href="#" aria-label="下一頁">下一頁</a>
+        </li>
+    </ul>
+</nav>
+
+
+@section Scripts {
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/Search.js" asp-append-version="true"></script>
+}

@@ -1,0 +1,310 @@
+﻿@* Views/Furniture/RentalCart.cshtml *@
+@model zuHause.Models.FurnitureCart
+@using Microsoft.AspNetCore.Mvc.Rendering
+@{
+    Layout = "~/Views/Shared/_NavigationBar.cshtml"; // 確保導覽列路徑正確
+    ViewBag.Title = "購物車租借清單";
+
+    var rentalEndDate = ViewBag.RentalEndDate as DateOnly?;
+    var rentalDaysLeft = ViewBag.RentalDaysLeft as int? ?? 0;
+    var propertySelectList = ViewBag.PropertySelectList as SelectList;
+    var currentPropertyForCart = ViewBag.CurrentPropertyForCart as Tuple<int, string, DateOnly?>; // 確保類型正確
+    var totalCartAmount = ViewBag.TotalCartAmount as decimal? ?? 0m;
+    decimal shippingFee = 3000m;
+
+    // 準備給 JavaScript 使用的屬性列表
+    var propertyInfoJson = ViewBag.PropertyInfoJson as string;
+    var initialPropertyId = ViewBag.CurrentPropertyIdForCart as int? ?? 0;
+}
+
+<div class="row">
+
+    <div class="col-md-2">
+        <h5>會員功能</h5>
+        <ul class="list-group">
+            <li class="list-group-item"><a href="/Furniture/OrderHistory" class="text-decoration-none">租借 / 購買付款查詢</a></li>
+            <li class="list-group-item"><a href="/Furniture/ContactRecords" class="text-decoration-none">聯繫紀錄</a></li>
+            <li class="list-group-item active"><a href="/Furniture/RentalCart" class="text-white text-decoration-none">購物車</a></li>
+        </ul>
+    </div>
+<!-- 右側內容區 -->
+        <div class="col-md-9">
+
+    <div class="col-md-10">
+        <h2 class="mt-4">購物車清單</h2>
+
+        @if (Model != null && Model.FurnitureCartItems != null && Model.FurnitureCartItems.Any())
+        {
+            <div class="card p-3 mb-3 shadow-sm">
+                <h5 class="card-title mb-3">目前綁定房屋：</h5>
+                <div class="mb-3 d-flex align-items-center">
+                    <label for="PropertyId" class="form-label me-3 text-nowrap">選擇房源：</label>
+                    <select id="PropertyId" name="selectedPropertyId" class="form-select w-auto">
+                        <option value="">請選擇房源</option>
+                        @if (propertySelectList != null)
+                        {
+                            foreach (var p in propertySelectList.Items.Cast<SelectListItem>())
+                            {
+                                @* RZ1031 錯誤修正點：確保 'selected' 屬性的 C# 語法正確 *@
+                                <option value="@p.Value" selected="@(p.Selected ? "selected" : null)">
+                                    @p.Text
+                                </option>
+                            }
+                        }
+                    </select>
+                </div>
+
+                <div class="border rounded p-3 bg-light" id="propertyDetailsDisplay">
+                    <p class="mb-1"><strong id="strongPropertyId" style="display:none;">房屋編號：</strong> <span id="propertyIdDisplay" style="display:none;"></span></p>
+                    <p class="mb-1"><strong id="strongPropertyTitle" style="display:none;">房屋標題：</strong> <span id="propertyTitleDisplay" style="display:none;"></span></p>
+                    <p class="mb-1"><strong id="strongEndDate" style="display:none;">到期日：</strong> <span id="endDateDisplay" style="display:none;"></span></p>
+                    <p class="mb-0"><strong id="strongDaysLeft" style="display:none;">剩餘可租天數：</strong> <span id="daysLeftDisplay" style="display:none;"></span></p>
+                    <p id="noPropertySelected" class="text-muted mb-0">請選擇一個綁定房源以查看詳情。</p>
+                </div>
+            </div>
+
+            <table class="table table-bordered table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 28%;">項目</th>
+                        <th style="width: 10%;">數量</th>
+                        <th style="width: 12%;">原價</th>
+                        <th style="width: 12%;">租金/天</th>
+                        <th style="width: 10%;">天數</th>
+                        <th style="width: 16%;">總租金</th>
+                        <th style="width: 12%;">操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.FurnitureCartItems)
+                    {
+                        var subTotal = item.RentalDays * item.Product.DailyRental * item.Quantity; // 假設 item.Product 不會是 null
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    @if (!string.IsNullOrEmpty(item.Product?.ImageUrl))
+                                    {
+                                        <img src="@item.Product.ImageUrl" alt="@item.Product.ProductName" class="me-2 rounded" style="width: 60px; height: 60px; object-fit: cover;" />
+                                    }
+                                    <span>@item.Product?.ProductName</span>
+                                </div>
+                            </td>
+                            <td>
+                                    <div class="input-group quantity-control" data-itemid="@item.CartItemId">
+                                        <button type="button" class="btn btn-outline-secondary btn-decrease">－</button>
+                                        <input type="text" class="form-control text-center quantity-input" value="@item.Quantity" readonly />
+                                        <button type="button" class="btn btn-outline-secondary btn-increase">＋</button>
+                                    </div>
+                                </td>
+                            <td>NT$@item.Product?.ListPrice.ToString("N0")</td>
+                            <td>NT$@item.Product?.DailyRental.ToString("N0")</td>
+                            <td>@item.RentalDays</td>
+                            <td>NT$@subTotal.ToString("N0")</td>
+                            <td>
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-danger"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#deleteConfirmModal"
+                                        data-product-name="@item.Product?.ProductName"
+                                        data-cart-item-id="@item.CartItemId">
+                                    刪除
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="5" class="text-end">總租金：</td>
+                        <td colspan="2"><strong>NT$@totalCartAmount.ToString("N0")</strong></td>
+                    </tr>
+                    <tr>
+                        <td colspan="5" class="text-end">搬運費：</td>
+                        <td colspan="2"><strong>NT$@shippingFee.ToString("N0")</strong></td>
+                    </tr>
+                    <tr class="table-info">
+                        <td colspan="5" class="text-end fw-bold">合計金額：</td>
+                        <td colspan="2" class="fw-bold text-danger fs-5">NT$@((totalCartAmount + shippingFee).ToString("N0"))</td>
+                    </tr>
+                </tfoot>
+            </table>
+
+            <div class="text-end mt-4">
+                <button class="btn btn-success btn-lg me-3">✅ 確定租借</button>
+                <a href="/Furniture/FurnitureHomePage" class="btn btn-secondary btn-lg">回到租借首頁</a>
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-info text-center py-4">
+                <p class="lead mb-0">您的購物車目前沒有商品。</p>
+                <a href="/Furniture/FurnitureHomePage" class="btn btn-primary mt-3">前往選購家具</a>
+            </div>
+        }
+    </div>
+</div>
+
+<input type="hidden" id="propertyInfoJson" value='@Html.Raw(propertyInfoJson)' />
+<input type="hidden" id="initialPropertyId" value="@initialPropertyId" />
+
+<!-- 刪除確認 Modal -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <form method="post" action="/Furniture/RemoveCartItem" id="deleteForm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteConfirmModalLabel">確認刪除</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="關閉"></button>
+                </div>
+                <div class="modal-body">
+                    <p>確定要從購物車中移除以下商品嗎？</p>
+                    <p><strong id="modalProductName" class="text-danger"></strong></p>
+                    <input type="hidden" name="cartItemId" id="modalCartItemId" />
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-danger">是，刪除</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    // ---------- 房源選單顯示處理 ----------
+    const select = document.getElementById("PropertyId");
+    const propertyIdDisplay = document.getElementById("propertyIdDisplay");
+    const propertyTitleDisplay = document.getElementById("propertyTitleDisplay");
+    const endDateDisplay = document.getElementById("endDateDisplay");
+    const daysLeftDisplay = document.getElementById("daysLeftDisplay");
+    const noPropertySelected = document.getElementById("noPropertySelected");
+
+    const strongPropertyId = document.getElementById("strongPropertyId");
+    const strongPropertyTitle = document.getElementById("strongPropertyTitle");
+    const strongEndDate = document.getElementById("strongEndDate");
+    const strongDaysLeft = document.getElementById("strongDaysLeft");
+
+    const propertyInfoJsonInput = document.getElementById("propertyInfoJson");
+    let allPropertiesData = [];
+
+    if (propertyInfoJsonInput && propertyInfoJsonInput.value) {
+        try {
+            allPropertiesData = JSON.parse(propertyInfoJsonInput.value);
+        } catch (e) {
+            console.error("解析 propertyInfoJson 失敗:", e);
+        }
+    }
+
+    const initialPropertyIdValue = document.getElementById("initialPropertyId")?.value;
+    if (select && initialPropertyIdValue && initialPropertyIdValue !== "0") {
+        select.value = initialPropertyIdValue;
+        updatePropertyDisplay(); // ✅ 初始顯示
+    }
+
+    if (select) {
+        select.addEventListener("change", updatePropertyDisplay);
+    }
+
+    function updatePropertyDisplay() {
+        const selectedId = parseInt(select.value);
+        const selectedProperty = allPropertiesData.find(p => p.PropertyId === selectedId);
+
+        if (selectedProperty) {
+            propertyIdDisplay.textContent = selectedProperty.PropertyId;
+            propertyTitleDisplay.textContent = selectedProperty.Title;
+            endDateDisplay.textContent = selectedProperty.ContractEndDate || "無";
+            daysLeftDisplay.textContent = selectedProperty.ContractEndDate
+                ? selectedProperty.DaysLeft + " 天"
+                : "無";
+
+            // 顯示欄位
+            [propertyIdDisplay, propertyTitleDisplay, endDateDisplay, daysLeftDisplay,
+             strongPropertyId, strongPropertyTitle, strongEndDate, strongDaysLeft]
+             .forEach(el => el.style.display = 'inline');
+
+            if (noPropertySelected) noPropertySelected.style.display = 'none';
+
+        } else {
+            // 清空並隱藏
+            [propertyIdDisplay, propertyTitleDisplay, endDateDisplay, daysLeftDisplay].forEach(el => {
+                el.textContent = "";
+                el.style.display = 'none';
+            });
+            [strongPropertyId, strongPropertyTitle, strongEndDate, strongDaysLeft]
+                .forEach(el => el.style.display = 'none');
+
+            if (noPropertySelected) noPropertySelected.style.display = 'block';
+        }
+    }
+
+    // ---------- 數量控制 ----------
+    const controls = document.querySelectorAll('.quantity-control');
+    controls.forEach(control => {
+        const decreaseBtn = control.querySelector('.btn-decrease');
+        const increaseBtn = control.querySelector('.btn-increase');
+        const input = control.querySelector('.quantity-input');
+
+        decreaseBtn?.addEventListener('click', () => {
+            let current = parseInt(input.value);
+            if (current > 1) {
+                input.value = current - 1;
+            } else {
+                alert('⚠️ 已達最低數量');
+            }
+        });
+
+        increaseBtn?.addEventListener('click', () => {
+            let current = parseInt(input.value);
+            input.value = current + 1;
+        });
+    });
+
+    // ---------- Modal 刪除 ----------
+    const deleteButtons = document.querySelectorAll('button[data-bs-target="#deleteConfirmModal"]');
+    const modalProductName = document.getElementById('modalProductName');
+    const modalCartItemId = document.getElementById('modalCartItemId');
+
+    deleteButtons.forEach(button => {
+        button.addEventListener('click', function () {
+            const productName = this.getAttribute('data-product-name');
+            const cartItemId = this.getAttribute('data-cart-item-id');
+
+            modalProductName.textContent = productName;
+            modalCartItemId.value = cartItemId;
+        });
+    });
+});
+</script>
+
+<style>
+    td {
+        vertical-align: middle !important;
+    }
+
+    .quantity-control {
+        min-width: 100px;
+    }
+
+    .quantity-input {
+        width: 40px;
+        height: 38px;
+        padding: 0;
+        font-size: 16px;
+    }
+
+    .btn-decrease,
+    .btn-increase {
+        width: 38px;
+        padding: 0;
+        font-size: 18px;
+    }
+
+    .table td {
+        word-break: break-word;
+        white-space: normal;
+    }
+</style>
+
+

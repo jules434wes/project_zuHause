@@ -71,4 +71,6 @@ public partial class FurnitureOrder
     public virtual ICollection<OrderEvent> OrderEvents { get; set; } = new List<OrderEvent>();
 
     public virtual Property? Property { get; set; }
+
+   
 }

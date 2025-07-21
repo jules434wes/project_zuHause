@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace zuHause.Models;
 
@@ -56,6 +58,8 @@ public partial class ListingPlan
     /// <summary>
     /// 刊登費方案ID
     /// </summary>
+    [Key]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public int PlanId { get; set; }
 
     public virtual ICollection<Property> Properties { get; set; } = new List<Property>();

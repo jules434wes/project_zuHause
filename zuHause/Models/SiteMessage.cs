@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace zuHause.Models;
 
@@ -11,6 +13,8 @@ public partial class SiteMessage
     /// <summary>
     /// 訊息ID
     /// </summary>
+    [Key]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public int SiteMessagesId { get; set; }
 
     /// <summary>

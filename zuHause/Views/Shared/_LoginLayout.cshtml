@@ -1,0 +1,49 @@
+﻿@{
+    bool needCenter = ViewData["CenterBody"] as bool? ?? false;
+
+    var toastTitle = TempData["SuccessMessageTitle"] as string ?? null;
+    var toastContent = TempData["SuccessMessageContent"] as string ?? null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - zuHause</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/_LoginPartialShared.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/zuHause.styles.css" asp-append-version="true" />
+</head>
+<body class="position-relative d-flex flex-column min-vh-100">
+
+    @await Component.InvokeAsync("NavbarMember")
+    <main role="main" class="d-flex justify-content-center flex-fill">
+        <div class="container d-flex flex-column @(needCenter?"justify-content-center":"justify-content-start") align-items-center mx-auto my-5 position-relative">
+            @RenderBody()
+
+            @(await Html.PartialAsync("_PartialMemberToast"))
+        </div>
+    </main>
+
+    <footer class="border-top footer text-muted">
+        <div class="container">
+            &copy; 2025 - zuHause - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+        </div>
+    </footer>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/showMemberToast.js"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+
+    @if (!string.IsNullOrEmpty(toastTitle) && !string.IsNullOrEmpty(toastContent))
+    {
+        <script>
+            callToast('@Html.Raw(toastTitle)','@Html.Raw(toastContent)');
+        </script>
+    }
+</body>
+</html>

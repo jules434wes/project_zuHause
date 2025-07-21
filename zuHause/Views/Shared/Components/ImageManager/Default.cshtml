@@ -1,0 +1,263 @@
+@model zuHause.Models.ViewModels.ImageManagerViewComponentModel
+
+<div class="@Model.ContainerCssClass" 
+     id="@Model.GetUniqueId()"
+     data-entity-type="@Model.EntityType"
+     data-entity-id="@Model.EntityId"
+     data-category="@Model.Category"
+     data-max-files="@Model.MaxFiles"
+     data-max-file-size="@Model.MaxFileSize"
+     data-allowed-types="@Model.GetFileTypesString()"
+     data-allow-multiple="@Model.AllowMultiple.ToString().ToLower()"
+     data-enable-drag-sort="@Model.EnableDragSort.ToString().ToLower()"
+     data-enable-batch-ops="@Model.EnableBatchOperations.ToString().ToLower()"
+     data-api-upload="@Model.ApiUploadUrl"
+     data-api-delete="@Model.ApiDeleteUrl"
+     data-api-reorder="@Model.ApiReorderUrl"
+     data-api-list="@Model.ApiListUrl"
+     data-theme="@Model.Theme"
+     role="region"
+     aria-label="圖片管理組件">
+
+    <!-- 標題區域 -->
+    <div class="image-manager-header">
+        <h3 class="image-manager-title">
+            <i class="fas fa-images me-2" aria-hidden="true"></i>
+            圖片管理
+        </h3>
+        <div class="image-manager-info">
+            <span class="current-count" aria-live="polite">
+                已上傳: <span class="count-number">@Model.ExistingImages.Count</span> 張
+            </span>
+            <span class="max-limit text-muted">
+                / 最多 @Model.MaxFiles 張 (單檔最大 @Model.GetMaxFileSizeFormatted())
+            </span>
+        </div>
+    </div>
+
+    <!-- 上傳區域 -->
+    <div class="image-upload-zone" 
+         tabindex="0"
+         role="button"
+         aria-label="點擊或拖拽上傳圖片"
+         aria-describedby="upload-help">
+        <div class="upload-zone-content">
+            <div class="upload-icon">
+                <i class="fas fa-cloud-upload-alt fa-3x text-primary" aria-hidden="true"></i>
+            </div>
+            <div class="upload-text">
+                <h4>拖拽圖片到此處或點擊選擇</h4>
+                <p id="upload-help" class="text-muted">
+                    支援格式: @string.Join(", ", Model.AllowedFileTypes.Select(x => x.Replace("image/", "")))
+                </p>
+            </div>
+            <button type="button" class="btn btn-primary btn-select-files">
+                <i class="fas fa-folder-open me-2" aria-hidden="true"></i>
+                選擇圖片
+            </button>
+            <input type="file" 
+                   class="file-input d-none" 
+                   accept="@Model.GetFileTypesString()"
+                   multiple="@Model.AllowMultiple"
+                   aria-label="選擇要上傳的圖片檔案">
+        </div>
+        <div class="upload-zone-overlay">
+            <div class="overlay-content">
+                <i class="fas fa-upload fa-2x text-white" aria-hidden="true"></i>
+                <p class="text-white mb-0">放開以上傳圖片</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 操作按鈕區域 -->
+    <div class="image-manager-actions">
+        <div class="action-buttons-left">
+            <button type="button" class="btn btn-success btn-upload-confirm" disabled>
+                <i class="fas fa-check me-2" aria-hidden="true"></i>
+                確認上傳 (<span class="pending-count">0</span>)
+            </button>
+        </div>
+    </div>
+
+    <!-- 圖片預覽網格 -->
+    <div class="image-preview-grid" 
+         role="grid" 
+         aria-label="圖片預覽網格">
+
+        <!-- 空狀態提示 -->
+        <div class="empty-state @(Model.ExistingImages.Any() ? "d-none" : "")"
+             role="status" 
+             aria-live="polite">
+            <div class="empty-state-content text-center py-5">
+                <i class="fas fa-images fa-4x text-muted mb-3" aria-hidden="true"></i>
+                <h5 class="text-muted">尚未選擇任何圖片</h5>
+                <p class="text-muted mb-0">點擊上方按鈕或拖拽圖片開始上傳</p>
+            </div>
+        </div>
+
+        <!-- 現有圖片 -->
+        @if (Model.ShowExistingImages && Model.ExistingImages.Any())
+        {
+            <div class="existing-images-section">
+                <div class="section-header">
+                    <h5>
+                        <i class="fas fa-check-circle text-success me-2" aria-hidden="true"></i>
+                        已上傳的圖片
+                    </h5>
+                </div>
+                <div class="image-grid sortable-container" 
+                     data-sortable="true"
+                     role="grid"
+                     aria-label="已上傳圖片列表">
+                    @foreach (var image in Model.ExistingImages.OrderBy(x => x.DisplayOrder))
+                    {
+                        <div class="image-item uploaded-image" 
+                             data-image-id="@image.ImageId"
+                             data-display-order="@image.DisplayOrder"
+                             role="gridcell"
+                             tabindex="0"
+                             aria-label="圖片 @image.FileName，顯示順序 @image.DisplayOrder">
+                            
+                            <!-- 圖片縮圖 -->
+                            <div class="image-thumbnail">
+                                <img src="@image.ThumbnailUrl" 
+                                     alt="@image.FileName"
+                                     loading="lazy"
+                                     draggable="false">
+                                @if (image.IsMainImage)
+                                {
+                                    <div class="main-image-badge">
+                                        <i class="fas fa-star" aria-hidden="true"></i>
+                                        <span class="visually-hidden">主圖</span>
+                                    </div>
+                                }
+                            </div>
+
+                            <!-- 圖片資訊 -->
+                            <div class="image-info">
+                                <div class="image-filename" title="@image.FileName">
+                                    @image.FileName
+                                </div>
+                                <div class="image-meta text-muted">
+                                    <span class="file-size">@((image.FileSize / 1024.0 / 1024.0).ToString("F1")) MB</span>
+                                    <span class="display-order-badge">
+                                        #@image.DisplayOrder
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- 操作按鈕 -->
+                            <div class="image-actions">
+                                <button type="button" 
+                                        class="btn btn-sm btn-outline-danger btn-delete-single"
+                                        data-image-id="@image.ImageId"
+                                        aria-label="刪除圖片 @image.FileName">
+                                    <i class="fas fa-trash" aria-hidden="true"></i>
+                                </button>
+                                @if (Model.EnableDragSort)
+                                {
+                                    <div class="drag-handle" 
+                                         aria-label="拖拽調整順序"
+                                         role="button"
+                                         tabindex="0">
+                                        <i class="fas fa-grip-vertical" aria-hidden="true"></i>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        <!-- 待上傳圖片預覽區域 -->
+        <div class="pending-images-section d-none">
+            <div class="section-header">
+                <h5>
+                    <i class="fas fa-clock text-warning me-2" aria-hidden="true"></i>
+                    待上傳的圖片
+                </h5>
+            </div>
+            <div class="image-grid pending-container" 
+                 role="grid"
+                 aria-label="待上傳圖片列表">
+                <!-- 動態生成的待上傳圖片將插入此處 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 載入中覆蓋層 -->
+    <div class="loading-overlay d-none" role="status" aria-live="polite">
+        <div class="loading-content">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">載入中...</span>
+            </div>
+            <p class="loading-text mt-3">處理中，請稍候...</p>
+        </div>
+    </div>
+</div>
+
+<!-- 確認對話框模板 (由 JavaScript 動態產生) -->
+<template id="confirm-dialog-template">
+    <div class="modal fade" tabindex="-1" role="dialog" aria-modal="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">確認操作</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="關閉"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="confirm-message"></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-danger btn-confirm-action">確定</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
+
+<!-- 成功提示模板 -->
+<template id="success-toast-template">
+    <div class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body">
+                <i class="fas fa-check-circle me-2" aria-hidden="true"></i>
+                <span class="message-text"></span>
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="關閉"></button>
+        </div>
+    </div>
+</template>
+
+<!-- 錯誤提示模板 -->
+<template id="error-toast-template">
+    <div class="toast align-items-center text-bg-danger border-0" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body">
+                <i class="fas fa-exclamation-circle me-2" aria-hidden="true"></i>
+                <span class="message-text"></span>
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="關閉"></button>
+        </div>
+    </div>
+</template>
+
+<!-- Toast 容器 -->
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;">
+    <!-- 動態產生的 Toast 將插入此處 -->
+</div>
+
+@section Scripts {
+    <script src="~/js/image-manager-controller.js"></script>
+    <script>
+        // 初始化圖片管理器
+        document.addEventListener('DOMContentLoaded', function() {
+            const container = document.getElementById('@Model.GetUniqueId()');
+            if (container && window.ImageManager) {
+                window.ImageManager.init(container);
+            }
+        });
+    </script>
+}

@@ -1,0 +1,91 @@
+﻿@{
+    // 設定頁面標題，會顯示在瀏覽器標籤頁上
+    ViewData["Title"] = "公告與說明";
+    // 設定頁面佈局，確保它使用了您租戶相關的共同佈局
+    Layout = "_LayoutTenant";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/Announcement.css" asp-append-version="true" />
+}
+
+<div class="content-wrapper">
+    <aside class="sidebar">
+        <nav class="main-nav">
+            <ul>
+                <li class="nav-item active" data-target="announcements">
+                    <a href="#announcements">公告</a>
+                </li>
+                <li class="nav-item" data-target="terms">
+                    <a href="#terms">服務條款</a>
+                </li>
+                <li class="nav-item" data-target="disclaimer">
+                    <a href="#disclaimer">免責聲明</a>
+                </li>
+                <li class="nav-item" data-target="privacy">
+                    <a href="#privacy">隱私權說明</a>
+                </li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <section id="announcements" class="content-section active">
+            <h1>公告</h1>
+            <div class="announcement-list">
+                <p>載入中，請稍候...</p>
+            </div>
+            <div class="pagination">
+            </div>
+            <div class="announcement-detail-container" style="display: none;">
+            </div>
+        </section>
+
+        <section id="terms" class="content-section static-page">
+            <h1 id="terms-title">服務條款</h1>
+            <div class="document-content">
+                <p class="static-content-label">內文</p>
+                <div class="static-content-actual-text">
+                    <p>這段是服務條款的範例內容。</p>
+                    <p>例如：</p>
+                    <ol>
+                        <li>用戶同意在使用本服務前仔細閱讀並遵守所有條款。</li>
+                        <li>本公司保留隨時修改本條款的權利，恕不另行通知。</li>
+                        <li>用戶應自行承擔使用本服務的一切風險。</li>
+                    </ol>
+                    <p>...</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="disclaimer" class="content-section static-page">
+            <h1 id="disclaimer-title">免責聲明</h1>
+            <div class="document-content">
+                <p class="static-content-label">內文</p>
+                <div class="static-content-actual-text">
+                    <p>這段是免責聲明的範例內容。</p>
+                    <p>對於因使用本服務或無法使用本服務而造成的任何直接、間接、附帶、特殊、懲罰性或衍生性損害，本公司概不負責。</p>
+                    <p>所有資訊僅供參考，不構成法律或專業建議。</p>
+                    <p>...</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="privacy" class="content-section static-page">
+            <h1 id="privacy-title">隱私權說明</h1>
+            <div class="document-content">
+                <p class="static-content-label">內文</p>
+                <div class="static-content-actual-text">
+                    <p>這段是隱私權說明的範例內容。</p>
+                    <p>本公司尊重您的個人隱私權。我們收集的任何資訊都將按照本隱私政策的規定進行處理。</p>
+                    <p>我們可能會收集的資訊包括但不限於：姓名、電子郵件地址、聯絡電話等。</p>
+                    <p>...</p>
+                </div>
+            </div>
+        </section>
+    </main>
+</div>
+
+@section Scripts {
+    <script src="~/js/Announcement.js" asp-append-version="true"></script>
+}

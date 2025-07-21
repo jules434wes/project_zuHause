@@ -1,0 +1,100 @@
+﻿@{
+    ViewBag.Title = "輪播圖管理";
+}
+<div class="container-fluid py-4">
+    <div class="row">
+        <!-- 圖片列表區 -->
+        <div class="col-md-4">
+            <div class="panel p-3 bg-white border rounded">
+                <h5 class="mb-3">圖片庫</h5>
+                <!-- 分類 Tabs -->
+                <ul class="nav nav-tabs mb-3" id="carouselCategoryTabs">
+                    <li class="nav-item">
+                        <button class="nav-link active" data-category="tenant" onclick="changeCategoryTab(this)">租客首頁</button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" data-category="landlord" onclick="changeCategoryTab(this)">房東首頁</button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" data-category="furniture" onclick="changeCategoryTab(this)">家具首頁</button>
+                    </li>
+                </ul>
+                <div id="carouselImageList" class="overflow-auto" style="max-height: 500px;"></div>
+
+            </div>
+        </div>
+
+        <!-- 表單區 -->
+        <div class="col-md-8">
+            <div class="panel p-3 bg-white border rounded">
+                <h5 class="mb-3">圖片上傳 / 編輯</h5>
+
+                <input type="hidden" id="carouselImageId">
+
+                <div class="mb-3">
+                    <label class="form-label">選擇檔案</label>
+                    <input type="file" class="form-control" id="imageFile">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">圖片名稱</label>
+                    <input type="text" class="form-control" id="imagesName">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">圖片連結 (可為空)</label>
+                    <input type="url" class="form-control" id="webUrl">
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">圖片位置</label>
+                        <input type="number" class="form-control" id="displayOrder" placeholder="顯示順序">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">圖片分類</label>
+                        <select class="form-select" id="category">
+                            <option value="tenant">租客首頁輪播</option>
+                            <option value="landlord">房東首頁輪播</option>
+                            <option value="furniture">家具首頁輪播</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">是否啟用</label>
+                    <select class="form-select" id="isActive">
+                        <option value="true">啟用</option>
+                        <option value="false">停用</option>
+                    </select>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">開始時間</label>
+                        <input type="datetime-local" class="form-control" id="startAt">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">結束時間（可空白，代表無期限）</label>
+                        <input type="datetime-local" class="form-control" id="endAt">
+
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">預覽</label>
+                    <img id="imagePreview" src="#" alt="預覽" class="img-fluid border d-none" style="max-height: 200px;" />
+                </div>
+
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <button class="btn btn-success" onclick="uploadCarouselImage()">✅ 確認上傳</button>
+                        <button class="btn btn-outline-danger" onclick="resetCarouselForm()">❌ 清除表單</button>
+                    </div>
+                    <div>
+                        <button class="btn btn-primary" onclick="updateCarouselImage()">💾 確認編輯</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

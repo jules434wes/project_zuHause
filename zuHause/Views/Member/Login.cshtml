@@ -1,0 +1,66 @@
+﻿@using zuHause.ViewModels.MemberViewModel
+@model LoginViewModel
+@{
+    ViewData["CenterBody"] = true;
+    
+    ViewData["Title"] = "登入";
+}
+<p>@Model.PhoneNumber</p>
+<p>@Model.UserPassword</p>
+<p>@Model.ReturnUrl</p>
+<form asp-controller="Member" asp-action="Login" method="post" class="w-100 text-light">
+    <div class="row">
+        <div class="col-4 mx-auto d-flex flex-column gap-3 p-5 shadow-lg bg-white-aqua">
+            <h1 class="text-start title-text">登入您的帳戶</h1>
+            <div class="row mx-auto w-100">
+                <div class="col-12 mx-auto p-0 d-flex flex-column gap-2">
+                    <div class="input-group has-validation">
+                        <span class="input-group-text rounded-0 px-3 bg-white">
+                            <i class="text-aqua bi bi-phone-fill"></i>
+                        </span>
+                        <div class="form-floating ">
+                            <input type="text" class="form-control rounded-0 pe-5" id="PhoneNumber"
+                                   placeholder="請輸入手機號碼" required asp-for="PhoneNumber" value="0987865524">
+                            <label asp-for="PhoneNumber"></label>
+                        </div>
+                        <span class="invalid-feedback opacity-100" asp-validation-for="PhoneNumber">
+                        </span>
+                    </div>
+                    <div class="input-group has-validation password-area pwd-hidden">
+                        <span class="input-group-text  rounded-0 px-3 bg-white">
+                            <i class="text-aqua bi bi-lock-fill"></i>
+                        </span>
+                        <div class="form-floating ">
+                            <input type="password" class="form-control rounded-0 pe-5"
+                                   placeholder="Password" asp-for="UserPassword" data-type="pwd" value="123455678">
+                            <label asp-for="UserPassword"></label>
+                        </div>
+                        <span class="input-group-text  rounded-0 p-0 bg-white">
+                            <button type="button" class="btn btn-aqua-color toggle-pwd">
+                                <i class="text-aqua bi bi-eye"></i>
+                                <i class="text-aqua bi bi-eye-slash"></i>
+                            </button>
+                        </span>
+                        <span class="invalid-feedback opacity-100" asp-validation-for="UserPassword">
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <div class="row mx-auto w-100">
+                <div class="col-12 px-0">
+                    <span class="invalid-feedback opacity-100" asp-validation-for="LoginStatus"></span>
+                </div>
+                <div class="col-12 d-flex flex-column align-items-center gap-2 p-0">
+                    <button class="btn btn-aqua w-100" type="submit">登入</button>
+                    <a class="link-offset-2 link-underline link-underline-opacity-0" asp-action="RegisterVerifyPhone"><small>還沒有帳號嗎？點此註冊</small></a>
+                    <a class="link-offset-2 link-underline link-underline-opacity-0" asp-action=""><small>忘記密碼</small></a>
+                </div>
+                <input type="hidden" asp-for=ReturnUrl />
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <script src="~/js/hiddenPassword.js"></script>
+}

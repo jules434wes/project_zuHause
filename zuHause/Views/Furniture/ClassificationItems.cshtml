@@ -1,0 +1,105 @@
+﻿@model List<zuHause.Models.FurnitureProduct>
+
+@{
+    ViewBag.Title = "商品分類";
+    Layout = "~/Views/Shared/_NavigationBar.cshtml";
+    var categories = ViewBag.categories as List<zuHause.Models.FurnitureCategory>;
+}
+
+<div class="row">
+    <div class="col-md-2">
+        <h5>商品分類</h5>
+        @Html.Partial("_FurnitureCategoryList", categories)
+
+        <hr />
+        <h6>租借須知</h6>
+        <ul>
+            <li>租期須滿三個月</li>
+            <li>提前解約須補差額</li>
+            <li>請妥善保管家具</li>
+        </ul>
+    </div>
+
+
+    <div class="col-md-10">
+        <h3 class="text-primary mb-4">@ViewBag.CategoryName</h3>
+            @if (Model != null && Model.Any())
+            {
+                <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-3">
+                    @foreach (var item in Model) // 這裡使用 `item` 來避免上次的錯誤
+                    {
+                        <div class="col">
+                            <div class="card h-100 shadow-sm">
+                                <a href="@Url.Action("ProductPurchasePage", "Furniture", new { id = item.FurnitureProductId })" class="text-decoration-none text-dark">
+                                    <img src="@item.ImageUrl" class="card-img-top w-100" alt="@item.ProductName" style="height: auto; max-height: 250px; object-fit: contain;">
+                                </a>
+
+                                <div class="card-body d-flex flex-column justify-content-between">
+                                    <h6 class="card-title text-center">
+                                        <a href="@Url.Action("ProductPurchasePage", "Furniture", new { id = item.FurnitureProductId })" class="text-dark text-decoration-none">@item.ProductName</a>
+                                    </h6>
+
+                                    <div class="text-center mt-2">
+                                        <p class="text-danger mb-1">租金: NT$@item.DailyRental/天</p>
+                                        <p class="text-muted small mb-2">原價: NT$@item.ListPrice</p>
+                                        <a href="@Url.Action("ProductPurchasePage", "Furniture", new { id = item.FurnitureProductId })" class="btn btn-success btn-sm w-100 mt-auto text-decoration-none">
+                                            查看商品詳情
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <p>此分類目前沒有商品。</p>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // 為所有 "加入租借清單" 按鈕添加事件監聽器
+            document.querySelectorAll('.add-to-cart-btn').forEach(button => {
+                button.addEventListener('click', function (event) {
+                    event.preventDefault(); // 阻止連結的默認行為，因為它在卡片連結內部
+                    event.stopPropagation(); // 阻止事件冒泡到卡片的父層（連結），避免觸發跳轉
+
+                    const productId = this.dataset.productId;
+
+                    // 執行 AJAX 請求將商品加入購物車
+                    // 這裡假設您的 AddToCart Action 接受 productId 和 propertyId
+                    // 但在分類頁，我們通常不會有 propertyId，需要再商品詳細頁才提供
+                    // 因此，這裡的 AddToCart 請求可能需要調整或在後端處理預設房源
+                    fetch('/Furniture/AddToCart', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded' // 或 'application/json'
+                        },
+                        // 如果 AddToCart 只需要 productId，可以這樣發送
+                        body: `productId=${productId}&quantity=1` // 假設數量為 1，如果需要預設房源ID，請添加 &selectedPropertyId=您的預設ID
+                        // 如果 AddToCart 期望 JSON，可以這樣發送
+                        // body: JSON.stringify({ productId: productId, quantity: 1 })
+                    })
+                    .then(response => response.json()) // 假設後端返回 JSON
+                    .then(data => {
+                        if (data.success) {
+                            alert('商品已成功加入購物車！');
+                            // 可以更新購物車數量顯示等
+                        } else {
+                            alert('加入購物車失敗：' + (data.message || '未知錯誤'));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error adding to cart:', error);
+                        alert('加入購物車時發生錯誤！');
+                    });
+                });
+            });
+        });
+    </script>
+}

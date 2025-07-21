@@ -1,0 +1,54 @@
+﻿@using System.Security.Claims
+@{
+    // ViewData["CenterBody"] = true;
+
+    // ViewData["Title"] = "登入";
+}
+
+<p>@User.Identity?.Name</p>
+<p>@User.FindFirst(ClaimTypes.Role)?.Value</p>
+<p>@User.FindFirst("Phone")?.Value</p>
+<p>@User.FindFirst("UserId")?.Value</p>
+
+
+<div class="d-flex flex-column">
+    <a asp-area="" asp-controller="Member" asp-action="Login">登入 Login</a>
+    @* <a asp-area="" asp-controller="Member" asp-action="LoginSuccess">登入成功 LoginSuccess</a> *@
+
+    <hr />
+    @* <a asp-area="" asp-controller="Member" asp-action="ResetPasswordVerifyPhone">重新設定：輸入手機號碼  ResetPasswordVerifyPhone</a> *@
+    @* <a asp-area="" asp-controller="Member" asp-action="ResetPasswordSendCode">重新設定：輸入驗證碼  ResetPasswordSendCode</a> *@
+    <a asp-area="" asp-controller="Member" asp-action="ResetPasswordConfirmCode">重新設定：重新設定密碼  ResetPasswordConfirmCode</a>
+    @* <a asp-area="" asp-controller="Member" asp-action="ResetPasswordChange">重新設定：密碼修改完成  ResetPasswordChange</a> *@
+
+    <hr />
+
+
+    <a asp-area="" asp-controller="Member" asp-action="RegisterVerifyPhone">註冊：輸入手機號碼  RegisterVerifyPhone</a>
+    @* <a asp-area="" asp-controller="Member" asp-action="RegisterSendCode">註冊：輸入驗證碼  RegisterSendCode</a> *@
+    @* <a asp-area="" asp-controller="Member" asp-action="RegisteFillInfomation">註冊：輸入會員資料  RegisteFillInfomation</a> *@
+    @* <a asp-area="" asp-controller="Member" asp-action="RegisteSuccess">註冊：註冊完成  RegisteSuccess</a> *@
+
+
+    <hr />
+
+    <a asp-area="" asp-controller="Member" asp-action="MemberProfile">租客：會員資料管理 MemberProfile</a>
+
+    <hr />
+
+
+    <a asp-area="" asp-controller="MemberApplications" asp-action="Index">申請紀錄管理 MemberApplications Index</a>
+    <a asp-area="" asp-controller="MemberApplications" asp-action="Test">申請租賃與看房 MemberApplications Test</a>
+
+    <hr />
+
+    <a asp-area="" asp-controller="MemberContracts" asp-action="Index">合約管理 MemberContracts Index</a>
+    <a asp-area="" asp-controller="MemberContracts" asp-action="ContractProduction">擬定合約 MemberContracts ContractProduction</a>
+
+
+    <hr />
+    <a asp-area="" asp-controller="MemberInbox" asp-action="Index">通知/私訊 MemberInbox Index</a>
+    <a asp-area="" asp-controller="MemberInbox" asp-action="PrivateMessage">私訊聊天室 MemberInbox PrivateMessage</a>
+
+    <hr />
+</div>

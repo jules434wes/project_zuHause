@@ -1,3 +1,20 @@
 ﻿@{
+
     Layout = "_Layout";
-}
+    var tenantControllers = new List<string> { "Announcement", "Tenant", "Search" };
+    List<string> LoginLayoutController = new List<string> { "Member", "MemberInbox", "MemberContracts", "MemberApplications" };
+
+    if (LoginLayoutController.Contains(ViewContext.RouteData.Values["Controller"]?.ToString()!))
+    {
+        Layout = "_LoginLayout";
+    }
+    else if (tenantControllers.Contains(ViewContext.RouteData.Values["Controller"]?.ToString()!))
+    {
+        Layout = "_LayoutTenant";
+    }
+    else if(ViewContext.RouteData.Values["Controller"]?.ToString() == "Furniture")
+    {
+        Layout = "_NavigationBar";
+    }
+
+  }

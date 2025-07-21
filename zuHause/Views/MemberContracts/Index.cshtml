@@ -1,0 +1,202 @@
+﻿@{
+    ViewData["activePage"] = "MemberContracts";
+}
+
+<div class="row w-100 gx-5 justify-content-center position-relative h-100">
+    @await Html.PartialAsync("_PartialMemberSideBar")
+    <div class="col-10 d-flex justify-content-start flex-column
+        align-items-center">
+        <div class="row w-100">
+            <h1 class="fs-3 text-white px-0 mb-3">合約管理</h1>
+            <hr />
+            <div class="col-12 px-0">
+                <div class="tab-content" id="ApplicationTypeContent">
+                    <div class="tab-pane fade show active py-3" id="allItemTab-pane" role="tabpanel"
+                         aria-labelledby="allItemTab" tabindex="0">
+                        <div class="row w-100 mx-0 mb-3 align-items-center justify-content-end">
+                            <div class="col-auto px-0">
+                                <select class="form-select" aria-label="Default select example">
+                                    <option selected>合約狀態</option>
+                                    <option value="1">合約已完成</option>
+                                    <option value="2">合約簽署中</option>
+                                    <option value="3">Three</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row w-100 mx-0 gy-3">
+
+                            @await Component.InvokeAsync("MemberContractCard")
+
+
+                            <div class="card col-12">
+                                <div class="card-body p-3">
+                                    <div class="row mb-2">
+                                        <div class="card-type col-auto border border-1 bg-aqua">租賃申請</div>
+                                        <div class="card-property-id col-4">房源編號 A01</div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-3 px-0">
+                                            <div class="property-img border ">
+                                                <img src="@Url.Content("~/images/logo.png")" class="image-area" alt="">
+
+                                            </div>
+                                        </div>
+                                        <div class="col">
+                                            <h5 class="card-title">西屯工業區 電梯套房...</h5>
+                                            <div class="d-flex align-items-center gap-1">
+                                                <i class="bi bi-geo-alt-fill"></i>
+                                                <span class="fs-6" title="台中市西屯區">台中市西屯區...</span>
+                                            </div>
+                                            <div class="d-flex align-items-center gap-1">
+                                                <i class="bi bi-house-fill"></i>
+                                                <span class="fs-6" title="房屋租金">房屋租金：10000 元 / 月</span>
+                                            </div>
+                                            <div class="d-flex align-items-center gap-1">
+                                                <i class="bi bi-calendar-week"></i>
+                                                <span class="fs-6" title="預約看房日">預約看房日：2025-08-05</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-auto d-flex flex-column align-items-start justify-content-start px-0 gap-2">
+                                            <a href="#" class="btn btn-aqua py-0 w-100">查看房源</a>
+                                            <a href="#" class="btn btn-aqua py-0 w-100">傳送訊息給房東</a>
+                                            <a href="#" class="btn btn-aqua py-0 w-100" disabled>簽署合約</a>
+                                            <a href="#" class="btn btn-aqua py-0 w-100">查看合約</a>
+                                            <a href="#" class="btn btn-aqua py-0 w-100">取消申請</a>
+                                        </div>
+                                    </div>
+                                    <ol class="row p-0 m-0 mt-2">
+                                        <li class="col d-flex justify-content-center flex-column align-items-center px-0 step-area step-area-active" data-num="1"
+                                            aria-current="step">
+                                            <div class="w-100 position-relative d-flex justify-content-center p-3">
+                                                <div class="icon py-2 rounded-1 d-flex justify-content-center align-items-center position-relative z-1 border border-1"
+                                                     style="width: 2rem; height: 2rem;">
+                                                    1
+                                                </div>
+                                                <div class="bg position-absolute step-area-line step-area-line-after start-50 top-50 w-50 translate-middle-y"
+                                                     style="height: 0.5rem;"></div>
+                                            </div>
+                                            <div class="title">已申請</div>
+                                            <div class="date">2025-08-01</div>
+                                        </li>
+                                        <li class="col d-flex justify-content-center flex-column align-items-center px-0 step-area" data-num="2"
+                                            aria-current="step">
+                                            <div class="w-100 position-relative d-flex justify-content-center p-3">
+                                                <div class="icon py-2 rounded-1 d-flex justify-content-center align-items-center position-relative z-1 border border-1"
+                                                     style="width: 2rem; height: 2rem;">
+                                                    2
+                                                </div>
+                                                <div class="bg position-absolute step-area-line step-area-line-before start-0 top-50 w-50 translate-middle-y"
+                                                     style="height: 0.5rem;"></div>
+                                                <div class="bg position-absolute step-area-line step-area-line-after start-50 top-50 w-50 translate-middle-y"
+                                                     style="height: 0.5rem;"></div>
+                                            </div>
+                                            <div class="title">待審核</div>
+                                            <div class="date">2025-08-01</div>
+                                        </li>
+                                        <li class="col d-flex justify-content-center flex-column align-items-center px-0 step-area" data-num="3"
+                                            aria-current="step">
+                                            <div class="w-100 position-relative d-flex justify-content-center p-3">
+                                                <div class="icon py-2 rounded-1 d-flex justify-content-center align-items-center position-relative z-1 border border-1"
+                                                     style="width: 2rem; height: 2rem;">
+                                                    3
+                                                </div>
+                                                <div class="bg position-absolute step-area-line step-area-line-before start-0 top-50 w-100 translate-middle-y"
+                                                     style="height: 0.5rem;"></div>
+                                                <div class="bg position-absolute step-area-line step-area-line-after start-50 top-50 w-50 translate-middle-y"
+                                                     style="height: 0.5rem;"></div>
+                                            </div>
+                                            <div class="title">已同意申請</div>
+                                            <div class="date">2025-08-02</div>
+                                        </li>
+                                        <li class="col d-flex justify-content-center flex-column align-items-center px-0 step-area" data-num="4"
+                                            aria-current="step">
+                                            <div class="w-100 position-relative d-flex justify-content-center p-3">
+                                                <div class="icon py-2 rounded-1 d-flex justify-content-center align-items-center position-relative z-1 border border-1"
+                                                     style="width: 2rem; height: 2rem;">
+                                                    4
+                                                </div>
+                                                <div class="bg position-absolute step-area-line step-area-line-before start-0 top-50 w-50 translate-middle-y"
+                                                     style="height: 0.5rem;"></div>
+                                                <div class="bg position-absolute step-area-line step-area-line-after start-50 top-50 w-50 translate-middle-y"
+                                                     style="height: 0.5rem;"></div>
+                                            </div>
+                                            <div class="title">看房日</div>
+                                            <div class="date">2025-08-03</div>
+                                        </li>
+                                        <li class="col d-flex justify-content-center flex-column align-items-center px-0 step-area" data-num="5"
+                                            aria-current="step">
+                                            <div class="w-100 position-relative d-flex justify-content-center p-3">
+                                                <div class="icon py-2 rounded-1 d-flex justify-content-center align-items-center position-relative z-1 border border-1"
+                                                     style="width: 2rem; height: 2rem;">
+                                                    5
+                                                </div>
+                                                <div class="bg position-absolute step-area-line start-0 top-50 w-50 translate-middle-y"
+                                                     style="height: 0.5rem;"></div>
+                                            </div>
+                                            <div class="title">看房已完成</div>
+                                            <div class="date">2025-08-05</div>
+                                        </li>
+                                    </ol>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class="tab-pane fade" id="applyHouseViewing-pane" role="tabpanel"
+                         aria-labelledby="applyHouseViewing" tabindex="0">
+                        ...
+                    </div>
+                    <div class="tab-pane fade" id="applyRental-pane" role="tabpanel" aria-labelledby="applyRental"
+                         tabindex="0">
+                        ...
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Modal -->
+        <div class="modal fade" id="contactService" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+             aria-labelledby="staticBackdropLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5" id="contactServiceLabel">聯絡客服</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body p-3">
+                        <form action="" method="post" class="w-100">
+                            <div class="row mx-auto w-100 gap-1 mb-2">
+                                <div class="col-12 px-0 pb-1">
+                                    <label for="selectReason">事由</label>
+                                </div>
+                                <div class="col-12 px-0 pb-2">
+                                    <select class="form-select" aria-label="Default select example" id="selectReason">
+                                        <option selected>請選擇事由</option>
+                                        <option value="1">合約已完成</option>
+                                        <option value="2">合約簽署中</option>
+                                        <option value="3">Three</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row mx-auto w-100 gap-1 mb-2">
+                                <div class="col-12 px-0 pb-2">
+                                    <label for="contactInstructions">說明</label>
+                                </div>
+                                <div class="col-12 px-0 pb-1">
+                                    <textarea class="form-control" id="contactInstructions" rows="3" style="resize:none;"></textarea>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                        <button type="button" class="btn btn-aqua">送出</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+
+</div>
