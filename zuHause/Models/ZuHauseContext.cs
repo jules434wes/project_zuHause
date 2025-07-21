@@ -661,6 +661,7 @@ public partial class ZuHauseContext : DbContext
             entity.Property(e => e.IsSublettable)
                 .HasComment("是否可轉租")
                 .HasColumnName("isSublettable");
+            entity.Property(e => e.LandlordHouseholdAddress).HasMaxLength(100);
             entity.Property(e => e.ManagementFee)
                 .HasComment("管理費")
                 .HasColumnName("managementFee");
@@ -2513,6 +2514,10 @@ public partial class ZuHauseContext : DbContext
                 .HasPrecision(0)
                 .HasComment("刪除時間")
                 .HasColumnName("deletedAt");
+            entity.Property(e => e.HouseholdAddress)
+                .HasMaxLength(100)
+                .HasComment("戶籍地址")
+                .HasColumnName("householdAddress");
             entity.Property(e => e.IsActive)
                 .HasDefaultValue(true)
                 .HasComment("是否有效")
