@@ -27,7 +27,7 @@ namespace zuHause.Controllers
         /// <summary>
         /// 暫時的佔位符方法 - 避免編譯錯誤
         /// </summary>
-        [HttpGet("search")]
+        [HttpGet("legacy-search")]
         public async Task<ActionResult> SearchProperties()
         {
             // TODO: 重新實作房源搜尋功能以配合新的 DTO 架構

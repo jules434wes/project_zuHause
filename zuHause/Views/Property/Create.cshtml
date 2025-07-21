@@ -1,0 +1,760 @@
+@using zuHause.ViewModels
+@model PropertyCreateViewModel
+@{
+    ViewData["Title"] = "刊登房源";
+    Layout = null; // 使用自定義佈局
+}
+
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - zuHause</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Variables CSS -->
+    <link rel="stylesheet" href="~/css/variables.css" />
+    <!-- Property Detail CSS for consistent styling -->
+    <link rel="stylesheet" href="~/css/property-detail.css" />
+    <!-- Custom Property Creation styles -->
+    <style>
+        /* 表單容器樣式 */
+        .property-create-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem 0;
+        }
+        
+        .form-section {
+            background: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 3px solid #3498db;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-label {
+            font-weight: 600;
+            color: #34495e;
+            margin-bottom: 0.5rem;
+        }
+        
+        .required::after {
+            content: " *";
+            color: #e74c3c;
+        }
+        
+        .form-control:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+        }
+        
+        .input-group-text {
+            background-color: #f8f9fa;
+            border-color: #dee2e6;
+        }
+        
+        /* 圖片上傳區域 */
+        .image-upload-area {
+            border: 2px dashed #dee2e6;
+            border-radius: 0.5rem;
+            padding: 3rem 2rem;
+            text-align: center;
+            background-color: #f8f9fa;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .image-upload-area:hover {
+            border-color: #3498db;
+            background-color: #f1f8ff;
+        }
+        
+        .image-upload-area.dragover {
+            border-color: #2980b9;
+            background-color: #e8f4fd;
+        }
+        
+        .upload-icon {
+            font-size: 3rem;
+            color: #bdc3c7;
+            margin-bottom: 1rem;
+        }
+        
+        /* 提交按鈕 */
+        .btn-submit {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            border: none;
+            color: white;
+            font-weight: 600;
+            padding: 0.75rem 3rem;
+            border-radius: 0.5rem;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-submit:hover {
+            background: linear-gradient(135deg, #2980b9, #21618c);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.4);
+        }
+        
+        /* 級聯下拉選單 */
+        .cascade-container {
+            display: flex;
+            gap: 1rem;
+        }
+        
+        .cascade-container .form-group {
+            flex: 1;
+        }
+        
+        /* 設備選擇 */
+        .equipment-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+        
+        .equipment-item {
+            border: 1px solid #dee2e6;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .equipment-item:hover {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .equipment-item.selected {
+            border-color: #3498db;
+            background-color: #f1f8ff;
+        }
+        
+        /* 響應式設計 */
+        @@media (max-width: 768px) {
+            .property-create-container {
+                padding: 1rem;
+            }
+            
+            .form-section {
+                padding: 1.5rem;
+                margin-bottom: 1.5rem;
+            }
+            
+            .cascade-container {
+                flex-direction: column;
+                gap: 0;
+            }
+            
+            .equipment-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+    
+    <link rel="stylesheet" href="~/css/_LoginPartialShared.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/zuHause.styles.css" asp-append-version="true" />
+</head>
+<body>
+    <div class="min-vh-100 bg-light">
+        <!-- 主導覽列 -->
+        @await Component.InvokeAsync("NavbarMember")
+        
+        <!-- 主要內容 -->
+        <div class="container-fluid px-4 py-4">
+            <div class="property-create-container">
+                <!-- 頁面標題 -->
+                <div class="text-center mb-4">
+                    <h1 class="display-5 fw-bold text-primary mb-2">刊登新房源</h1>
+                    <p class="text-muted">請填寫以下資訊來刊登您的房源</p>
+                </div>
+                
+                <form asp-action="Create" asp-controller="Property" method="post" enctype="multipart/form-data" novalidate>
+                    @Html.AntiForgeryToken()
+                    
+                    <!-- 基本資訊區塊 -->
+                    <div class="form-section">
+                        <h2 class="section-title">
+                            <i class="fas fa-info-circle me-2"></i>基本資訊
+                        </h2>
+                        
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="form-group">
+                                    <label class="form-label required" for="Title">房源標題</label>
+                                    <input type="text" class="form-control" id="Title" name="Title" 
+                                           value="@(Model.PropertyData?.Title ?? "")" 
+                                           placeholder="例：台北市大安區精裝修套房，近捷運站" maxlength="100" required>
+                                    <div class="form-text">建議包含地區、房型、特色等關鍵字，讓租客更容易找到您的房源</div>
+                                    <span asp-validation-for="PropertyData.Title" class="text-danger small"></span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="cascade-container">
+                            <div class="form-group">
+                                <label class="form-label required" for="CityId">縣市</label>
+                                <select class="form-select" id="CityId" name="CityId" required>
+                                    <option value="">請選擇縣市</option>
+                                    @if (Model.Cities != null)
+                                    {
+                                        @foreach (var city in Model.Cities)
+                                        {
+                                            <option value="@city.CityId" 
+                                                    data-districts="@Html.Raw(System.Text.Json.JsonSerializer.Serialize(city.Districts))"
+                                                    selected="@(Model.PropertyData?.CityId == city.CityId)">
+                                                @city.CityName
+                                            </option>
+                                        }
+                                    }
+                                </select>
+                                <span asp-validation-for="PropertyData.CityId" class="text-danger small"></span>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label required" for="DistrictId">區域</label>
+                                <select class="form-select" id="DistrictId" name="DistrictId" required>
+                                    <option value="">請先選擇縣市</option>
+                                </select>
+                                <span asp-validation-for="PropertyData.DistrictId" class="text-danger small"></span>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label required" for="AddressLine">詳細地址</label>
+                            <input type="text" class="form-control" id="AddressLine" name="AddressLine" 
+                                   value="@(Model.PropertyData?.AddressLine ?? "")" 
+                                   placeholder="例：忠孝東路四段181巷7弄13號3樓" maxlength="200" required>
+                            <div class="form-text">請輸入完整地址，不含縣市區域</div>
+                            <span asp-validation-for="PropertyData.AddressLine" class="text-danger small"></span>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label" for="Description">房源描述</label>
+                            <textarea class="form-control" id="Description" name="Description" rows="6" 
+                                      placeholder="請描述房源的特色、周邊環境、交通便利性等...">@(Model.PropertyData?.Description ?? "")</textarea>
+                            <div class="form-text">詳細的描述能幫助租客更了解您的房源</div>
+                            <span asp-validation-for="PropertyData.Description" class="text-danger small"></span>
+                        </div>
+                    </div>
+                    
+                    <!-- 房屋資訊區塊 -->
+                    <div class="form-section">
+                        <h2 class="section-title">
+                            <i class="fas fa-home me-2"></i>房屋資訊
+                        </h2>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label required" for="MonthlyRent">月租金</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">NT$</span>
+                                        <input type="number" class="form-control" id="MonthlyRent" name="MonthlyRent" 
+                                               value="@(Model.PropertyData?.MonthlyRent ?? 0)" 
+                                               min="1000" max="999999" step="100" required>
+                                        <span class="input-group-text">元</span>
+                                    </div>
+                                    <span asp-validation-for="PropertyData.MonthlyRent" class="text-danger small"></span>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label required" for="DepositAmount">押金</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">NT$</span>
+                                        <input type="number" class="form-control" id="DepositAmount" name="DepositAmount" 
+                                               value="@(Model.PropertyData?.DepositAmount ?? 0)" 
+                                               min="0" max="999999" step="100" required>
+                                        <span class="input-group-text">元</span>
+                                    </div>
+                                    <span asp-validation-for="PropertyData.DepositAmount" class="text-danger small"></span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label class="form-label required" for="RoomCount">房間數</label>
+                                    <select class="form-select" id="RoomCount" name="RoomCount" required>
+                                        <option value="">選擇</option>
+                                        @for (int i = 0; i <= 10; i++)
+                                        {
+                                            <option value="@i" selected="@(Model.PropertyData?.RoomCount == i)">@i 房</option>
+                                        }
+                                    </select>
+                                    <span asp-validation-for="PropertyData.RoomCount" class="text-danger small"></span>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label class="form-label required" for="LivingRoomCount">客廳數</label>
+                                    <select class="form-select" id="LivingRoomCount" name="LivingRoomCount" required>
+                                        <option value="">選擇</option>
+                                        @for (int i = 0; i <= 5; i++)
+                                        {
+                                            <option value="@i" selected="@(Model.PropertyData?.LivingRoomCount == i)">@i 廳</option>
+                                        }
+                                    </select>
+                                    <span asp-validation-for="PropertyData.LivingRoomCount" class="text-danger small"></span>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label class="form-label required" for="BathroomCount">衛浴數</label>
+                                    <select class="form-select" id="BathroomCount" name="BathroomCount" required>
+                                        <option value="">選擇</option>
+                                        @for (int i = 1; i <= 10; i++)
+                                        {
+                                            <option value="@i" selected="@(Model.PropertyData?.BathroomCount == i)">@i 衛</option>
+                                        }
+                                    </select>
+                                    <span asp-validation-for="PropertyData.BathroomCount" class="text-danger small"></span>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label class="form-label required" for="Area">坪數</label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" id="Area" name="Area" 
+                                               value="@(Model.PropertyData?.Area ?? 0)" 
+                                               min="1" max="1000" step="0.1" required>
+                                        <span class="input-group-text">坪</span>
+                                    </div>
+                                    <span asp-validation-for="PropertyData.Area" class="text-danger small"></span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label required" for="CurrentFloor">所在樓層</label>
+                                    <select class="form-select" id="CurrentFloor" name="CurrentFloor" required>
+                                        <option value="">選擇樓層</option>
+                                        <option value="-3" selected="@(Model.PropertyData?.CurrentFloor == -3)">B3</option>
+                                        <option value="-2" selected="@(Model.PropertyData?.CurrentFloor == -2)">B2</option>
+                                        <option value="-1" selected="@(Model.PropertyData?.CurrentFloor == -1)">B1</option>
+                                        @for (int i = 1; i <= 50; i++)
+                                        {
+                                            <option value="@i" selected="@(Model.PropertyData?.CurrentFloor == i)">@i 樓</option>
+                                        }
+                                    </select>
+                                    <span asp-validation-for="PropertyData.CurrentFloor" class="text-danger small"></span>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label required" for="TotalFloors">總樓層數</label>
+                                    <select class="form-select" id="TotalFloors" name="TotalFloors" required>
+                                        <option value="">選擇總樓層</option>
+                                        @for (int i = 1; i <= 50; i++)
+                                        {
+                                            <option value="@i" selected="@(Model.PropertyData?.TotalFloors == i)">@i 層</option>
+                                        }
+                                    </select>
+                                    <span asp-validation-for="PropertyData.TotalFloors" class="text-danger small"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 費用資訊區塊 -->
+                    <div class="form-section">
+                        <h2 class="section-title">
+                            <i class="fas fa-dollar-sign me-2"></i>費用資訊
+                        </h2>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">管理費</label>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="ManagementFeeIncluded" id="ManagementFeeIncluded" value="true" 
+                                               checked="@(Model.PropertyData?.ManagementFeeIncluded == true)">
+                                        <label class="form-check-label" for="ManagementFeeIncluded">
+                                            已包含在租金內
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="ManagementFeeIncluded" id="ManagementFeeNotIncluded" value="false" 
+                                               checked="@(Model.PropertyData?.ManagementFeeIncluded == false)">
+                                        <label class="form-check-label" for="ManagementFeeNotIncluded">
+                                            須另外收取
+                                        </label>
+                                    </div>
+                                    <div id="ManagementFeeAmountContainer" style="display: none;">
+                                        <div class="input-group mt-2">
+                                            <span class="input-group-text">NT$</span>
+                                            <input type="number" class="form-control" id="ManagementFeeAmount" name="ManagementFeeAmount" 
+                                                   value="@(Model.PropertyData?.ManagementFeeAmount ?? 0)" min="0" step="100">
+                                            <span class="input-group-text">元/月</span>
+                                        </div>
+                                    </div>
+                                    <span asp-validation-for="PropertyData.ManagementFeeAmount" class="text-danger small"></span>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label required" for="DepositMonths">押金月數</label>
+                                    <select class="form-select" id="DepositMonths" name="DepositMonths" required>
+                                        <option value="">選擇月數</option>
+                                        @for (int i = 0; i <= 6; i++)
+                                        {
+                                            <option value="@i" selected="@(Model.PropertyData?.DepositMonths == i)">@i 個月</option>
+                                        }
+                                    </select>
+                                    <span asp-validation-for="PropertyData.DepositMonths" class="text-danger small"></span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 停車位費用 -->
+                        <div class="form-group">
+                            <label class="form-label">停車位</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="ParkingAvailable" name="ParkingAvailable" 
+                                       checked="@(Model.PropertyData?.ParkingAvailable == true)">
+                                <label class="form-check-label" for="ParkingAvailable">
+                                    提供停車位
+                                </label>
+                            </div>
+                            <div id="ParkingFeeContainer" style="display: none;">
+                                <div class="form-check mt-2">
+                                    <input class="form-check-input" type="checkbox" id="ParkingFeeRequired" name="ParkingFeeRequired" 
+                                           checked="@(Model.PropertyData?.ParkingFeeRequired == true)">
+                                    <label class="form-check-label" for="ParkingFeeRequired">
+                                        停車費須額外收取
+                                    </label>
+                                </div>
+                                <div id="ParkingFeeAmountContainer" style="display: none;">
+                                    <div class="input-group mt-2">
+                                        <span class="input-group-text">NT$</span>
+                                        <input type="number" class="form-control" id="ParkingFeeAmount" name="ParkingFeeAmount" 
+                                               value="@(Model.PropertyData?.ParkingFeeAmount ?? 0)" min="0" step="100">
+                                        <span class="input-group-text">元/月</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 設備與服務區塊 -->
+                    <div class="form-section">
+                        <h2 class="section-title">
+                            <i class="fas fa-cogs me-2"></i>設備與服務
+                        </h2>
+                        
+                        <div class="equipment-grid" id="equipmentGrid">
+                            @if (Model.EquipmentCategories != null)
+                            {
+                                @foreach (var equipment in Model.EquipmentCategories)
+                                {
+                                    <div class="equipment-item" data-category-id="@equipment.CategoryId">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="SelectedEquipmentIds" 
+                                                   value="@equipment.CategoryId" id="equipment_@equipment.CategoryId"
+                                                   checked="@(Model.PropertyData?.SelectedEquipmentIds?.Contains(equipment.CategoryId) == true)">
+                                            <label class="form-check-label fw-medium" for="equipment_@equipment.CategoryId">
+                                                @equipment.CategoryName
+                                            </label>
+                                        </div>
+                                        <div class="mt-2">
+                                            <label class="form-label small">數量</label>
+                                            <input type="number" class="form-control form-control-sm" 
+                                                   name="EquipmentQuantities[@equipment.CategoryId]" 
+                                                   value="@(Model.PropertyData?.EquipmentQuantities?.GetValueOrDefault(equipment.CategoryId, 1) ?? 1)" 
+                                                   min="1" max="99">
+                                        </div>
+                                    </div>
+                                }
+                            }
+                        </div>
+                    </div>
+                    
+                    <!-- 刊登方案區塊 -->
+                    <div class="form-section">
+                        <h2 class="section-title">
+                            <i class="fas fa-calendar me-2"></i>刊登方案
+                        </h2>
+                        
+                        <div class="row">
+                            @if (Model.ListingPlans != null)
+                            {
+                                @foreach (var plan in Model.ListingPlans)
+                                {
+                                    <div class="col-md-4 mb-3">
+                                        <div class="card h-100">
+                                            <div class="card-body">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="radio" name="ListingPlanId" 
+                                                           value="@plan.PlanId" id="plan_@plan.PlanId"
+                                                           checked="@(Model.PropertyData?.ListingPlanId == plan.PlanId)" required>
+                                                    <label class="form-check-label" for="plan_@plan.PlanId">
+                                                        <h5 class="card-title">@plan.PlanName</h5>
+                                                        <p class="card-text">
+                                                            <strong>NT$ @plan.TotalPrice</strong><br>
+                                                            <small class="text-muted">@plan.MinListingDays 天 × NT$ @plan.PricePerDay</small>
+                                                        </p>
+                                                        <small class="text-muted">@plan.Description</small>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                        </div>
+                        <span asp-validation-for="PropertyData.ListingPlanId" class="text-danger small"></span>
+                    </div>
+                    
+                    <!-- 圖片上傳區塊 -->
+                    <div class="form-section">
+                        <h2 class="section-title">
+                            <i class="fas fa-camera me-2"></i>房屋照片
+                        </h2>
+                        
+                        <div class="form-group">
+                            <label class="form-label" for="ChineseCategory">圖片分類</label>
+                            <select class="form-select" id="ChineseCategory" name="ChineseCategory">
+                                @if (Model.AvailableChineseCategories != null)
+                                {
+                                    @foreach (var category in Model.AvailableChineseCategories)
+                                    {
+                                        <option value="@category">@category</option>
+                                    }
+                                }
+                            </select>
+                            <div class="form-text">請選擇要上傳圖片的分類</div>
+                        </div>
+                        
+                        <div class="image-upload-area" id="imageUploadArea">
+                            <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                            <h4>點擊或拖曳圖片到此處</h4>
+                            <p class="text-muted mb-3">支援 JPG、PNG 格式，單檔最大 5MB</p>
+                            <input type="file" id="imageFiles" name="ImageFiles" multiple accept="image/*" style="display: none;">
+                            <button type="button" class="btn btn-outline-primary" onclick="document.getElementById('imageFiles').click()">
+                                <i class="fas fa-plus me-2"></i>選擇圖片
+                            </button>
+                        </div>
+                        
+                        <div id="imagePreview" class="mt-3" style="display: none;">
+                            <h6>已選擇的圖片：</h6>
+                            <div id="previewContainer" class="d-flex flex-wrap gap-2"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- 提交按鈕 -->
+                    <div class="text-center">
+                        <button type="submit" class="btn btn-submit btn-lg">
+                            <i class="fas fa-save me-2"></i>創建房源
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- 自定義 JavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 級聯下拉選單
+            const citySelect = document.getElementById('CityId');
+            const districtSelect = document.getElementById('DistrictId');
+            
+            citySelect.addEventListener('change', function() {
+                const selectedOption = this.options[this.selectedIndex];
+                const districts = selectedOption.dataset.districts ? JSON.parse(selectedOption.dataset.districts) : [];
+                
+                districtSelect.innerHTML = '<option value="">請選擇區域</option>';
+                
+                districts.forEach(function(district) {
+                    const option = document.createElement('option');
+                    option.value = district.DistrictId;
+                    option.textContent = district.DistrictName;
+                    districtSelect.appendChild(option);
+                });
+            });
+            
+            // 管理費顯示控制
+            const managementFeeRadios = document.querySelectorAll('input[name="ManagementFeeIncluded"]');
+            const managementFeeContainer = document.getElementById('ManagementFeeAmountContainer');
+            
+            managementFeeRadios.forEach(function(radio) {
+                radio.addEventListener('change', function() {
+                    if (this.value === 'false' && this.checked) {
+                        managementFeeContainer.style.display = 'block';
+                    } else {
+                        managementFeeContainer.style.display = 'none';
+                    }
+                });
+            });
+            
+            // 停車位費用顯示控制
+            const parkingAvailable = document.getElementById('ParkingAvailable');
+            const parkingFeeContainer = document.getElementById('ParkingFeeContainer');
+            const parkingFeeRequired = document.getElementById('ParkingFeeRequired');
+            const parkingFeeAmountContainer = document.getElementById('ParkingFeeAmountContainer');
+            
+            parkingAvailable.addEventListener('change', function() {
+                if (this.checked) {
+                    parkingFeeContainer.style.display = 'block';
+                } else {
+                    parkingFeeContainer.style.display = 'none';
+                    parkingFeeRequired.checked = false;
+                    parkingFeeAmountContainer.style.display = 'none';
+                }
+            });
+            
+            parkingFeeRequired.addEventListener('change', function() {
+                if (this.checked) {
+                    parkingFeeAmountContainer.style.display = 'block';
+                } else {
+                    parkingFeeAmountContainer.style.display = 'none';
+                }
+            });
+            
+            // 設備選擇視覺效果
+            const equipmentCheckboxes = document.querySelectorAll('#equipmentGrid input[type="checkbox"]');
+            equipmentCheckboxes.forEach(function(checkbox) {
+                checkbox.addEventListener('change', function() {
+                    const equipmentItem = this.closest('.equipment-item');
+                    if (this.checked) {
+                        equipmentItem.classList.add('selected');
+                    } else {
+                        equipmentItem.classList.remove('selected');
+                    }
+                });
+            });
+            
+            // 圖片上傳功能
+            const imageUploadArea = document.getElementById('imageUploadArea');
+            const imageFiles = document.getElementById('imageFiles');
+            const imagePreview = document.getElementById('imagePreview');
+            const previewContainer = document.getElementById('previewContainer');
+            
+            // 點擊上傳區域觸發文件選擇
+            imageUploadArea.addEventListener('click', function(e) {
+                if (e.target.tagName !== 'BUTTON') {
+                    imageFiles.click();
+                }
+            });
+            
+            // 拖拽上傳
+            imageUploadArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                this.classList.add('dragover');
+            });
+            
+            imageUploadArea.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                this.classList.remove('dragover');
+            });
+            
+            imageUploadArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                this.classList.remove('dragover');
+                
+                const files = e.dataTransfer.files;
+                handleFiles(files);
+            });
+            
+            // 文件選擇處理
+            imageFiles.addEventListener('change', function() {
+                handleFiles(this.files);
+            });
+            
+            function handleFiles(files) {
+                previewContainer.innerHTML = '';
+                
+                if (files.length > 0) {
+                    imagePreview.style.display = 'block';
+                    
+                    Array.from(files).forEach(function(file, index) {
+                        if (file.type.startsWith('image/')) {
+                            const reader = new FileReader();
+                            reader.onload = function(e) {
+                                const preview = document.createElement('div');
+                                preview.className = 'position-relative';
+                                preview.innerHTML = `
+                                    <img src="${e.target.result}" alt="預覽" 
+                                         style="width: 100px; height: 100px; object-fit: cover; border-radius: 0.5rem;">
+                                    <small class="d-block text-center mt-1">${file.name}</small>
+                                `;
+                                previewContainer.appendChild(preview);
+                            };
+                            reader.readAsDataURL(file);
+                        }
+                    });
+                } else {
+                    imagePreview.style.display = 'none';
+                }
+            }
+            
+            // 初始化頁面狀態
+            // 觸發管理費狀態檢查
+            const checkedManagementFee = document.querySelector('input[name="ManagementFeeIncluded"]:checked');
+            if (checkedManagementFee && checkedManagementFee.value === 'false') {
+                managementFeeContainer.style.display = 'block';
+            }
+            
+            // 觸發停車位狀態檢查
+            if (parkingAvailable.checked) {
+                parkingFeeContainer.style.display = 'block';
+                if (parkingFeeRequired.checked) {
+                    parkingFeeAmountContainer.style.display = 'block';
+                }
+            }
+            
+            // 初始化設備選擇狀態
+            equipmentCheckboxes.forEach(function(checkbox) {
+                const equipmentItem = checkbox.closest('.equipment-item');
+                if (checkbox.checked) {
+                    equipmentItem.classList.add('selected');
+                }
+            });
+            
+            // 初始化城市區域選擇
+            if (citySelect.value) {
+                citySelect.dispatchEvent(new Event('change'));
+                
+                // 如果有預設的區域值，選中它
+                const savedDistrictId = '@(Model.PropertyData?.DistrictId ?? 0)';
+                if (savedDistrictId && savedDistrictId !== '0') {
+                    setTimeout(function() {
+                        districtSelect.value = savedDistrictId;
+                    }, 100);
+                }
+            }
+        });
+    </script>
+</body>
+</html>
