@@ -19,14 +19,6 @@
             租客活動
         </button>
     </li>
-    @if (memberData.IsLandlord)
-    {
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="landlord-activity-tab" data-bs-toggle="tab" data-bs-target="#landlord-activity" type="button" role="tab" aria-controls="landlord-activity" aria-selected="false">
-                房東活動
-            </button>
-        </li>
-    }
     <li class="nav-item" role="presentation">
         <button class="nav-link" id="order-history-tab" data-bs-toggle="tab" data-bs-target="#order-history" type="button" role="tab" aria-controls="order-history" aria-selected="false">
             訂單記錄
@@ -37,4 +29,13 @@
             溝通與支援
         </button>
     </li>
+    @if (memberData.IsLandlord)
+    {
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="landlord-activity-tab" data-bs-toggle="tab" data-bs-target="#landlord-activity" type="button" role="tab" aria-controls="landlord-activity" aria-selected="false">
+                房東活動
+            </button>
+        </li>
+    }
+
 </ul>
