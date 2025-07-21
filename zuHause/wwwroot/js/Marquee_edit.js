@@ -22,7 +22,10 @@
                 <button class="btn btn-sm btn-secondary" onclick="moveDown(this)">↓</button>
                 <span class="ms-2 display-order">${index + 1}</span>
             </td>
-            <td><input type="text" class="form-control" value="${item.siteMessageContent ?? ''}"></td>
+            <td><input type="text" class="form-control content-input" value="${item.siteMessageContent ?? ''}"></td>
+            <td><input type="text" class="form-control attachment-input" value="${item.attachmentUrl ?? ''}"></td>
+
+
             <td><input type="datetime-local" class="form-control" value="${formatTime(item.startAt)}"></td>
             <td><input type="datetime-local" class="form-control" value="${formatTime(item.endAt)}"></td>
             
@@ -42,7 +45,7 @@
         </td>`;
         tbody.appendChild(controlRow);
         updateNextOrderDisplay(list.length);
-
+        renderMarqueePreview(list);
     }
 
     // 上傳 / 編輯儲存跑馬燈
@@ -51,13 +54,16 @@
 
         const payload = Array.from(rows).map((row, index) => ({
             siteMessagesId: parseInt(row.dataset.id),
-            siteMessageContent: row.querySelector("input[type=text]").value,
+            siteMessageContent: row.querySelector(".content-input").value,
+            attachmentUrl: row.querySelector(".attachment-input").value || null,
             startAt: row.querySelectorAll("input[type=datetime-local]")[0].value || null,
             endAt: row.querySelectorAll("input[type=datetime-local]")[1].value || null,
             isActive: row.querySelector("input[type=checkbox]").checked,
             moduleScope: currentScope,
             category: "MARQUEE",
             displayOrder: index + 1
+            
+
         }));
 
         const res = await fetch("/Dashboard/BatchUpdateMarquees", {
@@ -134,7 +140,8 @@
             endAt: document.getElementById("new-end").value || null,
             isActive: document.getElementById("new-active").checked,
             moduleScope: currentScope,
-            category: "MARQUEE"
+            category: "MARQUEE",
+            attachmentUrl: document.getElementById("new-attachment").value || null 
         };
 
         if (!payload.siteMessageContent) {
@@ -181,6 +188,59 @@
             if (orderEl) orderEl.textContent = count++;
         });
     }
+    // 新增這段函式：更新導覽列預覽內容
+    function renderMarqueePreview(list) {
+        const now = new Date();
+        const filtered = list.filter(m => {
+            const startOk = !m.startAt || new Date(m.startAt) <= now;
+            const endOk = !m.endAt || new Date(m.endAt) >= now;
+            return m.isActive && startOk && endOk;
+        }).sort((a, b) => a.displayOrder - b.displayOrder);
+
+        startMarqueeRotation(filtered);
+    }
+
+    let marqueeTimer; // 在外層宣告
+
+    function startMarqueeRotation(messages) {
+        const wrapper = document.getElementById("marquee-line");
+        let index = 0;
+
+        if (marqueeTimer) clearInterval(marqueeTimer);
+
+        if (!messages || messages.length === 0) {
+            wrapper.innerText = "無可播放訊息";
+            return;
+        }
+
+        function showNext() {
+            const msg = messages[index];
+            wrapper.innerHTML = ""; // 清空
+
+            if (msg.attachmentUrl) {
+                const link = document.createElement("a");
+                link.href = msg.attachmentUrl;
+                link.target = "_blank";
+                link.textContent = msg.siteMessageContent;
+                link.className = "text-decoration-none text-primary fw-bold";
+                wrapper.appendChild(link);
+            } else {
+                wrapper.textContent = msg.siteMessageContent;
+            }
+
+            // 重新觸發動畫
+            wrapper.style.animation = "none";
+            void wrapper.offsetWidth;
+            wrapper.style.animation = "slideUp 3s ease-in-out";
+
+            index = (index + 1) % messages.length;
+        }
+
+        showNext();
+        marqueeTimer = setInterval(showNext, 3000);
+    }
+
+
 
 
     // 時間格式化

@@ -1,8 +1,9 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
-@{
+﻿@{
+    ViewBag.Title = "跑馬燈管理";
 }
+
+<link href="~/css/marquee.css" rel="stylesheet" />
+
 <div class="container-fluid py-4">
     <div class="row">
 
@@ -23,18 +24,21 @@
 
                 <h5 class="my-3">租客首頁跑馬燈預覽</h5>
                 <div class="panel mt-4">
-                    <h6>導覽列預覽</h6>
-                    <h6 class="text-center">歡迎使用本平台</h6>
+                    <div id="marquee-preview-wrapper" style="height: 30px; overflow: hidden; position: relative;">
+                        <div id="marquee-line" class="position-absolute w-100 text-primary fw-bold text-center"></div>
+                    </div>
                 </div>
+
+
                 <h6>執行中跑馬燈</h6>
                 <table class="table table-bordered table-sm align-middle">
                     <thead class="table-light">
                         <tr>
                             <th>播放排序</th>
                             <th>播放內容</th>
+                            <th>圖片網址</th>
                             <th>播放開始時間</th>
                             <th>播放結束時間</th>
-                           
                             <th>啟用狀態</th>
                             <th>操作</th>
                         </tr>
@@ -50,6 +54,7 @@
                         <tr>
                             <th>播放排序</th>
                             <th>播放內容</th>
+                            <th>圖片網址</th>
                             <th>播放開始時間</th>
                             <th>播放結束時間</th>
                             <th>啟用狀態</th>
@@ -60,6 +65,7 @@
                         <tr id="marquee-add-row">
                             <td><span id="next-order">1</span></td> <!-- 排序僅顯示 -->
                             <td><input type="text" class="form-control" id="new-content"></td>
+                            <td><input type="text" class="form-control" id="new-attachment"></td>
                             <td><input type="datetime-local" class="form-control" id="new-start"></td>
                             <td><input type="datetime-local" class="form-control" id="new-end"></td>
                             <td><input type="checkbox" class="form-check-input" id="new-active" checked></td>
