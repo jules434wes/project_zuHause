@@ -9,13 +9,13 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
-    <!-- Admin Styles -->
-    <link href="~/css/admin-style.css" rel="stylesheet" />
+    <!-- Admin Layout Styles -->
+    <link href="~/css/admin-layout.css" rel="stylesheet" />
     <!-- Site Styles -->
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/zuHause.styles.css" asp-append-version="true" />
 </head>
-<body class="admin-body">
+<body class="admin-layout">
     <!-- 側邊導航欄 -->
     <nav class="admin-sidebar">
         <div class="sidebar-header">
@@ -32,7 +32,7 @@
                     <span>會員管理</span>
                 </li>
                 <li class="nav-item">
-                    <a href="@Url.Action("admin_userslist", "Admin")" class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "admin_userslist" ? "active" : "")">
+                    <a href="@Url.Action("admin_usersList", "Admin")" class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "admin_usersList" ? "active" : "")">
                         <i class="bi bi-people"></i>
                         <span>會員列表</span>
                     </a>
