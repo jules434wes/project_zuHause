@@ -187,8 +187,10 @@
                 performSearch();
             });
 
-            // 頁面載入時執行初始搜尋
-            performSearch();
+            // 檢查初始數據是否存在，如果沒有則執行搜尋
+            if ($('.table tbody tr').length === 0) {
+                performSearch();
+            }
         });
 
         function loadCityData() {
@@ -227,12 +229,12 @@
                 type: 'POST',
                 data: formData,
                 success: function(response) {
-                    if (response.success) {
+                    if (response && response.success) {
                         updateTable(response.data);
                         updatePagination(response);
                         updateResultInfo(response);
                     } else {
-                        showErrorMessage(response.message);
+                        showErrorMessage(response?.message || '未知錯誤');
                     }
                 },
                 error: function(xhr, status, error) {
@@ -264,7 +266,7 @@
             var tbody = $('.table tbody');
             tbody.empty();
 
-            if (data.length === 0) {
+            if (!data || data.length === 0) {
                 tbody.append('<tr><td colspan="6" class="text-center">沒有找到符合條件的房東資料</td></tr>');
                 return;
             }
@@ -369,10 +371,15 @@
                 type: 'POST',
                 data: formData,
                 success: function(response) {
-                    if (response.success) {
+                    if (response && response.success) {
                         updateTable(response.data);
                         updatePagination(response);
+                    } else {
+                        showErrorMessage(response?.message || '分頁載入失敗');
                     }
+                },
+                error: function(xhr, status, error) {
+                    showErrorMessage('分頁請求失敗：' + error);
                 },
                 complete: function() {
                     hideLoadingState();
