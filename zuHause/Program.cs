@@ -56,6 +56,11 @@ builder.Services.AddScoped<zuHause.Services.Interfaces.IImageValidationService, 
 // 註冊房源圖片 Facade 服務
 builder.Services.AddScoped<zuHause.Interfaces.IPropertyImageService, zuHause.Services.PropertyImageService>();
 
+// === 註冊管理員權限檢查服務 ===
+// 用於 AdminController 的後端權限驗證
+// 配合 RequireAdminPermissionAttribute 使用，防止直接 URL 存取無權限功能
+builder.Services.AddScoped<zuHause.Services.Interfaces.IPermissionService, zuHause.Services.PermissionService>();
+
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 

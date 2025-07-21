@@ -21,26 +21,58 @@ namespace zuHause.Controllers
         }
 
 
+        /// <summary>
+        /// Dashboard 首頁 - 管理員權限控制的核心邏輯
+        /// </summary>
+        /// <returns>Dashboard 主頁面視圖</returns>
+        /// <remarks>
+        /// 權限控制流程：
+        /// 1. 從 Cookie Claims 中取得管理員登入時存儲的權限資訊
+        /// 2. 解析 PermissionsJSON (來自資料庫 AdminRoles.PermissionsJson)
+        /// 3. 定義系統所有可用的功能鍵值 (allKeys)
+        /// 4. 根據權限類型建立前端權限物件 ViewBag.RoleAccess
+        /// 5. 傳遞給前端 JavaScript 進行動態選單控制
+        /// 
+        /// 權限資料來源：
+        /// - AuthController 登入時從資料庫 AdminRoles 表讀取 PermissionsJson
+        /// - 儲存至 Cookie Claims 的 "PermissionsJSON" 欄位
+        /// - 此 Controller 解析並轉換為前端可用格式
+        /// 
+        /// 前端權限物件格式：
+        /// - 完全權限時：{ "角色名稱": { "all": true } }
+        /// - 部分權限時：{ "角色名稱": ["overview", "monitor", ...] }
+        /// </remarks>
         [HttpGet("")]
         public IActionResult Index()
         {
-            // 從 Cookie Claims 獲取管理員資訊
+            // === 步驟1：從 Cookie Claims 獲取管理員資訊 ===
+            // 這些資訊在 AuthController.Login() 時從資料庫查詢並存入 Claims
             ViewBag.EmployeeID = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             ViewBag.Role = HttpContext.User.FindFirst("RoleName")?.Value;
 
+            // === 步驟2：解析權限JSON ===
+            // PermissionsJSON 來自資料庫 AdminRoles.PermissionsJson 欄位
+            // 格式範例：{"all": true} 或 {"overview": true, "monitor": false, ...}
             var permissionsJSON = HttpContext.User.FindFirst("PermissionsJSON")?.Value ?? "{}";
             var permissions = JsonSerializer.Deserialize<Dictionary<string, bool>>(permissionsJSON);
 
+            // === 步驟3：定義系統所有可用功能 ===
+            // 這是唯一的硬編碼部分，定義了系統支援哪些功能模組
+            // 實際權限完全由資料庫的 PermissionsJson 控制
             var allKeys = new List<string>
     {
         "overview", "monitor", "behavior", "orders", "system",
         "roles", "Backend_user_list", "contract_template",
-        "platform_fee", "imgup", "furniture_fee", "Marquee_edit", "furniture_management"
+        "platform_fee", "imgup", "furniture_fee", "Marquee_edit", "furniture_management",
+        "announcement_management", "member_list", "landlord_list", "property_list", 
+        "property_complaint_list", "customer_service_list", "system_message_list"
     };
 
-            // 根據是否為 all 權限決定要塞什麼資料格式
+            // === 步驟4：建立前端權限控制物件 ===
+            // 根據 PermissionsJson 的格式決定傳給前端的資料結構
             if (permissions.TryGetValue("all", out bool isAll) && isAll)
             {
+                // 超級管理員：完全權限，前端顯示所有功能
                 ViewBag.RoleAccess = new Dictionary<string, object>
                 {
                     [ViewBag.Role] = new { all = true }
@@ -48,6 +80,8 @@ namespace zuHause.Controllers
             }
             else
             {
+                // 一般管理員：部分權限，只顯示有權限的功能
+                // 從 permissions 中篩選出值為 true 且在 allKeys 中的功能
                 var grantedKeys = permissions
                     .Where(p => p.Value && allKeys.Contains(p.Key))
                     .Select(p => p.Key)
@@ -59,6 +93,9 @@ namespace zuHause.Controllers
                 };
             }
 
+            // === 步驟5：傳遞給前端 ===
+            // ViewBag.RoleAccess 會在 _DashboardLayout.cshtml 中序列化為 JavaScript 的 roleAccess 變數
+            // 前端 dashboard.js 使用此變數控制左側選單的顯示
             return View();
         }
 
@@ -69,6 +106,12 @@ namespace zuHause.Controllers
         public IActionResult LoadTab(string id)
         {
             if (string.IsNullOrWhiteSpace(id)) return NotFound();
+            
+            if (id == "announcement_management")
+            {
+                // 暫時返回空的 partial view，之後可以根據需要添加數據
+                return PartialView("~/Views/Dashboard/Partial/announcement_management.cshtml");
+            }
             if (id == "platform_fee")
             {
                 var plans = _context.ListingPlans
