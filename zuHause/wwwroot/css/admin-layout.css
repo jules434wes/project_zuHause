@@ -119,8 +119,8 @@
     margin: 0.5rem auto;
 }
 
-/* 導航項目 */
-.admin-layout .nav-item {
+/* 導航項目 - 僅限側邊欄 */
+.admin-layout .sidebar-nav .nav-item {
     margin: 0 0.75rem 0.25rem;
 }
 

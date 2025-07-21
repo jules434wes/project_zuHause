@@ -124,9 +124,6 @@
         <!-- 頂部導航欄 -->
         <header class="admin-header">
             <div class="header-left">
-                <button class="sidebar-toggle" id="sidebarToggle">
-                    <i class="bi bi-list"></i>
-                </button>
                 <div class="breadcrumb-section">
                     <nav aria-label="breadcrumb">
                         <ol class="breadcrumb">
@@ -177,40 +174,8 @@
     <!-- Admin Layout Script -->
     <script>
         $(document).ready(function() {
-            // 側邊欄切換功能
-            $('#sidebarToggle').click(function() {
-                $('.admin-sidebar').toggleClass('collapsed');
-                $('.admin-main').toggleClass('sidebar-collapsed');
-            });
-            
-            // 響應式處理
-            function handleResize() {
-                if ($(window).width() <= 768) {
-                    $('.admin-sidebar').addClass('mobile-hidden');
-                } else {
-                    $('.admin-sidebar').removeClass('mobile-hidden');
-                }
-            }
-            
-            $(window).resize(handleResize);
-            handleResize();
-            
-            // 行動版側邊欄點擊外部關閉
-            $(document).click(function(e) {
-                if ($(window).width() <= 768) {
-                    if (!$(e.target).closest('.admin-sidebar, #sidebarToggle').length) {
-                        $('.admin-sidebar').addClass('mobile-hidden');
-                    }
-                }
-            });
-            
-            // 行動版側邊欄切換
-            $('#sidebarToggle').click(function(e) {
-                e.stopPropagation();
-                if ($(window).width() <= 768) {
-                    $('.admin-sidebar').toggleClass('mobile-hidden');
-                }
-            });
+            // 移除所有側邊欄開合功能，保持固定式側邊欄
+            console.log('Admin Layout: Fixed sidebar mode enabled');
         });
     </script>
     
