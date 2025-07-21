@@ -212,8 +212,18 @@ function openTab(tabKey) {
                         if (typeof initCarouselManager === "function") {
                             initCarouselManager(); // ✅ 執行初始化
                         }
+                        
+                       
                     }
+                    if (tabKey === "Marquee_edit") {
+                        if (typeof initMarqueeManager === "function") {
+                            initMarqueeManager();
+                        }
+                    }
+
+                    //onloadx內
                 };
+
 
                 document.body.appendChild(script);
             }

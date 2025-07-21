@@ -16,13 +16,13 @@
             listingPlans.forEach(plan => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                <td>${plan.PlanId}</td>
-                <td>${plan.PlanName}</td>
-                <td>NT$${plan.PricePerDay}</td>
-                <td>${plan.MinListingDays}</td>
-                <td>${plan.StartAt} ~ ${plan.EndAt ?? '無期限'}</td>
-                <td>${plan.IsActive ? '✅ 啟用中' : '❌ 已停用'}</td>
-                <td><button class="btn btn-sm btn-outline-primary" onclick="editPlan(${plan.PlanId})">✏️ 編輯</button></td>
+                <td>${plan.planId}</td>
+                <td>${plan.planName}</td>
+                <td>NT$${plan.pricePerDay}</td>
+                <td>${plan.minListingDays}</td>
+                <td>${plan.startAt} ~ ${plan.endAt ?? '無期限'}</td>
+                <td>${plan.isActive ? '✅ 啟用中' : '❌ 已停用'}</td>
+                <td><button class="btn btn-sm btn-outline-primary" onclick="editPlan(${plan.planId})">✏️ 編輯</button></td>
             `;
                 tbody.appendChild(tr);
             });
@@ -113,12 +113,12 @@
         editingPlanId = planId;
         document.getElementById("cancelEditBtn").classList.remove("d-none");
         // 帶入表單
-        document.getElementById('planName').value = plan.PlanName;
-        document.getElementById('pricePerDay').value = plan.PricePerDay;
-        document.getElementById('minListingDays').value = plan.MinListingDays;
-        document.getElementById('currencyCode').value = plan.CurrencyCode;
-        document.getElementById('startAt').value = plan.StartAt?.substring(0, 16);
-        document.getElementById('endAt').value = plan.EndAt ? plan.EndAt.substring(0, 16) : '';
+        document.getElementById('planName').value = plan.planName;
+        document.getElementById('pricePerDay').value = plan.pricePerDay;
+        document.getElementById('minListingDays').value = plan.minListingDays;
+        document.getElementById('currencyCode').value = plan.currencyCode;
+        document.getElementById('startAt').value = plan.startAt?.substring(0, 16);
+        document.getElementById('endAt').value = plan.endAt ? plan.endAt.substring(0, 16) : '';
 
         // 更新標題 & 按鈕樣式
         const card = document.querySelector('.card.mt-4'); // ✅ 專門選取下面新增表單那塊
@@ -128,7 +128,7 @@
         // 修改樣式
         header.classList.remove('bg-success');
         header.classList.add('bg-warning');
-        header.innerText = `編輯刊登費方案（方案ID${plan.PlanId} ${plan.PlanName}）`;
+        header.innerText = `編輯刊登費方案（方案ID${plan.planId} ${plan.planName}）`;
 
         button.classList.remove('btn-success');
         button.classList.add('btn-warning');
@@ -211,19 +211,19 @@
 
                 let innerHTML = `
         <div class="p-3 border rounded bg-white h-100">
-            <h6 class="fw-bold text-primary">最小上架天數：${group.MinListingDays} 天</h6>
+            <h6 class="fw-bold text-primary">最小上架天數：${group.minListingDays} 天</h6>
             <div class="row g-3">
     `;
 
-                group.Plans.forEach(plan => {
+                group.plans.forEach(plan => {
                     innerHTML += `
             <div class="col-12">
                 <div class="card shadow-sm">
                     <div class="card-body">
-                        <p class="mb-1"><strong>方案名稱：</strong>${plan.PlanName}</p>
-                        <p class="mb-1"><strong>開始：</strong>${formatDateTime(plan.StartAt)}</p>
-                        <p class="mb-1"><strong>結束：</strong>${plan.EndAt ? formatDateTime(plan.EndAt) : '無期限'}</p>
-                        <p class="mb-0"><strong>上架費用：</strong>NT$${plan.PricePerDay} 元/天</p>
+                        <p class="mb-1"><strong>方案名稱：</strong>${plan.planName}</p>
+                        <p class="mb-1"><strong>開始：</strong>${formatDateTime(plan.startAt)}</p>
+                        <p class="mb-1"><strong>結束：</strong>${plan.endAt ? formatDateTime(plan.endAt) : '無期限'}</p>
+                        <p class="mb-0"><strong>上架費用：</strong>NT$${plan.pricePerDay} 元/天</p>
                     </div>
                 </div>
             </div>
@@ -280,18 +280,18 @@
 
                 let innerHTML = `
                 <div class="p-3 border rounded bg-white h-100">
-                    <h6 class="fw-bold text-warning">上架天數：${group.MinListingDays} 天</h6>
+                    <h6 class="fw-bold text-warning">上架天數：${group.minListingDays} 天</h6>
                     <div class="row g-3">
             `;
-                group.Plans.forEach(plan => {
+                group.plans.forEach(plan => {
                     innerHTML += `
                     <div class="col-12">
                         <div class="card shadow-sm">
                             <div class="card-body">
-                                <p class="mb-1"><strong>方案名稱：</strong>${plan.PlanName}</p>
-                                <p class="mb-1"><strong>開始：</strong>${formatDateTime(plan.StartAt)}</p>
-                                <p class="mb-1"><strong>結束：</strong>${plan.EndAt ? formatDateTime(plan.EndAt) : '無期限'}</p>
-                                <p class="mb-0"><strong>上架費用：</strong>NT$${plan.PricePerDay} 元/天</p>
+                                <p class="mb-1"><strong>方案名稱：</strong>${plan.planName}</p>
+                                <p class="mb-1"><strong>開始：</strong>${formatDateTime(plan.startAt)}</p>
+                                <p class="mb-1"><strong>結束：</strong>${plan.endAt ? formatDateTime(plan.endAt) : '無期限'}</p>
+                                <p class="mb-0"><strong>上架費用：</strong>NT$${plan.pricePerDay} 元/天</p>
                             </div>
                         </div>
                     </div>

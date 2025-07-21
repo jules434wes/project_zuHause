@@ -324,10 +324,10 @@ public partial class ZuHauseContext : DbContext
 
             entity.HasIndex(e => new { e.StatusCategory, e.StatusCode }, "IX_approvals_status_category");
 
+            entity.HasIndex(e => new { e.ModuleCode, e.SourcePropertyId }, "UQ_approvals_module_source")
+                .IsUnique()
+                .HasFillFactor(100);
 
-            //entity.HasIndex(e => new { e.ModuleCode, e.SourceId }, "UQ_approvals_module_source")
-            //    .IsUnique()
-            //    .HasFillFactor(100);
 
             entity.HasIndex(e => new { e.ModuleCode, e.ApplicantMemberId, e.SourcePropertyId }, "UQ_approvals_member_module").IsUnique();
 
@@ -2775,7 +2775,8 @@ public partial class ZuHauseContext : DbContext
             entity.Property(e => e.SiteMessagesId)
                 .ValueGeneratedNever()
                 .HasComment("訊息ID")
-                .HasColumnName("siteMessagesId");
+                .HasColumnName("siteMessagesId")
+                .ValueGeneratedOnAdd(); // <-- 強制告訴 EF：這是 Identity 欄位
             entity.Property(e => e.AttachmentUrl)
                 .HasMaxLength(255)
                 .HasComment("圖片/附件URL")

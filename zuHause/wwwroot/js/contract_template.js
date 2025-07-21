@@ -50,7 +50,7 @@
             const res = await fetch('/Dashboard/UploadContractTemplate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ TemplateName: name, TemplateContent: htmlContent })
+                body: JSON.stringify({ templateName: name, templateContent: htmlContent })
             });
 
             if (!res.ok) {
@@ -82,7 +82,7 @@
             div.className = "d-flex justify-content-between align-items-center border rounded p-2 mb-2 bg-white";
 
             div.innerHTML = `
-                <div>${item.TemplateName}</div>
+                <div>${item.templateName}</div>
                 <div class="btn-group">
                     <button class="btn btn-sm btn-outline-primary" onclick="previewTemplate(${i})">預覽</button>
                     <button class="btn btn-sm btn-outline-secondary" onclick="editTemplate(${i})">編輯</button>
@@ -99,9 +99,9 @@
         const item = list[index];
         if (!item) return;
 
-        document.getElementById("pdfPreview").srcdoc = item.TemplateContent;
-        document.getElementById("fileNameInput").value = item.TemplateName;
-        document.getElementById("previewTitle").innerText = "📄 預覽中：" + item.TemplateName;
+        document.getElementById("pdfPreview").srcdoc = item.templateContent;
+        document.getElementById("fileNameInput").value = item.templateName;
+        document.getElementById("previewTitle").innerText = "📄 預覽中：" + item.templateName;
     };
 
     // 編輯
@@ -110,8 +110,8 @@
         const item = list[index];
         if (!item) return;
 
-        document.getElementById("templateEditor").value = item.TemplateContent;
-        document.getElementById("editingTemplateId").value = item.ContractTemplateId;
+        document.getElementById("templateEditor").value = item.templateContent;
+        document.getElementById("editingTemplateId").value = item.contractTemplateId;
         updateLivePreview(); // ⬅️ 新增這行
     };
 
@@ -129,8 +129,8 @@
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                ContractTemplateId: parseInt(id),
-                TemplateContent: content
+                contractTemplateId: parseInt(id),
+                templateContent: content
             })
         });
 

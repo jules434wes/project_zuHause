@@ -14,15 +14,15 @@
     });
 
 
-    window.editFurniture = function (FurnitureId) {
-        fetch(`/Dashboard/GetFurnitureById?id=${FurnitureId}`)
+    window.editFurniture = function (furnitureId) {
+        fetch(`/Dashboard/GetFurnitureById?id=${furnitureId}`)
             .then(res => {
                 if (!res.ok) throw new Error("查無此家具");
                 return res.json();
             })
             .then(data => {
                 // 進入編輯模式 UI
-                document.getElementById("formMode").innerText = `✏️ 家具編輯模式（編號 ${FurnitureId}）`;
+                document.getElementById("formMode").innerText = `✏️ 家具編輯模式（編號 ${furnitureId}）`;
                 document.getElementById("returnToUploadBtn").style.display = "inline-block";
                 document.getElementById("stockInputGroup").style.display = "none";
                 // 進入編輯模式時觸發：
@@ -31,30 +31,30 @@
                     document.getElementById("updateBtn").style.display = "inline-block";
                 
                 // 填入資料
-                document.getElementById("furnitureName").value = data.ProductName;
-                document.getElementById("furnitureDesc").value = data.Description;
-                document.getElementById("furnitureType").value = data.CategoryId;
-                document.getElementById("originalPrice").value = data.ListPrice;
-                document.getElementById("rentPerDay").value = data.DailyRental;
-                document.getElementById("furnitureSafeStock").value = data.SafetyStock;
-                document.getElementById("listDate").value = data.ListedAt;
-                document.getElementById("delistDate").value = data.DelistedAt;
-                document.getElementById("productStatus").value = data.Status ? "true" : "false";
+                document.getElementById("furnitureName").value = data.productName;
+                document.getElementById("furnitureDesc").value = data.description;
+                document.getElementById("furnitureType").value = data.categoryId;
+                document.getElementById("originalPrice").value = data.listPrice;
+                document.getElementById("rentPerDay").value = data.dailyRental;
+                document.getElementById("furnitureSafeStock").value = data.safetyStock;
+                document.getElementById("listDate").value = data.listedAt;
+                document.getElementById("delistDate").value = data.delistedAt;
+                document.getElementById("productStatus").value = data.status ? "true" : "false";
                 console.log("回傳資料", data);
                 // 存起來目前編輯的 ID（可隱藏欄位或變數）
-                document.getElementById("furnitureForm").dataset.EditingId = FurnitureId;
+                document.getElementById("furnitureForm").dataset.editingId = furnitureId;
 
                 // 滾到表單區
                 window.scrollTo({ top: document.getElementById("furnitureForm").offsetTop - 60, behavior: "smooth" });
 
                 // 切換提交按鈕行為
-                document.getElementById("updateBtn").onclick = () => updateFurniture(FurnitureId);
+                document.getElementById("updateBtn").onclick = () => updateFurniture(furnitureId);
             })
             .catch(err => alert("❌ 讀取資料失敗：" + err.message));
     };
-    function updateFurniture(FurnitureId) {
+    function updateFurniture(furnitureId) {
         const formData = new FormData();
-        formData.append("FurnitureProductId", FurnitureId);
+        formData.append("FurnitureProductId", furnitureId);
         formData.append("Name", $("#furnitureName").val().trim());
         formData.append("Description", $("#furnitureDesc").val().trim());
         formData.append("Type", $("#furnitureType").val());
@@ -98,8 +98,8 @@
 
     // 重設表單
     window.resetForm = function () {
-        document.getElementById("furnitureForm").dataset.EditingId = "";
-        document.getElementById("formMode").InnerText = "🆕 家具上傳模式";
+        document.getElementById("furnitureForm").dataset.editingId = "";
+        document.getElementById("formMode").innerText = "🆕 家具上傳模式";
         document.getElementById("returnToUploadBtn").style.display = "none"; // 隱藏返回按鈕
         document.getElementById("stockInputGroup").style.display = "block"; // 顯示上架庫存欄
         document.getElementById("submitBtn").style.display = "inline-block";
@@ -122,9 +122,9 @@
   
     
     // 軟刪除家具
-    window.deleteFurniture = function (FurnitureId) {
+    window.deleteFurniture = function (furnitureId) {
         if (!confirm("確定要刪除這筆家具嗎？")) return;
-        fetch(`/Dashboard/SoftDeleteFurniture?id=${FurnitureId}`, { method: "POST" })
+        fetch(`/Dashboard/SoftDeleteFurniture?id=${furnitureId}`, { method: "POST" })
             .then(res => res.text())
             .then(msg => {
                 alert(msg);
@@ -144,15 +144,15 @@
     };
 
     // 提前下架家具
-    window.setProductOffline = function (FurnitureId) {
-        if (!confirm(`確定要提前下架家具 ${FurnitureId} 嗎？`)) return;
+    window.setProductOffline = function (furnitureId) {
+        if (!confirm(`確定要提前下架家具 ${furnitureId} 嗎？`)) return;
             
         fetch("/Dashboard/SetOffline", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({ id: FurnitureId })  // ✅ 用物件包裝
+            body: JSON.stringify({ id: furnitureId })  // ✅ 用物件包裝
         })
             .then(response => {
                 if (!response.ok) throw new Error("伺服器回應失敗");
@@ -234,17 +234,17 @@
                 data.forEach(row => {
                     tbody.innerHTML += `
                     <tr>
-                        <td>${row.ProductId}</td>
-                        <td>${row.EventType === 'adjust_in' ? '入庫' : '出庫'}</td>
-                        <td>${row.Quantity}</td>
+                        <td>${row.productId}</td>
+                        <td>${row.eventType === 'adjust_in' ? '入庫' : '出庫'}</td>
+                        <td>${row.quantity}</td>
                          <td>
-                            ${row.SourceType === 'shrinkage' ? '🧹 減損' :
-                             row.SourceType === 'restock' ? '📦 補貨' :
-                            row.SourceType === 'manual' ? '✋ 手動' : row.sourceType}
+                            ${row.sourceType === 'shrinkage' ? '🧹 減損' :
+                             row.sourceType === 'restock' ? '📦 補貨' :
+                            row.sourceType === 'manual' ? '✋ 手動' : row.sourceType}
                         </td>
-                        <td>${row.SourceId}</td>
-                        <td>${row.OccurredAt}</td>
-                        <td>${row.RecordedAt}</td>
+                        <td>${row.sourceId}</td>
+                        <td>${row.occurredAt}</td>
+                        <td>${row.recordedAt}</td>
                     </tr>`;
                 });
                 // 部分重新載入家具卡片區域
@@ -263,13 +263,13 @@
     }
     window.submitInventoryAdjustment = function () {
         const data = {
-            ProductId: document.getElementById("adjustProductId").value.trim(),
-            Quantity: parseInt(document.getElementById("adjustQuantity").value),
-            SourceType: document.getElementById("adjustSourceType").value,
-            SourceId: document.getElementById("adjustSourceId").value.trim()
+            productId: document.getElementById("adjustProductId").value.trim(),
+            quantity: parseInt(document.getElementById("adjustQuantity").value),
+            sourceType: document.getElementById("adjustSourceType").value,
+            sourceId: document.getElementById("adjustSourceId").value.trim()
         };
 
-        if (!data.ProductId || isNaN(data.Quantity)) {
+        if (!data.productId || isNaN(data.quantity)) {
             alert("❌ 請完整填寫 商品ID 與 異動數量！");
             return;
         }

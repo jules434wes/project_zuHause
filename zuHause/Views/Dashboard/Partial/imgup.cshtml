@@ -7,24 +7,20 @@
         <div class="col-md-4">
             <div class="panel p-3 bg-white border rounded">
                 <h5 class="mb-3">圖片庫</h5>
+                <!-- 分類 Tabs -->
+                <ul class="nav nav-tabs mb-3" id="carouselCategoryTabs">
+                    <li class="nav-item">
+                        <button class="nav-link active" data-category="tenant" onclick="changeCategoryTab(this)">租客首頁</button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" data-category="landlord" onclick="changeCategoryTab(this)">房東首頁</button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" data-category="furniture" onclick="changeCategoryTab(this)">家具首頁</button>
+                    </li>
+                </ul>
                 <div id="carouselImageList" class="overflow-auto" style="max-height: 500px;"></div>
 
-                <!-- 搜尋 -->
-                <div class="row g-2 mt-3">
-                    <div class="col-5">
-                        <select class="form-select" id="filterField">
-                            <option value="">搜尋類別</option>
-                            <option value="ImagesName">名稱</option>
-                            <option value="CarouselImageId">編號</option>
-                        </select>
-                    </div>
-                    <div class="col-7">
-                        <div class="input-group">
-                            <input type="text" class="form-control" id="filterKeyword" placeholder="搜尋關鍵字">
-                            <button class="btn btn-outline-secondary" type="button" onclick="filterImages()">搜尋</button>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
 
@@ -47,7 +43,7 @@
 
                 <div class="mb-3">
                     <label class="form-label">圖片連結 (可為空)</label>
-                    <input type="url" class="form-control" id="pageCode">
+                    <input type="url" class="form-control" id="webUrl">
                 </div>
 
                 <div class="row mb-3">
@@ -64,15 +60,22 @@
                         </select>
                     </div>
                 </div>
-
+                <div class="mb-3">
+                    <label class="form-label">是否啟用</label>
+                    <select class="form-select" id="isActive">
+                        <option value="true">啟用</option>
+                        <option value="false">停用</option>
+                    </select>
+                </div>
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label class="form-label">開始時間</label>
                         <input type="datetime-local" class="form-control" id="startAt">
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">結束時間</label>
+                        <label class="form-label">結束時間（可空白，代表無期限）</label>
                         <input type="datetime-local" class="form-control" id="endAt">
+
                     </div>
                 </div>
 
