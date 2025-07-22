@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>測試圖片上傳</title>
+</head>
+<body>
+    <h1>測試房源圖片上傳功能</h1>
+    
+    <form id="imageUploadForm" enctype="multipart/form-data">
+        <label for="imageFiles">選擇圖片:</label>
+        <input type="file" id="imageFiles" name="ImageFiles" multiple accept="image/*"><br><br>
+        
+        <label for="chineseCategory">圖片分類:</label>
+        <select id="chineseCategory" name="ChineseCategory">
+            <option value="總覽">總覽</option>
+            <option value="客廳">客廳</option>
+            <option value="臥室">臥室</option>
+            <option value="廚房">廚房</option>
+            <option value="衛浴">衛浴</option>
+        </select><br><br>
+        
+        <button type="submit">上傳圖片</button>
+    </form>
+
+    <div id="result"></div>
+
+    <script>
+        document.getElementById('imageUploadForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData();
+            const files = document.getElementById('imageFiles').files;
+            const category = document.getElementById('chineseCategory').value;
+            
+            if (files.length === 0) {
+                alert('請選擇圖片檔案');
+                return;
+            }
+            
+            for (let i = 0; i < files.length; i++) {
+                formData.append('files', files[i]);
+            }
+            formData.append('chineseCategory', category);
+            
+            try {
+                const response = await fetch('http://localhost:5000/api/properties/0/images', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                document.getElementById('result').innerHTML = `
+                    <h3>上傳結果:</h3>
+                    <pre>${JSON.stringify(result, null, 2)}</pre>
+                `;
+            } catch (error) {
+                document.getElementById('result').innerHTML = `
+                    <h3>錯誤:</h3>
+                    <p>${error.message}</p>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>
