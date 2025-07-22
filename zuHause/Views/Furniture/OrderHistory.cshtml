@@ -64,7 +64,7 @@
         }
 </style>
 
-<div class="container-fluid mt-4">
+<div class="container-fluid mt-2">
     <div class="row">
         <!-- 左側選單 -->
         <div class="col-md-2">
@@ -73,13 +73,12 @@
                 <li class="list-group-item active">租借 / 購買付款查詢</li>
                 <li class="list-group-item"><a href="/Furniture/ContactRecords">聯繫紀錄</a></li>
                 <li class="list-group-item"><a href="/Furniture/RentalCart">購物車</a></li>
-                <li class="list-group-item"><a href="#">登出</a></li>
             </ul>
         </div>
 
         <!-- 右側內容 -->
         <div class="col-md-10">
-            <h4>進行中的訂單</h4>
+            <h2 class="mt-4">進行中的訂單</h2>
             @if (ongoingOrders != null && ongoingOrders.Any())
             {
                 @foreach (var order in ongoingOrders)
@@ -89,15 +88,16 @@
                     <div class="card mb-3">
                         <div class="card-body">
                             <p>成立日期：@Convert.ToDateTime(order.CreatedAt).ToString("yyyy-MM-dd HH:mm")</p>
+                            <p>房源名稱：@order.PropertyName</p>  
                             <p>商品名稱：@order.ProductName × @order.Quantity</p>
 
                             <!-- ✅ 進度條 -->
                             <div class="order-tracker">
-                                <div class="step @(stage == "PENDING" || stage == "PROCESSING" || stage == "SHIPPING" || stage == "RENTED" || stage == "RETURNED" ? "completed" : "")">
+                                <div class="step @(stage == "PENDING" || stage == "CONFIRMED" || stage == "PACKING" || stage == "SHIPPING" || stage == "RENTED" || stage == "RETURNED" ? "completed" : "")">
                                     <div class="icon">📋</div>
                                     <div class="label">訂單確認中</div>
                                 </div>
-                                <div class="step @(stage == "PROCESSING" || stage == "SHIPPING" || stage == "RENTED" || stage == "RETURNED" ? "completed" : "")">
+                                <div class="step @(stage == "PACKING" || stage == "SHIPPING" || stage == "RENTED" || stage == "RETURNED" ? "completed" : "")">
                                     <div class="icon">📦</div>
                                     <div class="label">理貨中</div>
                                 </div>
@@ -110,6 +110,8 @@
                                     <div class="label">已送達</div>
                                 </div>
                             </div>
+
+
 
                             <span class="badge bg-info text-dark">訂單狀態：@stage</span>
 
@@ -125,6 +127,7 @@
                             <div class="collapse mt-2" id="orderDetail-@order.FurnitureOrderItemId">
                                 <div class="card card-body bg-light">
                                     <p><strong>訂單編號：</strong>@order.OrderId</p>
+                                    <p><strong>房源名稱：</strong>@order.PropertyName</p>
                                     <p><strong>商品：</strong>@order.ProductName × @order.Quantity</p>
                                     <p><strong>日租金：</strong>@order.DailyRentalSnapshot 元</p>
                                     <p><strong>租期天數：</strong>@order.RentalDays 天</p>
@@ -149,6 +152,7 @@
                     <div class="card mb-3 bg-light">
                         <div class="card-body">
                             <p>成立日期：@Convert.ToDateTime(order.CreatedAt).ToString("yyyy-MM-dd HH:mm")</p>
+                            <p>房源名稱：@order.PropertyName</p>
                             <p>商品名稱：@order.ProductNameSnapshot × @order.Quantity</p>
                             <p>租期：@order.RentalStart ~ @order.RentalEnd</p>
                             <span class="badge bg-success">已歸還</span>
@@ -161,6 +165,7 @@
                             <div class="collapse mt-2" id="completedDetail-@order.FurnitureOrderHistoryId">
                                 <div class="card card-body">
                                     <p><strong>訂單編號：</strong>@order.OrderId</p>
+                                    <p><strong>房源名稱：</strong>@order.PropertyName</p>
                                     <p><strong>商品名稱：</strong>@order.ProductNameSnapshot</p>
                                     <p><strong>租期：</strong>@order.RentalStart ~ @order.RentalEnd</p>
                                     <p><strong>日租金：</strong>@order.DailyRentalSnapshot 元</p>
