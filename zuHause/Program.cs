@@ -13,10 +13,10 @@ using zuHause.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 
-var dllPath = Path.Combine(AppContext.BaseDirectory, "libwkhtmltox.dll");
 var context = new CustomAssemblyLoadContext();
-context.LoadUnmanagedLibrary(dllPath);
 
+var path = Path.Combine(Directory.GetCurrentDirectory(), "DinkToPdfLib", "libwkhtmltox.dll");
+context.LoadUnmanagedLibrary(path);
 
 builder.Services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
 
