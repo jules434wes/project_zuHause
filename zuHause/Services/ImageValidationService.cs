@@ -16,7 +16,8 @@ namespace zuHause.Services
         {
             { "image/jpeg", new[] { ".jpg", ".jpeg" } },
             { "image/png", new[] { ".png" } },
-            { "image/webp", new[] { ".webp" } }
+            { "image/webp", new[] { ".webp" } },
+            { "application/pdf", new[] { ".pdf" } }
         };
 
         private static readonly Dictionary<ImageCategory, long> MaxFileSizes = new()
@@ -27,7 +28,8 @@ namespace zuHause.Services
             { ImageCategory.Living, 10 * 1024 * 1024 }, // 10MB
             { ImageCategory.Kitchen, 10 * 1024 * 1024 }, // 10MB
             { ImageCategory.Balcony, 10 * 1024 * 1024 }, // 10MB
-            { ImageCategory.Product, 5 * 1024 * 1024 } // 5MB
+            { ImageCategory.Product, 5 * 1024 * 1024 }, // 5MB
+            { ImageCategory.Document, 10 * 1024 * 1024 } // 10MB
         };
 
         private static readonly Dictionary<ImageCategory, (int MinWidth, int MinHeight, int MaxWidth, int MaxHeight)> DimensionLimits = new()
@@ -97,6 +99,10 @@ namespace zuHause.Services
         /// </summary>
         public ValidationResult ValidateImageDimensions(int width, int height, ImageCategory category)
         {
+            // PDF 文件不需要尺寸驗證
+            if (category == ImageCategory.Document)
+                return ValidationResult.Success();
+                
             if (width <= 0 || height <= 0)
                 return ValidationResult.Failure("圖片尺寸必須大於 0");
 
@@ -162,7 +168,7 @@ namespace zuHause.Services
             if (!sizeResult.IsValid)
                 allErrors.AddRange(sizeResult.Errors);
 
-            // 圖片尺寸驗證
+            // 圖片尺寸驗證（Document 類別會自動跳過）
             var dimensionResult = ValidateImageDimensions(image.Width, image.Height, image.Category);
             if (!dimensionResult.IsValid)
                 allErrors.AddRange(dimensionResult.Errors);

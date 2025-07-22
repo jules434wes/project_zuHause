@@ -38,6 +38,11 @@ namespace zuHause.Enums
         /// <summary>
         /// 商品圖片
         /// </summary>
-        Product
+        Product,
+        
+        /// <summary>
+        /// 文件檔案（PDF等）
+        /// </summary>
+        Document
     }
 }
