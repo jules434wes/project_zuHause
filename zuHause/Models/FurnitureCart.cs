@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace zuHause.Models;
 
@@ -42,6 +43,10 @@ public partial class FurnitureCart
     /// 刪除時間
     /// </summary>
     public DateTime? DeletedAt { get; set; }
+
+    //總金額
+    [NotMapped]
+    public decimal TotalAmount { get; set; }
 
     public virtual ICollection<FurnitureCartItem> FurnitureCartItems { get; set; } = new List<FurnitureCartItem>();
 

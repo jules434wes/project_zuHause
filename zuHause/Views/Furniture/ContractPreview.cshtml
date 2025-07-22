@@ -1,0 +1,52 @@
+﻿@{
+    Layout = "~/Views/Shared/_NavigationBar.cshtml";
+    ViewBag.Title = "簽約預覽";
+}
+
+<div class="container my-5">
+    <h2 class="text-center text-primary mb-4">📄 簽約合約預覽</h2>
+
+    @if (ViewBag.SelectedProperty != null && ViewBag.Contract != null)
+    {
+        var property = ViewBag.SelectedProperty;
+        var contract = ViewBag.Contract;
+        var rentalDays = ViewBag.RentalDaysLeft as int? ?? 0;
+        var totalAmount = ViewBag.TotalCartAmount as decimal? ?? 0m;
+
+        <div class="card shadow-sm p-4">
+            <h4 class="mb-3 text-success">🏠 房源資訊</h4>
+            <p><strong>標題：</strong> @property.Title</p>
+            <p><strong>地址：</strong> @property.AddressLine</p>
+            <p><strong>合約狀態：</strong> @contract.Status</p>
+            <p><strong>到期日：</strong> @(((DateOnly)contract.EndDate).ToString("yyyy/MM/dd"))</p>
+            <p><strong>剩餘租期：</strong> @rentalDays 天</p>
+        </div>
+
+        <div class="card shadow-sm mt-4 p-4">
+            <h4 class="mb-3 text-success">🛒 訂單總金額</h4>
+            <p class="fs-5">本次租借總金額為 <span class="fw-bold text-danger">NT$@totalAmount.ToString("N0")</span></p>
+
+            <form method="post" action="/Furniture/StartCheckout">
+                <input type="hidden" name="selectedPropertyId" value="@property.PropertyId" />
+
+                <div class="form-check my-3">
+                    <input type="checkbox" class="form-check-input" id="agreeTerms" required />
+                    <label class="form-check-label" for="agreeTerms">
+                        我已詳細閱讀並同意上述合約內容與租借條款。
+                    </label>
+                </div>
+
+                <button type="submit" class="btn btn-success">✅ 前往付款</button>
+                <a href="/Furniture/RentalCart" class="btn btn-outline-secondary ms-2">返回購物車</a>
+            </form>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-danger text-center">
+            無法載入合約或房源資訊，請返回購物車頁面重新操作。
+            <br />
+            <a href="/Furniture/RentalCart" class="btn btn-outline-primary mt-3">返回購物車</a>
+        </div>
+    }
+</div>

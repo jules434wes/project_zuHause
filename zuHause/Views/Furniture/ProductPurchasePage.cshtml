@@ -15,6 +15,7 @@
     var productFeatures = ViewBag.ProductFeatures as List<string>;
 }
 
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -85,7 +86,7 @@
 
         <div class="col-md-5">
             <h2>@Model.ProductName</h2>
-            <p>售價: NT$@Model.ListPrice</p>
+            <p>售價: NT$@Model.ListPrice.ToString("N0")</p>
 
             @* 商品特點列表 *@
             @if (productFeatures != null && productFeatures.Any())
@@ -104,8 +105,8 @@
             <hr />
 
             @* 租金資訊區塊 *@
-            <h4 class="price-info">每日租金：NT$<strong id="dailyRentalAmount">@Model.DailyRental</strong></h4>
-            <h4 class="price-info">租期總天數：<strong id="totalDaysDisplay">@(rentalDays != null ? rentalDays.ToString() : "N/A")</strong> 天</h4>
+            <h4 class="price-info">每日租金：NT$<strong id="dailyRentalAmount">@Model.DailyRental.ToString("N0")</strong></h4>
+            <h4 class="price-info">租期總天數：<strong id="totalDaysDisplay">@(rentalDays != null ? rentalDays.ToString("N0") : "N/A")</strong> 天</h4>
             <h4 class="price-info">總租金：NT$<strong id="totalRentalAmountDisplay">@(totalRentalAmount != null ? totalRentalAmount.ToString("N0") : "N/A")</strong></h4>
 
             <hr />

@@ -27,15 +27,10 @@ namespace zuHause.Controllers
             ViewBag.categories = GetAllCategories();
 
             // 輪播圖
-            DateTime now = DateTime.Now;
             var carouselImages = _context.CarouselImages
-           .Where(c => c.IsActive
-                       && c.StartAt <= now
-                       && (c.EndAt == null || c.EndAt > now)
-                       && c.DeletedAt == null
-                       && c.PageCode == "FurnitureHome")
-           .OrderBy(c => c.DisplayOrder)
-           .ToList();
+            .Where(c => c.IsActive && c.DeletedAt == null)
+            .OrderBy(c => c.DisplayOrder)
+            .ToList();
 
             ViewBag.CarouselImages = carouselImages;
 
@@ -189,9 +184,6 @@ namespace zuHause.Controllers
             return View(product);
         }
 
-
-
-
         //購物車頁面
         public IActionResult RentalCart()
         {
@@ -316,6 +308,10 @@ namespace zuHause.Controllers
             }
             ViewBag.TotalCartAmount = totalAmount;
 
+            var inventoryMap = _context.FurnitureInventories
+               .GroupBy(inv => inv.ProductId)
+               .ToDictionary(g => g.Key, g => g.First().AvailableQuantity);
+            ViewBag.InventoryMap = inventoryMap;
             return View(cart);
         }
 
@@ -420,6 +416,34 @@ namespace zuHause.Controllers
             return RedirectToAction("RentalCart");
         }
 
+        //更新購物車商品數量
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult UpdateCartItemQuantity([FromBody] CartItemUpdateRequest request)
+        {
+            var item = _context.FurnitureCartItems
+                .Include(i => i.Product)
+                .FirstOrDefault(i => i.CartItemId == request.CartItemId);
+
+            if (item == null)
+                return NotFound();
+
+            var inventory = _context.FurnitureInventories.FirstOrDefault(inv => inv.ProductId == item.ProductId);
+            if (inventory == null || request.Quantity > inventory.AvailableQuantity)
+                return BadRequest("超過可用庫存");
+
+            item.Quantity = request.Quantity;
+            _context.SaveChanges();
+
+            return Json(new { success = true, newQuantity = item.Quantity });
+        }
+
+        public class CartItemUpdateRequest
+        {
+            public string CartItemId { get; set; } = "";
+            public int Quantity { get; set; }
+        }
+
 
         // 租借說明頁面
         public IActionResult InstructionsForUse()
@@ -457,6 +481,64 @@ namespace zuHause.Controllers
             return categories;
         }
 
+        //合約預覽
+        [HttpPost]
+        public IActionResult ContractPreview(int selectedPropertyId)
+        {
+            SetCurrentMemberInfo();
+            // 假設你有一個方法可以根據 selectedPropertyId 查出房源資訊與合約
+            var property = _context.Properties
+                .Include(p => p.RentalApplications)
+                    .ThenInclude(r => r.Contracts)
+                .FirstOrDefault(p => p.PropertyId == selectedPropertyId);
+
+            if (property == null)
+            {
+                return NotFound("房源不存在");
+            }
+
+            // 取得合約資訊
+            var contract = property.RentalApplications
+                .SelectMany(r => r.Contracts)
+                .FirstOrDefault(c => c.Status == "active");
+
+            ViewBag.SelectedProperty = property;
+            ViewBag.Contract = contract;
+
+            return View(); // 對應 Views/Furniture/ContractPreview.cshtml
+        }
+
+
+        //結帳流程
+        [HttpPost]
+        public IActionResult StartCheckout(int selectedPropertyId)
+        {
+            Console.WriteLine("🟢 DEBUG: StartCheckout triggered with propertyId = " + selectedPropertyId);
+            return RedirectToAction("MockPaymentPage", new { selectedPropertyId });
+        }
+
+        //暫時模擬付款畫面
+        [HttpGet]
+        public IActionResult MockPaymentPage(int selectedPropertyId)
+        {
+            ViewBag.SelectedPropertyId = selectedPropertyId;
+            return View();
+        }
+
+        //確認支付
+        [HttpPost]
+        public IActionResult ConfirmPayment(int selectedPropertyId)
+        {
+            Console.WriteLine("✅ DEBUG: 模擬付款完成 propertyId = " + selectedPropertyId);
+            // 實際處理付款成功邏輯（略）
+            return RedirectToAction("Success");
+        }
+
+        //支付成功
+        public IActionResult Success()
+        {
+            return View();
+        }
 
         //歷史訂單紀錄
         public IActionResult OrderHistory()
@@ -464,10 +546,11 @@ namespace zuHause.Controllers
             SetCurrentMemberInfo();
             int memberId = _currentMemberId;
 
-            // 查詢進行中訂單
+            // 進行中訂單（排除 RETURNED）
             var ongoingOrders = _context.FurnitureOrderItems
+                .Include(item => item.Order)
+                .ThenInclude(order => order.Property)
                 .Where(item => item.Order.MemberId == memberId)
-                .OrderByDescending(item => item.CreatedAt)
                 .Select(item => new
                 {
                     item.FurnitureOrderItemId,
@@ -479,18 +562,21 @@ namespace zuHause.Controllers
                     item.SubTotal,
                     item.CreatedAt,
                     item.Order.Status,
-                    // ✅ 新增 CurrentStage 狀態字串（連動庫存事件）
-                    CurrentStage =
-                        _context.InventoryEvents.Any(e => e.SourceId == item.OrderId && e.ProductId == item.ProductId && e.EventType == "RETURN") ? "RETURNED" :
-                        _context.InventoryEvents.Any(e => e.SourceId == item.OrderId && e.ProductId == item.ProductId && e.EventType == "OUT") ? "RENTED" :
-                        item.Order.Status == "SHIPPING" ? "SHIPPING" :
-                        item.Order.Status == "PROCESSING" ? "PROCESSING" :
-                        "PENDING"
+                    PropertyName = item.Order.Property != null ? item.Order.Property.Title : "未綁定房源",
+                    CurrentStage = _context.OrderEvents
+                        .Where(e => e.OrderId == item.OrderId)
+                        .OrderByDescending(e => e.OccurredAt)
+                        .Select(e => e.EventType)
+                        .FirstOrDefault() ?? "PENDING"
                 })
+                .Where(x => x.CurrentStage != "RETURNED") // ✅ 排除已完成訂單
+                .OrderByDescending(x => x.CreatedAt)
                 .ToList();
 
             // 歷史訂單
             var completedOrders = _context.FurnitureOrderHistories
+                .Include(his => his.Order)
+                .ThenInclude(order => order.Property)
                 .Where(his => his.Order.MemberId == memberId)
                 .OrderByDescending(his => his.CreatedAt)
                 .Select(his => new
@@ -504,7 +590,8 @@ namespace zuHause.Controllers
                     his.RentalEnd,
                     his.SubTotal,
                     his.ItemStatus,
-                    his.CreatedAt
+                    his.CreatedAt,
+                    PropertyName = his.Order.Property != null ? his.Order.Property.Title : "未綁定房源"
                 })
                 .ToList();
 
@@ -513,8 +600,6 @@ namespace zuHause.Controllers
 
             return View("OrderHistory");
         }
-
-
 
         // 客服聯繫頁面
         public IActionResult ContactRecords()
@@ -559,6 +644,7 @@ namespace zuHause.Controllers
             return View("ContactUsForm");
         }
 
+        //提交聯絡方式
         [HttpPost]
         public IActionResult SubmitContactForm(string Subject, string TicketContent, int? PropertyId)
         {
