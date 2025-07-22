@@ -1,4 +1,6 @@
-﻿@{
+﻿@using zuHause.ViewModels.MemberViewModel
+@model List<ApplicationRecordViewModel>
+@{
     ViewData["activePage"] = "MemberApplications";
 }
 
@@ -37,16 +39,27 @@
                          aria-labelledby="allItemTab" tabindex="0">
                         <div class="row w-100 mx-0 mb-3 align-items-center justify-content-end">
                             <div class="col-auto px-0">
-                                <select class="form-select" aria-label="Default select example">
-                                    <option selected>申請狀態</option>
-                                    <option value="1">合約已完成</option>
-                                    <option value="2">Two</option>
-                                    <option value="3">Three</option>
+                                <select class="form-select" id="statusFilter" name="statusFilter">
+                                    <option value="">申請狀態</option>
+                                    @if (ViewBag.ApplicationStatusOptions is Dictionary<string, string> statusDict)
+                                    {
+                                        foreach (var status in statusDict)
+                                        {
+                                            <option value="@status.Key">@status.Value</option>
+                                        }
+                                    }
                                 </select>
                             </div>
                         </div>
                         <div class="row w-100 mx-0 gy-3">
-                            @await Component.InvokeAsync("MemberApplicationCard")
+                            @foreach (ApplicationRecordViewModel item in Model)
+                            {
+                                @await Component.InvokeAsync("MemberApplicationCard",new MemberApplicationCardInputViewModel
+                                {
+                                    Record = item,
+                                    StatusCodeDict = ViewBag.ApplicationStatusOptions as Dictionary<string, string> ?? new()
+                                })
+                             }
                         </div>
 
                     </div>

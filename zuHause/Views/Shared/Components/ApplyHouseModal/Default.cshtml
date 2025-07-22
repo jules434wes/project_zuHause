@@ -38,7 +38,7 @@
 
 
                             @* 請插入房源編號 *@
-                            <input type="hidden" value="3032" asp-for="PropertyId" />
+                            <input type="hidden" asp-for="PropertyId" value="@Model.PropertyId" />
                             <input type="date" class="border rounded-1" asp-for="ScheduleDate" min="@DateTime.Today.ToString("yyyy-MM-dd")">
                         </div>
                         <div class="col-auto">

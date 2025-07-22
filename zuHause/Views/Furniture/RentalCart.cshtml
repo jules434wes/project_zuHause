@@ -90,7 +90,15 @@
                                 </div>
                             </td>
                             <td>
-                                    <div class="input-group quantity-control" data-itemid="@item.CartItemId">
+                                    @{
+                                            var inventoryMap = ViewBag.InventoryMap as Dictionary<string, int>;
+                                            var available = inventoryMap != null && inventoryMap.ContainsKey(item.ProductId)
+                                                ? inventoryMap[item.ProductId]
+                                                : 0;
+                                        }
+                                        <div class="input-group quantity-control"
+                                             data-itemid="@item.CartItemId"
+                                             data-available="@available">
                                         <button type="button" class="btn btn-outline-secondary btn-decrease">－</button>
                                         <input type="text" class="form-control text-center quantity-input" value="@item.Quantity" readonly />
                                         <button type="button" class="btn btn-outline-secondary btn-increase">＋</button>
@@ -129,10 +137,18 @@
                 </tfoot>
             </table>
 
-            <div class="text-end mt-4">
-                <button class="btn btn-success btn-lg me-3">✅ 確定租借</button>
-                <a href="/Furniture/FurnitureHomePage" class="btn btn-secondary btn-lg">回到租借首頁</a>
+           <div class="text-end mt-4">
+                <form method="post" action="/Furniture/ContractPreview" onsubmit="return validatePropertySelection();">
+                    <input type="hidden" name="selectedPropertyId" id="hiddenSelectedPropertyInput" value="@ViewBag.SelectedPropertyId" />
+                    <button type="submit" class="btn btn-success btn-lg">
+                        ✅ 確定租借
+                    </button>
+                    <a href="/Furniture/FurnitureHomePage" class="btn btn-secondary btn-lg">回到租借首頁</a>
+                </form>
             </div>
+
+
+            
         }
         else
         {
@@ -200,7 +216,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const initialPropertyIdValue = document.getElementById("initialPropertyId")?.value;
     if (select && initialPropertyIdValue && initialPropertyIdValue !== "0") {
         select.value = initialPropertyIdValue;
-        updatePropertyDisplay(); // ✅ 初始顯示
+        updatePropertyDisplay();
     }
 
     if (select) {
@@ -219,15 +235,12 @@ document.addEventListener("DOMContentLoaded", function () {
                 ? selectedProperty.DaysLeft + " 天"
                 : "無";
 
-            // 顯示欄位
             [propertyIdDisplay, propertyTitleDisplay, endDateDisplay, daysLeftDisplay,
-             strongPropertyId, strongPropertyTitle, strongEndDate, strongDaysLeft]
-             .forEach(el => el.style.display = 'inline');
+            strongPropertyId, strongPropertyTitle, strongEndDate, strongDaysLeft]
+                .forEach(el => el.style.display = 'inline');
 
-            if (noPropertySelected) noPropertySelected.style.display = 'none';
-
+            noPropertySelected.style.display = 'none';
         } else {
-            // 清空並隱藏
             [propertyIdDisplay, propertyTitleDisplay, endDateDisplay, daysLeftDisplay].forEach(el => {
                 el.textContent = "";
                 el.style.display = 'none';
@@ -235,31 +248,82 @@ document.addEventListener("DOMContentLoaded", function () {
             [strongPropertyId, strongPropertyTitle, strongEndDate, strongDaysLeft]
                 .forEach(el => el.style.display = 'none');
 
-            if (noPropertySelected) noPropertySelected.style.display = 'block';
+            noPropertySelected.style.display = 'block';
+        }
+
+        const hiddenInput = document.getElementById("hiddenSelectedPropertyInput");
+        if (hiddenInput) {
+            hiddenInput.value = select.value;
         }
     }
 
-    // ---------- 數量控制 ----------
-    const controls = document.querySelectorAll('.quantity-control');
-    controls.forEach(control => {
-        const decreaseBtn = control.querySelector('.btn-decrease');
-        const increaseBtn = control.querySelector('.btn-increase');
+    // ---------- 數量變更邏輯 ----------
+    function updateRowSubtotal(control) {
         const input = control.querySelector('.quantity-input');
+        const quantity = parseInt(input.value);
+        const row = control.closest('tr');
+        const dailyRental = parseInt(row.querySelector('td:nth-child(4)').textContent.replace(/[^0-9]/g, ''));
+        const days = parseInt(row.querySelector('td:nth-child(5)').textContent);
+        const subtotalCell = row.querySelector('td:nth-child(6)');
 
-        decreaseBtn?.addEventListener('click', () => {
-            let current = parseInt(input.value);
-            if (current > 1) {
-                input.value = current - 1;
-            } else {
-                alert('⚠️ 已達最低數量');
-            }
+        const subtotal = dailyRental * days * quantity;
+        subtotalCell.textContent = 'NT$' + subtotal.toLocaleString();
+
+        updateTotalAmount();
+    }
+
+    function updateTotalAmount() {
+        const subtotalCells = document.querySelectorAll('tbody tr td:nth-child(6)');
+        let total = 0;
+        subtotalCells.forEach(cell => {
+            const amount = parseInt(cell.textContent.replace(/[^0-9]/g, '')) || 0;
+            total += amount;
         });
 
-        increaseBtn?.addEventListener('click', () => {
-            let current = parseInt(input.value);
-            input.value = current + 1;
-        });
+        const shippingFee = 3000;
+        const totalCartAmountDisplay = document.querySelector('tfoot tr:nth-child(1) td:nth-child(2) strong');
+        const finalAmountDisplay = document.querySelector('tfoot tr:nth-child(3) td:nth-child(2)');
+
+        if (totalCartAmountDisplay) {
+            totalCartAmountDisplay.textContent = 'NT$' + total.toLocaleString();
+        }
+        if (finalAmountDisplay) {
+            finalAmountDisplay.textContent = 'NT$' + (total + shippingFee).toLocaleString();
+        }
+    }
+
+    // 綁定加減事件
+ const controls = document.querySelectorAll('.quantity-control');
+
+controls.forEach(control => {
+    const decreaseBtn = control.querySelector('.btn-decrease');
+    const increaseBtn = control.querySelector('.btn-increase');
+    const input = control.querySelector('.quantity-input');
+
+    decreaseBtn?.addEventListener('click', () => {
+        let current = parseInt(input.value);
+        if (current > 1) {
+            input.value = current - 1;
+            updateRowSubtotal(control);
+        } else {
+            alert('⚠️ 已達最低數量');
+        }
     });
+
+    increaseBtn?.addEventListener('click', () => {
+        let current = parseInt(input.value);
+        const available = parseInt(control.getAttribute('data-available'));
+
+        if (current < available) {
+            input.value = current + 1;
+            updateRowSubtotal(control);
+        } else {
+            alert(`⚠️ 目前庫存剩餘 ${available}，不可超過此數量`);
+        }
+    });
+});
+
+    updateTotalAmount(); // 頁面載入時即時更新一次
 
     // ---------- Modal 刪除 ----------
     const deleteButtons = document.querySelectorAll('button[data-bs-target="#deleteConfirmModal"]');
@@ -276,7 +340,19 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 });
+
+function validatePropertySelection() {
+    const selectedValue = document.getElementById("hiddenSelectedPropertyInput").value;
+    if (!selectedValue || selectedValue === "0") {
+        alert("請先選擇綁定房源再進行租借！");
+        return false;
+    }
+    return true;
+}
+
+
 </script>
+
 
 <style>
     td {
@@ -305,6 +381,8 @@ document.addEventListener("DOMContentLoaded", function () {
         word-break: break-word;
         white-space: normal;
     }
+
+
 </style>
 
 

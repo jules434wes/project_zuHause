@@ -1,20 +1,29 @@
 ﻿body {
-    font-family: 'Microsoft JhengHei', sans-serif;
-    background-color: #f9f9f9;
+    background: linear-gradient(135deg, #38b5a0, #8ce1d3);
+    margin: 0;
+    padding: 0;
 }
 
-.logo {
-    height: 50px;
+/* 跑馬燈背景與字體樣式 */
+.marquee-bar {
+    background: linear-gradient(to right, #006644, #009977); /* 深綠色漸層 */
+    color: white;
+    padding: 8px 20px;
+    font-weight: bold;
+    font-size: 1rem;
 }
 
-ul.list-group li a {
-    text-decoration: none;
-    color: #333;
+/*特惠商品標籤*/
+.badge-discount {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background-color: red;
+    color: white;
+    padding: 4px 8px;
+    font-size: 12px;
+    font-weight: bold;
+    border-radius: 4px;
+    z-index: 10;
 }
-
-    ul.list-group li a:hover {
-        color: #007bff;
-    }
-
-
 
