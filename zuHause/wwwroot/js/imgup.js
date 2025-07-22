@@ -27,7 +27,10 @@
                         <p class="mb-1"><strong>編號：</strong>${img.carouselImageId}</p>
                         <p class="mb-1"><strong>名稱：</strong>${img.imagesName}</p>
                         <p class="mb-1"><strong>類別：</strong>${img.category}</p>
-                        <p class="mb-1"><strong>連結：</strong><a href="${img.webUrl}" target="_blank">${img.webUrl}</a></p>
+                        <p class="mb-1"><strong>連結：</strong>
+                          ${img.webUrl ? `<a href="${img.webUrl}" target="_blank">${img.webUrl}</a>` : ""}
+                        </p>
+
                         <p class="mb-1"><strong>位置：</strong>${img.displayOrder}</p>
                          <p class="mb-1"><strong>狀態：</strong>${img.isActive ? '✅ 啟用' : '❌ 停用'}</p>
                         <p class="mb-1"><strong>播放時間：</strong>${formatTime(img.startAt)} ~ ${img.endAt ? formatTime(img.endAt) : "無期限"}</p>

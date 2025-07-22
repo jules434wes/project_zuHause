@@ -153,7 +153,7 @@
             if (el) el.value = '';
         });
         document.getElementById('currencyCode').value = 'TWD';
-        editingPlanId = null;
+        window.editingPlanId = null;
         // 重置樣式
         const card = document.querySelector('.card.mt-4');
         const header = card.querySelector('.card-header');
