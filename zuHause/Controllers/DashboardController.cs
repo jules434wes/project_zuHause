@@ -1404,7 +1404,7 @@ namespace zuHause.Controllers
 
 
 
-    }
+    
         //權限身分表
         [HttpGet("roles/list")]
         public IActionResult GetRolesWithPermissions()
@@ -1641,7 +1641,7 @@ namespace zuHause.Controllers
         }
 
 
-
+        
     }
 
 
