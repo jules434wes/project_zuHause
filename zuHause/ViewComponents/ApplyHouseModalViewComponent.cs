@@ -1,13 +1,20 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using zuHause.ViewModels.MemberViewModel;
 
 namespace zuHause.ViewComponents
 {
     public class ApplyHouseModalViewComponent : ViewComponent
     {
 
-        public IViewComponentResult Invoke()
+        public IViewComponentResult Invoke(int propertyId, int userId)
         {
-            return View();
+
+            ApplicationViewModel model = new ApplicationViewModel
+            {
+                PropertyId = propertyId,
+
+            };
+            return View(model);
         }
 
 

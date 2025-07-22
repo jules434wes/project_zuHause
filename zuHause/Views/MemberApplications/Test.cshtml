@@ -1,7 +1,13 @@
-﻿@await Component.InvokeAsync("ApplyHouseModal") 
-@* @await Component.InvokeAsync("ApplyRentalModal", new { propertyId = 3032, userId = Convert.ToInt32(User.FindFirst("UserId")!.Value)}); *@
-@await Component.InvokeAsync("ViewRentalApplicationsModal")
-@* @await Component.InvokeAsync("SignContractModal") *@
+﻿@* 申請看房(完成)，會打資料到rentalApplications資料表 *@
+@await Component.InvokeAsync("ApplyHouseModal", new { propertyId = 3032, userId = Convert.ToInt32(User.FindFirst("UserId")!.Value) })
+
+@* 申請租賃(完成)，會打資料到rentalApplications資料表，及上傳圖片到userUploads *@
+ @await Component.InvokeAsync("ApplyRentalModal", new { propertyId = 3032, userId = Convert.ToInt32(User.FindFirst("UserId")!.Value)});
+
+
+ @* 未完成：租客簽名、查看租客申請 *@
+@* @await Component.InvokeAsync("ViewRentalApplicationsModal")
+@await Component.InvokeAsync("SignContractModal") *@
 
 
 
