@@ -10,11 +10,15 @@
 @await Component.InvokeAsync("SignContractModal") *@
 
 
-
+<button onclick="updateStatus(16, 'PENDING')">待審核</button>
+<button onclick="updateStatus(16, 'APPROVED')">同意申請</button>
+<button onclick="updateStatus(16, 'REJECTED')">拒絕申請</button>
 
 
 @section Scripts {
     <script src="~/js/selectDistrict.js"></script>
     <script src="~/js/applyRentalInput.js"></script>
     <script src="~/js/rentalDateCount.js"></script>
+    <script src="~/js/callUpdateApplicationStatus.js"></script>
+
 }

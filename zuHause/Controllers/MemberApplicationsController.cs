@@ -130,6 +130,19 @@ namespace zuHause.Controllers
             _context.RentalApplications.Add(application);
             await _context.SaveChangesAsync();
 
+            var newLog = new ApplicationStatusLog
+            {
+                ApplicationId = application.ApplicationId, 
+                StatusCode = "APPLIED",
+                ChangedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now,
+            };
+
+            _context.ApplicationStatusLogs.Add(newLog);
+            await _context.SaveChangesAsync();
+
+
+
             return RedirectToAction("Index");
         }
 
@@ -184,6 +197,17 @@ namespace zuHause.Controllers
             _context.RentalApplications.Add(rentalApp);
             await _context.SaveChangesAsync(); // 先存入，取得 ApplicationId 當作 SourceEntityId
 
+            var newLog = new ApplicationStatusLog
+            {
+                ApplicationId = rentalApp.ApplicationId, 
+                StatusCode = "APPLIED",
+                ChangedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now,
+            };
+
+            _context.ApplicationStatusLogs.Add(newLog);
+            await _context.SaveChangesAsync();
+
 
             string folder = "rentalApply";
             string uploadPath = Path.Combine("wwwroot", "uploads", folder);
@@ -233,5 +257,53 @@ namespace zuHause.Controllers
 
 
 
+
+        //創建一個路由，用來更改某筆合約的狀態，傳兩個參數，第一個是哪一筆申請，第二個是改成甚麼狀態，要寫到log
+
+        [HttpPost]
+        public async Task<IActionResult> UpdateApplicationLog([FromBody] UpdateApplicationViewModel model)
+        {
+
+
+            int applicationId = Convert.ToInt32(model.ApplicationId);
+            string status = model.Status!;
+
+            var application = await _context.RentalApplications.Where(r => r.ApplicationId == applicationId).Include(a => a.ApplicationStatusLogs).FirstOrDefaultAsync();
+            if (application == null)
+            {
+                return NotFound(new { msg = "找不到對應申請" });
+            }
+
+            var lastStatusLog = application?.ApplicationStatusLogs
+            .OrderByDescending(log => log.StatusLogId).FirstOrDefault();
+
+            if (lastStatusLog != null && lastStatusLog.StatusCode == status)
+            {
+                return BadRequest(new { msg = "狀態重複" });
+            }
+
+            var newLog = new ApplicationStatusLog
+            {
+                ApplicationId = applicationId,
+                StatusCode = status,
+                ChangedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now,
+            };
+
+            await _context.ApplicationStatusLogs.AddAsync(newLog);
+
+            application!.CurrentStatus = status;
+            application.UpdatedAt = DateTime.Now;
+
+
+            await _context.SaveChangesAsync();
+
+
+            return Ok(new { msg = "更新狀態成功", applicationId = applicationId, status = status });
+        }
+
+
     }
 }
+
+
