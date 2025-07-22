@@ -89,11 +89,13 @@ namespace zuHause.Controllers
                 return View();
             }
 
-            if (admin.PasswordHash != password) // ⛔️建議用 bcrypt 驗證
+            if (!VerifyPasswordWithBase64(password, admin.PasswordSalt ?? "", admin.PasswordHash))
             {
                 ViewBag.Error = "密碼錯誤";
                 return View();
             }
+
+
 
             var role = _context.AdminRoles.FirstOrDefault(r => r.RoleCode == admin.RoleCode && r.IsActive);
             if (role == null)
@@ -101,7 +103,9 @@ namespace zuHause.Controllers
                 ViewBag.Error = "角色資料錯誤";
                 return View();
             }
-
+            // ✅ ✅ ✅ 更新最後登入時間
+            admin.LastLoginAt = DateTime.Now;
+            _context.SaveChanges();
             // 設定 Cookie Authentication Claims
             var claims = new List<Claim>
             {
@@ -120,6 +124,18 @@ namespace zuHause.Controllers
 
             return RedirectToAction("Index", "Dashboard");
         }
+        private bool VerifyPasswordWithBase64(string inputPassword, string salt, string storedBase64Hash)
+        {
+
+            using var sha256 = System.Security.Cryptography.SHA256.Create();
+            var combined = inputPassword + salt;
+            var bytes = System.Text.Encoding.UTF8.GetBytes(combined);
+            var hashBytes = sha256.ComputeHash(bytes);
+            var computedBase64 = Convert.ToBase64String(hashBytes);
+           
+            return computedBase64 == storedBase64Hash;
+        }
+
 
         /// <summary>
         /// 管理員登出

@@ -1121,9 +1121,240 @@ namespace zuHause.Controllers
             return Ok(new { success = true });
         }
 
+        //權限身分表
+        [HttpGet("roles/list")]
+        public IActionResult GetRolesWithPermissions()
+        {
+            var roles = _context.AdminRoles
+                .Where(r => r.IsActive)
+                .OrderBy(r => r.CreatedAt)
+                .ToList() // ✅ 先取出資料
+                .Select(r => new {
+                    roleCode = r.RoleCode,
+                    roleName = r.RoleName,
+                    permissions = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, bool>>(r.PermissionsJson)
+                }).ToList();
 
+            return Json(roles);
+        }
 
+        [HttpPost("roles/create")]
+        public IActionResult CreateRole([FromBody] CreateRoleRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.RoleName))
+                return BadRequest("角色名稱不得為空");
 
+            // 權限物件轉 JSON（轉成 Dictionary 格式）
+            var permissions = request.AccessKeys
+                .Distinct()
+                .ToDictionary(k => k, v => true);
+
+            var newRole = new AdminRole
+            {
+                RoleCode = $"ROLE_{Guid.NewGuid().ToString("N").Substring(0, 8).ToUpper()}",
+                RoleName = request.RoleName,
+                PermissionsJson = JsonSerializer.Serialize(permissions),
+                IsActive = true,
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now
+            };
+
+            _context.AdminRoles.Add(newRole);
+            _context.SaveChanges();
+
+            return Ok(new { success = true, message = "角色新增成功" });
+        }
+
+        public class CreateRoleRequest
+        {
+            public string RoleName { get; set; }
+            public List<string> AccessKeys { get; set; }
+        }
+
+        [HttpPost("roles/delete")]
+        public IActionResult DeleteRole([FromBody] string roleCode)
+        {
+            var role = _context.AdminRoles.FirstOrDefault(r => r.RoleCode == roleCode);
+            if (role == null) return NotFound("找不到此角色");
+
+            role.IsActive = false;
+            role.UpdatedAt = DateTime.Now;
+            _context.SaveChanges();
+
+            return Ok(new { success = true, message = "角色已刪除" });
+        }
+        [HttpPut("roles/update")]
+        public IActionResult UpdateRole([FromBody] UpdateRoleRequest request)
+        {
+            var role = _context.AdminRoles.FirstOrDefault(r => r.RoleCode == request.RoleCode && r.IsActive);
+            if (role == null) return NotFound("找不到角色");
+
+            role.RoleName = request.RoleName;
+            role.PermissionsJson = JsonSerializer.Serialize(
+                request.AccessKeys?.Distinct().ToDictionary(k => k, v => true) ?? new Dictionary<string, bool>()
+            );
+            role.UpdatedAt = DateTime.Now;
+
+            _context.SaveChanges();
+
+            return Ok(new { success = true, message = "角色已更新" });
+        }
+
+        public class UpdateRoleRequest
+        {
+            public string RoleCode { get; set; }
+            public string RoleName { get; set; }
+            public List<string> AccessKeys { get; set; }
+        }
+
+        [HttpGet("admins/list")]
+        public IActionResult GetAdminList()
+        {
+            var admins = _context.Admins
+                .Where(a => a.DeletedAt == null && a.IsActive)
+                .Select(a => new {
+                    a.AdminId,
+                    a.Account,
+                    a.Name,
+                    a.RoleCode
+                })
+                .OrderBy(a => a.AdminId)
+                .ToList();
+
+            return Json(admins);
+        }
+
+        [HttpPost("admins/create")]
+        public IActionResult CreateAdmin([FromBody] CreateAdminRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.Account) ||
+                string.IsNullOrWhiteSpace(request.Password) ||
+                string.IsNullOrWhiteSpace(request.Name) ||
+                string.IsNullOrWhiteSpace(request.RoleCode))
+            {
+                return BadRequest("請填寫完整資料");
+            }
+
+            // 檢查帳號是否重複
+            if (_context.Admins.Any(a => a.Account == request.Account && a.DeletedAt == null))
+            {
+                return Conflict("帳號已存在");
+            }
+
+            // 產生 Salt 並雜湊密碼
+            var salt = Guid.NewGuid().ToString("N").Substring(0, 8);
+            var passwordHash = Convert.ToBase64String(
+                System.Security.Cryptography.SHA256.Create()
+                    .ComputeHash(System.Text.Encoding.UTF8.GetBytes(request.Password + salt))
+            );
+
+            var now = DateTime.Now;
+
+            var admin = new Admin
+            {
+                Account = request.Account,
+                PasswordHash = passwordHash,
+                PasswordSalt = salt,
+                Name = request.Name,
+                RoleCode = request.RoleCode,
+                IsActive = true,
+                CreatedAt = now,
+                UpdatedAt = now,
+                PasswordUpdatedAt = now
+            };
+
+            _context.Admins.Add(admin);
+            _context.SaveChanges();
+
+            return Ok(new { success = true, message = "管理員新增成功" });
+        }
+
+        public class CreateAdminRequest
+        {
+            public string Account { get; set; }
+            public string Password { get; set; }
+            public string Name { get; set; }
+            public string RoleCode { get; set; }
+        }
+        [HttpGet("roles/activeList")]
+        public IActionResult GetActiveRoles()
+        {
+            var roles = _context.AdminRoles
+                .Where(r => r.IsActive)
+                .OrderBy(r => r.CreatedAt)
+                .Select(r => new
+                {
+                    roleCode = r.RoleCode,
+                    roleName = r.RoleName,
+                    permissions = r.PermissionsJson
+                }).ToList();
+
+            return Json(roles);
+        }
+        [HttpGet("admins/detail/{id}")]
+        public IActionResult GetAdminDetail(int id)
+        {
+            var admin = _context.Admins
+                .Where(a => a.AdminId == id && a.DeletedAt == null)
+                .Select(a => new {
+                    a.AdminId,
+                    a.Account,
+                    a.Name,
+                    a.RoleCode
+                })
+                .FirstOrDefault();
+
+            if (admin == null) return NotFound("找不到此員工");
+            return Json(admin);
+        }
+        [HttpPut("admins/update")]
+        public IActionResult UpdateAdmin([FromBody] UpdateAdminRequest request)
+        {
+            var admin = _context.Admins.FirstOrDefault(a => a.AdminId == request.AdminId && a.DeletedAt == null);
+            if (admin == null) return NotFound("找不到此員工");
+
+            admin.Name = request.Name;
+            admin.RoleCode = request.RoleCode;
+            admin.UpdatedAt = DateTime.Now;
+
+            // ✅ 若有填密碼則更新
+            if (!string.IsNullOrWhiteSpace(request.Password))
+            {
+                var salt = Guid.NewGuid().ToString("N").Substring(0, 8);
+                var hash = Convert.ToBase64String(
+                    System.Security.Cryptography.SHA256.Create()
+                        .ComputeHash(System.Text.Encoding.UTF8.GetBytes(request.Password + salt))
+                );
+
+                admin.PasswordHash = hash;
+                admin.PasswordSalt = salt;
+                admin.PasswordUpdatedAt = DateTime.Now;
+            }
+
+            _context.SaveChanges();
+            return Ok(new { success = true, message = "員工資料已更新" });
+        }
+
+        public class UpdateAdminRequest
+        {
+            public int AdminId { get; set; }
+            public string Name { get; set; }
+            public string RoleCode { get; set; }
+            public string? Password { get; set; } // 可選填
+        }
+        [HttpPost("admins/delete")]
+        public IActionResult DeleteAdmin([FromBody] int adminId)
+        {
+            var admin = _context.Admins.FirstOrDefault(a => a.AdminId == adminId && a.DeletedAt == null);
+            if (admin == null)
+                return NotFound("找不到指定的用戶");
+
+            admin.DeletedAt = DateTime.Now;
+            admin.UpdatedAt = DateTime.Now;
+            _context.SaveChanges();
+
+            return Ok("刪除成功");
+        }
 
 
 
