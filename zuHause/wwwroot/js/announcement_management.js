@@ -50,6 +50,12 @@ function bindEvents() {
         scopeFilter.addEventListener('change', performFilter);
     }
     
+    // 重置按鈕
+    const resetBtn = document.getElementById('resetFiltersBtn');
+    if (resetBtn) {
+        resetBtn.addEventListener('click', resetFilters);
+    }
+    
     // 表單提交
     const saveBtn = document.getElementById('saveAnnouncementBtn');
     if (saveBtn) {
@@ -108,8 +114,8 @@ function renderAnnouncementTable(announcements) {
                 <input type="checkbox" class="form-check-input" value="${announcement.siteMessagesId}">
             </td>
             <td>
-                <strong class="d-block">${escapeHtml(announcement.title)}</strong>
-                <small class="text-muted announcement-content-preview">${escapeHtml(announcement.siteMessageContent)}</small>
+                <strong class="d-block" title="${escapeHtml(announcement.title)}">${truncateText(escapeHtml(announcement.title), 50)}</strong>
+                <small class="text-muted announcement-content-preview" title="${escapeHtml(announcement.siteMessageContent)}">${truncateText(escapeHtml(announcement.siteMessageContent), 80)}</small>
             </td>
             <td>
                 <span class="badge ${getScopeBadgeClass(announcement.moduleScope)}">
@@ -369,7 +375,14 @@ async function saveAnnouncement() {
 // 搜尋功能
 function performSearch() {
     const keyword = document.getElementById('searchInput').value.trim();
-    currentFilters.keyword = keyword;
+    
+    // 更新關鍵字篩選，保留其他篩選條件
+    if (keyword) {
+        currentFilters.keyword = keyword;
+    } else {
+        delete currentFilters.keyword;
+    }
+    
     currentPage = 1;
     loadAnnouncements(1);
 }
@@ -379,12 +392,48 @@ function performFilter() {
     const status = document.getElementById('statusFilter').value;
     const scope = document.getElementById('scopeFilter').value;
     
-    currentFilters = {};
-    if (status) currentFilters.status = status;
-    if (scope) currentFilters.scope = scope;
+    // 更新篩選條件，保留關鍵字搜尋
+    if (status) {
+        currentFilters.status = status;
+    } else {
+        delete currentFilters.status;
+    }
+    
+    if (scope) {
+        currentFilters.scope = scope;
+    } else {
+        delete currentFilters.scope;
+    }
     
     currentPage = 1;
     loadAnnouncements(1);
+}
+
+// 重置篩選功能
+function resetFilters() {
+    // 清空所有篩選條件
+    currentFilters = {};
+    currentPage = 1;
+    
+    // 重置表單元素
+    const searchInput = document.getElementById('searchInput');
+    const statusFilter = document.getElementById('statusFilter');
+    const scopeFilter = document.getElementById('scopeFilter');
+    
+    if (searchInput) {
+        searchInput.value = '';
+    }
+    if (statusFilter) {
+        statusFilter.value = '';
+    }
+    if (scopeFilter) {
+        scopeFilter.value = '';
+    }
+    
+    // 重新載入全部資料
+    loadAnnouncements(1);
+    
+    console.log('🔄 篩選條件已重置');
 }
 
 // 清空表單
@@ -467,9 +516,16 @@ function formatDateTimeLocal(dateString) {
 }
 
 function escapeHtml(text) {
+    if (!text) return '';
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+function truncateText(text, maxLength) {
+    if (!text) return '';
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
 }
 
 // 在 dashboard.js 中定義的 showToast 函數

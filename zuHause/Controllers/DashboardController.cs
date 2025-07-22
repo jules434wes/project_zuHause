@@ -1055,10 +1055,12 @@ namespace zuHause.Controllers
         /// 取得所有公告 - 支援分頁和篩選
         /// </summary>
         /// <param name="scope">模組範圍篩選 (TENANT, LANDLORD, FURNITURE, COMMON)</param>
+        /// <param name="keyword">關鍵字搜尋 (標題或內容)</param>
+        /// <param name="status">發布狀態篩選 (true=已發布, false=未發布)</param>
         /// <param name="page">頁碼，預設為 1</param>
         /// <param name="pageSize">每頁筆數，預設為 10</param>
         [HttpGet("GetAnnouncements")]
-        public IActionResult GetAnnouncements(string? scope = null, int page = 1, int pageSize = 10)
+        public IActionResult GetAnnouncements(string? scope = null, string? keyword = null, bool? status = null, int page = 1, int pageSize = 10)
         {
             var query = _context.SiteMessages
                 .Where(m => m.Category == "ANNOUNCEMENT" && m.DeletedAt == null);
@@ -1067,6 +1069,18 @@ namespace zuHause.Controllers
             if (!string.IsNullOrWhiteSpace(scope))
             {
                 query = query.Where(m => m.ModuleScope == scope.ToUpper());
+            }
+            
+            // 關鍵字搜尋 (標題或內容)
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                query = query.Where(m => m.Title.Contains(keyword) || m.SiteMessageContent.Contains(keyword));
+            }
+            
+            // 發布狀態篩選
+            if (status.HasValue)
+            {
+                query = query.Where(m => m.IsActive == status.Value);
             }
             
             var total = query.Count();
