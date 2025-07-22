@@ -1,12 +1,24 @@
-using Microsoft.EntityFrameworkCore;
-using zuHause.Models;
-using zuHause.Data;
+using DinkToPdf;
+using DinkToPdf.Contracts;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using System.Runtime.Loader;
 using System.Text.Encodings.Web;
 using System.Text.Unicode;
+using zuHause.Data;
+using zuHause.Helpers;
+using zuHause.Models;
 using zuHause.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
+
+var dllPath = Path.Combine(AppContext.BaseDirectory, "libwkhtmltox.dll");
+var context = new CustomAssemblyLoadContext();
+context.LoadUnmanagedLibrary(dllPath);
+
+
+builder.Services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
 
 builder.Services.AddControllers().AddJsonOptions(options =>
 {

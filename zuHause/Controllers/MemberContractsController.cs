@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using DinkToPdf;
+using DinkToPdf.Contracts;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -12,9 +14,11 @@ namespace zuHause.Controllers
     public class MemberContractsController : Controller
     {
         public readonly ZuHauseContext _context;
-        public MemberContractsController(ZuHauseContext context)
+        private readonly IConverter _converter;
+        public MemberContractsController(ZuHauseContext context, IConverter converter)
         {
             _context = context;
+            _converter = converter;
         }
         public async Task<IActionResult> Index()
         {
@@ -333,7 +337,7 @@ namespace zuHause.Controllers
 
             await _context.SaveChangesAsync();
 
-        //還沒決定好會去哪一頁    
+            //還沒決定好會去哪一頁    
             return RedirectToAction("ContractList");
         }
 
@@ -465,6 +469,35 @@ namespace zuHause.Controllers
             sb.Append("</ul>");
             return sb.ToString();
         }
+
+
+
+
+
+        public async Task<IActionResult> DownloadPdf(int contractId)
+        {
+            var html = await GenerateContractHtml(contractId);
+
+            var doc = new HtmlToPdfDocument()
+            {
+                GlobalSettings = {
+            PaperSize = PaperKind.A4,
+            Orientation = Orientation.Portrait
+        },
+                Objects = {
+            new ObjectSettings {
+                HtmlContent = html,
+                WebSettings = { DefaultEncoding = "utf-8" }
+            }
+        }
+            };
+
+            var file = _converter.Convert(doc);
+            return File(file, "application/pdf", $"Contract_{contractId}.pdf");
+        }
+
+
+
 
     }
     public class ContractNameDto
