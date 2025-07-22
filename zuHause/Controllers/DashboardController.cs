@@ -109,8 +109,27 @@ namespace zuHause.Controllers
             
             if (id == "announcement_management")
             {
-                // 暫時返回空的 partial view，之後可以根據需要添加數據
-                return PartialView("~/Views/Dashboard/Partial/announcement_management.cshtml");
+                // 取得所有 ANNOUNCEMENT 類型的公告資料，按建立時間排序
+                var announcements = _context.SiteMessages
+                    .Where(m => m.Category == "ANNOUNCEMENT" && m.DeletedAt == null)
+                    .OrderByDescending(m => m.CreatedAt)
+                    .Select(m => new
+                    {
+                        m.SiteMessagesId,
+                        m.Title,
+                        m.SiteMessageContent,
+                        m.ModuleScope,
+                        m.DisplayOrder,
+                        m.StartAt,
+                        m.EndAt,
+                        m.IsActive,
+                        m.AttachmentUrl,
+                        m.CreatedAt,
+                        m.UpdatedAt
+                    })
+                    .ToList();
+                
+                return PartialView("~/Views/Dashboard/Partial/announcement_management.cshtml", announcements);
             }
             if (id == "platform_fee")
             {
@@ -1030,6 +1049,250 @@ namespace zuHause.Controllers
             return Ok(new { success = true });
         }
 
+        // ========== 公告管理相關 API ==========
+        
+        /// <summary>
+        /// 取得所有公告 - 支援分頁和篩選
+        /// </summary>
+        /// <param name="scope">模組範圍篩選 (TENANT, LANDLORD, FURNITURE, COMMON)</param>
+        /// <param name="page">頁碼，預設為 1</param>
+        /// <param name="pageSize">每頁筆數，預設為 10</param>
+        [HttpGet("GetAnnouncements")]
+        public IActionResult GetAnnouncements(string? scope = null, int page = 1, int pageSize = 10)
+        {
+            var query = _context.SiteMessages
+                .Where(m => m.Category == "ANNOUNCEMENT" && m.DeletedAt == null);
+            
+            // 依模組範圍篩選
+            if (!string.IsNullOrWhiteSpace(scope))
+            {
+                query = query.Where(m => m.ModuleScope == scope.ToUpper());
+            }
+            
+            var total = query.Count();
+            var announcements = query
+                .OrderByDescending(m => m.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(m => new
+                {
+                    m.SiteMessagesId,
+                    m.Title,
+                    m.SiteMessageContent,
+                    m.ModuleScope,
+                    m.DisplayOrder,
+                    m.StartAt,
+                    m.EndAt,
+                    m.IsActive,
+                    m.AttachmentUrl,
+                    CreatedAt = m.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss"),
+                    UpdatedAt = m.UpdatedAt.ToString("yyyy-MM-dd HH:mm:ss")
+                })
+                .ToList();
+            
+            return Json(new 
+            {
+                data = announcements,
+                total = total,
+                page = page,
+                pageSize = pageSize,
+                totalPages = (int)Math.Ceiling(total / (double)pageSize)
+            });
+        }
+        
+        /// <summary>
+        /// 新增公告
+        /// </summary>
+        [HttpPost("CreateAnnouncement")]
+        public IActionResult CreateAnnouncement([FromBody] AnnouncementCreateViewModel dto)
+        {
+            if (string.IsNullOrWhiteSpace(dto.Title) || string.IsNullOrWhiteSpace(dto.SiteMessageContent))
+                return BadRequest("標題和內容不能為空");
+            
+            // 驗證模組範圍
+            var validScopes = new[] { "TENANT", "LANDLORD", "FURNITURE", "COMMON" };
+            if (!validScopes.Contains(dto.ModuleScope?.ToUpper()))
+                return BadRequest("無效的模組範圍，必須是 TENANT、LANDLORD、FURNITURE 或 COMMON");
+            
+            var announcement = new SiteMessage
+            {
+                Title = dto.Title,
+                SiteMessageContent = dto.SiteMessageContent,
+                Category = "ANNOUNCEMENT",
+                ModuleScope = dto.ModuleScope.ToUpper(),
+                MessageType = "SYSTEM",
+                DisplayOrder = dto.DisplayOrder ?? 1,
+                StartAt = dto.StartAt ?? DateTime.Now,
+                EndAt = dto.EndAt,
+                IsActive = dto.IsActive ?? true,
+                AttachmentUrl = dto.AttachmentUrl,
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now
+            };
+            
+            _context.SiteMessages.Add(announcement);
+            _context.SaveChanges();
+            
+            return Ok(new { success = true, id = announcement.SiteMessagesId });
+        }
+        
+        /// <summary>
+        /// 更新公告
+        /// </summary>
+        [HttpPost("UpdateAnnouncement")]
+        public IActionResult UpdateAnnouncement([FromBody] AnnouncementUpdateViewModel dto)
+        {
+            var announcement = _context.SiteMessages
+                .FirstOrDefault(m => m.SiteMessagesId == dto.SiteMessagesId && 
+                                   m.Category == "ANNOUNCEMENT" && 
+                                   m.DeletedAt == null);
+            
+            if (announcement == null)
+                return NotFound("找不到指定的公告");
+            
+            if (string.IsNullOrWhiteSpace(dto.Title) || string.IsNullOrWhiteSpace(dto.SiteMessageContent))
+                return BadRequest("標題和內容不能為空");
+            
+            // 驗證模組範圍
+            var validScopes = new[] { "TENANT", "LANDLORD", "FURNITURE", "COMMON" };
+            if (!validScopes.Contains(dto.ModuleScope?.ToUpper()))
+                return BadRequest("無效的模組範圍，必須是 TENANT、LANDLORD、FURNITURE 或 COMMON");
+            
+            announcement.Title = dto.Title;
+            announcement.SiteMessageContent = dto.SiteMessageContent;
+            announcement.ModuleScope = dto.ModuleScope.ToUpper();
+            announcement.DisplayOrder = dto.DisplayOrder ?? announcement.DisplayOrder;
+            announcement.StartAt = dto.StartAt ?? announcement.StartAt;
+            announcement.EndAt = dto.EndAt;
+            announcement.IsActive = dto.IsActive ?? announcement.IsActive;
+            announcement.AttachmentUrl = dto.AttachmentUrl;
+            announcement.UpdatedAt = DateTime.Now;
+            
+            _context.SaveChanges();
+            
+            return Ok(new { success = true });
+        }
+        
+        /// <summary>
+        /// 刪除公告 (軟刪除)
+        /// </summary>
+        [HttpPost("DeleteAnnouncement")]
+        public IActionResult DeleteAnnouncement([FromBody] int id)
+        {
+            var announcement = _context.SiteMessages
+                .FirstOrDefault(m => m.SiteMessagesId == id && 
+                                   m.Category == "ANNOUNCEMENT" && 
+                                   m.DeletedAt == null);
+            
+            if (announcement == null)
+                return NotFound("找不到指定的公告");
+            
+            announcement.IsActive = false;
+            announcement.DeletedAt = DateTime.Now;
+            announcement.UpdatedAt = DateTime.Now;
+            
+            _context.SaveChanges();
+            
+            return Ok(new { success = true });
+        }
+        
+        /// <summary>
+        /// 切換公告狀態 (啟用/停用)
+        /// </summary>
+        [HttpPost("ToggleAnnouncementStatus")]
+        public IActionResult ToggleAnnouncementStatus([FromBody] int id)
+        {
+            var announcement = _context.SiteMessages
+                .FirstOrDefault(m => m.SiteMessagesId == id && 
+                                   m.Category == "ANNOUNCEMENT" && 
+                                   m.DeletedAt == null);
+            
+            if (announcement == null)
+                return NotFound("找不到指定的公告");
+            
+            announcement.IsActive = !announcement.IsActive;
+            announcement.UpdatedAt = DateTime.Now;
+            
+            _context.SaveChanges();
+            
+            return Ok(new { success = true, isActive = announcement.IsActive });
+        }
+        
+        /// <summary>
+        /// 取得公告詳細資料
+        /// </summary>
+        [HttpGet("GetAnnouncementById/{id}")]
+        public IActionResult GetAnnouncementById(int id)
+        {
+            var announcement = _context.SiteMessages
+                .Where(m => m.SiteMessagesId == id && 
+                          m.Category == "ANNOUNCEMENT" && 
+                          m.DeletedAt == null)
+                .Select(m => new
+                {
+                    m.SiteMessagesId,
+                    m.Title,
+                    m.SiteMessageContent,
+                    m.ModuleScope,
+                    m.DisplayOrder,
+                    m.StartAt,
+                    m.EndAt,
+                    m.IsActive,
+                    m.AttachmentUrl,
+                    CreatedAt = m.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss"),
+                    UpdatedAt = m.UpdatedAt.ToString("yyyy-MM-dd HH:mm:ss")
+                })
+                .FirstOrDefault();
+            
+            if (announcement == null)
+                return NotFound("找不到指定的公告");
+            
+            return Json(announcement);
+        }
+        
+        /// <summary>
+        /// 取得可用的模組範圍清單
+        /// </summary>
+        [HttpGet("GetAnnouncementScopes")]
+        public IActionResult GetAnnouncementScopes()
+        {
+            var scopes = new[]
+            {
+                new { value = "TENANT", text = "租戶端" },
+                new { value = "LANDLORD", text = "房東端" },
+                new { value = "FURNITURE", text = "家具端" },
+                new { value = "COMMON", text = "通用" }
+            };
+            
+            return Json(scopes);
+        }
+
+        // ViewModel classes for announcement management
+        public class AnnouncementCreateViewModel
+        {
+            public string Title { get; set; }
+            public string SiteMessageContent { get; set; }
+            public string ModuleScope { get; set; }
+            public int? DisplayOrder { get; set; }
+            public DateTime? StartAt { get; set; }
+            public DateTime? EndAt { get; set; }
+            public bool? IsActive { get; set; }
+            public string? AttachmentUrl { get; set; }
+        }
+
+        public class AnnouncementUpdateViewModel
+        {
+            public int SiteMessagesId { get; set; }
+            public string Title { get; set; }
+            public string SiteMessageContent { get; set; }
+            public string ModuleScope { get; set; }
+            public int? DisplayOrder { get; set; }
+            public DateTime? StartAt { get; set; }
+            public DateTime? EndAt { get; set; }
+            public bool? IsActive { get; set; }
+            public string? AttachmentUrl { get; set; }
+        }
+
 
 
 
@@ -1037,6 +1300,4 @@ namespace zuHause.Controllers
 
 
     }
-
-
 }

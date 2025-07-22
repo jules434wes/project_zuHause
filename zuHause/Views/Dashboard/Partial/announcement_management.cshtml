@@ -145,6 +145,100 @@
     </div>
 </div>
 
+<!-- 新增/編輯公告模態框 -->
+<div class="modal fade" id="announcementModal" tabindex="-1" aria-labelledby="announcementModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="announcementModalLabel">新增公告</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="announcementForm">
+                    <input type="hidden" id="announcementId" name="siteMessagesId">
+                    
+                    <div class="mb-3">
+                        <label for="announcementTitle" class="form-label">標題 <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="announcementTitle" name="title" required>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="announcementScope" class="form-label">適用範圍 <span class="text-danger">*</span></label>
+                            <select class="form-select" id="announcementScope" name="moduleScope" required>
+                                <option value="">請選擇...</option>
+                                <option value="TENANT">租戶端</option>
+                                <option value="LANDLORD">房東端</option>
+                                <option value="FURNITURE">家具端</option>
+                                <option value="COMMON">通用</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="announcementDisplayOrder" class="form-label">顯示順序</label>
+                            <input type="number" class="form-control" id="announcementDisplayOrder" name="displayOrder" value="1" min="1">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="announcementContent" class="form-label">內容 <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="announcementContent" name="siteMessageContent" rows="8" required></textarea>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="announcementStartAt" class="form-label">開始時間</label>
+                            <input type="datetime-local" class="form-control" id="announcementStartAt" name="startAt">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="announcementEndAt" class="form-label">結束時間</label>
+                            <input type="datetime-local" class="form-control" id="announcementEndAt" name="endAt">
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-8">
+                            <label for="announcementAttachmentUrl" class="form-label">附件網址</label>
+                            <input type="url" class="form-control" id="announcementAttachmentUrl" name="attachmentUrl" placeholder="https://...">
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check mt-4">
+                                <input class="form-check-input" type="checkbox" id="announcementIsActive" name="isActive" checked>
+                                <label class="form-check-label" for="announcementIsActive">
+                                    立即發布
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="saveAnnouncementBtn">儲存</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 預覽公告模態框 -->
+<div class="modal fade" id="previewModal" tabindex="-1" aria-labelledby="previewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="previewModalLabel">公告預覽</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="previewContent">
+                    <!-- 動態載入的預覽內容 -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">關閉</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <style>
 .card {
     box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
@@ -162,5 +256,34 @@
 
 .badge {
     font-size: 0.75rem;
+}
+
+.announcement-content-preview {
+    max-width: 300px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.modal-body textarea {
+    resize: vertical;
+}
+
+.loading-overlay {
+    position: relative;
+}
+
+.loading-overlay::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1;
 }
 </style>
