@@ -1,0 +1,15 @@
+﻿@{
+    Layout = "~/Views/Shared/_NavigationBar.cshtml";
+}
+
+@* 模擬 Stripe 支付的頁面 *@
+<div class="container my-5">
+    <h2 class="text-center text-primary">模擬付款畫面</h2>
+    <p class="text-center text-muted">這裡是模擬 Stripe 支付的頁面，你可以在這裡進行付款。</p>
+
+    <div class="text-center mt-4">
+        <form method="post" action="/Furniture/ConfirmPayment">
+            <button class="btn btn-success btn-lg">💳 模擬付款成功</button>
+        </form>
+    </div>
+</div>

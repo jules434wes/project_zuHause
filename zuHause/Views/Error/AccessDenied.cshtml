@@ -1,0 +1,209 @@
+@{
+    ViewData["Title"] = "權限不足 - 403";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8 col-lg-6">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-shield-x me-2"></i>
+                        權限不足 (403)
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <!-- 主要錯誤訊息 -->
+                    <div class="alert alert-danger d-flex align-items-center" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill me-3 fs-4"></i>
+                        <div>
+                            <h5 class="alert-heading mb-1">存取被拒絕</h5>
+                            <p class="mb-0">抱歉，您沒有權限存取此功能。</p>
+                        </div>
+                    </div>
+
+                    <!-- 詳細資訊 -->
+                    <div class="row">
+                        <!-- 使用者資訊 -->
+                        <div class="col-12 mb-4">
+                            <h6 class="text-muted mb-3">
+                                <i class="bi bi-person-badge me-2"></i>當前登入資訊
+                            </h6>
+                            <div class="bg-light p-3 rounded">
+                                <div class="row">
+                                    <div class="col-sm-4"><strong>使用者：</strong></div>
+                                    <div class="col-sm-8">@ViewBag.UserName</div>
+                                </div>
+                                <div class="row mt-2">
+                                    <div class="col-sm-4"><strong>角色：</strong></div>
+                                    <div class="col-sm-8">
+                                        <span class="badge bg-secondary">@ViewBag.UserRole</span>
+                                        @if (ViewBag.IsSuperAdmin == true)
+                                        {
+                                            <span class="badge bg-warning text-dark ms-1">超級管理員</span>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(ViewBag.RequiredPermission))
+                        {
+                            <!-- 所需權限 -->
+                            <div class="col-12 mb-4">
+                                <h6 class="text-muted mb-3">
+                                    <i class="bi bi-key me-2"></i>所需權限
+                                </h6>
+                                <div class="bg-light p-3 rounded">
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-lock-fill text-danger me-2"></i>
+                                        <div>
+                                            <div><strong>@ViewBag.RequiredPermissionName</strong></div>
+                                            <small class="text-muted">權限代碼: @ViewBag.RequiredPermission</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
+                        <!-- 當前權限 -->
+                        <div class="col-12 mb-4">
+                            <h6 class="text-muted mb-3">
+                                <i class="bi bi-shield-check me-2"></i>您目前的權限
+                            </h6>
+                            <div class="bg-light p-3 rounded">
+                                @if (ViewBag.IsSuperAdmin == true)
+                                {
+                                    <div class="d-flex align-items-center text-success">
+                                        <i class="bi bi-check-circle-fill me-2"></i>
+                                        <span><strong>超級管理員 - 擁有所有權限</strong></span>
+                                    </div>
+                                    <small class="text-muted">注意：如果您看到此頁面，可能是系統設定錯誤，請聯絡技術人員。</small>
+                                }
+                                else
+                                {
+                                    var userPermissions = ViewBag.UserPermissions as List<string>;
+                                    @if (userPermissions != null && userPermissions.Any())
+                                    {
+                                        <div class="d-flex flex-wrap gap-2">
+                                            @foreach (var permission in userPermissions)
+                                            {
+                                                <span class="badge bg-success">@permission</span>
+                                            }
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="text-muted">
+                                            <i class="bi bi-info-circle me-2"></i>
+                                            目前沒有任何功能權限
+                                        </div>
+                                    }
+                                }
+                            </div>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(ViewBag.CurrentPath))
+                        {
+                            <!-- 嘗試存取的路徑 -->
+                            <div class="col-12 mb-4">
+                                <h6 class="text-muted mb-3">
+                                    <i class="bi bi-link-45deg me-2"></i>嘗試存取的功能
+                                </h6>
+                                <div class="bg-light p-3 rounded">
+                                    <code>@ViewBag.CurrentPath</code>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- 解決方案和操作按鈕 -->
+                    <div class="border-top pt-4">
+                        <h6 class="text-muted mb-3">
+                            <i class="bi bi-lightbulb me-2"></i>解決方案
+                        </h6>
+                        <div class="alert alert-info">
+                            <ul class="mb-0">
+                                <li>請確認您是否有存取此功能的權限</li>
+                                <li>如需開通權限，請聯絡系統管理員</li>
+                                <li>您可以返回首頁使用其他已授權的功能</li>
+                            </ul>
+                        </div>
+
+                        <!-- 操作按鈕 -->
+                        <div class="d-flex gap-2 flex-wrap">
+                            <a href="/Dashboard" class="btn btn-primary">
+                                <i class="bi bi-house me-2"></i>返回首頁
+                            </a>
+                            <button type="button" class="btn btn-outline-secondary" onclick="history.back()">
+                                <i class="bi bi-arrow-left me-2"></i>返回上頁
+                            </button>
+                            <a href="mailto:admin@zuhouse.com" class="btn btn-outline-info">
+                                <i class="bi bi-envelope me-2"></i>聯絡管理員
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 卡片底部資訊 -->
+                <div class="card-footer bg-light text-muted text-center">
+                    <small>
+                        <i class="bi bi-clock me-1"></i>
+                        錯誤時間：@DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
+                        |
+                        <i class="bi bi-info-circle me-1"></i>
+                        如有疑問請聯絡技術支援
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* 自訂樣式 */
+.card {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.alert {
+    border: none;
+    border-radius: 8px;
+}
+
+.bg-light {
+    background-color: #f8f9fa !important;
+    border-radius: 6px;
+}
+
+.badge {
+    font-size: 0.75em;
+}
+
+code {
+    color: #e83e8c;
+    background-color: #f8f9fa;
+    padding: 2px 4px;
+    border-radius: 3px;
+}
+
+.btn {
+    border-radius: 6px;
+}
+
+.card-footer {
+    border-top: 1px solid #dee2e6;
+}
+
+/* 響應式調整 */
+@@media (max-width: 576px) {
+    .d-flex.gap-2 {
+        flex-direction: column;
+    }
+    
+    .d-flex.gap-2 .btn {
+        width: 100%;
+    }
+}
+</style>

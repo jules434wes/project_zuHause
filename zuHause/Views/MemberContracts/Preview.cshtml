@@ -1,0 +1,16 @@
+﻿@{
+    ViewBag.Title = "合約預覽";
+    Layout = "~/Views/Shared/_NavigationBar.cshtml";
+}
+
+
+<div class="container my-4">
+    <h2 class="text-center mb-4">合約預覽</h2>
+    <div class="bg-white p-4 shadow-sm rounded">
+        @Html.Raw(ViewBag.ContractHtml)
+    </div>
+
+    <div class="mt-4 text-center">
+        <a class="btn btn-secondary" href="@Url.Action("Index", "MemberContracts")">返回合約列表</a>
+    </div>
+</div>

@@ -52,6 +52,10 @@
                     <input type="hidden" name="contractId" value="@Model.ContractId" />
                     <button type="submit" class="btn btn-aqua py-0 w-100">查看租賃合約</button>
                 </form>
+                <a href="@Url.Action("Preview", "MemberContracts", new { contractId = Model.ContractId })"
+                   class="btn btn-outline-secondary py-0 w-100" target="_blank">
+                    預覽合約
+                </a>
                 @await Html.PartialAsync("_PartialRentalApplicationsModal",Model)
 
                 @* <a href="#" class="btn btn-aqua py-0 w-100">頁面快照</a> *@

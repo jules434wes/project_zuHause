@@ -12,7 +12,16 @@
     imgup: "🖼️ 輪播圖片管理",
     furniture_fee: "📦 家具配送費",
     Marquee_edit: "🌀 跑馬燈管理",
-    furniture_management: "🛋️ 家具列表管理"
+    furniture_management: "🛋️ 家具列表管理",
+    announcement_management: "📢 公告管理",
+    
+    // Admin 功能
+    member_list: "👤 會員列表與驗證",
+    landlord_list: "🏘️ 房東列表",
+    property_list: "🏠 房源列表", 
+    property_complaint_list: "⚠️ 房源投訴列表",
+    customer_service_list: "🎧 客服處理",
+    system_message_list: "📨 系統訊息"
 };
 
 // ====== 分組設定 ======
@@ -22,10 +31,6 @@ const tabGroups = {
         title: "📊 儀表板",
         keys: ['overview', 'monitor', 'behavior', 'orders', 'system']
     },
-    //Platform: {
-    //    title: "🏢 平台功能管理",
-    //    keys: ['member_management']
-    //},
     Permission: {
         title: "🛡️ 權限管理",
         keys: ['roles', 'Backend_user_list']
@@ -34,9 +39,21 @@ const tabGroups = {
         title: "📂 模板管理",
         keys: ['contract_template']
     },
+    UserManagement: {
+        title: "👥 用戶管理",
+        keys: ['member_list', 'landlord_list']
+    },
+    PropertyManagement: {
+        title: "🏠 房源管理",
+        keys: ['property_list', 'property_complaint_list']
+    },
+    CustomerService: {
+        title: "🎧 客戶服務",
+        keys: ['customer_service_list', 'system_message_list']
+    },
     Imgandtext: {
         title: "📂 平台圖片與文字資料管理",
-        keys: ['imgup', 'Marquee_edit', 'furniture_management']
+        keys: ['imgup', 'Marquee_edit', 'furniture_management', 'announcement_management']
     },
     Fee: {
         title: "📁 平台費用設定",
@@ -45,47 +62,87 @@ const tabGroups = {
 };
 
 // ====== 初始化畫面 ======
+// 管理員權限控制 - 頁面載入時的權限檢查與首頁決定邏輯
 window.onload = () => {
+    // 初始化左側選單（根據權限顯示功能按鈕）
     initSidebar();
+    
+    // === 權限資料解析 ===
+    // currentUserRole: 從後端 ViewBag.Role 傳入的當前管理員角色名稱
+    // roleAccess: 從後端 ViewBag.RoleAccess 序列化而來的權限物件
+    //   格式1 (超級管理員): { "超級管理員": { "all": true } }
+    //   格式2 (一般管理員): { "系統管理員": ["overview", "monitor", "roles"] }
     const role = currentUserRole;
     const permissions = roleAccess[role];
 
     let firstTab = null;
 
-    // ✅ 如果是 all:true，就預設跳第一個
+    // === 決定預設開啟的第一個頁籤 ===
+    // 修改原因：避免登入後自動開啟 Admin 功能的新分頁
+    // 原本邏輯會直接選擇第一個權限，但如果是 Admin 功能會用 window.open() 開新分頁
+    // 造成同時顯示 Dashboard 和 Admin 頁面的問題
     if (permissions?.all === true) {
-        firstTab = Object.keys(tabNames)[0];
+        // 超級管理員：有全部權限，開啟第一個 Dashboard 內嵌功能
+        const allKeys = Object.keys(tabNames);
+        const adminTabs = [
+            'member_list', 'landlord_list', 'property_list', 
+            'property_complaint_list', 'customer_service_list', 'system_message_list'
+        ];
+        firstTab = allKeys.find(key => !adminTabs.includes(key)) || allKeys[0];
     } else if (Array.isArray(permissions)) {
-        firstTab = permissions[0];
+        // 一般管理員：優先選擇 Dashboard 內嵌功能，避免自動開啟 Admin 新分頁
+        const adminTabs = [
+            'member_list', 'landlord_list', 'property_list', 
+            'property_complaint_list', 'customer_service_list', 'system_message_list'
+        ];
+        const dashboardPermissions = permissions.filter(p => !adminTabs.includes(p));
+        firstTab = dashboardPermissions.length > 0 ? dashboardPermissions[0] : null;
     }
+    
+    // 開啟預設頁籤
     if (firstTab) openTab(firstTab);
-
 };
 
 
 // ====== 左側選單生成 ======
+// 管理員權限控制 - 根據權限動態生成左側功能選單
 function initSidebar() {
+    // 顯示當前管理員資訊
     document.getElementById("roleDisplay").innerText = currentUserRole;
     document.getElementById("EmployeeID").innerText = EmployeeID;
 
+    // 清空選單容器
     const menu = document.getElementById("menuButtons");
     menu.innerHTML = "";
 
+    // === 權限檢查邏輯 ===
+    // 從 roleAccess 物件中取得當前管理員的權限資訊
     const rolePermission = roleAccess[currentUserRole] || {};
-    const isAllAccess = rolePermission.all === true;
+    const isAllAccess = rolePermission.all === true; // 檢查是否為超級管理員
 
+    // === 遍歷所有功能分組並建立選單 ===
     for (const groupKey in tabGroups) {
         const { title, keys } = tabGroups[groupKey];
+        
+        // 建立分組容器
         const groupWrapper = document.createElement("div");
         groupWrapper.className = "mb-3";
 
+        // 建立分組標題
         const groupTitle = document.createElement("div");
         groupTitle.className = "fw-bold ps-2 mb-2";
         groupTitle.textContent = title;
         groupWrapper.appendChild(groupTitle);
 
+        // === 權限控制的核心邏輯 ===
+        // 遍歷分組中的每個功能，根據權限決定是否顯示
         keys.forEach(key => {
+            // 權限檢查：
+            // 1. 如果是超級管理員 (isAllAccess = true)：顯示所有功能
+            // 2. 如果是一般管理員：檢查 rolePermission 陣列中是否包含此功能鍵值
             if (!isAllAccess && !rolePermission.includes?.(key)) return;
+            
+            // 建立功能按鈕
             const btn = document.createElement("button");
             btn.className = "btn btn-outline-secondary w-100 my-1 text-start";
             btn.textContent = tabNames[key];
@@ -93,6 +150,7 @@ function initSidebar() {
             groupWrapper.appendChild(btn);
         });
 
+        // 只有包含功能按鈕的分組才會顯示（至少要有標題 + 一個按鈕）
         if (groupWrapper.children.length > 1) {
             menu.appendChild(groupWrapper);
         }
@@ -101,7 +159,39 @@ function initSidebar() {
 
 
 // ====== 開啟分頁 ======
+// 功能頁籤開啟邏輯 - 區分 Dashboard 內嵌功能與 Admin 獨立頁面
 function openTab(tabKey) {
+    // === Admin 功能：開新分頁處理 ===
+    // 定義需要開新分頁的 admin 功能清單
+    // 這些功能使用獨立的 AdminController，不在 Dashboard 內嵌顯示
+    const adminTabs = [
+        'member_list',              // 會員列表與驗證
+        'landlord_list',            // 房東列表
+        'property_list',            // 房源列表
+        'property_complaint_list',  // 房源投訴列表
+        'customer_service_list',    // 客服處理
+        'system_message_list'       // 系統訊息
+    ];
+    
+    // 如果點擊的是 admin 功能，用新分頁開啟對應的 Admin 路由
+    if (adminTabs.includes(tabKey)) {
+        const adminUrls = {
+            member_list: '/Admin/admin_usersList',
+            landlord_list: '/Admin/admin_landlordList',
+            property_list: '/Admin/admin_propertiesList',
+            property_complaint_list: '/Admin/admin_propertyComplaints',
+            customer_service_list: '/Admin/admin_customerServiceList',
+            system_message_list: '/Admin/admin_systemMessageList'
+        };
+        
+        // 開新分頁並結束函數執行
+        window.open(adminUrls[tabKey], '_blank');
+        return;
+    }
+
+    // === Dashboard 內嵌功能：AJAX 載入處理 ===
+    // 以下處理 Dashboard 內部的功能頁籤（如 overview, monitor 等）
+
     const tabId = `tab-${tabKey}`;
     const tabExists = document.getElementById(tabId);
 
@@ -160,7 +250,8 @@ function openTab(tabKey) {
                 imgup: `/js/imgup.js?v=${timestamp}`,
                 furniture_fee: `/js/furniture_fee.js?v=${timestamp}`,
                 Marquee_edit: `/js/Marquee_edit.js?v=${timestamp}`,
-                furniture_management: `/js/furniture_management.js?v=${timestamp}`
+                furniture_management: `/js/furniture_management.js?v=${timestamp}`,
+                announcement_management: `/js/announcement_management.js?v=${timestamp}`
             };
 
             if (scriptMap[tabKey]) {
@@ -234,6 +325,11 @@ function openTab(tabKey) {
                     if (tabKey === "Marquee_edit") {
                         if (typeof initMarqueeManager === "function") {
                             initMarqueeManager();
+                        }
+                    }
+                    if (tabKey === "announcement_management") {
+                        if (typeof initAnnouncementManager === "function") {
+                            initAnnouncementManager();
                         }
                     }
 

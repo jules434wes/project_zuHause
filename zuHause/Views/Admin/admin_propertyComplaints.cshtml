@@ -1,0 +1,290 @@
+@{
+    ViewData["Title"] = "房源投訴管理";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- 頁面標題 -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="fw-bold">⚠️ 房源投訴管理</h2>
+                    <p class="text-muted mb-0">處理和追蹤房源相關投訴案件</p>
+                </div>
+                <div>
+                    <span class="badge bg-danger me-2">待處理: 12</span>
+                    <span class="badge bg-warning me-2">處理中: 8</span>
+                    <span class="badge bg-success">已完成: 156</span>
+                </div>
+            </div>
+
+            <!-- 篩選和搜尋區域 -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label">搜尋關鍵字</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" placeholder="投訴編號、房源標題、投訴人">
+                                <button class="btn btn-outline-secondary" type="button">
+                                    <i class="bi bi-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">處理狀態</label>
+                            <select class="form-select">
+                                <option value="">全部</option>
+                                <option value="pending">待處理</option>
+                                <option value="processing">處理中</option>
+                                <option value="completed">已完成</option>
+                                <option value="closed">已關閉</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">投訴類型</label>
+                            <select class="form-select">
+                                <option value="">全部</option>
+                                <option value="false_info">資訊不實</option>
+                                <option value="quality_issue">房源品質</option>
+                                <option value="landlord_issue">房東問題</option>
+                                <option value="safety_concern">安全疑慮</option>
+                                <option value="other">其他</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">嚴重程度</label>
+                            <select class="form-select">
+                                <option value="">全部</option>
+                                <option value="high">高</option>
+                                <option value="medium">中</option>
+                                <option value="low">低</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">日期範圍</label>
+                            <div class="input-group">
+                                <input type="date" class="form-control">
+                                <span class="input-group-text">至</span>
+                                <input type="date" class="form-control">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <button type="button" class="btn btn-primary me-2">
+                                <i class="bi bi-search"></i> 搜尋
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-clockwise"></i> 重設
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 投訴列表 -->
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">投訴列表</h5>
+                    <div class="btn-group btn-group-sm">
+                        <button type="button" class="btn btn-outline-primary">
+                            <i class="bi bi-download"></i> 匯出
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary">
+                            <i class="bi bi-funnel"></i> 進階篩選
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th width="5%">
+                                        <input type="checkbox" class="form-check-input">
+                                    </th>
+                                    <th width="10%">投訴編號</th>
+                                    <th width="25%">房源資訊</th>
+                                    <th width="15%">投訴人</th>
+                                    <th width="10%">投訴類型</th>
+                                    <th width="8%">嚴重程度</th>
+                                    <th width="10%">狀態</th>
+                                    <th width="12%">投訴日期</th>
+                                    <th width="5%">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- 示例數據 -->
+                                <tr>
+                                    <td>
+                                        <input type="checkbox" class="form-check-input">
+                                    </td>
+                                    <td>
+                                        <strong class="text-primary">CP2025001</strong>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <strong>台北市中正區溫馨套房</strong>
+                                            <br>
+                                            <small class="text-muted">房源ID: P2001 | 房東: 張先生</small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <strong>李小姐</strong>
+                                            <br>
+                                            <small class="text-muted">M0012</small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-warning">資訊不實</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-danger">高</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-warning">處理中</span>
+                                    </td>
+                                    <td>2025-07-20</td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-outline-primary" title="檢視詳情">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <input type="checkbox" class="form-check-input">
+                                    </td>
+                                    <td>
+                                        <strong class="text-primary">CP2025002</strong>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <strong>新北市板橋區家庭公寓</strong>
+                                            <br>
+                                            <small class="text-muted">房源ID: P2045 | 房東: 陳太太</small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <strong>王先生</strong>
+                                            <br>
+                                            <small class="text-muted">M0156</small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">房源品質</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-warning">中</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-danger">待處理</span>
+                                    </td>
+                                    <td>2025-07-19</td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-outline-primary" title="檢視詳情">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <input type="checkbox" class="form-check-input">
+                                    </td>
+                                    <td>
+                                        <strong class="text-primary">CP2025003</strong>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <strong>桃園市中壢區學生宿舍</strong>
+                                            <br>
+                                            <small class="text-muted">房源ID: P3021 | 房東: 劉小姐</small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <strong>張同學</strong>
+                                            <br>
+                                            <small class="text-muted">M0298</small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">其他</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-success">低</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-success">已完成</span>
+                                    </td>
+                                    <td>2025-07-18</td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-outline-primary" title="檢視詳情">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- 分頁 -->
+                    <nav aria-label="投訴列表分頁" class="mt-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="text-muted">
+                                顯示第 1-20 筆，共 176 筆投訴記錄
+                            </div>
+                            <ul class="pagination mb-0">
+                                <li class="page-item disabled">
+                                    <span class="page-link">上一頁</span>
+                                </li>
+                                <li class="page-item active">
+                                    <span class="page-link">1</span>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="#" onclick="event.preventDefault()">2</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="#" onclick="event.preventDefault()">3</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="#" onclick="event.preventDefault()">下一頁</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    border: 1px solid rgba(0, 0, 0, 0.125);
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+    background-color: #f8f9fa;
+}
+
+.badge {
+    font-size: 0.75rem;
+}
+
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+}
+
+.form-label {
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+</style>

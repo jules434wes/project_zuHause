@@ -17,11 +17,23 @@ builder.Services.AddControllers().AddJsonOptions(options =>
 });
 
 // 會員
-builder.Services.AddAuthentication("MemberCookieAuth").AddCookie("MemberCookieAuth", options =>
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultScheme = "MemberCookieAuth";
+})
+.AddCookie("MemberCookieAuth", options =>
 {
     options.LoginPath = "/Member/Login";
     options.AccessDeniedPath = "/Member/AccessDenied";
+})
+.AddCookie("AdminCookies", options =>// 管理員登入驗證
+{
+    options.LoginPath = "/Auth/Login"; // 登入路徑
+    options.LogoutPath = "/Auth/Logout"; // 登出路徑
+    options.ExpireTimeSpan = TimeSpan.FromHours(8); // Cookie 有效時間 8 小時
+    options.SlidingExpiration = true; // 滑動期限（有活動就延長）
 });
+
 
 
 builder.Services.AddDbContext<ZuHauseContext>(
@@ -45,6 +57,11 @@ builder.Services.AddScoped<zuHause.Services.Interfaces.IImageValidationService, 
 
 // 註冊房源圖片 Facade 服務
 builder.Services.AddScoped<zuHause.Interfaces.IPropertyImageService, zuHause.Services.PropertyImageService>();
+
+// === 註冊管理員權限檢查服務 ===
+// 用於 AdminController 的後端權限驗證
+// 配合 RequireAdminPermissionAttribute 使用，防止直接 URL 存取無權限功能
+builder.Services.AddScoped<zuHause.Services.Interfaces.IPermissionService, zuHause.Services.PermissionService>();
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();

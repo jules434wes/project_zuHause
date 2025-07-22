@@ -3,9 +3,13 @@ using zuHause.AdminViewModels;
 using zuHause.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
+using zuHause.Attributes;
 
 namespace zuHause.Controllers
 {
+    [Authorize(AuthenticationSchemes = "AdminCookies")]
     public class AdminController : Controller
     {
         private readonly ZuHauseContext _context;
@@ -14,29 +18,113 @@ namespace zuHause.Controllers
         {
             _context = context;
         }
+
+        /// <summary>
+        /// 取得當前登入管理員ID
+        /// </summary>
+        protected string? GetCurrentAdminId()
+        {
+            return HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        }
+
+        /// <summary>
+        /// 取得當前登入管理員姓名
+        /// </summary>
+        protected string? GetCurrentAdminName()
+        {
+            return HttpContext.User.FindFirst(ClaimTypes.Name)?.Value;
+        }
+
+        /// <summary>
+        /// 取得當前登入管理員帳號
+        /// </summary>
+        protected string? GetCurrentAdminAccount()
+        {
+            return HttpContext.User.FindFirst("Account")?.Value;
+        }
+
+        /// <summary>
+        /// 取得當前登入管理員角色代碼
+        /// </summary>
+        protected string? GetCurrentAdminRoleCode()
+        {
+            return HttpContext.User.FindFirst("RoleCode")?.Value;
+        }
+
+        /// <summary>
+        /// 取得當前登入管理員角色名稱
+        /// </summary>
+        protected string? GetCurrentAdminRoleName()
+        {
+            return HttpContext.User.FindFirst("RoleName")?.Value;
+        }
+
+        /// <summary>
+        /// 取得當前登入管理員權限JSON
+        /// </summary>
+        protected string? GetCurrentAdminPermissions()
+        {
+            return HttpContext.User.FindFirst("PermissionsJSON")?.Value;
+        }
+
+        /// <summary>
+        /// 取得當前登入管理員完整資訊
+        /// </summary>
+        protected object GetCurrentAdminInfo()
+        {
+            return new
+            {
+                AdminId = GetCurrentAdminId(),
+                Name = GetCurrentAdminName(),
+                Account = GetCurrentAdminAccount(),
+                RoleCode = GetCurrentAdminRoleCode(),
+                RoleName = GetCurrentAdminRoleName(),
+                Permissions = GetCurrentAdminPermissions()
+            };
+        }
         public IActionResult Index()
         {
             return View();
         }
 
+        /// <summary>
+        /// 會員列表與驗證頁面
+        /// 需要 member_list 權限才能存取
+        /// </summary>
+        [RequireAdminPermission(AdminPermissions.MemberList)]
         public IActionResult admin_usersList()
         {
             var viewModel = new AdminUserListViewModel(_context);
             return View(viewModel);
         }
 
+        /// <summary>
+        /// 房東列表頁面
+        /// 需要 landlord_list 權限才能存取
+        /// </summary>
+        [RequireAdminPermission(AdminPermissions.LandlordList)]
         public IActionResult admin_landlordList()
         {
             var viewModel = new AdminUserListViewModel(_context, landlordsOnly: true);
             return View(viewModel);
         }
 
+        /// <summary>
+        /// 房源列表頁面
+        /// 需要 property_list 權限才能存取
+        /// </summary>
+        [RequireAdminPermission(AdminPermissions.PropertyList)]
         public IActionResult admin_propertiesList()
         {
             var viewModel = new AdminPropertyListViewModel();
             return View(viewModel);
         }
         
+        /// <summary>
+        /// 會員詳細資料頁面
+        /// 需要 member_list 權限才能存取（與會員列表使用相同權限）
+        /// </summary>
+        [RequireAdminPermission(AdminPermissions.MemberDetails)]
         public IActionResult admin_userDetails(int? id)
         {
             if (id == null)
@@ -48,32 +136,74 @@ namespace zuHause.Controllers
             return View(viewModel);
         }
 
+        /// <summary>
+        /// 房源詳細資料頁面
+        /// 需要 property_list 權限才能存取（與房源列表使用相同權限）
+        /// </summary>
+        [RequireAdminPermission(AdminPermissions.PropertyDetails)]
         public IActionResult admin_propertyDetails()
         {
             return View();
         }
 
+        /// <summary>
+        /// 客戶服務列表頁面
+        /// 需要 customer_service_list 權限才能存取
+        /// </summary>
+        [RequireAdminPermission(AdminPermissions.CustomerServiceList)]
         public IActionResult admin_customerServiceList()
         {
             return View();
         }
 
+        /// <summary>
+        /// 客戶服務詳細處理頁面
+        /// 需要 customer_service_list 權限才能存取（與客服列表使用相同權限）
+        /// </summary>
+        [RequireAdminPermission(AdminPermissions.CustomerServiceDetails)]
         public IActionResult admin_customerServiceDetails(string id = "CS001")
         {
             var viewModel = new AdminCustomerServiceDetailsViewModel(id);
+            
+            // 示範：取得當前管理員資訊
+            ViewBag.CurrentAdminId = GetCurrentAdminId();
+            ViewBag.CurrentAdminName = GetCurrentAdminName();
+            ViewBag.CurrentAdminAccount = GetCurrentAdminAccount();
+            
             return View(viewModel);
         }
 
+        /// <summary>
+        /// 系統訊息列表頁面
+        /// 需要 system_message_list 權限才能存取
+        /// </summary>
+        [RequireAdminPermission(AdminPermissions.SystemMessageList)]
         public IActionResult admin_systemMessageList()
         {
             var viewModel = new AdminSystemMessageListViewModel();
             return View(viewModel);
         }
 
+        /// <summary>
+        /// 新增系統訊息頁面
+        /// 需要 system_message_list 權限才能存取（與系統訊息列表使用相同權限）
+        /// </summary>
+        [RequireAdminPermission(AdminPermissions.SystemMessageNew)]
         public IActionResult admin_systemMessageNew()
         {
             var viewModel = new AdminSystemMessageNewViewModel(_context);
             return View(viewModel);
+        }
+
+        /// <summary>
+        /// 房源投訴管理頁面
+        /// 需要 property_complaint_list 權限才能存取
+        /// </summary>
+        [RequireAdminPermission(AdminPermissions.PropertyComplaintList)]
+        public IActionResult admin_propertyComplaints()
+        {
+            // 暫時使用空的 ViewModel，之後可以根據需要建立專門的 AdminPropertyComplaintsViewModel
+            return View();
         }
 
         // AJAX endpoints for dynamic data

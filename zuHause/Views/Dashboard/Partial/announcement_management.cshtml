@@ -1,0 +1,166 @@
+@{
+    ViewData["Title"] = "公告管理";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">📢 公告管理</h5>
+                    <button type="button" class="btn btn-primary btn-sm">
+                        <i class="bi bi-plus-circle"></i> 新增公告
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="input-group">
+                                <input type="text" class="form-control" placeholder="搜尋公告標題或內容...">
+                                <button class="btn btn-outline-secondary" type="button">
+                                    <i class="bi bi-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select">
+                                <option value="">所有狀態</option>
+                                <option value="active">已發布</option>
+                                <option value="inactive">草稿</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select">
+                                <option value="">所有類型</option>
+                                <option value="system">系統公告</option>
+                                <option value="maintenance">維護通知</option>
+                                <option value="promotion">活動推廣</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th width="5%">
+                                        <input type="checkbox" class="form-check-input">
+                                    </th>
+                                    <th width="40%">標題</th>
+                                    <th width="15%">類型</th>
+                                    <th width="10%">狀態</th>
+                                    <th width="15%">建立日期</th>
+                                    <th width="15%">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="announcementTableBody">
+                                <!-- 示例數據 -->
+                                <tr>
+                                    <td>
+                                        <input type="checkbox" class="form-check-input">
+                                    </td>
+                                    <td>
+                                        <strong>平台維護通知</strong>
+                                        <br>
+                                        <small class="text-muted">系統將於本週六進行例行維護...</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-warning">維護通知</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-success">已發布</span>
+                                    </td>
+                                    <td>2025-07-20</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <button type="button" class="btn btn-outline-primary" title="編輯">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-outline-secondary" title="預覽">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-outline-danger" title="刪除">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <input type="checkbox" class="form-check-input">
+                                    </td>
+                                    <td>
+                                        <strong>新功能上線公告</strong>
+                                        <br>
+                                        <small class="text-muted">全新的房源推薦功能正式上線...</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">系統公告</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">草稿</span>
+                                    </td>
+                                    <td>2025-07-19</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <button type="button" class="btn btn-outline-primary" title="編輯">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-outline-secondary" title="預覽">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-outline-danger" title="刪除">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- 分頁 -->
+                    <nav aria-label="公告分頁">
+                        <ul class="pagination justify-content-center">
+                            <li class="page-item disabled">
+                                <span class="page-link">上一頁</span>
+                            </li>
+                            <li class="page-item active">
+                                <span class="page-link">1</span>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="#" onclick="event.preventDefault()">2</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="#" onclick="event.preventDefault()">3</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="#" onclick="event.preventDefault()">下一頁</a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    border: 1px solid rgba(0, 0, 0, 0.125);
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+}
+
+.btn-group-sm > .btn {
+    padding: 0.25rem 0.5rem;
+}
+
+.badge {
+    font-size: 0.75rem;
+}
+</style>
