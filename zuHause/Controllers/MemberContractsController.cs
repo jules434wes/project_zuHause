@@ -380,12 +380,17 @@ namespace zuHause.Controllers
         private async Task<string> GenerateContractHtml(int contractId)
         {
             var contract = await _context.Contracts
-                .Include(c => c.ContractFurnitureItems)
-                .Include(c => c.ContractComments)
-                .Include(c => c.ContractSignatures)
-                .Include(c => c.RentalApplication).ThenInclude(a => a.Property).ThenInclude(p => p.LandlordMember)
-                .Include(c => c.Template)
-                .FirstOrDefaultAsync(c => c.ContractId == contractId);
+                 .Include(c => c.ContractFurnitureItems)
+                 .Include(c => c.ContractComments)
+                 .Include(c => c.ContractSignatures)
+                 .Include(c => c.RentalApplication)
+                     .ThenInclude(a => a.Member) // ✅ 加這行
+                 .Include(c => c.RentalApplication)
+                     .ThenInclude(a => a.Property)
+                         .ThenInclude(p => p.LandlordMember)
+                 .Include(c => c.Template)
+                 .FirstOrDefaultAsync(c => c.ContractId == contractId);
+
             // 備註條件區塊處理
             string commentBlock = "";
             if (contract.ContractComments.Any())
@@ -409,40 +414,73 @@ namespace zuHause.Controllers
             var landlord = contract.RentalApplication?.Property?.LandlordMember;
 
             var tenant = contract.RentalApplication?.Member;
+            var uploads = await _context.UserUploads
+                .Where(u => u.ModuleCode == "CONTRACT" && u.SourceEntityId == contractId && u.IsActive)
+                .ToListAsync();
+
+            var landlordId = contract.RentalApplication?.Property?.LandlordMemberId ?? -1;
+            var tenantId = contract.RentalApplication?.MemberId ?? -1;
+            System.Diagnostics.Debug.WriteLine($"🧾 ContractId: {contractId}");
+            System.Diagnostics.Debug.WriteLine($"➡️ LandlordId: {landlordId}");
+            System.Diagnostics.Debug.WriteLine($"➡️ TenantId: {tenantId}");
+
+            var landlordExtraFiles = uploads
+                .Where(u => u.UploadTypeCode.StartsWith("LANDLORD_"))
+                .Select(u => u.FilePath)
+                .ToList();
+
+            var tenantExtraFiles = uploads
+                .Where(u => u.UploadTypeCode.StartsWith("TENANT_"))
+                .Select(u => u.FilePath)
+                .ToList();
+
+            
+            string landlordImagesHtml = string.Join("", landlordExtraFiles.Select(p => $"<img src='{p}' height='80' />"));
+            string tenantImagesHtml = string.Join("", tenantExtraFiles.Select(p => $"<img src='{p}' height='80' />"));
+
+            string testAllUploadsHtml = string.Join("<br>", uploads.Select(u => $"{u.UploadTypeCode} - {u.FilePath} - memberId: {u.MemberId}"));
+            
 
             var fields = new Dictionary<string, string>
-                {
-                    // 甲方
-                    { "{{甲方姓名}}", landlord?.MemberName ?? "" },
-                    { "{{甲方地址}}", contract.LandlordHouseholdAddress ?? "" },
-                    { "{{甲方身分證}}", landlord?.NationalIdNo ?? "" },
-                    { "{{甲方生日}}", landlord?.BirthDate.ToString("yyyy/MM/dd") ?? "" },
+            {
+                // 甲方
+                { "{{甲方姓名}}", landlord?.MemberName ?? "" },
+                { "{{甲方地址}}", contract.LandlordHouseholdAddress ?? "" },
+                { "{{甲方身分證}}", landlord?.NationalIdNo ?? "" },
+                { "{{甲方生日}}", landlord?.BirthDate.ToString("yyyy/MM/dd") ?? "" },
 
-                    // 乙方
-                    { "{{乙方姓名}}", tenant?.MemberName ?? "" },
-                    { "{{乙方身分證}}", tenant?.NationalIdNo ?? "" },
-                    { "{{乙方地址}}", tenant?.AddressLine ?? "" },
-                    { "{{乙方生日}}", tenant?.BirthDate.ToString("yyyy/MM/dd") ?? "" },
-                    
-                    // 合約欄位
-                    { "{{租賃起日}}", contract.StartDate.ToString("yyyy/MM/dd") },
-                    { "{{租賃迄日}}", contract.EndDate?.ToString("yyyy/MM/dd") ?? "" },
-                    { "{{月租金}}", contract.RentalApplication?.Property?.MonthlyRent.ToString("N0") ?? "" },
-                    { "{{押金}}", contract.DepositAmount?.ToString("N0") ?? "" },
-                    { "{{使用目的}}", contract.UsagePurpose ?? "" },
-                    { "{{糾紛法院}}", contract.CourtJurisdiction ?? "" },
-                    { "{{違約金}}", contract.PenaltyAmount?.ToString("N0") ?? "" },
-                    { "{{租賃月數}}", rentalMonths.ToString() },
-                    { "{{租賃地址}}", contract.RentalApplication?.Property?.AddressLine ?? "" },
-                    { "{{房源編號}}", contract.RentalApplication?.PropertyId.ToString() ?? "" },
-                    { "{{備註條件}}", commentBlock?? "" },
-                    // 家具清單
-                    { "{{家具清單}}", GenerateFurnitureHtml(contract.ContractFurnitureItems.ToList()) },
+                // 乙方
+                { "{{乙方姓名}}", tenant?.MemberName ?? "" },
+                { "{{乙方身分證}}", tenant?.NationalIdNo ?? "" },
+                { "{{乙方地址}}", tenant?.AddressLine ?? "" },
+                { "{{乙方生日}}", tenant?.BirthDate.ToString("yyyy/MM/dd") ?? "" },
 
-                    // 簽名圖片（可能為 null）
-                    { "{{甲方簽名圖}}", contract.ContractSignatures.FirstOrDefault(s => s.SignerRole == "LANDLORD")?.SignatureFileUrl ?? "" },
-                    { "{{乙方簽名圖}}", contract.ContractSignatures.FirstOrDefault(s => s.SignerRole == "TENANT")?.SignatureFileUrl ?? "" }
-                };
+                // 合約內容
+                { "{{租賃起日}}", contract.StartDate.ToString("yyyy/MM/dd") },
+                { "{{租賃迄日}}", contract.EndDate?.ToString("yyyy/MM/dd") ?? "" },
+                { "{{月租金}}", contract.RentalApplication?.Property?.MonthlyRent.ToString("N0") ?? "" },
+                { "{{押金}}", contract.DepositAmount?.ToString("N0") ?? "" },
+                { "{{使用目的}}", contract.UsagePurpose ?? "" },
+                { "{{糾紛法院}}", contract.CourtJurisdiction ?? "" },
+                { "{{違約金}}", contract.PenaltyAmount?.ToString("N0") ?? "" },
+                { "{{租賃月數}}", rentalMonths.ToString() },
+                { "{{租賃地址}}", contract.RentalApplication?.Property?.AddressLine ?? "" },
+                { "{{房源編號}}", contract.RentalApplication?.PropertyId.ToString() ?? "" },
+                { "{{備註條件}}", commentBlock ?? "" },
+                { "{{家具清單}}", GenerateFurnitureHtml(contract.ContractFurnitureItems.ToList()) },
+
+                // 簽名圖片
+                { "{{甲方簽名圖}}", contract.ContractSignatures.FirstOrDefault(s => s.SignerRole == "LANDLORD")?.SignatureFileUrl ?? "" },
+                { "{{乙方簽名圖}}", contract.ContractSignatures.FirstOrDefault(s => s.SignerRole == "TENANT")?.SignatureFileUrl ?? "" }
+            };
+
+            // HTML 頁面顯示圖片的欄位
+            fields.Add("{{甲方附件圖片}}", landlordImagesHtml);
+            fields.Add("{{乙方附件圖片}}", tenantImagesHtml);
+
+            // 除錯專用測試文字（可選）
+            fields.Add("{{測試列印}}", testAllUploadsHtml);
+
 
 
             foreach (var kv in fields)
