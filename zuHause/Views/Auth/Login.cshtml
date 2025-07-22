@@ -13,11 +13,13 @@
     <form method="post">
         <div class="mb-3">
             <label>帳號</label>
-            <input type="text" name="account" class="form-control" required />
+            <!-- TODO: 移除預設值 - 僅供開發測試使用 -->
+            <input type="text" name="account" class="form-control" value="admin.master" required />
         </div>
         <div class="mb-3">
             <label>密碼</label>
-            <input type="password" name="password" class="form-control" required />
+            <!-- TODO: 移除預設值 - 僅供開發測試使用 -->
+            <input type="password" name="password" class="form-control" value="admin001" required />
         </div>
         <button class="btn btn-primary w-100">登入</button>
     </form>
