@@ -17,21 +17,23 @@ builder.Services.AddControllers().AddJsonOptions(options =>
 });
 
 // 會員
-builder.Services.AddAuthentication("MemberCookieAuth").AddCookie("MemberCookieAuth", options =>
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultScheme = "MemberCookieAuth";
+})
+.AddCookie("MemberCookieAuth", options =>
 {
     options.LoginPath = "/Member/Login";
     options.AccessDeniedPath = "/Member/AccessDenied";
+})
+.AddCookie("AdminCookies", options =>// 管理員登入驗證
+{
+    options.LoginPath = "/Auth/Login"; // 登入路徑
+    options.LogoutPath = "/Auth/Logout"; // 登出路徑
+    options.ExpireTimeSpan = TimeSpan.FromHours(8); // Cookie 有效時間 8 小時
+    options.SlidingExpiration = true; // 滑動期限（有活動就延長）
 });
 
-// 管理員登入驗證
-builder.Services.AddAuthentication("AdminCookies")
-    .AddCookie("AdminCookies", options =>
-    {
-        options.LoginPath = "/Auth/Login"; // 登入路徑
-        options.LogoutPath = "/Auth/Logout"; // 登出路徑
-        options.ExpireTimeSpan = TimeSpan.FromHours(8); // Cookie 有效時間 8 小時
-        options.SlidingExpiration = true; // 滑動期限（有活動就延長）
-    });
 
 
 builder.Services.AddDbContext<ZuHauseContext>(
