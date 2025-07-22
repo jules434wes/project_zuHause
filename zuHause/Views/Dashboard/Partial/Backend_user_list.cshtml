@@ -23,14 +23,14 @@
             <div class="mb-3">
                 <label for="employeeRole" class="form-label">員工權限</label>
                 <select class="form-select" id="employeeRole">
-                    <option value="超級管理員">超級管理員（📊 📦 👤 🛒 🛠️）</option>
-                    <option value="管理員">管理員（📊 👤 🛒）</option>
-                    <option value="房源審核員">房源審核員（📦）</option>
-                    <option value="客服">客服（👤 🛒）</option>
+                    
                 </select>
             </div>
 
-            <button class="btn btn-success w-100" onclick="saveBackendUser()">儲存用戶</button>
+            <button class="btn btn-success w-100" id="saveBtn" onclick="saveBackendUser()">新增用戶</button>
+            <button class="btn btn-secondary w-100 mt-2 d-none" id="cancelEditBtn" onclick="clearForm()">取消</button>
+
+
         </div>
     </div>
 

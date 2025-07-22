@@ -263,7 +263,8 @@ function openTab(tabKey) {
                         updateRoleListWithPermissions();
                     }
                     if (tabKey === "Backend_user_list" && typeof renderUserTable === "function") {
-                        renderUserTable();
+                        if (typeof loadRoleOptions === "function") loadRoleOptions();
+                        if (typeof renderUserTable === "function") renderUserTable();
                     }
                     //if (tabKey === "member_management" && typeof initMemberManagement === "function") {
                     //    initMemberManagement();
@@ -284,9 +285,10 @@ function openTab(tabKey) {
                       
                     }
                     if (tabKey === "furniture_fee") {
-                        if (typeof initShipFee === "function") initShipFee();
+                        if (typeof onload === "function") onload();
+                        
                     }
-                    
+                   
                     if (tabKey === "furniture_management") {
                        
                         if (typeof resetForm === "function") resetForm();
