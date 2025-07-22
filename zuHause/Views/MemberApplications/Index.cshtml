@@ -41,11 +41,11 @@
                             <div class="col-auto px-0">
                                 <select class="form-select" id="statusFilter" name="statusFilter">
                                     <option value="">申請狀態</option>
-                                    @if (ViewBag.ApplicationStatusOptions is List<SystemCode> statusList)
+                                    @if (ViewBag.ApplicationStatusOptions is Dictionary<string, string> statusDict)
                                     {
-                                        foreach (var status in statusList)
+                                        foreach (var status in statusDict)
                                         {
-                                            <option value="@status.Code">@status.CodeName</option>
+                                            <option value="@status.Key">@status.Value</option>
                                         }
                                     }
                                 </select>

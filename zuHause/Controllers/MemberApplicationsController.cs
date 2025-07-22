@@ -68,16 +68,14 @@ namespace zuHause.Controllers
                 })
                 .ToListAsync();
 
-            // 查詢申請狀態代碼表
+
+
             var applicationStatusCodes = await _context.SystemCodes
-                .Where(s => s.CodeCategory == "USER_APPLY_STATUS" && s.IsActive)
-                .OrderBy(s => s.DisplayOrder)
-                .ToListAsync();
+            .Where(s => s.CodeCategory == "USER_APPLY_STATUS" && s.IsActive)
+            .OrderBy(s => s.DisplayOrder)
+            .ToDictionaryAsync(s => s.Code, s => s.CodeName);
 
-            // 使用 ViewBag 傳到 View
             ViewBag.ApplicationStatusOptions = applicationStatusCodes;
-
-
 
 
             return View(viewModel);

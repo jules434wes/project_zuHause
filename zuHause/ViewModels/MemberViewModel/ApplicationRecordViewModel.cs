@@ -31,5 +31,6 @@
     {
         public ApplicationRecordViewModel Record { get; set; } = null!;
         public Dictionary<string, string> StatusCodeDict { get; set; } = new();
+
     }
 }
