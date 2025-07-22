@@ -654,6 +654,97 @@ namespace zuHause.Controllers
 
             return Json(scheduled);
         }
+        //運費設定API
+        //載入所有方案
+        [HttpGet("GetAllDeliveryPlans")]
+        public IActionResult GetAllDeliveryPlans()
+        {
+            var plans = _context.DeliveryFeePlans
+                .OrderByDescending(p => p.StartAt)
+                .ToList();
+
+            return Json(plans);
+        }
+        // 創建新的配送方案
+        [HttpPost("CreateDeliveryPlan")]
+        public IActionResult CreateDeliveryPlan([FromBody] DeliveryFeePlan plan)
+        {
+            if (string.IsNullOrWhiteSpace(plan.PlanName) || plan.BaseFee <= 0)
+                return BadRequest("❌ 方案名稱與基礎費用為必填");
+
+            plan.CreatedAt = DateTime.Now;
+            plan.UpdatedAt = DateTime.Now;
+            plan.IsActive = true;
+
+            _context.DeliveryFeePlans.Add(plan);
+            _context.SaveChanges();
+
+            return Json(new { success = true });
+        }
+        // 編輯方案
+        [HttpPost("UpdateDeliveryPlan")]
+        public IActionResult UpdateDeliveryPlan([FromBody] DeliveryFeePlan plan)
+        {
+            var existing = _context.DeliveryFeePlans.FirstOrDefault(p => p.PlanId == plan.PlanId);
+            if (existing == null)
+                return NotFound("❌ 找不到該配送方案");
+
+            existing.PlanName = plan.PlanName;
+            existing.BaseFee = plan.BaseFee;
+            existing.RemoteAreaSurcharge = plan.RemoteAreaSurcharge;
+            existing.CurrencyCode = plan.CurrencyCode;
+            
+            existing.StartAt = plan.StartAt;
+            existing.EndAt = plan.EndAt;
+            existing.UpdatedAt = DateTime.Now;
+
+            _context.SaveChanges();
+
+            return Json(new { success = true });
+        }
+        // 取得目前啟用的配送方案，並依 BaseFee 分組
+
+        [HttpGet("GetGroupedActiveDeliveryPlans")]
+        public IActionResult GetGroupedActiveDeliveryPlans()
+        {
+            var now = DateTime.Now;
+
+            var activePlans = _context.DeliveryFeePlans
+                .Where(p => p.StartAt <= now && (p.EndAt == null || p.EndAt > now) && p.IsActive)
+                .GroupBy(p => p.BaseFee)
+                .Select(g => new
+                {
+                    BaseFee = g.Key,
+                    Plans = g.OrderBy(p => p.StartAt).ToList()
+                })
+                .OrderBy(g => g.BaseFee)
+                .ToList();
+
+            return Json(activePlans);
+        }
+
+        // 取得未來的配送方案，並依 BaseFee 分組
+        [HttpGet("GetScheduledDeliveryPlans")]
+        
+        public IActionResult GetScheduledDeliveryPlans()
+        {
+            var now = DateTime.Now;
+
+            var futurePlans = _context.DeliveryFeePlans
+                .Where(p => p.StartAt > now && p.IsActive)
+                .GroupBy(p => p.BaseFee)
+                .Select(g => new
+                {
+                    BaseFee = g.Key,
+                    Plans = g.OrderBy(p => p.StartAt).ToList()
+                })
+                .OrderBy(g => g.BaseFee)
+                .ToList();
+
+            return Json(futurePlans);
+        }
+
+
         // 合約範本相關 API
 
         // 取得所有合約範本
