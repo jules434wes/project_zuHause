@@ -208,7 +208,7 @@
                                                     若提前解約，需另行給付甲方相當於：
                                                 </label>
                                                 <div class="col-3 pe-0">
-                                                    <input class="form-control form-control-sm" type="text" placeholder="違約金金額" asp-for="PenaltyAmount">
+                                                    <input class="form-control form-control-sm" type="text" placeholder="月數" asp-for="PenaltyAmount">
                                                 </div>
                                                 <div class="col-auto">
                                                     個月之租金金額
@@ -464,44 +464,10 @@
     <script src="~/js/applyRentalInput.js"></script>
     <script src="~/js/applyRentalNote.js"></script>
     <script src="~/js/applyRentalTable.js"></script>
+    <script src="~/js/signatureVerify.js"></script>
 
     <script>
-        const signatureUploadArea = document.querySelector(".signature-upload-area");
-        if (signatureUploadArea) {
-            const input = signatureUploadArea.querySelector("input[type='file']");
-            const label = signatureUploadArea.querySelector("label");
-            const inputFileName = signatureUploadArea.querySelector(".input-file-name");
-            const feedback = signatureUploadArea.querySelector(".input-feedback small");
-
-            input.addEventListener("change", function () {
-                const file = this.files[0];
-                if (!file) {
-                    inputFileName.textContent = "";
-                    return;
-                }
-
-                inputFileName.textContent = file.name;
-
-                const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
-                const maxSize = 5 * 1024 * 1024;
-
-                if (!allowedTypes.includes(file.type)) {
-                    feedback.textContent = "檔案格式錯誤，只允許 jpg/png/webp";
-                    feedback.classList.remove("text-muted");
-                    feedback.classList.add("text-danger");
-                } else if (file.size > maxSize) {
-                    feedback.textContent = "檔案過大，請小於 5MB";
-                    feedback.classList.remove("text-muted");
-                    feedback.classList.add("text-danger");
-                } else {
-                    feedback.textContent = "檔案格式與大小正確";
-                    feedback.classList.remove("text-danger");
-                    feedback.classList.add("text-muted");
-                }
-            });
-        }
-
-                function getDateDiff(startStr, endStr) {
+            function getDateDiff(startStr, endStr) {
             const start = new Date(startStr);
             const end = new Date(endStr);
 

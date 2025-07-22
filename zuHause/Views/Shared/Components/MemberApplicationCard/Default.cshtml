@@ -59,7 +59,7 @@
                 @if (record.ContractId != null)
                 {
                     <a href="@Url.Action("Detail", "Contracts", new { id = record.ContractId })" class="btn btn-aqua py-0 w-100">查看租賃合約</a>
-                    <a href="@Url.Action("Sign", "Contracts", new { id = record.ContractId })" class="btn btn-aqua py-0 w-100">簽署合約</a>
+                    @await Component.InvokeAsync("SignContractModal", new { applicationId = @record.ApplicationId, contractId = record.ContractId })
                 }
                 else
                 {

@@ -10,7 +10,8 @@ using zuHause.ViewModels.MemberViewModel;
 
 namespace zuHause.Controllers
 {
-    [Authorize(Roles = "1", AuthenticationSchemes = "MemberCookieAuth")]
+    [Authorize(AuthenticationSchemes = "MemberCookieAuth")]
+    //[Authorize(Roles = "1", AuthenticationSchemes = "MemberCookieAuth")]
     public class MemberContractsController : Controller
     {
         public readonly ZuHauseContext _context;
@@ -108,7 +109,7 @@ namespace zuHause.Controllers
         }
 
 
-        public async Task<IActionResult> ContractProduction(int applicationId = 12)
+        public async Task<IActionResult> ContractProduction(int applicationId = 20)
         {
             var application = await _context.RentalApplications
                 .Include(a => a.Member) // 租客
@@ -342,7 +343,75 @@ namespace zuHause.Controllers
         }
 
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateTenantSign(TenantSignViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return Content("上傳失敗，請檢查檔案或申請");
+            }
 
+            var memberId = int.Parse(User.FindFirst("UserId")!.Value);
+            var now = DateTime.Now;
+
+            // 儲存簽名檔案（UserUpload）
+            if (model.SignatureFile != null)
+            {
+                var file = model.SignatureFile;
+                string storedFileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
+                string filePath = Path.Combine("wwwroot/uploads/signatures", storedFileName);
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await file.CopyToAsync(stream);
+                }
+
+
+
+                var upload = new UserUpload
+                {
+                    MemberId = memberId,
+                    ModuleCode = "CONTRACT",
+                    SourceEntityId = model.ContractId,
+                    UploadTypeCode = "TENANT_SIGNATURE",
+                    OriginalFileName = file.FileName,
+                    StoredFileName = storedFileName,
+                    FileExt = Path.GetExtension(file.FileName),
+                    MimeType = file.ContentType,
+                    FilePath = $"/uploads/signatures/{storedFileName}",
+                    FileSize = file.Length,
+                    UploadedAt = now,
+                    CreatedAt = now,
+                    UpdatedAt = now,
+                    IsActive = true
+                };
+
+                _context.UserUploads.Add(upload);
+                await _context.SaveChangesAsync();
+
+                // 新增對應的 ContractSignature 資料
+                var contractSignature = new ContractSignature
+                {
+                    ContractId = model.ContractId,
+                    SignerId = memberId,
+                    SignerRole = "TENANT", // 或 "TENANT"，你可以根據實際使用者判斷
+                    SignMethod = "UPLOAD",
+                    SignatureFileUrl = upload.FilePath,
+                    UploadId = upload.UploadId,
+                    SignedAt = now
+                };
+
+                _context.ContractSignatures.Add(contractSignature);
+
+            }
+
+
+
+            await _context.SaveChangesAsync();
+
+            //還沒決定好會去哪一頁    
+            return RedirectToAction("ContractList");
+        }
 
 
         [HttpPost]
