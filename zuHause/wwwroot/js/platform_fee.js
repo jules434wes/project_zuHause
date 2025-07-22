@@ -1,6 +1,12 @@
 ﻿(() => {
     let listingPlans = []; // 儲存後端回傳的資料
-
+    function formatDateTime(raw) {
+        const dt = new Date(raw);
+        return dt.toLocaleString('zh-TW', {
+            year: 'numeric', month: '2-digit', day: '2-digit',
+            hour: '2-digit', minute: '2-digit', hour12: true
+        });
+    }
     async function renderListingPlans() {
         console.log("📥 從資料庫載入上架方案...");
         const tbody = document.querySelector('#listingPlansTable tbody');
@@ -20,7 +26,7 @@
                 <td>${plan.planName}</td>
                 <td>NT$${plan.pricePerDay}</td>
                 <td>${plan.minListingDays}</td>
-                <td>${plan.startAt} ~ ${plan.endAt ?? '無期限'}</td>
+                <td>${formatDateTime(plan.startAt)} ~ ${formatDateTime(plan.endAt) ?? '無期限'}</td>
                 <td>${plan.isActive ? '✅ 啟用中' : '❌ 已停用'}</td>
                 <td><button class="btn btn-sm btn-outline-primary" onclick="editPlan(${plan.planId})">✏️ 編輯</button></td>
             `;
@@ -107,7 +113,7 @@
 
     window.editPlan = editPlan;
     function editPlan(planId) {
-        const plan = listingPlans.find(p => p.PlanId === planId);
+        const plan = listingPlans.find(p => p.planId === planId);
         if (!plan) return alert("❌ 找不到要編輯的方案");
 
         editingPlanId = planId;
@@ -133,6 +139,9 @@
         button.classList.remove('btn-success');
         button.classList.add('btn-warning');
         button.innerText = '✅ 確認編輯';
+        // 🔽 滾動至表單區域 + 聚焦
+        document.getElementById('planName')?.focus();
+        document.getElementById('planName')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
     function clearListingPlanForm() {
@@ -249,13 +258,7 @@
         }
     }
 
-    function formatDateTime(raw) {
-        const dt = new Date(raw);
-        return dt.toLocaleString('zh-TW', {
-            year: 'numeric', month: '2-digit', day: '2-digit',
-            hour: '2-digit', minute: '2-digit', hour12: true
-        });
-    }
+    
     async function loadScheduledPlans() {
         const container = document.getElementById('scheduledPlanContainer');
 

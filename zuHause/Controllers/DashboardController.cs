@@ -60,13 +60,13 @@ namespace zuHause.Controllers
             // 這是唯一的硬編碼部分，定義了系統支援哪些功能模組
             // 實際權限完全由資料庫的 PermissionsJson 控制
             var allKeys = new List<string>
-    {
-        "overview", "monitor", "behavior", "orders", "system",
-        "roles", "Backend_user_list", "contract_template",
-        "platform_fee", "imgup", "furniture_fee", "Marquee_edit", "furniture_management",
-        "announcement_management", "member_list", "landlord_list", "property_list", 
-        "property_complaint_list", "customer_service_list", "system_message_list"
-    };
+            {
+                "overview", "monitor", "behavior", "orders", "system",
+                "roles", "Backend_user_list", "contract_template",
+                "platform_fee", "imgup", "furniture_fee", "Marquee_edit", "furniture_management",
+                "announcement_management", "member_list", "landlord_list", "property_list", 
+                "property_complaint_list", "customer_service_list", "system_message_list"
+            };
 
             // === 步驟4：建立前端權限控制物件 ===
             // 根據 PermissionsJson 的格式決定傳給前端的資料結構
