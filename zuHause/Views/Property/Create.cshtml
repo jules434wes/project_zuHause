@@ -1,0 +1,2373 @@
+@using zuHause.ViewModels
+@model PropertyCreateViewModel
+@{
+    ViewData["Title"] = "刊登房源";
+    Layout = null; // 使用自定義佈局
+}
+
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - zuHause</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Variables CSS -->
+    <link rel="stylesheet" href="~/css/variables.css" />
+    <!-- Property Detail CSS for consistent styling -->
+    <link rel="stylesheet" href="~/css/property-detail.css" />
+    <!-- Custom Property Creation styles -->
+    <style>
+        /* 表單容器樣式 */
+        .property-create-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+        
+        .form-section {
+            background: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 3px solid #3498db;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-label {
+            font-weight: 600;
+            color: #34495e;
+            margin-bottom: 0.5rem;
+        }
+        
+        .required::after {
+            content: " *";
+            color: #e74c3c;
+        }
+        
+        .form-control:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+        }
+        
+        .input-group-text {
+            background-color: #f8f9fa;
+            border-color: #dee2e6;
+        }
+        
+        /* 圖片上傳區域 */
+        .image-upload-area {
+            border: 2px dashed #dee2e6;
+            border-radius: 0.5rem;
+            padding: 3rem 2rem;
+            text-align: center;
+            background-color: #f8f9fa;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .image-upload-area:hover {
+            border-color: #3498db;
+            background-color: #f1f8ff;
+        }
+        
+        .image-upload-area.dragover {
+            border-color: #2980b9;
+            background-color: #e8f4fd;
+        }
+        
+        .upload-icon {
+            font-size: 3rem;
+            color: #bdc3c7;
+            margin-bottom: 1rem;
+        }
+        
+        /* 刊登方案詳情高亮樣式 */
+        .plan-details-highlight {
+            color: #dc3545 !important;
+            font-weight: bold !important;
+        }
+        
+        .plan-details-highlight .highlight-days {
+            color: #dc3545 !important;
+            font-weight: bold !important;
+        }
+        
+        .plan-details-highlight .highlight-cost {
+            color: #dc3545 !important;
+            font-weight: bold !important;
+        }
+        
+        /* 選中的刊登方案卡片樣式 */
+        .listing-plan-card.selected {
+            border-color: #3498db !important;
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25) !important;
+        }
+        
+        /* CSS 變數 - 精確色彩規範 */
+        :root {
+            --color-preview: #1a7482;
+            --color-publish-disabled: #f9cfc7;
+            --color-publish-active: #e95d54;
+            --color-cancel-border: #66c0a4;
+            --color-confirm-cancel: #313b48;
+            --color-continue-edit: #1a7482;
+            --color-confirm-submit: #e95d54;
+            --color-return-edit: #66c0a4;
+        }
+
+        /* 按鈕基礎樣式 */
+        .btn-preview {
+            background-color: var(--color-preview);
+            border: none;
+            color: white;
+            font-weight: 600;
+            padding: 0.75rem 2rem;
+            border-radius: 0.375rem;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-preview:hover {
+            background-color: #155e69;
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(26, 116, 130, 0.3);
+        }
+
+        /* 立即發佈按鈕 */
+        .btn-publish {
+            background-color: var(--color-publish-disabled);
+            border: none;
+            color: #666;
+            font-weight: 600;
+            padding: 0.75rem 3rem;
+            border-radius: 0.375rem;
+            transition: all 0.3s ease;
+            cursor: not-allowed;
+        }
+        
+        .btn-publish.active {
+            background-color: var(--color-publish-active);
+            color: white;
+            cursor: pointer;
+        }
+        
+        .btn-publish.active:hover {
+            background-color: #d53f32;
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(233, 93, 84, 0.3);
+        }
+        
+        /* 確保 disabled 狀態不會有 hover 效果 */
+        .btn-publish:not(.active):hover {
+            background-color: var(--color-publish-disabled);
+            color: #666;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* 取消按鈕 */
+        .btn-cancel {
+            background: transparent;
+            border: 2px solid var(--color-cancel-border);
+            color: var(--color-cancel-border);
+            font-weight: 600;
+            padding: 0.75rem 2rem;
+            border-radius: 0.375rem;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-cancel:hover {
+            background-color: var(--color-cancel-border);
+            color: white;
+            transform: translateY(-1px);
+        }
+
+        /* 確認取消按鈕 */
+        .btn-confirm-cancel {
+            background-color: var(--color-confirm-cancel);
+            border: none;
+            color: white;
+            font-weight: 600;
+        }
+
+        /* 繼續編輯按鈕 */
+        .btn-continue-edit {
+            background-color: var(--color-continue-edit);
+            border: none;
+            color: white;
+            font-weight: 600;
+        }
+
+        /* 確認提交按鈕 */
+        .btn-confirm-submit {
+            background-color: var(--color-confirm-submit);
+            border: none;
+            color: white;
+            font-weight: 600;
+        }
+
+        /* 返回編輯按鈕 */
+        .btn-return-edit {
+            background: transparent;
+            border: 2px solid var(--color-return-edit);
+            color: var(--color-return-edit);
+            font-weight: 600;
+        }
+        
+        /* 級聯下拉選單 */
+        .cascade-container {
+            display: flex;
+            gap: 1rem;
+        }
+        
+        .cascade-container .form-group {
+            flex: 1;
+        }
+        
+        /* 設備選擇 */
+        .equipment-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+        
+        .equipment-item {
+            border: 1px solid #dee2e6;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .equipment-item:hover {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .equipment-item.selected {
+            border-color: #3498db;
+            background-color: #f1f8ff;
+        }
+        
+        /* 設備三層階層樣式 */
+        .equipment-hierarchy {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+        
+        .equipment-top-category {
+            border: 1px solid #dee2e6;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            background: white;
+        }
+        
+        .equipment-category-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #3498db;
+        }
+        
+        .equipment-sub-categories {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+        
+        .equipment-sub-item {
+            border: 1px solid #e9ecef;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            transition: all 0.3s ease;
+        }
+        
+        .equipment-sub-item:hover {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border-color: #3498db;
+        }
+        
+        .equipment-sub-item.selected {
+            border-color: #3498db;
+            background-color: #f1f8ff;
+        }
+        
+        .equipment-detail-items {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+            padding: 0.75rem;
+            margin-top: 0.75rem;
+        }
+        
+        .equipment-detail-items .form-check {
+            margin-bottom: 0.5rem;
+        }
+        
+        .equipment-detail-items .form-check:last-child {
+            margin-bottom: 0;
+        }
+        
+        /* 側邊欄步驟導航 */
+        .sidebar-nav {
+            position: sticky;
+            top: 20px;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+        }
+        
+        .step-nav-card {
+            background: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .step-nav-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .step-nav-item {
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .step-nav-item:last-child {
+            border-bottom: none;
+        }
+        
+        .step-nav-item:hover {
+            background-color: #f8f9fa;
+            padding-left: 0.5rem;
+        }
+        
+        .step-nav-item.active {
+            color: var(--color-preview);
+            font-weight: 600;
+            background-color: #f1f8ff;
+            padding-left: 0.5rem;
+            border-left: 3px solid var(--color-preview);
+        }
+        
+        .progress-indicator {
+            height: 6px;
+            background: #f0f0f0;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 1rem;
+        }
+        
+        .progress-bar-custom {
+            height: 100%;
+            background: linear-gradient(90deg, var(--color-preview), var(--color-publish-active));
+            border-radius: 3px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        /* 隱藏數字輸入箭頭 */
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+        
+        /* 守則欄位樣式 */
+        .rule-input-group {
+            position: relative;
+        }
+        
+        .rule-input-group .remove-rule-btn {
+            border-color: #dc3545;
+            color: #dc3545;
+        }
+        
+        .rule-input-group .remove-rule-btn:hover {
+            background-color: #dc3545;
+            color: white;
+        }
+        
+        .add-rule-btn {
+            border-color: #28a745;
+            color: #28a745;
+        }
+        
+        .add-rule-btn:hover {
+            background-color: #28a745;
+            color: white;
+        }
+
+        /* 響應式設計 */
+        /* 大螢幕專用佈局 (1200px 以上) */
+        @@media (min-width: 1200px) {
+            .main-content-row {
+                display: flex;
+                gap: 3rem;
+            }
+            
+            .form-content {
+                flex: 3;
+                min-width: 0; /* 防止 flex 項目溢出 */
+            }
+            
+            .sidebar-content {
+                flex: 1;
+                max-width: 400px;
+                min-width: 320px;
+            }
+            
+            .form-section {
+                padding: 2.5rem;
+            }
+            
+            /* 大螢幕下的表單欄位優化 */
+            .row .col-md-12 {
+                max-width: none;
+            }
+            
+            /* 改善圖片上傳區域在大螢幕的顯示 */
+            .image-upload-area {
+                padding: 4rem 3rem;
+            }
+            
+            /* 優化設備選擇網格 */
+            .equipment-grid {
+                grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+                gap: 1.5rem;
+            }
+            
+            /* 步驟導航優化 */
+            .step-nav {
+                position: sticky;
+                top: 2rem;
+            }
+        }
+        
+        /* 中等螢幕佈局 (768px - 1199px) */
+        @@media (min-width: 768px) and (max-width: 1199px) {
+            .main-content-row {
+                display: flex;
+                gap: 2rem;
+            }
+            
+            .form-content {
+                flex: 2;
+                min-width: 0; /* 防止 flex 項目溢出 */
+            }
+            
+            .sidebar-content {
+                flex: 1;
+                max-width: 350px;
+            }
+        }
+        
+        @@media (max-width: 768px) {
+            .property-create-container {
+                padding: 1rem;
+            }
+            
+            .form-section {
+                padding: 1.5rem;
+                margin-bottom: 1.5rem;
+            }
+            
+            .cascade-container {
+                flex-direction: column;
+                gap: 0;
+            }
+            
+            .equipment-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar-content {
+                order: 2;
+                margin-top: 2rem;
+            }
+            
+            .form-content {
+                order: 1;
+            }
+            
+            .step-nav-card {
+                padding: 1rem;
+            }
+            
+            /* 行動版按鈕佈局 */
+            .btn-group-mobile {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.5rem;
+                justify-content: center;
+            }
+            
+            .btn-group-mobile .btn {
+                flex: 1 1 calc(50% - 0.25rem);
+                min-width: 140px;
+            }
+        }
+    </style>
+    
+    <link rel="stylesheet" href="~/css/_LoginPartialShared.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/zuHause.styles.css" asp-append-version="true" />
+</head>
+<body>
+    <div class="min-vh-100 bg-light">
+        <!-- 主導覽列 -->
+        @await Component.InvokeAsync("NavbarMember")
+        
+        <!-- 主要內容 -->
+        <div class="container-fluid px-4 py-4">
+            <div class="property-create-container">
+                <!-- 頁面標題 -->
+                <div class="text-center mb-4">
+                    <h1 class="display-5 fw-bold text-primary mb-2">刊登新房源</h1>
+                    <p class="text-muted">請填寫以下資訊來刊登您的房源</p>
+                </div>
+                
+                <div class="main-content-row">
+                    <!-- 左側表單內容 -->
+                    <div class="form-content">
+                        <form id="propertyCreateForm" asp-action="Create" asp-controller="Property" method="post" enctype="multipart/form-data" novalidate>
+                    @Html.AntiForgeryToken()
+                    
+                    <!-- 基本資訊區塊 -->
+                    <div class="form-section" id="basicInfo">
+                        <h2 class="section-title">
+                            <i class="fas fa-info-circle me-2"></i>基本資訊
+                        </h2>
+                        
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="form-group">
+                                    <label class="form-label required" for="Title">房源標題</label>
+                                    <input type="text" class="form-control" id="Title" name="Title" 
+                                           value="@(Model.PropertyData?.Title ?? "")" 
+                                           placeholder="例：台北市大安區精裝修套房，近捷運站" maxlength="100" required>
+                                    <div class="form-text">建議包含地區、房型、特色等關鍵字，讓租客更容易找到您的房源</div>
+                                    <span asp-validation-for="PropertyData.Title" class="text-danger small"></span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="cascade-container">
+                            <div class="form-group">
+                                <label class="form-label required" for="CityId">縣市</label>
+                                <select class="form-select" id="CityId" name="CityId" required>
+                                    <option value="">請選擇縣市</option>
+                                    @if (Model.Cities != null)
+                                    {
+                                        @foreach (var city in Model.Cities)
+                                        {
+                                            var districtsJson = System.Text.Json.JsonSerializer.Serialize(city.Districts ?? new List<zuHause.DTOs.DistrictDto>());
+                                            var isSelected = Model.PropertyData?.CityId == city.CityId;
+                                            
+                                            <option value="@city.CityId" 
+                                                    data-districts="@districtsJson"
+                                                    selected="@isSelected">
+                                                @city.CityName
+                                            </option>
+                                        }
+                                    }
+                                </select>
+                                <span asp-validation-for="PropertyData.CityId" class="text-danger small"></span>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label required" for="DistrictId">區域</label>
+                                <select class="form-select" id="DistrictId" name="DistrictId" required>
+                                    <option value="">請先選擇縣市</option>
+                                </select>
+                                <span asp-validation-for="PropertyData.DistrictId" class="text-danger small"></span>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label required" for="AddressLine">詳細地址</label>
+                            <input type="text" class="form-control" id="AddressLine" name="AddressLine" 
+                                   value="@(Model.PropertyData?.AddressLine ?? "")" 
+                                   placeholder="例：忠孝東路四段181巷7弄13號3樓" maxlength="200" required>
+                            <div class="form-text">請輸入完整地址，不含縣市區域</div>
+                            <span asp-validation-for="PropertyData.AddressLine" class="text-danger small"></span>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label" for="Description">房源描述</label>
+                            <textarea class="form-control" id="Description" name="Description" rows="6" 
+                                      placeholder="請描述房源的特色、周邊環境、交通便利性等...">@(Model.PropertyData?.Description ?? "")</textarea>
+                            <div class="form-text">詳細的描述能幫助租客更了解您的房源</div>
+                            <span asp-validation-for="PropertyData.Description" class="text-danger small"></span>
+                        </div>
+                    </div>
+                    
+                    <!-- 房屋資訊區塊 -->
+                    <div class="form-section" id="houseInfo">
+                        <h2 class="section-title">
+                            <i class="fas fa-home me-2"></i>房屋資訊
+                        </h2>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label required" for="MonthlyRent">月租金</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">NT$</span>
+                                        <input type="number" class="form-control" id="MonthlyRent" name="MonthlyRent" 
+                                               placeholder="請輸入月租金" 
+                                               min="1000" max="999999" step="100" required>
+                                        <span class="input-group-text">元</span>
+                                    </div>
+                                    <span asp-validation-for="PropertyData.MonthlyRent" class="text-danger small"></span>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <!-- 押金欄位已移動到費用及守則區塊 -->
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label class="form-label required" for="RoomCount">房間數</label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" id="RoomCount" name="RoomCount" 
+                                               placeholder="請輸入房間數" 
+                                               min="0" max="10" step="1" required>
+                                        <span class="input-group-text">房</span>
+                                    </div>
+                                    <span asp-validation-for="PropertyData.RoomCount" class="text-danger small"></span>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label class="form-label required" for="LivingRoomCount">客廳數</label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" id="LivingRoomCount" name="LivingRoomCount" 
+                                               placeholder="請輸入客廳數" 
+                                               min="0" max="5" step="1" required>
+                                        <span class="input-group-text">廳</span>
+                                    </div>
+                                    <span asp-validation-for="PropertyData.LivingRoomCount" class="text-danger small"></span>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label class="form-label required" for="BathroomCount">衛浴數</label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" id="BathroomCount" name="BathroomCount" 
+                                               placeholder="請輸入衛浴數" 
+                                               min="1" max="10" step="1" required>
+                                        <span class="input-group-text">衛</span>
+                                    </div>
+                                    <span asp-validation-for="PropertyData.BathroomCount" class="text-danger small"></span>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label class="form-label required" for="Area">坪數</label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" id="Area" name="Area" 
+                                               placeholder="請輸入坪數" 
+                                               min="1" max="1000" step="0.1" required>
+                                        <span class="input-group-text">坪</span>
+                                    </div>
+                                    <span asp-validation-for="PropertyData.Area" class="text-danger small"></span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label required" for="CurrentFloor">所在樓層</label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" id="CurrentFloor" name="CurrentFloor" 
+                                               placeholder="請輸入所在樓層" 
+                                               min="-3" max="50" step="1" required>
+                                        <span class="input-group-text">樓</span>
+                                    </div>
+                                    <div class="form-text">負數表示地下樓層（如：-1 = B1）</div>
+                                    <span asp-validation-for="PropertyData.CurrentFloor" class="text-danger small"></span>
+                                    <div id="floorValidationError" class="text-danger small" style="display: none;">
+                                        所在樓層不能大於總樓層數
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label required" for="TotalFloors">總樓層數</label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" id="TotalFloors" name="TotalFloors" 
+                                               placeholder="請輸入總樓層數" 
+                                               min="1" max="50" step="1" required>
+                                        <span class="input-group-text">層</span>
+                                    </div>
+                                    <span asp-validation-for="PropertyData.TotalFloors" class="text-danger small"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 費用資訊區塊 -->
+                    <div class="form-section" id="feeInfo">
+                        <h2 class="section-title">
+                            <i class="fas fa-dollar-sign me-2"></i>費用及守則
+                        </h2>
+                        
+                        <!-- 押金資訊 -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label required" for="DepositAmount">押金金額</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">NT$</span>
+                                        <input type="number" class="form-control" id="DepositAmount" name="DepositAmount" 
+                                               placeholder="請輸入押金金額" 
+                                               min="0" max="999999" step="100" required>
+                                        <span class="input-group-text">元</span>
+                                    </div>
+                                    <span asp-validation-for="PropertyData.DepositAmount" class="text-danger small"></span>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label required" for="DepositMonths">押金月數</label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" id="DepositMonths" name="DepositMonths" 
+                                               placeholder="請輸入押金月數" 
+                                               min="0" max="6" step="1" required>
+                                        <span class="input-group-text">個月</span>
+                                    </div>
+                                    <span asp-validation-for="PropertyData.DepositMonths" class="text-danger small"></span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 最短租期 -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label required" for="MinimumRentalMonths">最短租期</label>
+                                    <select class="form-select" id="MinimumRentalMonths" name="MinimumRentalMonths" required>
+                                        <option value="">請選擇最短租期</option>
+                                        @foreach (var option in Model.MinimumRentalOptions)
+                                        {
+                                            <option value="@option.Key" 
+                                                    selected="@(Model.PropertyData?.MinimumRentalMonths == option.Key)">
+                                                @option.Value
+                                            </option>
+                                        }
+                                    </select>
+                                    <span asp-validation-for="PropertyData.MinimumRentalMonths" class="text-danger small"></span>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <!-- 預留空間給其他欄位 -->
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">管理費</label>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="ManagementFeeIncluded" id="ManagementFeeIncluded" value="true" 
+                                               checked="@(Model.PropertyData?.ManagementFeeIncluded == true)">
+                                        <label class="form-check-label" for="ManagementFeeIncluded">
+                                            已包含在租金內
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="ManagementFeeIncluded" id="ManagementFeeNotIncluded" value="false" 
+                                               checked="@(Model.PropertyData?.ManagementFeeIncluded == false)">
+                                        <label class="form-check-label" for="ManagementFeeNotIncluded">
+                                            須另外收取
+                                        </label>
+                                    </div>
+                                    <div id="ManagementFeeAmountContainer" style="display: none;">
+                                        <div class="input-group mt-2">
+                                            <span class="input-group-text">NT$</span>
+                                            <input type="number" class="form-control" id="ManagementFeeAmount" name="ManagementFeeAmount" 
+                                                   placeholder="請輸入管理費金額" min="0" step="100">
+                                            <span class="input-group-text">元/月</span>
+                                        </div>
+                                    </div>
+                                    <span asp-validation-for="PropertyData.ManagementFeeAmount" class="text-danger small"></span>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <!-- 押金月數已移動到費用及守則區塊開頭 -->
+                            </div>
+                        </div>
+                        
+                        <!-- 水電費計算 -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label required" for="WaterFeeType">水費計算方式</label>
+                                    <select class="form-select" id="WaterFeeType" name="WaterFeeType" required>
+                                        <option value="">請選擇水費計算方式</option>
+                                        @foreach (var option in Model.WaterFeeOptions)
+                                        {
+                                            <option value="@option" 
+                                                    selected="@(Model.PropertyData?.WaterFeeType == option)">
+                                                @option
+                                            </option>
+                                        }
+                                    </select>
+                                    <div id="CustomWaterFeeContainer" style="display: none;">
+                                        <div class="input-group mt-2">
+                                            <span class="input-group-text">NT$</span>
+                                            <input type="number" class="form-control" id="CustomWaterFee" name="CustomWaterFee" 
+                                                   placeholder="請輸入自訂水費" min="0" step="0.1">
+                                            <span class="input-group-text">元/月</span>
+                                        </div>
+                                    </div>
+                                    <span asp-validation-for="PropertyData.WaterFeeType" class="text-danger small"></span>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label required" for="ElectricityFeeType">電費計算方式</label>
+                                    <select class="form-select" id="ElectricityFeeType" name="ElectricityFeeType" required>
+                                        <option value="">請選擇電費計算方式</option>
+                                        @foreach (var option in Model.ElectricityFeeOptions)
+                                        {
+                                            <option value="@option" 
+                                                    selected="@(Model.PropertyData?.ElectricityFeeType == option)">
+                                                @option
+                                            </option>
+                                        }
+                                    </select>
+                                    <div id="CustomElectricityFeeContainer" style="display: none;">
+                                        <div class="input-group mt-2">
+                                            <span class="input-group-text">NT$</span>
+                                            <input type="number" class="form-control" id="CustomElectricityFee" name="CustomElectricityFee" 
+                                                   placeholder="請輸入自訂電費" min="0" step="0.1">
+                                            <span class="input-group-text">元/度</span>
+                                        </div>
+                                    </div>
+                                    <span asp-validation-for="PropertyData.ElectricityFeeType" class="text-danger small"></span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 清潔費 -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label required">清潔費</label>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="CleaningFeeRequired" id="CleaningFeeNotRequired" value="false" 
+                                               checked="@(Model.PropertyData?.CleaningFeeRequired == false)">
+                                        <label class="form-check-label" for="CleaningFeeNotRequired">
+                                            不須清潔費
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="CleaningFeeRequired" id="CleaningFeeRequired" value="true" 
+                                               checked="@(Model.PropertyData?.CleaningFeeRequired == true)">
+                                        <label class="form-check-label" for="CleaningFeeRequired">
+                                            須收取清潔費
+                                        </label>
+                                    </div>
+                                    <div id="CleaningFeeAmountContainer" style="display: none;">
+                                        <div class="input-group mt-2">
+                                            <span class="input-group-text">NT$</span>
+                                            <input type="number" class="form-control" id="CleaningFeeAmount" name="CleaningFeeAmount" 
+                                                   placeholder="請輸入清潔費金額" min="0" step="100">
+                                            <span class="input-group-text">元</span>
+                                        </div>
+                                    </div>
+                                    <span asp-validation-for="PropertyData.CleaningFeeRequired" class="text-danger small"></span>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <!-- 預留空間 -->
+                            </div>
+                        </div>
+                        
+                        <!-- 停車位費用 -->
+                        <div class="form-group">
+                            <label class="form-label required">停車位</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="ParkingAvailable" id="ParkingNotAvailable" value="false" 
+                                       checked="@(Model.PropertyData?.ParkingAvailable == false)">
+                                <label class="form-check-label" for="ParkingNotAvailable">
+                                    沒有停車位
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="ParkingAvailable" id="ParkingAvailable" value="true" 
+                                       checked="@(Model.PropertyData?.ParkingAvailable == true)">
+                                <label class="form-check-label" for="ParkingAvailable">
+                                    有停車位
+                                </label>
+                            </div>
+                            <div id="ParkingFeeContainer" style="display: none;">
+                                <div class="form-check mt-2">
+                                    <input class="form-check-input" type="checkbox" id="ParkingFeeRequired" name="ParkingFeeRequired" 
+                                           checked="@(Model.PropertyData?.ParkingFeeRequired == true)">
+                                    <label class="form-check-label" for="ParkingFeeRequired">
+                                        停車費須額外收取
+                                    </label>
+                                </div>
+                                <div id="ParkingFeeAmountContainer" style="display: none;">
+                                    <div class="input-group mt-2">
+                                        <span class="input-group-text">NT$</span>
+                                        <input type="number" class="form-control" id="ParkingFeeAmount" name="ParkingFeeAmount" 
+                                               placeholder="請輸入停車費金額" min="0" step="100">
+                                        <span class="input-group-text">元/月</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <span asp-validation-for="PropertyData.ParkingAvailable" class="text-danger small"></span>
+                        </div>
+                        
+                        <!-- 守則欄位 -->
+                        <div class="form-group">
+                            <label class="form-label">房屋守則</label>
+                            <div id="rulesContainer">
+                                <div class="rule-input-group mb-2">
+                                    <div class="input-group">
+                                        <input type="text" class="form-control rule-input" name="SpecialRules" 
+                                               placeholder="請輸入房屋守則（最多20字）" maxlength="20">
+                                        <button type="button" class="btn btn-outline-success add-rule-btn">
+                                            <i class="fas fa-plus"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-text">最多可新增3個守則，每個守則最多20字</div>
+                        </div>
+                    </div>
+                    
+                    <!-- 設備與服務區塊 -->
+                    <div class="form-section" id="equipmentInfo">
+                        <h2 class="section-title">
+                            <i class="fas fa-cogs me-2"></i>設備與服務
+                        </h2>
+                        
+                        <div class="equipment-hierarchy" id="equipmentHierarchy">
+                            @if (Model.EquipmentCategoriesHierarchy != null)
+                            {
+                                @foreach (var topCategory in Model.EquipmentCategoriesHierarchy)
+                                {
+                                    <!-- 大分類標題 -->
+                                    <div class="equipment-top-category">
+                                        <h4 class="equipment-category-title">@topCategory.CategoryName</h4>
+                                        
+                                        @if (topCategory.Children.Any())
+                                        {
+                                            <div class="equipment-sub-categories">
+                                                @foreach (var subCategory in topCategory.Children)
+                                                {
+                                                    <!-- 子項勾選框 -->
+                                                    <div class="equipment-sub-item" data-category-id="@subCategory.CategoryId">
+                                                        <div class="form-check">
+                                                            <input class="form-check-input sub-category-checkbox" type="checkbox" 
+                                                                   name="SelectedEquipmentIds" 
+                                                                   value="@subCategory.CategoryId" 
+                                                                   id="equipment_@subCategory.CategoryId"
+                                                                   data-parent-id="@topCategory.CategoryId"
+                                                                   checked="@(Model.PropertyData?.SelectedEquipmentIds?.Contains(subCategory.CategoryId) == true)">
+                                                            <label class="form-check-label fw-medium" for="equipment_@subCategory.CategoryId">
+                                                                @subCategory.CategoryName
+                                                            </label>
+                                                        </div>
+                                                        
+                                                        @if (subCategory.Children.Any())
+                                                        {
+                                                            <!-- 細項選擇 -->
+                                                            <div class="equipment-detail-items mt-2" id="details_@subCategory.CategoryId" 
+                                                                 style="display: @(Model.PropertyData?.SelectedEquipmentIds?.Contains(subCategory.CategoryId) == true ? "block" : "none")">
+                                                                @foreach (var detailCategory in subCategory.Children)
+                                                                {
+                                                                    <div class="form-check form-check-sm ms-3">
+                                                                        <input class="form-check-input detail-category-checkbox" type="checkbox" 
+                                                                               name="SelectedEquipmentIds" 
+                                                                               value="@detailCategory.CategoryId" 
+                                                                               id="equipment_@detailCategory.CategoryId"
+                                                                               data-parent-id="@subCategory.CategoryId"
+                                                                               checked="@(Model.PropertyData?.SelectedEquipmentIds?.Contains(detailCategory.CategoryId) == true)">
+                                                                        <label class="form-check-label small" for="equipment_@detailCategory.CategoryId">
+                                                                            @detailCategory.CategoryName
+                                                                        </label>
+                                                                    </div>
+                                                                }
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                }
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            }
+                        </div>
+                    </div>
+                    
+                    <!-- 刊登方案區塊 -->
+                    <div class="form-section" id="planInfo">
+                        <h2 class="section-title">
+                            <i class="fas fa-calendar me-2"></i>刊登方案
+                        </h2>
+                        
+                        <div class="row">
+                            @if (Model.ListingPlans != null)
+                            {
+                                @foreach (var plan in Model.ListingPlans)
+                                {
+                                    <div class="col-md-4 mb-3">
+                                        <div class="card h-100 listing-plan-card" data-plan-id="@plan.PlanId" data-plan-days="@plan.MinListingDays">
+                                            <div class="card-body">
+                                                <div class="form-check">
+                                                    <input class="form-check-input listing-plan-radio" type="radio" name="ListingPlanId" 
+                                                           value="@plan.PlanId" id="plan_@plan.PlanId"
+                                                           checked="@(Model.PropertyData?.ListingPlanId == plan.PlanId)" required>
+                                                    <label class="form-check-label" for="plan_@plan.PlanId">
+                                                        <h5 class="card-title">@plan.PlanName</h5>
+                                                        <p class="card-text">
+                                                            <strong>NT$ @String.Format("{0:N0}", (plan.PricePerDay * plan.MinListingDays))</strong>
+                                                        </p>
+                                                        <small class="text-muted">方案詳情請洽客服</small>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                        </div>
+                        
+                        <!-- 選中方案詳情顯示區域 -->
+                        <div id="selectedPlanDetails" class="mt-4" style="display: none;">
+                            <div class="alert alert-info">
+                                <div id="planDetailsContent" class="plan-details-highlight">
+                                    <!-- 詳情內容將由 JavaScript 動態生成 -->
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <span asp-validation-for="PropertyData.ListingPlanId" class="text-danger small"></span>
+                    </div>
+                    
+                    <!-- 圖片上傳區塊 -->
+                    <div class="form-section" id="imageInfo">
+                        <h2 class="section-title">
+                            <i class="fas fa-camera me-2"></i>房屋照片
+                        </h2>
+                        
+                        <div class="form-group">
+                            <label class="form-label" for="ChineseCategory">圖片分類</label>
+                            <select class="form-select" id="ChineseCategory" name="ChineseCategory">
+                                @if (Model.AvailableChineseCategories != null)
+                                {
+                                    @foreach (var category in Model.AvailableChineseCategories)
+                                    {
+                                        <option value="@category">@category</option>
+                                    }
+                                }
+                            </select>
+                            <div class="form-text">請選擇要上傳圖片的分類</div>
+                        </div>
+                        
+                        <div class="image-upload-area" id="imageUploadArea">
+                            <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                            <h4>點擊或拖曳圖片到此處</h4>
+                            <p class="text-muted mb-3">支援 JPG、PNG 格式，單檔最大 5MB</p>
+                            <input type="file" id="imageFiles" name="ImageFiles" multiple accept="image/*" style="display: none;">
+                            <button type="button" class="btn btn-outline-primary" onclick="document.getElementById('imageFiles').click()">
+                                <i class="fas fa-plus me-2"></i>選擇圖片
+                            </button>
+                        </div>
+                        
+                        <div id="imagePreview" class="mt-3" style="display: none;">
+                            <h6>已選擇的圖片：</h6>
+                            <div id="previewContainer" class="d-flex flex-wrap gap-2"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- 操作按鈕 -->
+                    <div class="text-center btn-group-mobile">
+                        <button type="button" id="manualSaveButton" class="btn btn-outline-secondary">
+                            <i class="fas fa-bookmark me-2"></i>儲存草稿
+                        </button>
+                        <button type="button" id="previewButton" class="btn btn-preview">
+                            <i class="fas fa-eye me-2"></i>預覽
+                        </button>
+                        <button type="button" id="cancelButton" class="btn btn-cancel">
+                            <i class="fas fa-times me-2"></i>取消發佈
+                        </button>
+                        <button type="submit" id="submitButton" class="btn btn-publish btn-lg">
+                            <i class="fas fa-paper-plane me-2"></i>立即發佈
+                        </button>
+                    </div>
+                </form>
+                    </div>
+                    
+                    <!-- 右側導航欄 -->
+                    <div class="sidebar-content">
+                        <div class="sidebar-nav">
+                            <div class="step-nav-card">
+                                <h6 class="mb-3">完成進度</h6>
+                                <div class="progress-indicator">
+                                    <div class="progress-bar-custom" id="progressBar"></div>
+                                </div>
+                                <ul class="step-nav-list" id="stepNavList">
+                                    <li class="step-nav-item" data-target="basicInfo">
+                                        <i class="fas fa-info-circle me-2"></i>基本資訊
+                                        <span class="float-end" id="basicInfo-status">
+                                            <i class="fas fa-circle text-muted small"></i>
+                                        </span>
+                                    </li>
+                                    <li class="step-nav-item" data-target="houseInfo">
+                                        <i class="fas fa-home me-2"></i>房屋資訊
+                                        <span class="float-end" id="houseInfo-status">
+                                            <i class="fas fa-circle text-muted small"></i>
+                                        </span>
+                                    </li>
+                                    <li class="step-nav-item" data-target="feeInfo">
+                                        <i class="fas fa-dollar-sign me-2"></i>費用及守則
+                                        <span class="float-end" id="feeInfo-status">
+                                            <i class="fas fa-circle text-muted small"></i>
+                                        </span>
+                                    </li>
+                                    <li class="step-nav-item" data-target="equipmentInfo">
+                                        <i class="fas fa-cogs me-2"></i>設備與服務
+                                        <span class="float-end" id="equipmentInfo-status">
+                                            <i class="fas fa-circle text-muted small"></i>
+                                        </span>
+                                    </li>
+                                    <li class="step-nav-item" data-target="planInfo">
+                                        <i class="fas fa-calendar me-2"></i>刊登方案
+                                        <span class="float-end" id="planInfo-status">
+                                            <i class="fas fa-circle text-muted small"></i>
+                                        </span>
+                                    </li>
+                                    <li class="step-nav-item" data-target="imageInfo">
+                                        <i class="fas fa-camera me-2"></i>房屋照片
+                                        <span class="float-end" id="imageInfo-status">
+                                            <i class="fas fa-circle text-muted small"></i>
+                                        </span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 取消發佈確認模態框 -->
+    <div class="modal fade" id="cancelModal" tabindex="-1" aria-labelledby="cancelModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-body text-center py-4">
+                    <h5 class="mb-3">是否確定取消發佈？</h5>
+                    <div class="mt-4">
+                        <button type="button" class="btn btn-confirm-cancel me-3 px-4" data-bs-dismiss="modal">
+                            確定取消
+                        </button>
+                        <button type="button" class="btn btn-continue-edit px-4" data-bs-dismiss="modal">
+                            繼續編輯
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 房源審核提醒模態框 -->
+    <div class="modal fade" id="submitConfirmModal" tabindex="-1" aria-labelledby="submitConfirmModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-body text-center py-4">
+                    <h5 class="mb-3">房源審核提醒</h5>
+                    <p class="text-muted small mb-3">您的房源資料已提交成功！房源將進入後台審核流程，我們會仔細檢查以下項目：</p>
+                    <ul class="text-start small text-muted mb-3">
+                        <li>房產證明文件的完整性</li>
+                        <li>房源照片品質與真實性</li>
+                        <li>房源資訊的準確性</li>
+                    </ul>
+                    <div class="border rounded p-3 mb-4">
+                        <h6 class="mb-2">審核時間</h6>
+                        <small class="text-muted">通常需要 1 至 3 個工作天，審核通過後將通知您付款，敬請留意，付款成功後系統將立即上架！</small>
+                    </div>
+                    <div class="mt-4">
+                        <button type="button" class="btn btn-return-edit me-3 px-4" data-bs-dismiss="modal">
+                            返回編輯
+                        </button>
+                        <button type="button" class="btn btn-confirm-submit px-4" id="finalSubmitButton">
+                            確認提交
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 預覽模態框 -->
+    <div class="modal fade" id="previewModal" tabindex="-1" aria-labelledby="previewModalLabel" aria-hidden="true" data-bs-backdrop="true" data-bs-keyboard="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="previewModalLabel">房源預覽</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="previewContent">
+                        <!-- 預覽內容將由 JavaScript 動態生成 -->
+                        <div class="text-center py-5">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">載入中...</span>
+                            </div>
+                            <p class="mt-2 text-muted">載入預覽中...</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">關閉預覽</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- PropertyFormCache 暫存管理 -->
+    <script src="~/js/property-form-cache.js" asp-append-version="true"></script>
+    
+    <!-- 自定義 JavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化表單暫存管理器 - 使用 ID 選擇器
+            const formSelector = '#propertyCreateForm';
+            const formElement = document.querySelector(formSelector);
+            
+            let formCache = null;
+            if (formElement) {
+                formCache = new PropertyFormCache(formSelector);
+            } else {
+                console.warn('PropertyFormCache: 找不到指定的表單元素:', formSelector);
+            }
+            
+            // 手動暫存按鈕功能（可選）
+            const saveButton = document.getElementById('manualSaveButton');
+            if (saveButton) {
+                saveButton.addEventListener('click', function() {
+                    formCache.manualSave();
+                });
+            }
+            // 級聯下拉選單
+            const citySelect = document.getElementById('CityId');
+            const districtSelect = document.getElementById('DistrictId');
+            
+            citySelect.addEventListener('change', function() {
+                const selectedOption = this.options[this.selectedIndex];
+                let districts = [];
+                
+                console.log('Selected city:', selectedOption.value, selectedOption.textContent);
+                console.log('Districts data:', selectedOption.dataset.districts);
+                
+                try {
+                    if (selectedOption.value && selectedOption.dataset.districts) {
+                        // 處理可能被 HTML 編碼的 JSON 字符串
+                        let jsonString = selectedOption.dataset.districts;
+                        
+                        // 解碼 HTML 實體
+                        const textarea = document.createElement('textarea');
+                        textarea.innerHTML = jsonString;
+                        jsonString = textarea.value;
+                        
+                        if (jsonString && jsonString.trim() !== '' && jsonString !== '[]') {
+                            districts = JSON.parse(jsonString);
+                            console.log('Parsed districts:', districts);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error parsing districts JSON:', error);
+                    console.error('原始 JSON 字符串:', selectedOption.dataset.districts);
+                    districts = [];
+                }
+                
+                // 清空並重建區域選項
+                districtSelect.innerHTML = '<option value="">請選擇區域</option>';
+                
+                if (districts && districts.length > 0) {
+                    // 按名稱排序區域
+                    districts.sort((a, b) => {
+                        const nameA = a.districtName || a.DistrictName || '';
+                        const nameB = b.districtName || b.DistrictName || '';
+                        return nameA.localeCompare(nameB, 'zh-TW');
+                    });
+                    
+                    districts.forEach(function(district) {
+                        const option = document.createElement('option');
+                        option.value = district.districtId || district.DistrictId;
+                        option.textContent = district.districtName || district.DistrictName;
+                        districtSelect.appendChild(option);
+                    });
+                    console.log(`已加載 ${districts.length} 個區域`);
+                } else {
+                    console.warn('沒有找到區域資料');
+                }
+            });
+            
+            // 樓層驗證邏輯
+            const currentFloorInput = document.getElementById('CurrentFloor');
+            const totalFloorsInput = document.getElementById('TotalFloors');
+            const floorValidationError = document.getElementById('floorValidationError');
+            
+            function validateFloors() {
+                const currentFloor = parseInt(currentFloorInput.value) || 0;
+                const totalFloors = parseInt(totalFloorsInput.value) || 0;
+                
+                if (currentFloorInput.value && totalFloorsInput.value && currentFloor > totalFloors) {
+                    floorValidationError.style.display = 'block';
+                    currentFloorInput.classList.add('is-invalid');
+                    return false;
+                } else {
+                    floorValidationError.style.display = 'none';
+                    currentFloorInput.classList.remove('is-invalid');
+                    return true;
+                }
+            }
+            
+            if (currentFloorInput && totalFloorsInput) {
+                currentFloorInput.addEventListener('blur', validateFloors);
+                totalFloorsInput.addEventListener('blur', validateFloors);
+                currentFloorInput.addEventListener('input', validateFloors);
+                totalFloorsInput.addEventListener('input', validateFloors);
+            }
+            
+            // 管理費顯示控制
+            const managementFeeRadios = document.querySelectorAll('input[name="ManagementFeeIncluded"]');
+            const managementFeeContainer = document.getElementById('ManagementFeeAmountContainer');
+            
+            managementFeeRadios.forEach(function(radio) {
+                radio.addEventListener('change', function() {
+                    if (this.value === 'false' && this.checked) {
+                        managementFeeContainer.style.display = 'block';
+                    } else {
+                        managementFeeContainer.style.display = 'none';
+                    }
+                });
+            });
+            
+            // 水費計算方式顯示控制
+            const waterFeeTypeSelect = document.getElementById('WaterFeeType');
+            const customWaterFeeContainer = document.getElementById('CustomWaterFeeContainer');
+            
+            if (waterFeeTypeSelect) {
+                waterFeeTypeSelect.addEventListener('change', function() {
+                    if (this.value === '自訂金額') {
+                        customWaterFeeContainer.style.display = 'block';
+                    } else {
+                        customWaterFeeContainer.style.display = 'none';
+                    }
+                });
+                
+                // 初始化顯示狀態
+                if (waterFeeTypeSelect.value === '自訂金額') {
+                    customWaterFeeContainer.style.display = 'block';
+                }
+            }
+            
+            // 電費計算方式顯示控制
+            const electricityFeeTypeSelect = document.getElementById('ElectricityFeeType');
+            const customElectricityFeeContainer = document.getElementById('CustomElectricityFeeContainer');
+            
+            if (electricityFeeTypeSelect) {
+                electricityFeeTypeSelect.addEventListener('change', function() {
+                    if (this.value === '自訂金額') {
+                        customElectricityFeeContainer.style.display = 'block';
+                    } else {
+                        customElectricityFeeContainer.style.display = 'none';
+                    }
+                });
+                
+                // 初始化顯示狀態
+                if (electricityFeeTypeSelect.value === '自訂金額') {
+                    customElectricityFeeContainer.style.display = 'block';
+                }
+            }
+            
+            // 清潔費顯示控制
+            const cleaningFeeRadios = document.querySelectorAll('input[name="CleaningFeeRequired"]');
+            const cleaningFeeAmountContainer = document.getElementById('CleaningFeeAmountContainer');
+            
+            cleaningFeeRadios.forEach(function(radio) {
+                radio.addEventListener('change', function() {
+                    if (this.value === 'true' && this.checked) {
+                        cleaningFeeAmountContainer.style.display = 'block';
+                    } else {
+                        cleaningFeeAmountContainer.style.display = 'none';
+                    }
+                });
+            });
+            
+            // 停車位費用顯示控制（更新為單選邏輯）
+            const parkingRadios = document.querySelectorAll('input[name="ParkingAvailable"]');
+            const parkingFeeContainer = document.getElementById('ParkingFeeContainer');
+            const parkingFeeRequired = document.getElementById('ParkingFeeRequired');
+            const parkingFeeAmountContainer = document.getElementById('ParkingFeeAmountContainer');
+            const parkingAvailable = document.querySelector('input[name="ParkingAvailable"][value="true"]');
+            
+            parkingRadios.forEach(function(radio) {
+                radio.addEventListener('change', function() {
+                    if (this.value === 'true' && this.checked) {
+                        parkingFeeContainer.style.display = 'block';
+                    } else {
+                        parkingFeeContainer.style.display = 'none';
+                        parkingFeeRequired.checked = false;
+                        parkingFeeAmountContainer.style.display = 'none';
+                    }
+                });
+            });
+            
+            if (parkingFeeRequired) {
+                parkingFeeRequired.addEventListener('change', function() {
+                    if (this.checked) {
+                        parkingFeeAmountContainer.style.display = 'block';
+                    } else {
+                        parkingFeeAmountContainer.style.display = 'none';
+                    }
+                });
+            }
+            
+            // 設備三層階層選擇邏輯
+            const subCategoryCheckboxes = document.querySelectorAll('.sub-category-checkbox');
+            const detailCategoryCheckboxes = document.querySelectorAll('.detail-category-checkbox');
+            
+            // 子項勾選邏輯：選擇子項時顯示細項
+            subCategoryCheckboxes.forEach(function(checkbox) {
+                checkbox.addEventListener('change', function() {
+                    const subCategoryId = this.value;
+                    const detailContainer = document.getElementById('details_' + subCategoryId);
+                    
+                    if (this.checked) {
+                        // 選擇子項時顯示細項
+                        if (detailContainer) {
+                            detailContainer.style.display = 'block';
+                        }
+                        this.closest('.equipment-sub-item').classList.add('selected');
+                    } else {
+                        // 取消選擇子項時隱藏細項並取消所有細項選擇
+                        if (detailContainer) {
+                            detailContainer.style.display = 'none';
+                            const childCheckboxes = detailContainer.querySelectorAll('.detail-category-checkbox');
+                            childCheckboxes.forEach(child => child.checked = false);
+                        }
+                        this.closest('.equipment-sub-item').classList.remove('selected');
+                    }
+                });
+            });
+            
+            // 細項選擇邏輯：確保至少選擇一個細項
+            detailCategoryCheckboxes.forEach(function(checkbox) {
+                checkbox.addEventListener('change', function() {
+                    const parentId = this.dataset.parentId;
+                    const parentCheckbox = document.querySelector(`input[value="${parentId}"].sub-category-checkbox`);
+                    const detailContainer = document.getElementById('details_' + parentId);
+                    
+                    if (detailContainer) {
+                        const checkedDetails = detailContainer.querySelectorAll('.detail-category-checkbox:checked');
+                        
+                        // 如果沒有選擇任何細項，取消父項選擇
+                        if (checkedDetails.length === 0 && parentCheckbox) {
+                            parentCheckbox.checked = false;
+                            detailContainer.style.display = 'none';
+                            parentCheckbox.closest('.equipment-sub-item').classList.remove('selected');
+                        }
+                        // 如果選擇了細項但父項未選擇，自動選擇父項
+                        else if (checkedDetails.length > 0 && parentCheckbox && !parentCheckbox.checked) {
+                            parentCheckbox.checked = true;
+                            parentCheckbox.closest('.equipment-sub-item').classList.add('selected');
+                        }
+                    }
+                });
+            });
+            
+            // 刊登方案到期日計算
+            function calculateExpireDate(days) {
+                const now = new Date();
+                const expireDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + days + 1);
+                return expireDate.getFullYear() + '-' + 
+                       String(expireDate.getMonth() + 1).padStart(2, '0') + '-' + 
+                       String(expireDate.getDate()).padStart(2, '0') + ' 00:00';
+            }
+            
+            // 刊登方案選擇邏輯
+            const listingPlanRadios = document.querySelectorAll('.listing-plan-radio');
+            const selectedPlanDetails = document.getElementById('selectedPlanDetails');
+            const planDetailsContent = document.getElementById('planDetailsContent');
+            
+            listingPlanRadios.forEach(function(radio) {
+                radio.addEventListener('change', function() {
+                    if (this.checked) {
+                        const planCard = this.closest('.listing-plan-card');
+                        const planDays = parseInt(planCard.dataset.planDays);
+                        const planName = planCard.querySelector('.card-title').textContent;
+                        const planCost = planCard.querySelector('.card-text strong').textContent;
+                        const expireDate = calculateExpireDate(planDays);
+                        
+                        // 移除其他卡片的選中狀態
+                        document.querySelectorAll('.listing-plan-card').forEach(card => {
+                            card.classList.remove('selected');
+                        });
+                        
+                        // 添加當前卡片的選中狀態
+                        planCard.classList.add('selected');
+                        
+                        // 生成詳情內容
+                        planDetailsContent.innerHTML = `
+                            您選擇的方案刊登日為 <span class="highlight-days">${planDays} 天</span>，預計下架日 ${expireDate}（24 小時制）<br>
+                            <span class="highlight-cost">費用總計共 ${planCost} 元</span>
+                        `;
+                        
+                        // 顯示詳情區域
+                        selectedPlanDetails.style.display = 'block';
+                        
+                        // 平滑滾動到詳情區域
+                        selectedPlanDetails.scrollIntoView({ 
+                            behavior: 'smooth',
+                            block: 'nearest'
+                        });
+                    }
+                });
+            });
+            
+            // 初始化已選中的方案
+            const checkedPlanRadio = document.querySelector('.listing-plan-radio:checked');
+            if (checkedPlanRadio) {
+                checkedPlanRadio.dispatchEvent(new Event('change'));
+            }
+            
+            // 預覽按鈕功能
+            const previewButton = document.getElementById('previewButton');
+            const previewModal = document.getElementById('previewModal');
+            const previewContent = document.getElementById('previewContent');
+            
+            if (previewButton && previewModal && previewContent) {
+                previewButton.addEventListener('click', async function(e) {
+                    e.preventDefault();
+                    
+                    try {
+                        // 顯示載入狀態
+                        previewContent.innerHTML = `
+                            <div class="text-center py-5">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">載入中...</span>
+                                </div>
+                                <p class="mt-2 text-muted">正在生成預覽...</p>
+                            </div>
+                        `;
+                        
+                        // 使用 Bootstrap 5.3 最佳實踐
+                        const modal = bootstrap.Modal.getOrCreateInstance(previewModal, {
+                            backdrop: true,
+                            keyboard: true,
+                            focus: true
+                        });
+                        modal.show();
+                        
+                        // 收集表單資料
+                        const formData = collectFormData();
+                        
+                        // 發送 AJAX 請求
+                        const response = await fetch('/Property/Preview', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                            },
+                            body: JSON.stringify(formData)
+                        });
+                        
+                        if (response.ok) {
+                            const htmlContent = await response.text();
+                            previewContent.innerHTML = htmlContent;
+                        } else {
+                            throw new Error('預覽請求失敗');
+                        }
+                        
+                    } catch (error) {
+                        console.error('預覽錯誤:', error);
+                        previewContent.innerHTML = `
+                            <div class="text-center py-5">
+                                <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                                <h5>預覽載入失敗</h5>
+                                <p class="text-muted">請檢查表單資料是否完整，或稍後再試</p>
+                                <button type="button" class="btn btn-outline-primary error-close-btn">
+                                    關閉
+                                </button>
+                            </div>
+                        `;
+                        
+                        // 確保錯誤狀態下也能正常關閉
+                        const modal = bootstrap.Modal.getInstance(previewModal);
+                        if (modal) {
+                            const closeBtn = previewContent.querySelector('.error-close-btn');
+                            if (closeBtn) {
+                                closeBtn.addEventListener('click', () => modal.hide());
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // 添加預覽模態框事件監聽器，確保內容清理
+            if (previewModal) {
+                previewModal.addEventListener('hidden.bs.modal', function () {
+                    // 清理內容，準備下次使用
+                    const defaultContent = `
+                        <div class="text-center py-5">
+                            <p class="text-muted">請點擊預覽按鈕查看房源預覽</p>
+                        </div>
+                    `;
+                    previewContent.innerHTML = defaultContent;
+                    
+                    // 確保 backdrop 完全清理
+                    setTimeout(() => {
+                        document.querySelectorAll('.modal-backdrop').forEach(el => {
+                            if (el) el.remove();
+                        });
+                        document.body.classList.remove('modal-open');
+                        document.body.style.removeProperty('padding-right');
+                        document.body.style.removeProperty('overflow');
+                    }, 100);
+                });
+                
+                // 添加模態框顯示事件監聽器
+                previewModal.addEventListener('shown.bs.modal', function () {
+                    console.log('預覽模態框已顯示');
+                });
+                
+                // 添加強制清理機制（備用方案）
+                window.forceCleanPreviewModal = function() {
+                    const modal = bootstrap.Modal.getInstance(previewModal);
+                    if (modal) {
+                        modal.dispose();
+                    }
+                    
+                    // 清理可能殘留的 backdrop
+                    document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+                    document.body.classList.remove('modal-open');
+                    document.body.style.paddingRight = '';
+                    document.body.style.overflow = '';
+                    document.body.style.removeProperty('padding-right');
+                };
+            }
+            
+            // 圖片上傳功能
+            const imageUploadArea = document.getElementById('imageUploadArea');
+            const imageFiles = document.getElementById('imageFiles');
+            const imagePreview = document.getElementById('imagePreview');
+            const previewContainer = document.getElementById('previewContainer');
+            
+            // 點擊上傳區域觸發文件選擇
+            imageUploadArea.addEventListener('click', function(e) {
+                if (e.target.tagName !== 'BUTTON') {
+                    imageFiles.click();
+                }
+            });
+            
+            // 拖拽上傳
+            imageUploadArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                this.classList.add('dragover');
+            });
+            
+            imageUploadArea.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                this.classList.remove('dragover');
+            });
+            
+            imageUploadArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                this.classList.remove('dragover');
+                
+                const files = e.dataTransfer.files;
+                handleFiles(files);
+            });
+            
+            // 文件選擇處理
+            imageFiles.addEventListener('change', function() {
+                handleFiles(this.files);
+            });
+            
+            function handleFiles(files) {
+                previewContainer.innerHTML = '';
+                
+                if (files.length > 0) {
+                    imagePreview.style.display = 'block';
+                    
+                    Array.from(files).forEach(function(file, index) {
+                        if (file.type.startsWith('image/')) {
+                            const reader = new FileReader();
+                            reader.onload = function(e) {
+                                const preview = document.createElement('div');
+                                preview.className = 'position-relative';
+                                preview.innerHTML = `
+                                    <img src="${e.target.result}" alt="預覽" 
+                                         style="width: 100px; height: 100px; object-fit: cover; border-radius: 0.5rem;">
+                                    <small class="d-block text-center mt-1">${file.name}</small>
+                                `;
+                                previewContainer.appendChild(preview);
+                            };
+                            reader.readAsDataURL(file);
+                        }
+                    });
+                } else {
+                    imagePreview.style.display = 'none';
+                }
+            }
+            
+            // 初始化頁面狀態
+            // 觸發管理費狀態檢查
+            const checkedManagementFee = document.querySelector('input[name="ManagementFeeIncluded"]:checked');
+            if (checkedManagementFee && checkedManagementFee.value === 'false') {
+                managementFeeContainer.style.display = 'block';
+            }
+            
+            // 觸發停車位狀態檢查
+            if (parkingAvailable.checked) {
+                parkingFeeContainer.style.display = 'block';
+                if (parkingFeeRequired.checked) {
+                    parkingFeeAmountContainer.style.display = 'block';
+                }
+            }
+            
+            // 初始化設備選擇狀態
+            const equipmentCheckboxes = document.querySelectorAll('.sub-category-checkbox, .detail-category-checkbox');
+            equipmentCheckboxes.forEach(function(checkbox) {
+                const equipmentItem = checkbox.closest('.equipment-sub-item');
+                if (checkbox.checked) {
+                    equipmentItem?.classList.add('selected');
+                }
+            });
+            
+            // 初始化守則動態欄位功能
+            initializeRulesDynamicFields();
+            
+            // 模態框和按鈕邏輯
+            initializeModalLogic();
+            
+            // 步驟導航邏輯
+            initializeStepNavigation();
+            
+            // 初始化城市區域選擇
+            if (citySelect.value) {
+                citySelect.dispatchEvent(new Event('change'));
+                
+                // 如果有預設的區域值，選中它
+                const savedDistrictId = '@(Model.PropertyData?.DistrictId ?? 0)';
+                if (savedDistrictId && savedDistrictId !== '0') {
+                    setTimeout(function() {
+                        districtSelect.value = savedDistrictId;
+                    }, 100);
+                }
+            }
+        });
+        
+        /**
+         * 初始化模態框邏輯
+         */
+        function initializeModalLogic() {
+            const previewButton = document.getElementById('previewButton');
+            const cancelButton = document.getElementById('cancelButton');
+            const submitButton = document.getElementById('submitButton');
+            const finalSubmitButton = document.getElementById('finalSubmitButton');
+            
+            // 預覽按鈕
+            previewButton.addEventListener('click', function() {
+                generatePreview();
+                const previewModal = new bootstrap.Modal(document.getElementById('previewModal'));
+                previewModal.show();
+            });
+            
+            // 取消發佈按鈕
+            cancelButton.addEventListener('click', function() {
+                const cancelModal = new bootstrap.Modal(document.getElementById('cancelModal'));
+                cancelModal.show();
+            });
+            
+            // 立即發佈按鈕
+            submitButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                if (validateForm()) {
+                    const submitModal = new bootstrap.Modal(document.getElementById('submitConfirmModal'));
+                    submitModal.show();
+                }
+            });
+            
+            // 最終提交按鈕
+            finalSubmitButton.addEventListener('click', function() {
+                const form = document.querySelector('#propertyCreateForm');
+                if (form) {
+                    form.submit();
+                } else {
+                    console.error('找不到表單元素，無法提交');
+                }
+            });
+            
+            // 表單驗證和按鈕狀態更新
+            document.addEventListener('input', updateSubmitButtonState);
+            document.addEventListener('change', updateSubmitButtonState);
+            
+            // 初始化按鈕狀態
+            updateSubmitButtonState();
+        }
+        
+        /**
+         * 生成預覽內容
+         */
+        function generatePreview() {
+            const previewContent = document.getElementById('previewContent');
+            const formData = collectFormDataForPreview();
+            
+            previewContent.innerHTML = `
+                <div class="property-preview">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <h4>${formData.title || '(尚未輸入標題)'}</h4>
+                            <div class="mb-3">
+                                <h5 class="text-primary">NT$ ${formData.monthlyRent ? Number(formData.monthlyRent).toLocaleString() : '0'} <small class="text-muted">/月</small></h5>
+                            </div>
+                            <p><i class="fas fa-map-marker-alt me-2"></i>${formData.address || '(尚未輸入地址)'}</p>
+                            <p><i class="fas fa-home me-2"></i>${formData.roomCount || 0} 房 ${formData.livingRoomCount || 0} 廳 ${formData.bathroomCount || 0} 衛 | ${formData.area || 0} 坪</p>
+                            <p><i class="fas fa-building me-2"></i>${formData.currentFloor || 0} 樓 / ${formData.totalFloors || 0} 層</p>
+                            ${formData.description ? '<div class="mt-3"><h6>房源描述</h6><p>' + formData.description + '</p></div>' : ''}
+                        </div>
+                        <div class="col-md-4">
+                            <div class="border rounded p-3">
+                                <h6>費用資訊</h6>
+                                <p>押金：NT$ ${formData.depositAmount ? Number(formData.depositAmount).toLocaleString() : '0'}</p>
+                                <p>押金月數：${formData.depositMonths || 0} 個月</p>
+                                ${formData.managementFeeIncluded === 'false' ? '<p>管理費：NT$ ' + (Number(formData.managementFeeAmount || 0).toLocaleString()) + '/月</p>' : '<p>管理費：已包含</p>'}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        /**
+         * 收集表單資料用於預覽
+         */
+        function collectFormDataForPreview() {
+            const form = document.querySelector('#propertyCreateForm');
+            if (!form) {
+                console.error('collectFormDataForPreview: 找不到表單元素');
+                return {};
+            }
+            const formData = new FormData(form);
+            const data = {};
+            
+            for (let [key, value] of formData.entries()) {
+                data[key] = value;
+            }
+            
+            // 組合地址
+            const citySelect = document.getElementById('CityId');
+            const districtSelect = document.getElementById('DistrictId');
+            const cityName = citySelect.selectedOptions[0]?.text || '';
+            const districtName = districtSelect.selectedOptions[0]?.text || '';
+            const addressLine = data.AddressLine || '';
+            
+            data.address = `${cityName}${districtName}${addressLine}`;
+            
+            return data;
+        }
+        
+        /**
+         * 表單驗證
+         */
+        function validateForm() {
+            const requiredFields = [
+                'Title', 'CityId', 'DistrictId', 'AddressLine', 
+                'MonthlyRent', 'DepositAmount', 'RoomCount', 
+                'LivingRoomCount', 'BathroomCount', 'Area',
+                'CurrentFloor', 'TotalFloors', 'DepositMonths',
+                'MinimumRentalMonths', 'WaterFeeType', 'ElectricityFeeType'
+            ];
+            
+            let isValid = true;
+            
+            requiredFields.forEach(fieldName => {
+                const field = document.querySelector(`[name="${fieldName}"]`);
+                if (field && (!field.value || field.value.trim() === '')) {
+                    isValid = false;
+                }
+            });
+            
+            // 檢查必選的 radio 按鈕組
+            const radioGroups = ['ManagementFeeIncluded', 'CleaningFeeRequired', 'ParkingAvailable'];
+            radioGroups.forEach(groupName => {
+                const checkedRadio = document.querySelector(`input[name="${groupName}"]:checked`);
+                if (!checkedRadio) {
+                    isValid = false;
+                }
+            });
+            
+            // 檢查設備選擇（至少選擇一個）
+            const selectedEquipment = document.querySelectorAll('input[name="SelectedEquipmentIds"]:checked');
+            if (selectedEquipment.length === 0) {
+                isValid = false;
+            }
+            
+            // 檢查刊登方案選擇
+            const selectedPlan = document.querySelector('input[name="ListingPlanId"]:checked');
+            if (!selectedPlan) {
+                isValid = false;
+            }
+            
+            return isValid;
+        }
+        
+        /**
+         * 更新提交按鈕狀態
+         */
+        function updateSubmitButtonState() {
+            const submitButton = document.getElementById('submitButton');
+            const isFormValid = validateForm();
+            
+            if (isFormValid) {
+                submitButton.classList.add('active');
+            } else {
+                submitButton.classList.remove('active');
+            }
+        }
+        
+        /**
+         * 收集表單資料轉換為 PropertyCreateDto 格式
+         */
+        function collectFormData() {
+            // 收集基本資訊
+            const formData = {
+                Title: document.getElementById('Title')?.value || '',
+                CityId: parseInt(document.getElementById('CityId')?.value) || 0,
+                DistrictId: parseInt(document.getElementById('DistrictId')?.value) || 0,
+                AddressLine: document.getElementById('AddressLine')?.value || '',
+                
+                // 房屋資訊
+                MonthlyRent: parseFloat(document.getElementById('MonthlyRent')?.value) || 0,
+                RoomCount: parseInt(document.getElementById('RoomCount')?.value) || 0,
+                LivingRoomCount: parseInt(document.getElementById('LivingRoomCount')?.value) || 0,
+                BathroomCount: parseInt(document.getElementById('BathroomCount')?.value) || 0,
+                Area: parseFloat(document.getElementById('Area')?.value) || 0,
+                CurrentFloor: parseInt(document.getElementById('CurrentFloor')?.value) || 0,
+                TotalFloors: parseInt(document.getElementById('TotalFloors')?.value) || 0,
+                
+                // 費用資訊
+                DepositAmount: parseFloat(document.getElementById('DepositAmount')?.value) || 0,
+                DepositMonths: parseInt(document.getElementById('DepositMonths')?.value) || 0,
+                MinimumRentalMonths: parseInt(document.getElementById('MinimumRentalMonths')?.value) || 0,
+                ManagementFeeIncluded: document.querySelector('input[name="ManagementFeeIncluded"]:checked')?.value === 'true',
+                ManagementFeeAmount: parseFloat(document.getElementById('ManagementFeeAmount')?.value) || null,
+                WaterFeeType: document.getElementById('WaterFeeType')?.value || '',
+                CustomWaterFee: parseFloat(document.getElementById('CustomWaterFee')?.value) || null,
+                ElectricityFeeType: document.getElementById('ElectricityFeeType')?.value || '',
+                CustomElectricityFee: parseFloat(document.getElementById('CustomElectricityFee')?.value) || null,
+                ParkingAvailable: document.querySelector('input[name="ParkingAvailable"]:checked')?.value === 'true',
+                ParkingFeeRequired: document.getElementById('ParkingFeeRequired')?.checked || false,
+                ParkingFeeAmount: parseFloat(document.getElementById('ParkingFeeAmount')?.value) || null,
+                CleaningFeeRequired: document.querySelector('input[name="CleaningFeeRequired"]:checked')?.value === 'true',
+                CleaningFeeAmount: parseFloat(document.getElementById('CleaningFeeAmount')?.value) || null,
+                
+                // 特殊守則
+                SpecialRules: Array.from(document.querySelectorAll('input[name="SpecialRules"]'))
+                    .map(input => input.value.trim())
+                    .filter(rule => rule)
+                    .join('; '),
+                
+                // 選中的設備
+                SelectedEquipmentIds: Array.from(document.querySelectorAll('input[name="SelectedEquipmentIds"]:checked'))
+                    .map(input => parseInt(input.value)),
+                
+                // 刊登方案
+                ListingPlanId: parseInt(document.querySelector('input[name="ListingPlanId"]:checked')?.value) || 0,
+                
+                // 描述
+                Description: document.getElementById('Description')?.value || ''
+            };
+            
+            // 收集設備數量
+            formData.EquipmentQuantities = {};
+            document.querySelectorAll('input[name="SelectedEquipmentIds"]:checked').forEach(checkbox => {
+                const equipmentId = parseInt(checkbox.value);
+                const quantityInput = document.getElementById(`quantity_${equipmentId}`);
+                formData.EquipmentQuantities[equipmentId] = quantityInput ? parseInt(quantityInput.value) || 1 : 1;
+            });
+            
+            return formData;
+        }
+
+        /**
+         * 初始化守則動態欄位功能
+         */
+        function initializeRulesDynamicFields() {
+            const rulesContainer = document.getElementById('rulesContainer');
+            let ruleCount = 1; // 從 1 開始，因為已有一個預設欄位
+            const maxRules = 3;
+            
+            // 為現有的添加按鈕綁定事件
+            bindAddRuleEvent();
+            
+            function bindAddRuleEvent() {
+                const addButtons = rulesContainer.querySelectorAll('.add-rule-btn');
+                addButtons.forEach(button => {
+                    button.removeEventListener('click', handleAddRule); // 避免重複綁定
+                    button.addEventListener('click', handleAddRule);
+                });
+            }
+            
+            function handleAddRule(e) {
+                e.preventDefault();
+                
+                if (ruleCount >= maxRules) {
+                    return;
+                }
+                
+                // 創建新的守則輸入欄位
+                const newRuleGroup = document.createElement('div');
+                newRuleGroup.className = 'rule-input-group mb-2';
+                newRuleGroup.innerHTML = `
+                    <div class="input-group">
+                        <input type="text" class="form-control rule-input" name="SpecialRules" 
+                               placeholder="請輸入房屋守則（最多20字）" maxlength="20">
+                        <button type="button" class="btn btn-outline-danger remove-rule-btn">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                    </div>
+                `;
+                
+                // 添加到容器中
+                rulesContainer.appendChild(newRuleGroup);
+                ruleCount++;
+                
+                // 綁定刪除事件
+                const removeButton = newRuleGroup.querySelector('.remove-rule-btn');
+                removeButton.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    handleRemoveRule(newRuleGroup);
+                });
+                
+                // 檢查是否需要隱藏添加按鈕
+                updateAddButtonsVisibility();
+            }
+            
+            function handleRemoveRule(ruleGroup) {
+                ruleGroup.remove();
+                ruleCount--;
+                updateAddButtonsVisibility();
+            }
+            
+            function updateAddButtonsVisibility() {
+                const addButtons = rulesContainer.querySelectorAll('.add-rule-btn');
+                
+                if (ruleCount >= maxRules) {
+                    // 隱藏所有添加按鈕
+                    addButtons.forEach(button => {
+                        button.style.display = 'none';
+                    });
+                } else {
+                    // 只顯示最後一個添加按鈕
+                    addButtons.forEach((button, index) => {
+                        if (index === addButtons.length - 1) {
+                            button.style.display = 'inline-block';
+                        } else {
+                            button.style.display = 'none';
+                        }
+                    });
+                }
+            }
+            
+            // 初始化狀態
+            updateAddButtonsVisibility();
+        }
+        
+        /**
+         * 初始化步驟導航
+         */
+        function initializeStepNavigation() {
+            const stepNavItems = document.querySelectorAll('.step-nav-item');
+            const sections = ['basicInfo', 'houseInfo', 'feeInfo', 'equipmentInfo', 'planInfo', 'imageInfo'];
+            
+            // 檢查必要元素是否存在
+            if (!stepNavItems.length) {
+                console.warn('未找到步驟導航項目');
+                return;
+            }
+            
+            // 添加點擊事件
+            stepNavItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    const targetId = this.dataset.target;
+                    const targetElement = document.getElementById(targetId);
+                    
+                    if (!targetElement) {
+                        console.error(`未找到目標元素: ${targetId}`);
+                        return;
+                    }
+                    
+                    try {
+                        // 平滑捲動到目標區塊
+                        targetElement.scrollIntoView({ 
+                            behavior: 'smooth',
+                            block: 'start',
+                            inline: 'nearest'
+                        });
+                        
+                        // 更新導航狀態
+                        updateStepNavigation(targetId);
+                    } catch (error) {
+                        console.error('滾動到目標元素時發生錯誤:', error);
+                    }
+                });
+            });
+            
+            // 監聽滾動事件，更新當前步驟（添加防抖處理）
+            let scrollTimer = null;
+            window.addEventListener('scroll', function() {
+                if (scrollTimer) {
+                    clearTimeout(scrollTimer);
+                }
+                
+                scrollTimer = setTimeout(() => {
+                    try {
+                        requestAnimationFrame(() => {
+                            updateCurrentStep();
+                            updateProgress();
+                        });
+                    } catch (error) {
+                        console.error('更新步驟導航時發生錯誤:', error);
+                    }
+                }, 100); // 100ms 防抖延遲
+            });
+            
+            // 初始更新
+            updateCurrentStep();
+            updateProgress();
+        }
+        
+        /**
+         * 更新步驟導航狀態
+         */
+        function updateStepNavigation(activeStep) {
+            const stepNavItems = document.querySelectorAll('.step-nav-item');
+            
+            stepNavItems.forEach(item => {
+                if (item.dataset.target === activeStep) {
+                    item.classList.add('active');
+                } else {
+                    item.classList.remove('active');
+                }
+            });
+        }
+        
+        /**
+         * 更新當前步驟（基於滾動位置）
+         */
+        function updateCurrentStep() {
+            const sections = ['basicInfo', 'houseInfo', 'feeInfo', 'equipmentInfo', 'planInfo', 'imageInfo'];
+            const scrollPosition = window.scrollY + 200; // 偏移量
+            
+            let currentSection = '';
+            
+            sections.forEach(sectionId => {
+                const section = document.getElementById(sectionId);
+                if (section) {
+                    const sectionTop = section.offsetTop;
+                    const sectionHeight = section.offsetHeight;
+                    
+                    if (scrollPosition >= sectionTop && scrollPosition < sectionTop + sectionHeight) {
+                        currentSection = sectionId;
+                    }
+                }
+            });
+            
+            if (currentSection) {
+                updateStepNavigation(currentSection);
+            }
+        }
+        
+        /**
+         * 更新進度條
+         */
+        function updateProgress() {
+            const sections = ['basicInfo', 'houseInfo', 'feeInfo', 'equipmentInfo', 'planInfo', 'imageInfo'];
+            let completedSteps = 0;
+            
+            sections.forEach(sectionId => {
+                const isComplete = validateSection(sectionId);
+                const statusIcon = document.querySelector(`#${sectionId}-status i`);
+                
+                if (statusIcon) {
+                    if (isComplete) {
+                        statusIcon.className = 'fas fa-check-circle text-success small';
+                        completedSteps++;
+                    } else {
+                        statusIcon.className = 'fas fa-circle text-muted small';
+                    }
+                }
+            });
+            
+            const progressPercent = (completedSteps / sections.length) * 100;
+            const progressBar = document.getElementById('progressBar');
+            if (progressBar) {
+                progressBar.style.width = progressPercent + '%';
+            }
+        }
+        
+        /**
+         * 驗證單個區塊
+         */
+        function validateSection(sectionId) {
+            switch(sectionId) {
+                case 'basicInfo':
+                    return document.getElementById('Title')?.value?.trim() &&
+                           document.getElementById('CityId')?.value &&
+                           document.getElementById('DistrictId')?.value &&
+                           document.getElementById('AddressLine')?.value?.trim();
+                           
+                case 'houseInfo':
+                    const monthlyRent = document.getElementById('MonthlyRent')?.value;
+                    const roomCount = document.getElementById('RoomCount')?.value;
+                    const livingRoomCount = document.getElementById('LivingRoomCount')?.value;
+                    const bathroomCount = document.getElementById('BathroomCount')?.value;
+                    const area = document.getElementById('Area')?.value;
+                    const currentFloor = document.getElementById('CurrentFloor')?.value;
+                    const totalFloors = document.getElementById('TotalFloors')?.value;
+                    
+                    // 基本欄位驗證
+                    const basicFieldsValid = monthlyRent && monthlyRent !== '' &&
+                           roomCount !== '' && roomCount !== null &&
+                           livingRoomCount !== '' && livingRoomCount !== null &&
+                           bathroomCount && bathroomCount !== '' &&
+                           area && area !== '' &&
+                           currentFloor !== '' && currentFloor !== null &&
+                           totalFloors && totalFloors !== '';
+                    
+                    // 樓層邏輯驗證：所在樓層不可大於總樓層數
+                    const floorLogicValid = currentFloor && totalFloors && 
+                                          parseInt(currentFloor) <= parseInt(totalFloors);
+                    
+                    return basicFieldsValid && floorLogicValid;
+                           
+                case 'feeInfo':
+                    const managementFeeSelected = document.querySelector('input[name="ManagementFeeIncluded"]:checked');
+                    const depositAmount = document.getElementById('DepositAmount')?.value;
+                    const depositMonths = document.getElementById('DepositMonths')?.value;
+                    const minimumRentalMonths = document.getElementById('MinimumRentalMonths')?.value;
+                    const waterFeeType = document.getElementById('WaterFeeType')?.value;
+                    const electricityFeeType = document.getElementById('ElectricityFeeType')?.value;
+                    const cleaningFeeSelected = document.querySelector('input[name="CleaningFeeRequired"]:checked');
+                    const parkingSelected = document.querySelector('input[name="ParkingAvailable"]:checked');
+                    
+                    // 基本欄位驗證
+                    let isValid = managementFeeSelected && 
+                                 depositAmount && depositAmount !== '' && 
+                                 depositMonths && depositMonths !== '' &&
+                                 minimumRentalMonths && minimumRentalMonths !== '' &&
+                                 waterFeeType && waterFeeType !== '' &&
+                                 electricityFeeType && electricityFeeType !== '' &&
+                                 cleaningFeeSelected &&
+                                 parkingSelected;
+                    
+                    // 檢查管理費邏輯
+                    if (managementFeeSelected && managementFeeSelected.value === 'false') {
+                        const managementFeeAmount = document.getElementById('ManagementFeeAmount')?.value;
+                        isValid = isValid && managementFeeAmount && managementFeeAmount !== '';
+                    }
+                    
+                    // 檢查水費自訂金額
+                    if (waterFeeType === '自訂金額') {
+                        const customWaterFee = document.getElementById('CustomWaterFee')?.value;
+                        isValid = isValid && customWaterFee && customWaterFee !== '';
+                    }
+                    
+                    // 檢查電費自訂金額
+                    if (electricityFeeType === '自訂金額') {
+                        const customElectricityFee = document.getElementById('CustomElectricityFee')?.value;
+                        isValid = isValid && customElectricityFee && customElectricityFee !== '';
+                    }
+                    
+                    // 檢查清潔費邏輯
+                    if (cleaningFeeSelected && cleaningFeeSelected.value === 'true') {
+                        const cleaningFeeAmount = document.getElementById('CleaningFeeAmount')?.value;
+                        isValid = isValid && cleaningFeeAmount && cleaningFeeAmount !== '';
+                    }
+                    
+                    // 檢查停車位邏輯
+                    if (parkingSelected && parkingSelected.value === 'true') {
+                        const parkingFeeRequired = document.getElementById('ParkingFeeRequired')?.checked;
+                        if (parkingFeeRequired) {
+                            const parkingFeeAmount = document.getElementById('ParkingFeeAmount')?.value;
+                            isValid = isValid && parkingFeeAmount && parkingFeeAmount !== '';
+                        }
+                    }
+                    
+                    return isValid;
+                    
+                case 'equipmentInfo':
+                    // 檢查是否至少選擇了一個設備
+                    const selectedEquipment = document.querySelectorAll('input[name="SelectedEquipmentIds"]:checked');
+                    return selectedEquipment.length >= 1;
+                    
+                case 'planInfo':
+                    return document.querySelector('input[name="ListingPlanId"]:checked');
+                    
+                case 'imageInfo':
+                    return document.getElementById('imageFiles')?.files?.length > 0;
+                    
+                default:
+                    return false;
+            }
+        }
+    </script>
+</body>
+</html>

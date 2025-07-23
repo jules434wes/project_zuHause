@@ -5,9 +5,7 @@
     
     ViewData["Title"] = "登入";
 }
-<p>@Model.PhoneNumber</p>
-<p>@Model.UserPassword</p>
-<p>@Model.ReturnUrl</p>
+
 <form asp-controller="Member" asp-action="Login" method="post" class="w-100 text-light">
     <div class="row">
         <div class="col-4 mx-auto d-flex flex-column gap-3 p-5 shadow-lg bg-white-aqua">
@@ -20,7 +18,7 @@
                         </span>
                         <div class="form-floating ">
                             <input type="text" class="form-control rounded-0 pe-5" id="PhoneNumber"
-                                   placeholder="請輸入手機號碼" required asp-for="PhoneNumber" value="0987865524">
+                                   placeholder="請輸入手機號碼" required asp-for="PhoneNumber">
                             <label asp-for="PhoneNumber"></label>
                         </div>
                         <span class="invalid-feedback opacity-100" asp-validation-for="PhoneNumber">
@@ -32,7 +30,7 @@
                         </span>
                         <div class="form-floating ">
                             <input type="password" class="form-control rounded-0 pe-5"
-                                   placeholder="Password" asp-for="UserPassword" data-type="pwd" value="123455678">
+                                   placeholder="Password" asp-for="UserPassword" data-type="pwd">
                             <label asp-for="UserPassword"></label>
                         </div>
                         <span class="input-group-text  rounded-0 p-0 bg-white">

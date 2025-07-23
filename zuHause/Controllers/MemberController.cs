@@ -171,11 +171,12 @@ namespace zuHause.Controllers
             }
             else
             {
-                return RedirectToAction("Index");
+                return RedirectToAction("FrontPage", "Tenant");
             }
 
         }
         [HttpPost]
+        [HttpGet]
         public async Task<IActionResult> Logout()
         {
             var memberId = User.FindFirst("UserId")?.Value;
@@ -185,7 +186,7 @@ namespace zuHause.Controllers
 
             TempData["SuccessMessageTitle"] = "通知";
             TempData["SuccessMessageContent"] = "您已登出";
-            return RedirectToAction("Index");
+            return RedirectToAction("FrontPage", "Tenant");
         }
         [HttpPost]
         [Authorize(AuthenticationSchemes = "MemberCookieAuth")]

@@ -3,6 +3,7 @@ using zuHause.DTOs;
 using zuHause.Enums;
 using zuHause.Interfaces;
 using zuHause.Models;
+using zuHause.Helpers;
 
 namespace zuHause.Services
 {
@@ -57,6 +58,78 @@ namespace zuHause.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "上傳房源圖片時發生錯誤，房源ID: {PropertyId}", propertyId);
+                return new List<PropertyImageResult> 
+                { 
+                    PropertyImageResult.CreateFailure("", $"系統錯誤: {ex.Message}") 
+                };
+            }
+        }
+
+        /// <summary>
+        /// 上傳房源圖片，指定分類 - 新增方法支援分類功能
+        /// </summary>
+        /// <param name="propertyId">房源ID</param>
+        /// <param name="files">上傳的圖片檔案</param>
+        /// <param name="category">圖片分類</param>
+        /// <returns>處理結果列表，轉換為 PropertyImageResult 保持向後相容性</returns>
+        public async Task<List<PropertyImageResult>> UploadPropertyImagesByCategoryAsync(int propertyId, IFormFileCollection files, ImageCategory category)
+        {
+            try
+            {
+                _logger.LogInformation("開始上傳房源圖片，房源ID: {PropertyId}, 檔案數量: {FileCount}, 分類: {Category}", propertyId, files.Count, category);
+
+                // 完全委託給統一圖片上傳服務，使用指定的分類
+                var uploadResults = await _imageUploadService.UploadImagesAsync(
+                    files, 
+                    EntityType.Property, 
+                    propertyId, 
+                    category);
+
+                // 轉換為 PropertyImageResult 以保持向後相容性
+                var propertyResults = uploadResults.Select(ConvertToPropertyImageResult).ToList();
+
+                var successCount = propertyResults.Count(r => r.Success);
+                _logger.LogInformation("房源圖片上傳完成，房源ID: {PropertyId}, 成功: {SuccessCount}/{TotalCount}, 分類: {Category}", 
+                    propertyId, successCount, propertyResults.Count, category);
+
+                return propertyResults;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "上傳房源圖片時發生錯誤，房源ID: {PropertyId}, 分類: {Category}", propertyId, category);
+                return new List<PropertyImageResult> 
+                { 
+                    PropertyImageResult.CreateFailure("", $"系統錯誤: {ex.Message}") 
+                };
+            }
+        }
+
+        /// <summary>
+        /// 上傳房源圖片，使用中文分類（自動轉換為英文儲存）
+        /// </summary>
+        /// <param name="propertyId">房源ID</param>
+        /// <param name="files">上傳的圖片檔案</param>
+        /// <param name="chineseCategory">中文分類名稱</param>
+        /// <returns>處理結果列表</returns>
+        public async Task<List<PropertyImageResult>> UploadPropertyImagesByChineseCategoryAsync(int propertyId, IFormFileCollection files, string chineseCategory)
+        {
+            try
+            {
+                _logger.LogInformation("開始上傳房源圖片（中文分類），房源ID: {PropertyId}, 檔案數量: {FileCount}, 中文分類: {ChineseCategory}", 
+                    propertyId, files.Count, chineseCategory);
+
+                // 將中文分類轉換為英文分類
+                var englishCategory = PropertyImageCategoryHelper.GetEnglishCategory(chineseCategory);
+                
+                _logger.LogDebug("中文分類轉換：{ChineseCategory} → {EnglishCategory}", chineseCategory, englishCategory);
+
+                // 委託給英文分類的上傳方法
+                return await UploadPropertyImagesByCategoryAsync(propertyId, files, englishCategory);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "上傳房源圖片時發生錯誤（中文分類），房源ID: {PropertyId}, 中文分類: {ChineseCategory}", 
+                    propertyId, chineseCategory);
                 return new List<PropertyImageResult> 
                 { 
                     PropertyImageResult.CreateFailure("", $"系統錯誤: {ex.Message}") 
@@ -176,10 +249,11 @@ namespace zuHause.Services
             try
             {
                 _logger.LogInformation("開始刪除房源所有圖片，房源ID: {PropertyId}", propertyId);
+                // 刪除所有分類的房源圖片，不限制特定分類
                 var result = await _imageUploadService.DeleteImagesByEntityAsync(
                     EntityType.Property, 
-                    propertyId, 
-                    ImageCategory.Gallery);
+                    propertyId,
+                    null);
                 
                 if (result)
                 {

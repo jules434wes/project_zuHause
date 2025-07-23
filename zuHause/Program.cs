@@ -67,6 +67,12 @@ builder.Services.AddScoped<zuHause.Interfaces.IImageQueryService, zuHause.Servic
 builder.Services.AddScoped<zuHause.Interfaces.IImageUploadService, zuHause.Services.ImageUploadService>();
 builder.Services.AddScoped<zuHause.Services.Interfaces.IImageValidationService, zuHause.Services.ImageValidationService>();
 
+// 註冊刊登方案驗證服務
+builder.Services.AddScoped<zuHause.Services.Interfaces.IListingPlanValidationService, zuHause.Services.ListingPlanValidationService>();
+
+// 註冊設備分類查詢服務
+builder.Services.AddScoped<zuHause.Services.Interfaces.IEquipmentCategoryQueryService, zuHause.Services.EquipmentCategoryQueryService>();
+
 // 註冊房源圖片 Facade 服務
 builder.Services.AddScoped<zuHause.Interfaces.IPropertyImageService, zuHause.Services.PropertyImageService>();
 
