@@ -1,9 +1,10 @@
 ﻿@* Views/Shared/_NavigationBar.cshtml *@
 @{
     var categories = ViewBag.categories as List<zuHause.Models.FurnitureCategory>;
-    // 這裡從 ViewBag 獲取 member 物件，它會是資料庫中的實際會員資料
-    var member = ViewBag.CurrentMember as zuHause.Models.Member;
-    var displayName = member != null ? $"{member.MemberName}，歡迎使用" : "訪客";
+    // 使用統一的 Cookie 認證機制
+    var isAuthenticated = User.Identity?.IsAuthenticated == true;
+    var memberName = isAuthenticated ? User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value : null;
+    var displayName = !string.IsNullOrEmpty(memberName) ? $"{memberName}，歡迎使用" : "訪客";
 }
 <!DOCTYPE html>
 <html lang="zh-Hant">
@@ -28,7 +29,7 @@
                     <li class="nav-item"><a class="nav-link" href="@Url.Action("InstructionsForUse", "Furniture")">租借說明</a></li>
                 </ul>
                 <div class="d-flex align-items-center">
-                    @if (member != null)
+                    @if (isAuthenticated)
                     {
                         <a href="@Url.Action("OrderHistory", "Furniture")" class="text-decoration-none text-dark d-flex align-items-center">
                             <i class="bi bi-person-fill text-purple me-1"></i> @* 確保有 Bootstrap Icons *@
