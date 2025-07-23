@@ -1,56 +1,28 @@
-﻿    @*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
-@{
+﻿@{
 }
 <div class='row g-3'>
-    <div class='col-md-6'>
-        <div class='card p-3'>
-            🔥 熱門租屋地區：
-            <ol>
-                <li>中山區（320 筆成交）</li>
-                <li>板橋（298 筆成交）</li>
-                <li>信義區（275 筆成交）</li>
-                <li>桃園中壢（248 筆成交）</li>
-                <li>新店區（210 筆成交）</li>
-            </ol>
+    <div class="col-md-6">
+        <div class="card p-3">
+            🛑 熱門家具承租：
+            <ul id="furnitureRankings"></ul>
         </div>
     </div>
-
-    <div class='col-md-6'>
-        <div class='card p-3'>
-            🛑 熱門家具承租：
-            <ul>
-                <li>雙人床（542 次承租）</li>
-                <li>冰箱（487 次承租）</li>
-                <li>衣櫃（432 次承租）</li>
-                <li>書桌（398 次承租）</li>
-                <li>洗衣機（365 次承租）</li>
-            </ul>
+    <div class="col-md-6">
+        <div class="card p-3">
+            🔥 熱門租屋地區：
+            <ol id="rentalCityRankings"></ol>
         </div>
     </div>
     <div class='col-md-6'>
         <div class='card p-3'>
             🔍待驗證房源：
-            <ol>
-                <li>台北市（320 筆）</li>
-                <li>新竹市（298 筆）</li>
-                <li>苗栗縣（275 筆）</li>
-                <li>台中市（248 筆）</li>
-                <li>彰化縣（210 筆成交）</li>
-            </ol>
+            <ol id="pendingList"></ol>
         </div>
     </div>
     <div class='col-md-6'>
         <div class='card p-3'>
             ✅已驗證房源：
-            <ol>
-                <li>台北市（320 筆）</li>
-                <li>新竹市（298 筆）</li>
-                <li>苗栗縣（275 筆）</li>
-                <li>台中市（248 筆）</li>
-                <li>新店區（210 筆）</li>
-            </ol>
+            <ol id="verifiedList"></ol>
         </div>
     </div>
 </div>
