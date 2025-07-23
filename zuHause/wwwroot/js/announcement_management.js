@@ -28,8 +28,8 @@
         }
         
         // 搜尋功能
-        const searchBtn = document.getElementById('searchBtn');
-        const searchInput = document.getElementById('searchInput');
+        const searchBtn = document.getElementById('announcementSearchBtn');
+        const searchInput = document.getElementById('announcementSearchInput');
         if (searchBtn) {
             searchBtn.addEventListener('click', performSearch);
         }
@@ -42,8 +42,8 @@
         }
         
         // 篩選功能
-        const statusFilter = document.getElementById('statusFilter');
-        const scopeFilter = document.getElementById('scopeFilter');
+        const statusFilter = document.getElementById('announcementStatusFilter');
+        const scopeFilter = document.getElementById('announcementScopeFilter');
         if (statusFilter) {
             statusFilter.addEventListener('change', performFilter);
         }
@@ -52,7 +52,7 @@
         }
         
         // 重置按鈕
-        const resetBtn = document.getElementById('resetFiltersBtn');
+        const resetBtn = document.getElementById('announcementResetFiltersBtn');
         if (resetBtn) {
             resetBtn.addEventListener('click', resetFilters);
         }
@@ -375,7 +375,7 @@
 
     // 搜尋功能
     function performSearch() {
-    const keyword = document.getElementById('searchInput').value.trim();
+    const keyword = document.getElementById('announcementSearchInput').value.trim();
     
     // 更新關鍵字篩選，保留其他篩選條件
     if (keyword) {
@@ -390,8 +390,8 @@
 
     // 篩選功能
     function performFilter() {
-    const status = document.getElementById('statusFilter').value;
-    const scope = document.getElementById('scopeFilter').value;
+    const status = document.getElementById('announcementStatusFilter').value;
+    const scope = document.getElementById('announcementScopeFilter').value;
     
     // 更新篩選條件，保留關鍵字搜尋
     if (status) {
@@ -417,9 +417,9 @@
     currentPage = 1;
     
     // 重置表單元素
-    const searchInput = document.getElementById('searchInput');
-    const statusFilter = document.getElementById('statusFilter');
-    const scopeFilter = document.getElementById('scopeFilter');
+    const searchInput = document.getElementById('announcementSearchInput');
+    const statusFilter = document.getElementById('announcementStatusFilter');
+    const scopeFilter = document.getElementById('announcementScopeFilter');
     
     if (searchInput) {
         searchInput.value = '';

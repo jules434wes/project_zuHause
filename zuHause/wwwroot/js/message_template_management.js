@@ -28,8 +28,8 @@
     }
     
     // 搜尋功能
-    const searchBtn = document.getElementById('searchBtn');
-    const searchInput = document.getElementById('searchInput');
+    const searchBtn = document.getElementById('templateSearchBtn');
+    const searchInput = document.getElementById('templateSearchInput');
     if (searchBtn) {
         searchBtn.addEventListener('click', performSearch);
     }
@@ -42,8 +42,8 @@
     }
     
     // 篩選功能
-    const categoryFilter = document.getElementById('categoryFilter');
-    const statusFilter = document.getElementById('statusFilter');
+    const categoryFilter = document.getElementById('templateCategoryFilter');
+    const statusFilter = document.getElementById('templateStatusFilter');
     if (categoryFilter) {
         categoryFilter.addEventListener('change', performFilter);
     }
@@ -52,7 +52,7 @@
     }
     
     // 重置按鈕
-    const resetBtn = document.getElementById('resetFiltersBtn');
+    const resetBtn = document.getElementById('templateResetFiltersBtn');
     if (resetBtn) {
         resetBtn.addEventListener('click', resetFilters);
     }
@@ -376,7 +376,7 @@ async function saveMessageTemplate() {
 
 // 搜尋功能
 function performSearch() {
-    const keyword = document.getElementById('searchInput').value.trim();
+    const keyword = document.getElementById('templateSearchInput').value.trim();
     
     // 更新關鍵字篩選，保留其他篩選條件
     if (keyword) {
@@ -391,8 +391,8 @@ function performSearch() {
 
 // 篩選功能
 function performFilter() {
-    const category = document.getElementById('categoryFilter').value;
-    const status = document.getElementById('statusFilter').value;
+    const category = document.getElementById('templateCategoryFilter').value;
+    const status = document.getElementById('templateStatusFilter').value;
     
     // 更新篩選條件，保留關鍵字搜尋
     if (category) {
@@ -418,9 +418,9 @@ function resetFilters() {
     currentPage = 1;
     
     // 重置表單元素
-    const searchInput = document.getElementById('searchInput');
-    const categoryFilter = document.getElementById('categoryFilter');
-    const statusFilter = document.getElementById('statusFilter');
+    const searchInput = document.getElementById('templateSearchInput');
+    const categoryFilter = document.getElementById('templateCategoryFilter');
+    const statusFilter = document.getElementById('templateStatusFilter');
     
     if (searchInput) {
         searchInput.value = '';
