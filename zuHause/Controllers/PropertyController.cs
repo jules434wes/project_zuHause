@@ -6,6 +6,7 @@ using zuHause.Interfaces;
 using zuHause.Helpers;
 using zuHause.Enums;
 using zuHause.DTOs;
+using zuHause.Services.Interfaces;
 using System.ComponentModel.DataAnnotations;
 
 namespace zuHause.Controllers
@@ -15,12 +16,21 @@ namespace zuHause.Controllers
         private readonly ZuHauseContext _context;
         private readonly ILogger<PropertyController> _logger;
         private readonly IPropertyImageService _propertyImageService;
+        private readonly IListingPlanValidationService _listingPlanValidationService;
+        private readonly IEquipmentCategoryQueryService _equipmentCategoryQueryService;
 
-        public PropertyController(ZuHauseContext context, ILogger<PropertyController> logger, IPropertyImageService propertyImageService)
+        public PropertyController(
+            ZuHauseContext context, 
+            ILogger<PropertyController> logger, 
+            IPropertyImageService propertyImageService,
+            IListingPlanValidationService listingPlanValidationService,
+            IEquipmentCategoryQueryService equipmentCategoryQueryService)
         {
             _context = context;
             _logger = logger;
             _propertyImageService = propertyImageService;
+            _listingPlanValidationService = listingPlanValidationService;
+            _equipmentCategoryQueryService = equipmentCategoryQueryService;
         }
 
         /// <summary>
@@ -202,16 +212,16 @@ namespace zuHause.Controllers
                 // TODO: 添加身份驗證 - 檢查使用者是否為房東
                 // if (!User.IsInRole("Landlord")) return Forbid();
 
-                // 準備下拉選單資料
+                // 準備下拉選單資料 - 使用新的服務
                 var cities = await GetActiveCitiesAsync();
-                var listingPlans = await GetActiveListingPlansAsync();
-                var equipmentCategories = await GetActiveEquipmentCategoriesAsync();
+                var listingPlans = await _listingPlanValidationService.GetActiveListingPlansAsync();
+                var equipmentCategoriesHierarchy = await _equipmentCategoryQueryService.GetCategoriesHierarchyAsync();
 
                 var viewModel = new PropertyCreateViewModel
                 {
                     Cities = cities,
                     ListingPlans = listingPlans,
-                    EquipmentCategories = equipmentCategories,
+                    EquipmentCategoriesHierarchy = equipmentCategoriesHierarchy,
                     AvailableChineseCategories = PropertyImageCategoryHelper.GetAllPropertyChineseCategories()
                 };
 
@@ -244,7 +254,7 @@ namespace zuHause.Controllers
                 if (currentUserId == null)
                 {
                     TempData["ErrorMessage"] = "請先登入才能創建房源";
-                    return RedirectToAction("Login", "Account");
+                    return RedirectToAction("Login", "Member");
                 }
                 
                 // 驗證使用者是否為房東
@@ -267,17 +277,17 @@ namespace zuHause.Controllers
 
                 if (!ModelState.IsValid)
                 {
-                    // 重新載入下拉選單資料
+                    // 重新載入下拉選單資料 - 使用新的服務
                     var cities = await GetActiveCitiesAsync();
-                    var listingPlans = await GetActiveListingPlansAsync();
-                    var equipmentCategories = await GetActiveEquipmentCategoriesAsync();
+                    var listingPlans = await _listingPlanValidationService.GetActiveListingPlansAsync();
+                    var equipmentCategoriesHierarchy = await _equipmentCategoryQueryService.GetCategoriesHierarchyAsync();
 
                     var viewModel = new PropertyCreateViewModel
                     {
                         PropertyData = dto,
                         Cities = cities,
                         ListingPlans = listingPlans,
-                        EquipmentCategories = equipmentCategories,
+                        EquipmentCategoriesHierarchy = equipmentCategoriesHierarchy,
                         AvailableChineseCategories = PropertyImageCategoryHelper.GetAllPropertyChineseCategories()
                     };
 
@@ -305,8 +315,9 @@ namespace zuHause.Controllers
                     _logger.LogInformation("成功創建房源，房源ID: {PropertyId}, 房東ID: {LandlordId}", 
                         property.PropertyId, currentUserId.Value);
 
-                    TempData["SuccessMessage"] = "房源創建成功！您可以繼續上傳房屋圖片。";
-                    return RedirectToAction("Detail", new { id = property.PropertyId });
+                    TempData["SuccessMessageTitle"] = "房源創建成功！";
+                    TempData["SuccessMessageContent"] = "您的房源已成功提交審核，預計 2-3 個工作天完成審核。";
+                    return RedirectToAction("CreationSuccess", new { id = property.PropertyId });
                 }
                 catch (Exception)
                 {
@@ -320,6 +331,61 @@ namespace zuHause.Controllers
                 TempData["ErrorMessage"] = "創建房源時發生錯誤，請稍後再試";
                 return RedirectToAction("Create");
             }
+        }
+
+        /// <summary>
+        /// 房源預覽功能 - In-memory 模型預覽，不存入資料庫
+        /// </summary>
+        /// <param name="dto">房源創建資料</param>
+        /// <returns>預覽視圖</returns>
+        [HttpPost]
+        [Route("property/preview")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Preview([FromBody] PropertyCreateDto dto)
+        {
+            try
+            {
+                if (dto == null)
+                {
+                    return Json(new { success = false, message = "未收到有效的預覽資料" });
+                }
+
+                // 基本資料驗證（不包含必填欄位驗證，允許部分填寫的預覽）
+                var validationResult = await ValidatePropertyCreateDtoForPreview(dto);
+                if (!validationResult.IsValid)
+                {
+                    return Json(new 
+                    { 
+                        success = false, 
+                        message = "資料驗證失敗", 
+                        errors = validationResult.Errors.Select(e => e.ErrorMessage) 
+                    });
+                }
+
+                // 建立預覽用 PropertyDetailViewModel（不存入資料庫）
+                var previewViewModel = await CreatePreviewViewModelFromDto(dto);
+
+                // 直接返回部分視圖
+                return PartialView("_PropertyPreview", previewViewModel);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "產生房源預覽時發生錯誤");
+                return Json(new { success = false, message = "產生預覽時發生系統錯誤，請稍後再試" });
+            }
+        }
+
+        /// <summary>
+        /// 房源創建成功頁面
+        /// </summary>
+        /// <param name="id">房源 ID</param>
+        /// <returns>成功頁面視圖</returns>
+        [Route("property/creation-success/{id:int?}")]
+        public IActionResult CreationSuccess(int? id)
+        {
+            // 不需要驗證房源存在，因為這是成功提示頁面
+            // 即使 id 為空也可以顯示成功頁面
+            return View();
         }
 
         /// <summary>
@@ -569,6 +635,16 @@ namespace zuHause.Controllers
                 });
             }
 
+            // 驗證設備選擇：至少要選擇一個設備
+            if (dto.SelectedEquipmentIds == null || !dto.SelectedEquipmentIds.Any())
+            {
+                result.Errors.Add(new PropertyValidationError 
+                { 
+                    PropertyName = "SelectedEquipmentIds", 
+                    ErrorMessage = "設備與服務至少需要選擇一項" 
+                });
+            }
+
             // 驗證房源標題和地址組合的唯一性
             var duplicateExists = await _context.Properties
                 .AnyAsync(p => p.Title == dto.Title && 
@@ -592,13 +668,23 @@ namespace zuHause.Controllers
         /// </summary>
         private async Task<Property> CreatePropertyFromDto(PropertyCreateDto dto, int landlordMemberId)
         {
-            // 獲取刊登方案資訊以計算費用和到期日
-            var listingPlan = await _context.ListingPlans
-                .FirstAsync(lp => lp.PlanId == dto.ListingPlanId);
+            // 使用驗證服務驗證刊登方案
+            var validationResult = await _listingPlanValidationService.ValidateListingPlanAsync(dto.ListingPlanId);
+            if (!validationResult.IsValid)
+            {
+                throw new InvalidOperationException($"刊登方案驗證失敗: {string.Join(", ", validationResult.Errors)}");
+            }
 
+            // 使用驗證服務計算費用和到期日
             var now = DateTime.Now;
-            var listingFee = listingPlan.PricePerDay * listingPlan.MinListingDays;
-            var expireDate = now.AddDays(listingPlan.MinListingDays + 1).Date; // 下架日為刊登天數+1天的00:00
+            var listingFee = await _listingPlanValidationService.CalculateTotalFeeAsync(dto.ListingPlanId);
+            var expireDate = await _listingPlanValidationService.CalculateExpireDateAsync(dto.ListingPlanId, now);
+            var listingPlan = await _listingPlanValidationService.GetListingPlanByIdAsync(dto.ListingPlanId);
+
+            if (listingFee == null || expireDate == null || listingPlan == null)
+            {
+                throw new InvalidOperationException("刊登方案計算失敗");
+            }
 
             return new Property
             {
@@ -631,12 +717,12 @@ namespace zuHause.Controllers
                 CleaningFeeRequired = dto.CleaningFeeRequired,
                 CleaningFeeAmount = dto.CleaningFeeAmount,
                 ListingDays = listingPlan.MinListingDays,
-                ListingFeeAmount = listingFee,
+                ListingFeeAmount = listingFee.Value,
                 ListingPlanId = dto.ListingPlanId,
                 PropertyProofUrl = dto.PropertyProofUrl,
                 StatusCode = "DRAFT", // 預設為草稿狀態
                 IsPaid = false, // 預設未付款
-                ExpireAt = expireDate,
+                ExpireAt = expireDate.Value,
                 CreatedAt = now,
                 UpdatedAt = now
             };
@@ -710,5 +796,162 @@ namespace zuHause.Controllers
             
             return user != null;
         }
+
+        /// <summary>
+        /// 預覽專用的驗證方法 - 僅進行基本邏輯驗證，不檢查必填欄位
+        /// </summary>
+        private async Task<PropertyValidationResult> ValidatePropertyCreateDtoForPreview(PropertyCreateDto dto)
+        {
+            var result = new PropertyValidationResult();
+
+            // 只驗證有值時的邏輯正確性，不驗證必填
+            
+            // 驗證樓層邏輯（如果兩個欄位都有值）
+            if (dto.CurrentFloor > 0 && dto.TotalFloors > 0 && dto.CurrentFloor > dto.TotalFloors)
+            {
+                result.Errors.Add(new PropertyValidationError 
+                { 
+                    PropertyName = "CurrentFloor", 
+                    ErrorMessage = "所在樓層不能大於總樓層數" 
+                });
+            }
+
+            // 驗證城市和區域的有效性（如果兩個欄位都有值）
+            if (dto.CityId > 0 && dto.DistrictId > 0)
+            {
+                var districtExists = await _context.Districts
+                    .AnyAsync(d => d.DistrictId == dto.DistrictId && 
+                                  d.CityId == dto.CityId && 
+                                  d.IsActive == true);
+
+                if (!districtExists)
+                {
+                    result.Errors.Add(new PropertyValidationError 
+                    { 
+                        PropertyName = "DistrictId", 
+                        ErrorMessage = "選擇的城市和區域不匹配" 
+                    });
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 從 PropertyCreateDto 建立預覽用的 PropertyDetailViewModel
+        /// </summary>
+        private async Task<PropertyDetailViewModel> CreatePreviewViewModelFromDto(PropertyCreateDto dto)
+        {
+            // 取得城市區域名稱
+            var cityName = string.Empty;
+            var districtName = string.Empty;
+
+            if (dto.CityId > 0)
+            {
+                cityName = await _context.Cities
+                    .Where(c => c.CityId == dto.CityId)
+                    .Select(c => c.CityName)
+                    .FirstOrDefaultAsync() ?? "未指定";
+            }
+
+            if (dto.DistrictId > 0)
+            {
+                districtName = await _context.Districts
+                    .Where(d => d.DistrictId == dto.DistrictId)
+                    .Select(d => d.DistrictName)
+                    .FirstOrDefaultAsync() ?? "未指定";
+            }
+
+            // 取得選中的設備資訊
+            var equipmentList = new List<PropertyEquipmentViewModel>();
+            if (dto.SelectedEquipmentIds != null && dto.SelectedEquipmentIds.Any())
+            {
+                var equipmentData = await _context.PropertyEquipmentCategories
+                    .Where(pec => dto.SelectedEquipmentIds.Contains(pec.CategoryId))
+                    .Include(pec => pec.ParentCategory)
+                    .AsNoTracking()
+                    .ToListAsync();
+
+                equipmentList = equipmentData.Select(eq => new PropertyEquipmentViewModel
+                {
+                    EquipmentName = eq.CategoryName,
+                    EquipmentType = eq.ParentCategory?.CategoryName ?? eq.CategoryName,
+                    Quantity = dto.EquipmentQuantities?.TryGetValue(eq.CategoryId, out var qty) == true ? qty : 1,
+                    Condition = "良好"
+                }).ToList();
+            }
+
+            // 建立預覽 ViewModel
+            var viewModel = new PropertyDetailViewModel
+            {
+                PropertyId = 0, // 預覽用，沒有實際 ID
+                Title = dto.Title ?? "房源預覽",
+                Description = dto.Description ?? "暫無描述",
+                Price = dto.MonthlyRent,
+                Address = dto.AddressLine ?? "地址未填寫",
+                CityName = cityName,
+                DistrictName = districtName,
+                LandlordName = "預覽模式",
+                LandlordPhone = "請洽客服",
+                LandlordEmail = "preview@zuhause.com",
+                CreatedDate = DateTime.Now,
+                IsActive = true,
+                IsFavorite = false,
+                ViewCount = 0,
+                FavoriteCount = 0,
+                ApplicationCount = 0,
+                Images = new List<PropertyImageViewModel>
+                {
+                    new PropertyImageViewModel
+                    {
+                        PropertyImageId = 0,
+                        ImagePath = "/images/property-preview-placeholder.jpg",
+                        ImageDescription = "預覽圖片",
+                        IsMainImage = true,
+                        SortOrder = 1
+                    }
+                },
+                Equipment = equipmentList,
+                HouseInfo = new PropertyInfoSection
+                {
+                    PropertyType = "住宅",
+                    Floor = dto.TotalFloors > 0 && dto.CurrentFloor > 0 ? $"{dto.CurrentFloor}/{dto.TotalFloors}樓" : "未填寫",
+                    Area = dto.Area > 0 ? $"{dto.Area}坪" : "未填寫",
+                    Rooms = dto.RoomCount > 0 ? $"{dto.RoomCount}房" : "未填寫",
+                    Bathrooms = dto.BathroomCount > 0 ? $"{dto.BathroomCount}衛" : "未填寫",
+                    Balcony = dto.LivingRoomCount > 0 ? $"{dto.LivingRoomCount}廳" : "未填寫",
+                    Parking = dto.ParkingAvailable ? "有" : "無",
+                    Direction = "預覽模式",
+                    Age = 0
+                },
+                RulesAndFees = new PropertyRulesSection
+                {
+                    MonthlyRent = dto.MonthlyRent,
+                    Deposit = dto.DepositAmount,
+                    ManagementFee = dto.ManagementFeeAmount ?? 0,
+                    UtilityDeposit = 0,
+                    LeaseMinimum = dto.MinimumRentalMonths > 0 ? $"{dto.MinimumRentalMonths}個月" : "未指定",
+                    PaymentTerms = $"押{dto.DepositMonths}付1",
+                    HouseRules = !string.IsNullOrEmpty(dto.SpecialRules) ? 
+                        new List<string> { dto.SpecialRules } : new List<string>(),
+                    AllowPets = false,
+                    AllowSmoking = false,
+                    AllowCooking = true
+                },
+                Location = new PropertyLocationSection
+                {
+                    Latitude = 25.0330,
+                    Longitude = 121.5654,
+                    NearbyTransport = "預覽模式 - 交通資訊",
+                    NearbySchools = "預覽模式 - 學校資訊", 
+                    NearbyShopping = "預覽模式 - 購物資訊",
+                    NearbyHospitals = "預覽模式 - 醫療資訊",
+                    NearbyAttractions = new List<string> { "預覽模式", "景點資訊" }
+                }
+            };
+
+            return viewModel;
+        }
+
     }
 }

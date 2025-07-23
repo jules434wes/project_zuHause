@@ -1,4 +1,6 @@
 using zuHause.DTOs;
+using zuHause.Models;
+using zuHause.Services.Interfaces;
 
 namespace zuHause.ViewModels
 {
@@ -20,12 +22,17 @@ namespace zuHause.ViewModels
         /// <summary>
         /// 刊登方案選項
         /// </summary>
-        public List<ListingPlanDto> ListingPlans { get; set; } = new List<ListingPlanDto>();
+        public List<ListingPlan> ListingPlans { get; set; } = new List<ListingPlan>();
 
         /// <summary>
         /// 設備分類選項
         /// </summary>
         public List<PropertyEquipmentSelectionDto> EquipmentCategories { get; set; } = new List<PropertyEquipmentSelectionDto>();
+
+        /// <summary>
+        /// 設備分類三層階層結構
+        /// </summary>
+        public List<PropertyEquipmentCategoryHierarchy> EquipmentCategoriesHierarchy { get; set; } = new List<PropertyEquipmentCategoryHierarchy>();
 
         /// <summary>
         /// 可用的中文圖片分類列表
