@@ -498,16 +498,16 @@ namespace zuHause.Controllers
             System.Diagnostics.Debug.WriteLine($"➡️ TenantId: {tenantId}");
 
             var landlordExtraFiles = uploads
-                .Where(u => u.UploadTypeCode.StartsWith("LANDLORD_"))
+                .Where(u => u.MemberId == landlordId && u.UploadTypeCode.StartsWith("LANDLORD_"))
                 .Select(u => u.FilePath)
                 .ToList();
 
             var tenantExtraFiles = uploads
-                .Where(u => u.UploadTypeCode.StartsWith("TENANT_"))
+                .Where(u => u.MemberId == tenantId && u.UploadTypeCode.StartsWith("TENANT_"))
                 .Select(u => u.FilePath)
                 .ToList();
 
-            
+
             string landlordImagesHtml = string.Join("", landlordExtraFiles.Select(p => $"<img src='{p}' height='80' />"));
             string tenantImagesHtml = string.Join("", tenantExtraFiles.Select(p => $"<img src='{p}' height='80' />"));
 
