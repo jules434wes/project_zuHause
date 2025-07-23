@@ -1,0 +1,12 @@
+﻿@model zuHause.Models.FurnitureCart
+@{
+    ViewData["Title"] = "取消付款 - 家具租借";
+}
+
+<div class="container mt-5">
+    <div class="alert alert-warning text-center">
+        <h4 class="mb-3">⚠️ 您已取消付款</h4>
+        <p>這筆租借尚未完成，系統已自動清除購物車資料。</p>
+        <a href="@Url.Action("RentalCart", "Furniture")" class="btn btn-outline-primary mt-3">回到購物車</a>
+    </div>
+</div>

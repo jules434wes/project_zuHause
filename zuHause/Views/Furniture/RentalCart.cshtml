@@ -5,6 +5,7 @@
     Layout = "~/Views/Shared/_NavigationBar.cshtml"; // 確保導覽列路徑正確
     ViewBag.Title = "購物車租借清單";
 
+    // ViewBag 取得房源資料、合約資訊、購物車金額、房源清單等，供前端顯示與 JavaScript 使用
     var rentalEndDate = ViewBag.RentalEndDate as DateOnly?;
     var rentalDaysLeft = ViewBag.RentalDaysLeft as int? ?? 0;
     var propertySelectList = ViewBag.PropertySelectList as SelectList;
@@ -28,8 +29,8 @@
         </ul>
     </div>
 <!-- 右側內容區 -->
-        <div class="col-md-9">
-
+        
+<!--條件顯示購物車內容-->
     <div class="col-md-10">
         <h2 class="mt-4">購物車清單</h2>
 
@@ -39,6 +40,8 @@
                 <h5 class="card-title mb-3">目前綁定房屋：</h5>
                 <div class="mb-3 d-flex align-items-center">
                     <label for="PropertyId" class="form-label me-3 text-nowrap">選擇房源：</label>
+
+                    <!--房源選擇區塊-->
                     <select id="PropertyId" name="selectedPropertyId" class="form-select w-auto">
                         <option value="">請選擇房源</option>
                         @if (propertySelectList != null)
@@ -54,6 +57,7 @@
                     </select>
                 </div>
 
+                 <!--房源資料--> <!---->
                 <div class="border rounded p-3 bg-light" id="propertyDetailsDisplay">
                     <p class="mb-1"><strong id="strongPropertyId" style="display:none;">房屋編號：</strong> <span id="propertyIdDisplay" style="display:none;"></span></p>
                     <p class="mb-1"><strong id="strongPropertyTitle" style="display:none;">房屋標題：</strong> <span id="propertyTitleDisplay" style="display:none;"></span></p>
@@ -76,9 +80,10 @@
                     </tr>
                 </thead>
                 <tbody>
+                    <!--商品清單表格-->
                     @foreach (var item in Model.FurnitureCartItems)
                     {
-                        var subTotal = item.RentalDays * item.Product.DailyRental * item.Quantity; // 假設 item.Product 不會是 null
+                       var subTotal = rentalDaysLeft * item.Product.DailyRental * item.Quantity;
                         <tr>
                             <td>
                                 <div class="d-flex align-items-center">
@@ -106,7 +111,7 @@
                                 </td>
                             <td>NT$@item.Product?.ListPrice.ToString("N0")</td>
                             <td>NT$@item.Product?.DailyRental.ToString("N0")</td>
-                            <td>@item.RentalDays</td>
+                           <td>@rentalDaysLeft</td>
                             <td>NT$@subTotal.ToString("N0")</td>
                             <td>
                                 <button type="button"
@@ -121,6 +126,7 @@
                         </tr>
                     }
                 </tbody>
+                <!-- 金額合計區-->
                 <tfoot>
                     <tr>
                         <td colspan="5" class="text-end">總租金：</td>
@@ -138,17 +144,17 @@
             </table>
 
            <div class="text-end mt-4">
-                <form method="post" action="/Furniture/ContractPreview" onsubmit="return validatePropertySelection();">
-                    <input type="hidden" name="selectedPropertyId" id="hiddenSelectedPropertyInput" value="@ViewBag.SelectedPropertyId" />
-                    <button type="submit" class="btn btn-success btn-lg">
-                        ✅ 確定租借
-                    </button>
-                    <a href="/Furniture/FurnitureHomePage" class="btn btn-secondary btn-lg">回到租借首頁</a>
+
+                <form asp-action="ContractPreviewPost" asp-controller="Furniture" method="post" id="contractForm" onsubmit="return validatePropertySelection();">
+                     <!-- 這個 input 將由 JS 填入選中的房源 ID -->
+                    <input type="hidden" name="selectedPropertyId" id="hiddenSelectedPropertyInput" value="" />
+
+                    <button type="submit" class="btn btn-success">✅ 前往簽約</button>
+                    <a href="/Furniture/FurnitureHomePage" class="btn btn-secondary">回到租借首頁</a>
                 </form>
+
             </div>
 
-
-            
         }
         else
         {
@@ -157,6 +163,7 @@
                 <a href="/Furniture/FurnitureHomePage" class="btn btn-primary mt-3">前往選購家具</a>
             </div>
         }
+
     </div>
 </div>
 
@@ -187,171 +194,203 @@
 </div>
 
 
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-    // ---------- 房源選單顯示處理 ----------
-    const select = document.getElementById("PropertyId");
-    const propertyIdDisplay = document.getElementById("propertyIdDisplay");
-    const propertyTitleDisplay = document.getElementById("propertyTitleDisplay");
-    const endDateDisplay = document.getElementById("endDateDisplay");
-    const daysLeftDisplay = document.getElementById("daysLeftDisplay");
-    const noPropertySelected = document.getElementById("noPropertySelected");
+@section Scripts {
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // ---------- 房源選單顯示處理 ----------
+        const select = document.getElementById("PropertyId");
+        const propertyIdDisplay = document.getElementById("propertyIdDisplay");
+        const propertyTitleDisplay = document.getElementById("propertyTitleDisplay");
+        const endDateDisplay = document.getElementById("endDateDisplay");
+        const daysLeftDisplay = document.getElementById("daysLeftDisplay");
+        const noPropertySelected = document.getElementById("noPropertySelected");
 
-    const strongPropertyId = document.getElementById("strongPropertyId");
-    const strongPropertyTitle = document.getElementById("strongPropertyTitle");
-    const strongEndDate = document.getElementById("strongEndDate");
-    const strongDaysLeft = document.getElementById("strongDaysLeft");
+        const strongPropertyId = document.getElementById("strongPropertyId");
+        const strongPropertyTitle = document.getElementById("strongPropertyTitle");
+        const strongEndDate = document.getElementById("strongEndDate");
+        const strongDaysLeft = document.getElementById("strongDaysLeft");
 
-    const propertyInfoJsonInput = document.getElementById("propertyInfoJson");
-    let allPropertiesData = [];
+        const propertyInfoJsonInput = document.getElementById("propertyInfoJson");
+        let allPropertiesData = [];
 
-    if (propertyInfoJsonInput && propertyInfoJsonInput.value) {
-        try {
-            allPropertiesData = JSON.parse(propertyInfoJsonInput.value);
-        } catch (e) {
-            console.error("解析 propertyInfoJson 失敗:", e);
-        }
-    }
-
-    const initialPropertyIdValue = document.getElementById("initialPropertyId")?.value;
-    if (select && initialPropertyIdValue && initialPropertyIdValue !== "0") {
-        select.value = initialPropertyIdValue;
-        updatePropertyDisplay();
-    }
-
-    if (select) {
-        select.addEventListener("change", updatePropertyDisplay);
-    }
-
-    function updatePropertyDisplay() {
-        const selectedId = parseInt(select.value);
-        const selectedProperty = allPropertiesData.find(p => p.PropertyId === selectedId);
-
-        if (selectedProperty) {
-            propertyIdDisplay.textContent = selectedProperty.PropertyId;
-            propertyTitleDisplay.textContent = selectedProperty.Title;
-            endDateDisplay.textContent = selectedProperty.ContractEndDate || "無";
-            daysLeftDisplay.textContent = selectedProperty.ContractEndDate
-                ? selectedProperty.DaysLeft + " 天"
-                : "無";
-
-            [propertyIdDisplay, propertyTitleDisplay, endDateDisplay, daysLeftDisplay,
-            strongPropertyId, strongPropertyTitle, strongEndDate, strongDaysLeft]
-                .forEach(el => el.style.display = 'inline');
-
-            noPropertySelected.style.display = 'none';
-        } else {
-            [propertyIdDisplay, propertyTitleDisplay, endDateDisplay, daysLeftDisplay].forEach(el => {
-                el.textContent = "";
-                el.style.display = 'none';
-            });
-            [strongPropertyId, strongPropertyTitle, strongEndDate, strongDaysLeft]
-                .forEach(el => el.style.display = 'none');
-
-            noPropertySelected.style.display = 'block';
+        if (propertyInfoJsonInput && propertyInfoJsonInput.value) {
+            try {
+                allPropertiesData = JSON.parse(propertyInfoJsonInput.value);
+            } catch (e) {
+                console.error("解析 propertyInfoJson 失敗:", e);
+            }
         }
 
+        const initialPropertyIdValue = document.getElementById("initialPropertyId")?.value;
+        if (select && initialPropertyIdValue && initialPropertyIdValue !== "0") {
+            select.value = initialPropertyIdValue;
+            updatePropertyDisplay();
+        }
+
+        if (select) {
+            select.addEventListener("change", updatePropertyDisplay);
+        }
+
+        function updatePropertyDisplay() {
+            const selectedId = parseInt(select.value);
+            const selectedProperty = allPropertiesData.find(p => p.PropertyId === selectedId);
+
+            if (selectedProperty) {
+                propertyIdDisplay.textContent = selectedProperty.PropertyId;
+                propertyTitleDisplay.textContent = selectedProperty.Title;
+                endDateDisplay.textContent = selectedProperty.ContractEndDate || "無";
+                daysLeftDisplay.textContent = selectedProperty.ContractEndDate
+                    ? selectedProperty.DaysLeft + " 天"
+                    : "無";
+
+                [propertyIdDisplay, propertyTitleDisplay, endDateDisplay, daysLeftDisplay,
+                strongPropertyId, strongPropertyTitle, strongEndDate, strongDaysLeft]
+                    .forEach(el => el.style.display = 'inline');
+
+                noPropertySelected.style.display = 'none';
+            } else {
+                [propertyIdDisplay, propertyTitleDisplay, endDateDisplay, daysLeftDisplay].forEach(el => {
+                    el.textContent = "";
+                    el.style.display = 'none';
+                });
+                [strongPropertyId, strongPropertyTitle, strongEndDate, strongDaysLeft]
+                    .forEach(el => el.style.display = 'none');
+
+                noPropertySelected.style.display = 'block';
+            }
+
+            const hiddenInput = document.getElementById("hiddenSelectedPropertyInput");
+            if (hiddenInput) {
+                hiddenInput.value = select.value;
+            }
+        }
+
+        // ---------- 同步 hidden input 值 ----------
         const hiddenInput = document.getElementById("hiddenSelectedPropertyInput");
-        if (hiddenInput) {
+        if (select && hiddenInput) {
             hiddenInput.value = select.value;
+            select.addEventListener("change", function () {
+                hiddenInput.value = this.value;
+            });
         }
-    }
 
-    // ---------- 數量變更邏輯 ----------
-    function updateRowSubtotal(control) {
-        const input = control.querySelector('.quantity-input');
-        const quantity = parseInt(input.value);
-        const row = control.closest('tr');
-        const dailyRental = parseInt(row.querySelector('td:nth-child(4)').textContent.replace(/[^0-9]/g, ''));
-        const days = parseInt(row.querySelector('td:nth-child(5)').textContent);
-        const subtotalCell = row.querySelector('td:nth-child(6)');
+        // ---------- 數量變更邏輯 ----------
+        function updateRowSubtotal(control) {
+            const input = control.querySelector('.quantity-input');
+            const quantity = parseInt(input.value);
+            const row = control.closest('tr');
+            const dailyRental = parseInt(row.querySelector('td:nth-child(4)').textContent.replace(/[^0-9]/g, ''));
+            const days = parseInt(row.querySelector('td:nth-child(5)').textContent);
+            const subtotalCell = row.querySelector('td:nth-child(6)');
 
-        const subtotal = dailyRental * days * quantity;
-        subtotalCell.textContent = 'NT$' + subtotal.toLocaleString();
+            const subtotal = dailyRental * days * quantity;
+            subtotalCell.textContent = 'NT$' + subtotal.toLocaleString();
 
-        updateTotalAmount();
-    }
+            updateTotalAmount();
+        }
 
-    function updateTotalAmount() {
-        const subtotalCells = document.querySelectorAll('tbody tr td:nth-child(6)');
-        let total = 0;
-        subtotalCells.forEach(cell => {
-            const amount = parseInt(cell.textContent.replace(/[^0-9]/g, '')) || 0;
-            total += amount;
+        function updateTotalAmount() {
+            const subtotalCells = document.querySelectorAll('tbody tr td:nth-child(6)');
+            let total = 0;
+            subtotalCells.forEach(cell => {
+                const amount = parseInt(cell.textContent.replace(/[^0-9]/g, '')) || 0;
+                total += amount;
+            });
+
+            const shippingFee = 3000;
+            const totalCartAmountDisplay = document.querySelector('tfoot tr:nth-child(1) td:nth-child(2) strong');
+            const finalAmountDisplay = document.querySelector('tfoot tr:nth-child(3) td:nth-child(2)');
+
+            if (totalCartAmountDisplay) {
+                totalCartAmountDisplay.textContent = 'NT$' + total.toLocaleString();
+            }
+            if (finalAmountDisplay) {
+                finalAmountDisplay.textContent = 'NT$' + (total + shippingFee).toLocaleString();
+            }
+        }
+
+        updateTotalAmount(); // 頁面載入時即時更新一次
+
+        // ---------- Modal 刪除 ----------
+        const deleteButtons = document.querySelectorAll('button[data-bs-target="#deleteConfirmModal"]');
+        const modalProductName = document.getElementById('modalProductName');
+        const modalCartItemId = document.getElementById('modalCartItemId');
+
+        deleteButtons.forEach(button => {
+            button.addEventListener('click', function () {
+                const productName = this.getAttribute('data-product-name');
+                const cartItemId = this.getAttribute('data-cart-item-id');
+
+                modalProductName.textContent = productName;
+                modalCartItemId.value = cartItemId;
+            });
         });
 
-        const shippingFee = 3000;
-        const totalCartAmountDisplay = document.querySelector('tfoot tr:nth-child(1) td:nth-child(2) strong');
-        const finalAmountDisplay = document.querySelector('tfoot tr:nth-child(3) td:nth-child(2)');
-
-        if (totalCartAmountDisplay) {
-            totalCartAmountDisplay.textContent = 'NT$' + total.toLocaleString();
-        }
-        if (finalAmountDisplay) {
-            finalAmountDisplay.textContent = 'NT$' + (total + shippingFee).toLocaleString();
-        }
-    }
-
-    // 綁定加減事件
- const controls = document.querySelectorAll('.quantity-control');
-
-controls.forEach(control => {
-    const decreaseBtn = control.querySelector('.btn-decrease');
-    const increaseBtn = control.querySelector('.btn-increase');
-    const input = control.querySelector('.quantity-input');
-
-    decreaseBtn?.addEventListener('click', () => {
-        let current = parseInt(input.value);
-        if (current > 1) {
-            input.value = current - 1;
-            updateRowSubtotal(control);
-        } else {
-            alert('⚠️ 已達最低數量');
+        // ---------- 切換房源時跳轉 URL ----------
+        if (select) {
+            select.addEventListener("change", function () {
+                const selectedValue = this.value;
+                if (selectedValue) {
+                    window.location.href = `/Furniture/RentalCart?selectedPropertyId=${selectedValue}`;
+                }
+            });
         }
     });
 
-    increaseBtn?.addEventListener('click', () => {
-        let current = parseInt(input.value);
-        const available = parseInt(control.getAttribute('data-available'));
+    // ---------- 數量加減事件（jQuery） ----------
+    $('.btn-increase, .btn-decrease').on('click', function () {
+        const container = $(this).closest('.quantity-control');
+        const cartItemId = container.data('itemid');
+        const available = parseInt(container.data('available'));
+        let quantity = parseInt(container.find('.quantity-input').val());
 
-        if (current < available) {
-            input.value = current + 1;
-            updateRowSubtotal(control);
+        if ($(this).hasClass('btn-increase')) {
+            if (quantity < available) {
+                quantity++;
+            } else {
+                alert('目前庫存剩餘 ' + available + ' 件');
+                return;
+            }
         } else {
-            alert(`⚠️ 目前庫存剩餘 ${available}，不可超過此數量`);
+            if (quantity > 1) {
+                quantity--;
+            } else {
+                return;
+            }
         }
-    });
-});
 
-    updateTotalAmount(); // 頁面載入時即時更新一次
+        container.find('.quantity-input').val(quantity);
 
-    // ---------- Modal 刪除 ----------
-    const deleteButtons = document.querySelectorAll('button[data-bs-target="#deleteConfirmModal"]');
-    const modalProductName = document.getElementById('modalProductName');
-    const modalCartItemId = document.getElementById('modalCartItemId');
-
-    deleteButtons.forEach(button => {
-        button.addEventListener('click', function () {
-            const productName = this.getAttribute('data-product-name');
-            const cartItemId = this.getAttribute('data-cart-item-id');
-
-            modalProductName.textContent = productName;
-            modalCartItemId.value = cartItemId;
+        // AJAX 呼叫 API 更新資料庫
+        $.ajax({
+            url: '/Furniture/UpdateCartItemQuantity',
+            method: 'POST',
+            data: {
+                cartItemId: cartItemId,
+                quantity: quantity
+            },
+            success: function () {
+                console.log("更新成功");
+                location.reload(); // 若要即時更新金額欄位，可改寫為前端同步更新
+            },
+            error: function () {
+                alert("更新失敗");
+            }
         });
     });
-});
 
-function validatePropertySelection() {
-    const selectedValue = document.getElementById("hiddenSelectedPropertyInput").value;
-    if (!selectedValue || selectedValue === "0") {
-        alert("請先選擇綁定房源再進行租借！");
-        return false;
+    // ---------- 確認表單送出前選擇房源 ----------
+    function validatePropertySelection() {
+        const selectedValue = document.getElementById("hiddenSelectedPropertyInput").value;
+        if (!selectedValue || selectedValue === "0") {
+            alert("請先選擇綁定房源再進行租借！");
+            return false;
+        }
+        return true;
     }
-    return true;
-}
+    </script>
 
-
-</script>
 
 
 <style>
@@ -385,4 +424,4 @@ function validatePropertySelection() {
 
 </style>
 
-
+}
