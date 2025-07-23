@@ -79,6 +79,12 @@ builder.Services.AddScoped<zuHause.Services.Interfaces.IPermissionService, zuHau
 // 用於參數化模板的解析和替換
 builder.Services.AddScoped<zuHause.Services.MessageTemplateService>();
 
+// === 註冊 Google Maps 整合服務 ===
+// 地理編碼、地點搜尋、距離計算服務
+builder.Services.AddHttpClient<zuHause.Interfaces.IGoogleMapsService, zuHause.Services.GoogleMapsService>();
+builder.Services.AddScoped<zuHause.Interfaces.IApiUsageTracker, zuHause.Services.ApiUsageTracker>();
+builder.Services.AddScoped<zuHause.Interfaces.IPropertyMapCacheService, zuHause.Services.PropertyMapCacheService>();
+
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
