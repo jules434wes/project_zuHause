@@ -128,9 +128,8 @@ namespace zuHause.Controllers
 
             var authProperties = new AuthenticationProperties
             {
-                IsPersistent = true,
-                ExpiresUtc = DateTimeOffset.UtcNow.AddHours(72)
-
+                IsPersistent = false // 瀏覽器關閉後登出，15分鐘閒置自動登出
+                // 移除手動過期設定，使用 Program.cs 中的統一配置
             };
 
             var photoPath = _context.Members.Join(_context.UserUploads,
@@ -165,18 +164,13 @@ namespace zuHause.Controllers
             TempData["SuccessMessageTitle"] = "通知";
             TempData["SuccessMessageContent"] = "登入成功";
 
-            if (!string.IsNullOrEmpty(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl))
-            {
-                return Redirect(model.ReturnUrl);
-            }
-            else
-            {
-                return RedirectToAction("FrontPage", "Tenant");
-            }
+            // 使用智能重導向邏輯
+            var redirectUrl = GetSmartRedirectUrl(model.ReturnUrl);
+            return Redirect(redirectUrl);
 
         }
         [HttpPost]
-        [HttpGet]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
         {
             var memberId = User.FindFirst("UserId")?.Value;
@@ -186,7 +180,10 @@ namespace zuHause.Controllers
 
             TempData["SuccessMessageTitle"] = "通知";
             TempData["SuccessMessageContent"] = "您已登出";
-            return RedirectToAction("FrontPage", "Tenant");
+            
+            // 使用智能重導向邏輯（登出時沒有 ReturnUrl，純粹根據 Referer 判斷）
+            var redirectUrl = GetSmartRedirectUrl(null);
+            return Redirect(redirectUrl);
         }
         [HttpPost]
         [Authorize(AuthenticationSchemes = "MemberCookieAuth")]
@@ -276,9 +273,8 @@ namespace zuHause.Controllers
             var claimsIdentity = new ClaimsIdentity(claims, "MemberCookieAuth");
             var authProperties = new AuthenticationProperties
             {
-                IsPersistent = true,
-                ExpiresUtc = DateTimeOffset.UtcNow.AddHours(72)
-
+                IsPersistent = false // 瀏覽器關閉後登出，15分鐘閒置自動登出
+                // 移除手動過期設定，使用 Program.cs 中的統一配置
             };
 
             await HttpContext.SignOutAsync("MemberCookieAuth");
@@ -510,9 +506,8 @@ namespace zuHause.Controllers
             var claimsIdentity = new ClaimsIdentity(claims, "MemberCookieAuth");
             var authProperties = new AuthenticationProperties
             {
-                IsPersistent = true,
-                ExpiresUtc = DateTimeOffset.UtcNow.AddHours(72)
-
+                IsPersistent = false // 瀏覽器關閉後登出，15分鐘閒置自動登出
+                // 移除手動過期設定，使用 Program.cs 中的統一配置
             };
 
 
@@ -825,6 +820,58 @@ namespace zuHause.Controllers
                 storedFileName = storeFileName,
                 previewUrl = $"/uploads/{uploadFolderName}/{storeFileName}",
             });
+        }
+
+        /// <summary>
+        /// 智能重導向輔助方法 - 根據來源判斷要導向家具還是租屋首頁
+        /// </summary>
+        /// <param name="returnUrl">明確指定的回傳URL</param>
+        /// <returns>重導向URL</returns>
+        private string GetSmartRedirectUrl(string? returnUrl)
+        {
+            try
+            {
+                // 如果有明確的 ReturnUrl，優先使用（保持現有邏輯不變）
+                if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+                {
+                    return returnUrl;
+                }
+
+                // 檢查 HTTP Referer 來判斷用戶來源
+                var referer = Request.Headers["Referer"].ToString();
+                if (!string.IsNullOrEmpty(referer))
+                {
+                    // 防止無限重導向：如果 Referer 指向登入或登出頁面，跳過檢查
+                    if (referer.Contains("/Member/Login") || 
+                        referer.Contains("/Member/Logout") ||
+                        referer.Contains("/Auth/"))
+                    {
+                        // 跳過，使用預設行為
+                    }
+                    else
+                    {
+                        // 檢查是否來自家具相關頁面
+                        if (referer.Contains("/Furniture/") || 
+                            referer.Contains("FurnitureHomePage") ||
+                            referer.Contains("OrderHistory") ||
+                            referer.Contains("RentalCart") ||
+                            referer.Contains("ProductPurchasePage"))
+                        {
+                            var furnitureUrl = Url.Action("FurnitureHomePage", "Furniture");
+                            return !string.IsNullOrEmpty(furnitureUrl) ? furnitureUrl : "/Furniture/FurnitureHomePage";
+                        }
+                    }
+                }
+
+                // 預設導向租客首頁（維持原有行為）
+                var tenantUrl = Url.Action("FrontPage", "Tenant");
+                return !string.IsNullOrEmpty(tenantUrl) ? tenantUrl : "/Tenant/FrontPage";
+            }
+            catch (Exception)
+            {
+                // 如果發生任何錯誤，回到安全的預設頁面
+                return "/Tenant/FrontPage";
+            }
         }
     }
 }

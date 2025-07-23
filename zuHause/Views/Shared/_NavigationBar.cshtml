@@ -42,12 +42,12 @@
                     }
                     else
                     {
-                        <a href="@Url.Action("Login", "Member")" class="text-decoration-none text-dark d-flex align-items-center">
+                        <a href="@Url.Action("Login", "Member", new { ReturnUrl = Context.Request.Path })" class="text-decoration-none text-dark d-flex align-items-center">
                             <i class="bi bi-person-fill text-muted me-1"></i>
                             <span class="me-3">訪客</span>
                         </a>
-                        <a href="@Url.Action("Login", "Member")" class="btn btn-outline-secondary btn-sm me-2">登入</a>
-                        <a href="@Url.Action("Register", "Member")" class="btn btn-outline-primary btn-sm">註冊</a>
+                        <a href="@Url.Action("Login", "Member", new { ReturnUrl = Context.Request.Path })" class="btn btn-outline-secondary btn-sm me-2">登入</a>
+                        <a href="@Url.Action("RegisterVerifyPhone", "Member", new { ReturnUrl = Context.Request.Path })" class="btn btn-outline-primary btn-sm">註冊</a>
                     }
                 </div>
 
