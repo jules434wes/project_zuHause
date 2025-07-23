@@ -46,6 +46,23 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /**
+     * 格式化公告內容，確保換行符能正確顯示
+     * @param {string} content - 原始內容文字
+     * @returns {string} 格式化後的內容
+     */
+    function formatAnnouncementContent(content) {
+        if (!content) return '';
+        
+        // 如果內容中包含HTML標籤，直接返回（避免重複處理）
+        if (/<[^>]*>/g.test(content)) {
+            return content;
+        }
+        
+        // 將換行符轉換為HTML換行標籤，作為CSS white-space: pre-wrap 的備用方案
+        return content.replace(/\n/g, '<br>');
+    }
+
+    /**
      * 創建附件的 HTML 元素 (圖片或連結按鈕)。
      * @param {string} url - 附件的 URL。
      * @param {string} title - 公告標題，用於圖片 alt 屬性。
@@ -150,8 +167,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     const toggleButton = announcementBody.querySelector('.toggle-button');
 
                     // 初始顯示部分內容，並在數據屬性中儲存原始預覽內容
-                    announcementContentDiv.innerHTML = announcement.contentPreview;
-                    announcementContentDiv.dataset.contentPreview = announcement.contentPreview;
+                    announcementContentDiv.innerHTML = formatAnnouncementContent(announcement.contentPreview);
+                    announcementContentDiv.dataset.contentPreview = formatAnnouncementContent(announcement.contentPreview);
 
                     // --- 公告標題點擊事件監聽器 ---
                     announcementHeader.addEventListener('click', () => {
@@ -258,7 +275,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 }
 
                                 // 顯示完整內容
-                                announcementContentDiv.innerHTML = announcementCache[currentAnnouncementId].fullContent;
+                                announcementContentDiv.innerHTML = formatAnnouncementContent(announcementCache[currentAnnouncementId].fullContent);
 
                                 // 處理附件 (統一使用 createAttachmentElement 函數，確保即使替換 innerHTML 也能重新添加)
                                 const attachmentUrl = announcementCache[currentAnnouncementId].attachmentUrl;

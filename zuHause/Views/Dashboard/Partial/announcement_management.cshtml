@@ -107,6 +107,25 @@
 				<form id="announcementForm">
 					<input type="hidden" id="announcementId" name="siteMessagesId">
 
+					<!-- 模板選擇區塊 -->
+					<div class="row mb-3" id="announcementTemplateSection" style="display: none;">
+						<div class="col-md-8">
+							<label for="announcementTemplateSelect" class="form-label">選擇插入模板</label>
+							<select class="form-select" id="announcementTemplateSelect">
+								<option value="">請選擇模板...</option>
+								<!-- 動態載入模板選項 -->
+							</select>
+						</div>
+						@* <div class="col-md-4">
+							<label class="form-label">&nbsp;</label>
+							<div> *@
+								@* <button type="button" class="btn btn-outline-secondary w-100" id="announcementResetFormBtn">
+									<i class="bi bi-arrow-clockwise"></i> 重置
+								</button> *@
+						@* 	</div>
+						</div> *@
+					</div>
+
 					<div class="mb-3">
 						<label for="announcementTitle" class="form-label">標題 <span class="text-danger">*</span></label>
 						<input type="text" class="form-control" id="announcementTitle" name="title" required>
@@ -162,6 +181,10 @@
 				</form>
 			</div>
 			<div class="modal-footer">
+				<button type="button" class="btn btn-outline-secondary" id="announcementResetFormBtn">
+					<i class="bi bi-arrow-clockwise"></i> 重置
+				</button>
+
 				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
 				<button type="button" class="btn btn-primary" id="saveAnnouncementBtn">儲存</button>
 			</div>
