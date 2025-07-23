@@ -75,6 +75,10 @@ builder.Services.AddScoped<zuHause.Interfaces.IPropertyImageService, zuHause.Ser
 // 配合 RequireAdminPermissionAttribute 使用，防止直接 URL 存取無權限功能
 builder.Services.AddScoped<zuHause.Services.Interfaces.IPermissionService, zuHause.Services.PermissionService>();
 
+// === 註冊訊息模板服務 ===
+// 用於參數化模板的解析和替換
+builder.Services.AddScoped<zuHause.Services.MessageTemplateService>();
+
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
@@ -126,7 +130,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
-// 亂碼請修正 FurnitureController �� FurnitureHomePage
 app.MapControllerRoute(
     name: "default",
 

@@ -14,6 +14,7 @@
     Marquee_edit: "🌀 跑馬燈管理",
     furniture_management: "🛋️ 家具列表管理",
     announcement_management: "📢 公告管理",
+    message_template_management: "📝 後台訊息模板管理",
     
     // Admin 功能
     member_list: "👤 會員列表與驗證",
@@ -53,7 +54,7 @@ const tabGroups = {
     },
     Imgandtext: {
         title: "📂 平台圖片與文字資料管理",
-        keys: ['imgup', 'Marquee_edit', 'furniture_management', 'announcement_management']
+        keys: ['imgup', 'Marquee_edit', 'furniture_management', 'announcement_management', 'message_template_management']
     },
     Fee: {
         title: "📁 平台費用設定",
@@ -251,7 +252,8 @@ function openTab(tabKey) {
                 furniture_fee: `/js/furniture_fee.js?v=${timestamp}`,
                 Marquee_edit: `/js/Marquee_edit.js?v=${timestamp}`,
                 furniture_management: `/js/furniture_management.js?v=${timestamp}`,
-                announcement_management: `/js/announcement_management.js?v=${timestamp}`
+                announcement_management: `/js/announcement_management.js?v=${timestamp}`,
+                message_template_management: `/js/message_template_management.js?v=${timestamp}`
             };
 
             if (scriptMap[tabKey]) {
@@ -332,6 +334,11 @@ function openTab(tabKey) {
                     if (tabKey === "announcement_management") {
                         if (typeof initAnnouncementManager === "function") {
                             initAnnouncementManager();
+                        }
+                    }
+                    if (tabKey === "message_template_management") {
+                        if (typeof initMessageTemplateManager === "function") {
+                            initMessageTemplateManager();
                         }
                     }
 

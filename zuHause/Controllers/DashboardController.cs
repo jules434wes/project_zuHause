@@ -64,7 +64,7 @@ namespace zuHause.Controllers
                 "overview", "monitor", "behavior", "orders", "system",
                 "roles", "Backend_user_list", "contract_template",
                 "platform_fee", "imgup", "furniture_fee", "Marquee_edit", "furniture_management",
-                "announcement_management", "member_list", "landlord_list", "property_list", 
+                "announcement_management", "message_template_management", "member_list", "landlord_list", "property_list", 
                 "property_complaint_list", "customer_service_list", "system_message_list"
             };
 
@@ -130,6 +130,10 @@ namespace zuHause.Controllers
                     .ToList();
                 
                 return PartialView("~/Views/Dashboard/Partial/announcement_management.cshtml", announcements);
+            }
+            if (id == "message_template_management")
+            {
+                return PartialView("~/Views/Dashboard/Partial/message_template_management.cshtml");
             }
             if (id == "platform_fee")
             {
@@ -1640,7 +1644,250 @@ namespace zuHause.Controllers
             return Ok("刪除成功");
         }
 
+        #region 訊息模板管理 API
 
+        /// <summary>
+        /// 取得訊息模板列表（支援搜尋、篩選、分頁）
+        /// </summary>
+        [HttpGet("GetMessageTemplates")]
+        public IActionResult GetMessageTemplates(string? category = null, string? keyword = null, bool? status = null, int page = 1, int pageSize = 10)
+        {
+            try
+            {
+                var query = _context.AdminMessageTemplates.AsQueryable();
+
+                // 分類篩選
+                if (!string.IsNullOrEmpty(category))
+                {
+                    query = query.Where(t => t.CategoryCode == category.ToUpper());
+                }
+
+                // 關鍵字搜尋（標題或內容）
+                if (!string.IsNullOrEmpty(keyword))
+                {
+                    query = query.Where(t => t.Title.Contains(keyword) || t.TemplateContent.Contains(keyword));
+                }
+
+                // 狀態篩選
+                if (status.HasValue)
+                {
+                    query = query.Where(t => t.IsActive == status.Value);
+                }
+
+                // 計算總數
+                var totalCount = query.Count();
+                var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
+
+                // 分頁與排序
+                var templates = query
+                    .OrderByDescending(t => t.UpdatedAt)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .Select(t => new
+                    {
+                        templateID = t.TemplateId,
+                        categoryCode = t.CategoryCode,
+                        title = t.Title,
+                        templateContent = t.TemplateContent,
+                        isActive = t.IsActive,
+                        createdAt = t.CreatedAt,
+                        updatedAt = t.UpdatedAt
+                    })
+                    .ToList();
+
+                return Ok(new
+                {
+                    success = true,
+                    data = templates,
+                    page = page,
+                    pageSize = pageSize,
+                    totalCount = totalCount,
+                    totalPages = totalPages
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = "載入模板列表時發生錯誤：" + ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// 根據ID取得單一訊息模板
+        /// </summary>
+        [HttpGet("GetMessageTemplateById/{id}")]
+        public IActionResult GetMessageTemplateById(int id)
+        {
+            try
+            {
+                var template = _context.AdminMessageTemplates
+                    .Where(t => t.TemplateId == id)
+                    .Select(t => new
+                    {
+                        templateID = t.TemplateId,
+                        categoryCode = t.CategoryCode,
+                        title = t.Title,
+                        templateContent = t.TemplateContent,
+                        isActive = t.IsActive,
+                        createdAt = t.CreatedAt,
+                        updatedAt = t.UpdatedAt
+                    })
+                    .FirstOrDefault();
+
+                if (template == null)
+                {
+                    return NotFound(new { success = false, message = "找不到指定的模板" });
+                }
+
+                return Ok(template);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = "載入模板時發生錯誤：" + ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// 新增訊息模板
+        /// </summary>
+        [HttpPost("CreateMessageTemplate")]
+        public IActionResult CreateMessageTemplate([FromBody] MessageTemplateCreateDto dto)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(dto.Title) || string.IsNullOrEmpty(dto.TemplateContent) || string.IsNullOrEmpty(dto.CategoryCode))
+                {
+                    return BadRequest(new { success = false, message = "標題、內容和分類為必填欄位" });
+                }
+
+                var template = new AdminMessageTemplate
+                {
+                    CategoryCode = dto.CategoryCode.ToUpper(),
+                    Title = dto.Title,
+                    TemplateContent = dto.TemplateContent,
+                    IsActive = dto.IsActive,
+                    CreatedAt = DateTime.Now,
+                    UpdatedAt = DateTime.Now
+                };
+
+                _context.AdminMessageTemplates.Add(template);
+                _context.SaveChanges();
+
+                return Ok(new { success = true, message = "模板新增成功", templateId = template.TemplateId });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = "新增模板時發生錯誤：" + ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// 更新訊息模板
+        /// </summary>
+        [HttpPost("UpdateMessageTemplate")]
+        public IActionResult UpdateMessageTemplate([FromBody] MessageTemplateUpdateDto dto)
+        {
+            try
+            {
+                var template = _context.AdminMessageTemplates.FirstOrDefault(t => t.TemplateId == dto.TemplateID);
+                if (template == null)
+                {
+                    return NotFound(new { success = false, message = "找不到指定的模板" });
+                }
+
+                if (string.IsNullOrEmpty(dto.Title) || string.IsNullOrEmpty(dto.TemplateContent) || string.IsNullOrEmpty(dto.CategoryCode))
+                {
+                    return BadRequest(new { success = false, message = "標題、內容和分類為必填欄位" });
+                }
+
+                template.CategoryCode = dto.CategoryCode.ToUpper();
+                template.Title = dto.Title;
+                template.TemplateContent = dto.TemplateContent;
+                template.IsActive = dto.IsActive;
+                template.UpdatedAt = DateTime.Now;
+
+                _context.SaveChanges();
+
+                return Ok(new { success = true, message = "模板更新成功" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = "更新模板時發生錯誤：" + ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// 刪除訊息模板
+        /// </summary>
+        [HttpPost("DeleteMessageTemplate")]
+        public IActionResult DeleteMessageTemplate([FromBody] int id)
+        {
+            try
+            {
+                var template = _context.AdminMessageTemplates.FirstOrDefault(t => t.TemplateId == id);
+                if (template == null)
+                {
+                    return NotFound(new { success = false, message = "找不到指定的模板" });
+                }
+
+                _context.AdminMessageTemplates.Remove(template);
+                _context.SaveChanges();
+
+                return Ok(new { success = true, message = "模板刪除成功" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = "刪除模板時發生錯誤：" + ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// 切換訊息模板啟用狀態
+        /// </summary>
+        [HttpPost("ToggleMessageTemplateStatus")]
+        public IActionResult ToggleMessageTemplateStatus([FromBody] int id)
+        {
+            try
+            {
+                var template = _context.AdminMessageTemplates.FirstOrDefault(t => t.TemplateId == id);
+                if (template == null)
+                {
+                    return NotFound(new { success = false, message = "找不到指定的模板" });
+                }
+
+                template.IsActive = !template.IsActive;
+                template.UpdatedAt = DateTime.Now;
+                _context.SaveChanges();
+
+                return Ok(new { success = true, isActive = template.IsActive, message = $"模板已{(template.IsActive ? "啟用" : "停用")}" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = "切換模板狀態時發生錯誤：" + ex.Message });
+            }
+        }
+
+        #endregion
+
+        #region ViewModels/DTOs
+
+        public class MessageTemplateCreateDto
+        {
+            public string CategoryCode { get; set; } = string.Empty;
+            public string Title { get; set; } = string.Empty;
+            public string TemplateContent { get; set; } = string.Empty;
+            public bool IsActive { get; set; } = true;
+        }
+
+        public class MessageTemplateUpdateDto
+        {
+            public int TemplateID { get; set; }
+            public string CategoryCode { get; set; } = string.Empty;
+            public string Title { get; set; } = string.Empty;
+            public string TemplateContent { get; set; } = string.Empty;
+            public bool IsActive { get; set; }
+        }
+
+        #endregion
         
     }
 
