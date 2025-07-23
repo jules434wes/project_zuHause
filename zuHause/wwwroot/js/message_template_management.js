@@ -3,12 +3,13 @@
  * 處理訊息模板的新增、編輯、刪除、搜尋等功能
  */
 
-let currentPage = 1;
-let pageSize = 10;
-let currentFilters = {};
+(() => {
+    let currentPage = 1;
+    let pageSize = 10;
+    let currentFilters = {};
 
-// 初始化訊息模板管理器
-function initMessageTemplateManager() {
+    // 初始化訊息模板管理器
+    function initMessageTemplateManager() {
     console.log("🚀 初始化後台訊息模板管理功能");
     
     // 綁定事件
@@ -18,8 +19,8 @@ function initMessageTemplateManager() {
     loadMessageTemplates();
 }
 
-// 綁定所有事件
-function bindEvents() {
+    // 綁定所有事件
+    function bindEvents() {
     // 新增模板按鈕
     const addBtn = document.getElementById('addTemplateBtn');
     if (addBtn) {
@@ -69,8 +70,8 @@ function bindEvents() {
     }
 }
 
-// 載入訊息模板列表
-async function loadMessageTemplates(page = 1) {
+    // 載入訊息模板列表
+    async function loadMessageTemplates(page = 1) {
     try {
         showLoading(true);
         
@@ -98,8 +99,8 @@ async function loadMessageTemplates(page = 1) {
     }
 }
 
-// 渲染模板表格
-function renderTemplateTable(templates) {
+    // 渲染模板表格
+    function renderTemplateTable(templates) {
     const tbody = document.getElementById('templateTableBody');
     if (!tbody) return;
     
@@ -160,8 +161,8 @@ function renderTemplateTable(templates) {
     `).join('');
 }
 
-// 渲染分頁
-function renderPagination(result) {
+    // 渲染分頁
+    function renderPagination(result) {
     const container = document.getElementById('paginationList');
     if (!container) return;
     
@@ -203,15 +204,15 @@ function renderPagination(result) {
     container.innerHTML = pagination;
 }
 
-// 顯示新增模態框
-function showAddModal() {
+    // 顯示新增模態框
+    function showAddModal() {
     clearForm();
     document.getElementById('templateModalLabel').textContent = '新增模板';
     new bootstrap.Modal(document.getElementById('templateModal')).show();
 }
 
-// 編輯模板
-async function editTemplate(id) {
+    // 編輯模板
+    async function editTemplate(id) {
     try {
         const response = await fetch(`/Dashboard/GetMessageTemplateById/${id}`);
         const template = await response.json();
@@ -537,13 +538,22 @@ function highlightParameters(text) {
     return text.replace(/\{([^}]+)\}/g, '<span class="template-parameter">{$1}</span>');
 }
 
-// 在 dashboard.js 中定義的 showToast 函數
-// 如果不存在，使用備用方案
-if (typeof showToast === 'undefined') {
-    window.showToast = function(message, type = 'success') {
-        console.log(`${type.toUpperCase()}: ${message}`);
-        alert(message);
-    };
-}
+    // 在 dashboard.js 中定義的 showToast 函數
+    // 如果不存在，使用備用方案
+    if (typeof showToast === 'undefined') {
+        window.showToast = function(message, type = 'success') {
+            console.log(`${type.toUpperCase()}: ${message}`);
+            alert(message);
+        };
+    }
 
-console.log("📝 後台訊息模板管理 JS 已載入");
+    // 暴露需要在HTML中調用的函數到全域
+    window.initMessageTemplateManager = initMessageTemplateManager;
+    window.editTemplate = editTemplate;
+    window.previewTemplate = previewTemplate;
+    window.toggleTemplateStatus = toggleTemplateStatus;
+    window.deleteTemplate = deleteTemplate;
+    window.loadMessageTemplates = loadMessageTemplates;
+
+    console.log("📝 後台訊息模板管理 JS 已載入");
+})();
