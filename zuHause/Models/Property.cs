@@ -218,6 +218,16 @@ public partial class Property
     /// </summary>
     public DateTime? DeletedAt { get; set; }
 
+    /// <summary>
+    /// 緯度
+    /// </summary>
+    public decimal? Latitude { get; set; }
+
+    /// <summary>
+    /// 經度
+    /// </summary>
+    public decimal? Longitude { get; set; }
+
     public virtual ICollection<Approval> Approvals { get; set; } = new List<Approval>();
 
     public virtual ICollection<Chatroom> Chatrooms { get; set; } = new List<Chatroom>();
