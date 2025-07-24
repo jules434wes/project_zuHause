@@ -626,7 +626,7 @@ namespace zuHause.Controllers
                 PhoneVerifiedAt = member.PhoneVerifiedAt,
                 EmailVerifiedAt = member.EmailVerifiedAt,
                 IdentityVerifiedAt = member.IdentityVerifiedAt,
-                NationalIdNo = member.NationalIdNo != null ? member.NationalIdNo : "尚未認證",
+                NationalIdNo = member.NationalIdNo,
                 CreatedAt = member.CreatedAt,
                 CityOptions = cities,
                 ResidenceDistrictOptions = residenceDistrict,
@@ -813,7 +813,11 @@ namespace zuHause.Controllers
             };
             _context.UserUploads.Add(uploadInfo);
             await _context.SaveChangesAsync();
+
+            if (model.ModuleCode == "MemberInfo" && model.UploadTypeCode == "USER_IMG")
+            {
             _cache.Set($"Avatar_{User.FindFirst("UserId")?.Value}", $"~{storePath}");
+            }
             return Ok(new
             {
                 originalFileName = model.UploadFile.FileName,
