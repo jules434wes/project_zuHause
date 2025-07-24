@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 using zuHause.Models;
+using zuHause.Services;
 using zuHause.ViewModels.MemberViewModel;
 
 namespace zuHause.Controllers
@@ -16,10 +17,13 @@ namespace zuHause.Controllers
     {
         public readonly ZuHauseContext _context;
         private readonly IConverter _converter;
-        public MemberContractsController(ZuHauseContext context, IConverter converter)
+        public readonly ApplicationService _applicationService;
+        public MemberContractsController(ZuHauseContext context, IConverter converter, ApplicationService applicationService)
         {
             _context = context;
             _converter = converter;
+            _applicationService = applicationService;
+
         }
         public async Task<IActionResult> Index()
         {
@@ -408,9 +412,9 @@ namespace zuHause.Controllers
 
 
             await _context.SaveChangesAsync();
+            await _applicationService.UpdateApplicationStatusAsync(model.RentalApplicationId!.Value, "SIGNING");
 
-            //還沒決定好會去哪一頁    
-            return RedirectToAction("ContractList");
+            return RedirectToAction("Index", "MemberApplications");
         }
 
 
@@ -436,6 +440,10 @@ namespace zuHause.Controllers
         {
             var html = await GenerateContractHtml(contractId);
             ViewBag.ContractHtml = html;
+            ViewBag.ContractId = contractId;
+            ViewBag.ContractIdLayout = true;
+
+
             return View();
         }
         private int CalculateMonthDifference(DateOnly start, DateOnly? end)
