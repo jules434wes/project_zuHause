@@ -112,7 +112,8 @@
                         <h5 class="mb-0">屋源照片</h5>
                     </div>
                     <div class="card-body">
-                        @if (Model.Images.Any())
+                        @* TODO: 照片上傳系統還沒實作，之後再來修改 *@
+                        @if (false && Model.Images.Any())
                         {
                             <div class="row g-3">
                                 @foreach (var image in Model.Images)
@@ -134,7 +135,7 @@
                         {
                             <div class="text-center py-4">
                                 <i class="bi bi-image fa-3x text-muted mb-3"></i>
-                                <p class="text-muted">尚未上傳房源照片</p>
+                                <p class="text-muted">照片上傳功能開發中，敬請期待</p>
                             </div>
                         }
                     </div>
@@ -261,7 +262,7 @@
                                 @foreach (var rental in Model.RentalHistory)
                                 {
                                     <tr>
-                                        <td>C@rental.ContractId.ToString("000")</td>
+                                        <td>C@(rental.ContractId.ToString("000"))</td>
                                         <td><a href="/Admin/admin_userDetails/@rental.TenantId" class="text-decoration-none">@rental.TenantName</a></td>
                                         <td>@rental.RentalPeriod</td>
                                         <td>
