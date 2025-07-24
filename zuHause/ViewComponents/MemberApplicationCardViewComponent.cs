@@ -33,7 +33,7 @@ namespace zuHause.ViewComponents
         // 這建議放在 ViewComponent 或 Helper 類別
         private static readonly Dictionary<string, List<string>> ApplicationStepsMap = new()
         {
-            ["HOUSE_VIEWING"] = new()
+            ["HOUSE_VIEWING"] = new() // 看房
             {
                 "APPLIED",       // 已申請
                 "PENDING",       // 待審核
@@ -41,7 +41,7 @@ namespace zuHause.ViewComponents
                 "VIEWING_SCHEDULED",       // 看房日
                 "VIEWING_COMPLETED"         // 看房已完成
             },
-            ["RENTAL"] = new()
+            ["RENTAL"] = new() // 租賃
             {
                 "APPLIED",       // 已申請
                 "PENDING",       // 待審核
@@ -49,7 +49,7 @@ namespace zuHause.ViewComponents
                 "SIGNING",       // 合約簽署中
                 "CONTRACTED"         // 合約已完成
             },
-            ["REJECTED_FLOW"] = new()
+            ["REJECTED_FLOW"] = new() // 看房/租賃被拒絕
             {
                 "APPLIED",
                 "PENDING",
