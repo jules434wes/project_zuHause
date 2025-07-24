@@ -64,20 +64,29 @@
                             <td><input type="checkbox" class="form-check-input @checkboxClass" value="@property.PropertyID"></td>
                             <td>@property.PropertyID</td>
                             <td>
-                                <div><a href="#" target="_blank" class="text-decoration-none fw-bold">@property.PropertyTitle</a></div>
+                                <div><a href="/Admin/admin_propertyDetails/@property.PropertyID" target="_blank" class="text-decoration-none fw-bold">@property.PropertyTitle</a></div>
                                 <div><small class="text-muted">@property.Address</small></div>
                                 <div><small class="text-success fw-bold">NT$ @property.RentPrice.ToString("N0")/月</small></div>
                             </td>
-                            <td><a href="#" target="_blank" class="text-decoration-none">@property.LandlordName</a></td>
+                            <td><a href="/Admin/admin_userDetails/@property.LandlordId" target="_blank" class="text-decoration-none">@property.LandlordName</a></td>
                             <td>
                                 @{
-                                    var statusBadgeClass = property.Status switch
+                                    string statusBadgeClass;
+                                    switch (property.Status)
                                     {
-                                        "審核完成" => "bg-success",
-                                        "未審核" => "bg-warning", 
-                                        "違規下架" => "bg-danger",
-                                        _ => "bg-secondary"
-                                    };
+                                        case "審核完成":
+                                            statusBadgeClass = "bg-success";
+                                            break;
+                                        case "未審核":
+                                            statusBadgeClass = "bg-warning";
+                                            break;
+                                        case "違規下架":
+                                            statusBadgeClass = "bg-danger";
+                                            break;
+                                        default:
+                                            statusBadgeClass = "bg-secondary";
+                                            break;
+                                    }
                                 }
                                 <span class="badge @statusBadgeClass">@property.Status</span>
                             </td>
@@ -102,13 +111,22 @@
                                 <td>@property.SubmissionDate</td>
                                 <td>
                                     @{
-                                        var paymentBadgeClass = property.PaymentStatus switch
+                                        string paymentBadgeClass;
+                                        switch (property.PaymentStatus)
                                         {
-                                            "已付費" => "bg-success",
-                                            "未付費" => "bg-secondary",
-                                            "已過期" => "bg-danger",
-                                            _ => "bg-secondary"
-                                        };
+                                            case "已付費":
+                                                paymentBadgeClass = "bg-success";
+                                                break;
+                                            case "未付費":
+                                                paymentBadgeClass = "bg-secondary";
+                                                break;
+                                            case "已過期":
+                                                paymentBadgeClass = "bg-danger";
+                                                break;
+                                            default:
+                                                paymentBadgeClass = "bg-secondary";
+                                                break;
+                                        }
                                     }
                                     <span class="badge @paymentBadgeClass">@property.PaymentStatus</span>
                                 </td>

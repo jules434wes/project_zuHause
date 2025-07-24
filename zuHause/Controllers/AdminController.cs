@@ -141,9 +141,21 @@ namespace zuHause.Controllers
         /// 需要 property_list 權限才能存取（與房源列表使用相同權限）
         /// </summary>
         [RequireAdminPermission(AdminPermissions.PropertyDetails)]
-        public IActionResult admin_propertyDetails()
+        public IActionResult admin_propertyDetails(int? id)
         {
-            return View();
+            if (!id.HasValue)
+            {
+                return NotFound("房源ID不能為空");
+            }
+
+            var viewModel = new AdminPropertyDetailsViewModel(_context, id.Value);
+            
+            if (viewModel.Data == null)
+            {
+                return NotFound($"找不到房源ID: {id}");
+            }
+
+            return View(viewModel);
         }
 
         /// <summary>

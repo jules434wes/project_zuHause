@@ -501,6 +501,7 @@ namespace zuHause.AdminViewModels
                     PropertyID = p.PropertyId.ToString(),
                     PropertyTitle = p.Title,
                     LandlordName = p.LandlordMember.MemberName,
+                    LandlordId = p.LandlordMemberId.ToString(),
                     Address = p.AddressLine ?? "",
                     RentPrice = (int)p.MonthlyRent,
                     StatusCode = p.StatusCode,
@@ -516,6 +517,7 @@ namespace zuHause.AdminViewModels
                     PropertyID = p.PropertyID,
                     PropertyTitle = p.PropertyTitle,
                     LandlordName = p.LandlordName,
+                    LandlordId = p.LandlordId,
                     Address = p.Address,
                     RentPrice = p.RentPrice,
                     Status = GetPropertyStatusDisplay(p.StatusCode, p.IsPaid, p.ExpireAt),
@@ -541,6 +543,7 @@ namespace zuHause.AdminViewModels
                     PropertyID = p.PropertyId.ToString(),
                     PropertyTitle = p.Title,
                     LandlordName = p.LandlordMember.MemberName,
+                    LandlordId = p.LandlordMemberId.ToString(),
                     Address = p.AddressLine ?? "",
                     RentPrice = (int)p.MonthlyRent,
                     IsPaid = p.IsPaid,
@@ -556,6 +559,7 @@ namespace zuHause.AdminViewModels
                     PropertyID = p.PropertyID,
                     PropertyTitle = p.PropertyTitle,
                     LandlordName = p.LandlordName,
+                    LandlordId = p.LandlordId,
                     Address = p.Address,
                     RentPrice = p.RentPrice,
                     Status = "未審核",
@@ -601,6 +605,191 @@ namespace zuHause.AdminViewModels
                 new PropertyData { PropertyID = "P002", PropertyTitle = "新北市套房出租", LandlordName = "李小華", PropertyType = "套房", RentPrice = 20000, Status = "pending", SubmissionDate = "2024-02-20" },
                 new PropertyData { PropertyID = "P003", PropertyTitle = "桃園市整層公寓", LandlordName = "張小美", PropertyType = "整層住家", RentPrice = 35000, Status = "rejected", SubmissionDate = "2024-03-10" }
             };
+        }
+    }
+
+    // 房源詳情相關 ViewModels
+    public class AdminPropertyDetailsViewModel : BaseAdminViewModel
+    {
+        public AdminPropertyDetailsViewModel()
+        {
+            PageTitle = "房源詳情";
+        }
+
+        public AdminPropertyDetailsViewModel(ZuHauseContext context, int propertyId)
+        {
+            PageTitle = "房源詳情";
+            Data = LoadPropertyDetailsFromDatabase(context, propertyId);
+            RentalHistory = LoadRentalHistory(context, propertyId);
+            Complaints = LoadComplaints(context, propertyId);
+            Equipment = LoadEquipment(context, propertyId);
+            Images = LoadImages(context, propertyId);
+        }
+
+        public PropertyDetailsData? Data { get; set; }
+        public List<RentalHistoryData> RentalHistory { get; set; } = new();
+        public List<ComplaintDetailsData> Complaints { get; set; } = new();
+        public List<EquipmentData> Equipment { get; set; } = new();
+        public List<PropertyImageData> Images { get; set; } = new();
+
+        private PropertyDetailsData? LoadPropertyDetailsFromDatabase(ZuHauseContext context, int propertyId)
+        {
+            var property = context.Properties
+                .Include(p => p.LandlordMember)
+                .Include(p => p.ListingPlan)
+                .Include(p => p.Approvals.Where(a => a.ModuleCode == "PROPERTY"))
+                .FirstOrDefault(p => p.PropertyId == propertyId);
+
+            if (property == null)
+                return null;
+
+            var approval = property.Approvals.FirstOrDefault();
+
+            return new PropertyDetailsData
+            {
+                PropertyId = property.PropertyId.ToString(),
+                Title = property.Title,
+                LandlordName = property.LandlordMember.MemberName,
+                LandlordId = property.LandlordMemberId.ToString(),
+                Address = property.AddressLine ?? "",
+                MonthlyRent = property.MonthlyRent,
+                DepositAmount = property.DepositAmount,
+                DepositMonths = property.DepositMonths,
+                RoomCount = property.RoomCount,
+                LivingRoomCount = property.LivingRoomCount,
+                BathroomCount = property.BathroomCount,
+                CurrentFloor = property.CurrentFloor,
+                TotalFloors = property.TotalFloors,
+                Area = property.Area,
+                MinimumRentalMonths = property.MinimumRentalMonths,
+                Description = property.Description ?? "",
+                SpecialRules = property.SpecialRules ?? "",
+                WaterFeeType = property.WaterFeeType,
+                CustomWaterFee = property.CustomWaterFee,
+                ElectricityFeeType = property.ElectricityFeeType,
+                CustomElectricityFee = property.CustomElectricityFee,
+                ManagementFeeIncluded = property.ManagementFeeIncluded,
+                ManagementFeeAmount = property.ManagementFeeAmount,
+                ParkingAvailable = property.ParkingAvailable,
+                ParkingFeeRequired = property.ParkingFeeRequired,
+                ParkingFeeAmount = property.ParkingFeeAmount,
+                CleaningFeeRequired = property.CleaningFeeRequired,
+                CleaningFeeAmount = property.CleaningFeeAmount,
+                PropertyProofUrl = property.PropertyProofUrl,
+                PreviewImageUrl = property.PreviewImageUrl,
+                ApprovalStatus = GetApprovalStatusDisplay(property.StatusCode),
+                PaymentStatus = GetPaymentStatusDisplay(property.IsPaid, property.ExpireAt),
+                PublishedAt = property.PublishedAt,
+                ExpireAt = property.ExpireAt,
+                UpdatedAt = property.UpdatedAt,
+                CreatedAt = property.CreatedAt,
+                ListingPlan = property.ListingPlan != null ? new ListingPlanData
+                {
+                    PlanName = property.ListingPlan.PlanName,
+                    PricePerDay = property.ListingPlan.PricePerDay,
+                    MinListingDays = property.ListingPlan.MinListingDays,
+                    CalculatedFee = property.ListingDays.HasValue 
+                        ? property.ListingPlan.PricePerDay * property.ListingDays.Value 
+                        : property.ListingFeeAmount ?? 0,
+                    ListingDays = property.ListingDays ?? property.ListingPlan.MinListingDays
+                } : null
+            };
+        }
+
+        private List<RentalHistoryData> LoadRentalHistory(ZuHauseContext context, int propertyId)
+        {
+            return context.RentalApplications
+                .Include(ra => ra.Member)
+                .Include(ra => ra.Contracts)
+                .Where(ra => ra.PropertyId == propertyId && ra.Contracts.Any())
+                .SelectMany(ra => ra.Contracts.Select(c => new RentalHistoryData
+                {
+                    ContractId = c.ContractId,
+                    TenantName = ra.Member.MemberName,
+                    TenantId = ra.MemberId,
+                    StartDate = c.StartDate,
+                    EndDate = c.EndDate,
+                    Status = c.Status,
+                    MonthlyRent = ra.Property.MonthlyRent,
+                    ApplicationDate = ra.CreatedAt
+                }))
+                .OrderByDescending(rh => rh.StartDate)
+                .ToList();
+        }
+
+        private List<ComplaintDetailsData> LoadComplaints(ZuHauseContext context, int propertyId)
+        {
+            return context.PropertyComplaints
+                .Include(pc => pc.Complainant)
+                .Where(pc => pc.PropertyId == propertyId)
+                .Select(pc => new ComplaintDetailsData
+                {
+                    ComplaintId = pc.ComplaintId,
+                    ComplainantName = pc.Complainant.MemberName,
+                    ComplainantId = pc.ComplainantId,
+                    ComplaintContent = pc.ComplaintContent,
+                    Status = pc.StatusCode,
+                    CreatedAt = pc.CreatedAt,
+                    ResolvedAt = pc.ResolvedAt,
+                    InternalNote = pc.InternalNote
+                })
+                .OrderByDescending(c => c.CreatedAt)
+                .ToList();
+        }
+
+        private List<EquipmentData> LoadEquipment(ZuHauseContext context, int propertyId)
+        {
+            return context.PropertyEquipmentRelations
+                .Include(per => per.Category)
+                .Where(per => per.PropertyId == propertyId)
+                .Select(per => new EquipmentData
+                {
+                    CategoryName = per.Category.CategoryName,
+                    Quantity = per.Quantity,
+                    CreatedAt = per.CreatedAt
+                })
+                .OrderBy(e => e.CategoryName)
+                .ToList();
+        }
+
+        private List<PropertyImageData> LoadImages(ZuHauseContext context, int propertyId)
+        {
+            return context.PropertyImages
+                .Where(pi => pi.PropertyId == propertyId)
+                .Select(pi => new PropertyImageData
+                {
+                    ImageId = pi.ImageId,
+                    ImageUrl = pi.ImagePath,
+                    ImageSize = "Original",
+                    ImageCategory = "房源照片",
+                    DisplayOrder = pi.DisplayOrder,
+                    UploadedAt = pi.CreatedAt
+                })
+                .OrderBy(i => i.DisplayOrder)
+                .ToList();
+        }
+
+        private string GetApprovalStatusDisplay(string statusCode)
+        {
+            return statusCode switch
+            {
+                "PENDING" => "未審核",
+                "ACTIVE" => "審核完成",
+                "REJECTED" => "未審核",
+                "BANNED" => "違規下架",
+                _ => "未審核"
+            };
+        }
+
+        private string GetPaymentStatusDisplay(bool isPaid, DateTime? expireAt)
+        {
+            if (!isPaid)
+                return "未付費";
+            
+            if (!expireAt.HasValue)
+                return "已付費";
+                
+            return expireAt.Value > DateTime.Now ? "已付費" : "已過期";
         }
     }
 
@@ -755,6 +944,7 @@ namespace zuHause.AdminViewModels
         public string PropertyID { get; set; } = string.Empty;
         public string PropertyTitle { get; set; } = string.Empty;
         public string LandlordName { get; set; } = string.Empty;
+        public string LandlordId { get; set; } = string.Empty;
         public string PropertyType { get; set; } = string.Empty;
         public int RentPrice { get; set; }
         public string Status { get; set; } = string.Empty;
@@ -840,5 +1030,150 @@ namespace zuHause.AdminViewModels
         public DateTime LastReplyTime { get; set; }
         public string TicketUrl { get; set; } = string.Empty;
         public string RelatedItemUrl { get; set; } = string.Empty;
+    }
+
+    // 房源詳情專用資料模型
+    public class PropertyDetailsData
+    {
+        public string PropertyId { get; set; } = string.Empty;
+        public string Title { get; set; } = string.Empty;
+        public string LandlordName { get; set; } = string.Empty;
+        public string LandlordId { get; set; } = string.Empty;
+        public string Address { get; set; } = string.Empty;
+        public decimal MonthlyRent { get; set; }
+        public decimal DepositAmount { get; set; }
+        public int DepositMonths { get; set; }
+        public int RoomCount { get; set; }
+        public int LivingRoomCount { get; set; }
+        public int BathroomCount { get; set; }
+        public int CurrentFloor { get; set; }
+        public int TotalFloors { get; set; }
+        public decimal Area { get; set; }
+        public int MinimumRentalMonths { get; set; }
+        public string Description { get; set; } = string.Empty;
+        public string SpecialRules { get; set; } = string.Empty;
+        public string WaterFeeType { get; set; } = string.Empty;
+        public decimal? CustomWaterFee { get; set; }
+        public string ElectricityFeeType { get; set; } = string.Empty;
+        public decimal? CustomElectricityFee { get; set; }
+        public bool ManagementFeeIncluded { get; set; }
+        public decimal? ManagementFeeAmount { get; set; }
+        public bool ParkingAvailable { get; set; }
+        public bool ParkingFeeRequired { get; set; }
+        public decimal? ParkingFeeAmount { get; set; }
+        public bool CleaningFeeRequired { get; set; }
+        public decimal? CleaningFeeAmount { get; set; }
+        public string? PropertyProofUrl { get; set; }
+        public string? PreviewImageUrl { get; set; }
+        public string ApprovalStatus { get; set; } = string.Empty;
+        public string PaymentStatus { get; set; } = string.Empty;
+        public DateTime? PublishedAt { get; set; }
+        public DateTime? ExpireAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public ListingPlanData? ListingPlan { get; set; }
+
+        // 格式化屬性
+        public string Layout => $"{RoomCount}房{LivingRoomCount}廳{BathroomCount}衛";
+        public string FloorDisplay => $"{CurrentFloor}樓";
+        public string TotalFloorsDisplay => $"{TotalFloors}樓";
+        public bool IsActive => ApprovalStatus == "審核完成";
+        public bool HasPropertyProof => !string.IsNullOrEmpty(PropertyProofUrl);
+    }
+
+    public class ListingPlanData
+    {
+        public string PlanName { get; set; } = string.Empty;
+        public decimal PricePerDay { get; set; }
+        public int MinListingDays { get; set; }
+        public decimal CalculatedFee { get; set; }
+        public int ListingDays { get; set; }
+    }
+
+    public class RentalHistoryData
+    {
+        public int ContractId { get; set; }
+        public string TenantName { get; set; } = string.Empty;
+        public int TenantId { get; set; }
+        public DateOnly StartDate { get; set; }
+        public DateOnly? EndDate { get; set; }
+        public string Status { get; set; } = string.Empty;
+        public decimal? MonthlyRent { get; set; }
+        public DateTime ApplicationDate { get; set; }
+
+        public string StatusDisplay => Status switch
+        {
+            "ACTIVE" => "生效中",
+            "COMPLETED" => "已結束",
+            "TERMINATED" => "提前終止",
+            _ => "未知"
+        };
+
+        public string RentalPeriod => EndDate.HasValue 
+            ? $"{StartDate:yyyy-MM-dd} ~ {EndDate.Value:yyyy-MM-dd}"
+            : $"{StartDate:yyyy-MM-dd} ~ 進行中";
+    }
+
+    public class ComplaintDetailsData
+    {
+        public int ComplaintId { get; set; }
+        public string ComplainantName { get; set; } = string.Empty;
+        public int ComplainantId { get; set; }
+        public string ComplaintContent { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+        public DateTime CreatedAt { get; set; }
+        public DateTime? ResolvedAt { get; set; }
+        public string? InternalNote { get; set; }
+
+        public string StatusDisplay => Status switch
+        {
+            "OPEN" => "處理中",
+            "RESOLVED" => "已處理",
+            "CLOSED" => "已關閉",
+            _ => "未知"
+        };
+
+        public string Summary => ComplaintContent.Length > 50 
+            ? ComplaintContent.Substring(0, 50) + "..."
+            : ComplaintContent;
+    }
+
+    public class EquipmentData
+    {
+        public string CategoryName { get; set; } = string.Empty;
+        public int Quantity { get; set; }
+        public DateTime CreatedAt { get; set; }
+    }
+
+    public class PropertyImageData
+    {
+        public int ImageId { get; set; }
+        public string ImageUrl { get; set; } = string.Empty;
+        public string ImageSize { get; set; } = string.Empty;
+        public string ImageCategory { get; set; } = string.Empty;
+        public int DisplayOrder { get; set; }
+        public DateTime UploadedAt { get; set; }
+
+        public string SizeDisplay => ImageSize switch
+        {
+            "THUMBNAIL" => "縮圖",
+            "SMALL" => "小圖",
+            "MEDIUM" => "中圖", 
+            "LARGE" => "大圖",
+            "ORIGINAL" => "原圖",
+            _ => "未知"
+        };
+
+        public string CategoryDisplay => ImageCategory switch
+        {
+            "ROOM" => "房間",
+            "BATHROOM" => "浴室",
+            "KITCHEN" => "廚房",
+            "LIVING_ROOM" => "客廳",
+            "BALCONY" => "陽台",
+            "EXTERIOR" => "外觀",
+            "OTHER" => "其他",
+            _ => "未分類"
+        };
     }
 }

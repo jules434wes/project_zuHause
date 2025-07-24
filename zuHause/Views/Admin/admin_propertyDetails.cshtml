@@ -1,53 +1,29 @@
+@model zuHause.AdminViewModels.AdminPropertyDetailsViewModel
 @{
-    ViewData["Title"] = "個別屋源詳情";
-    Layout = "_AdminLayout";
+	ViewData["Title"] = Model.PageTitle;
+	ViewData["PropertyData"] = Model.Data;
 
-    // 模擬屋源資料 (後續將由Controller傳入)
-    var propertyData = new {
-        PropertyId = "P001",
-        Title = "市府捷運站溫馨兩房",
-        LandlordName = "王大明",
-        LandlordId = "12345",
-        ApprovalStatus = "待審核",
-        ListingStatus = "未上架",
-        IsActive = false,
-        Address = "台北市信義區信義路五段7號",
-        MonthlyRent = 35000,
-        Deposit = 70000,
-        Layout = "2房1廳1衛",
-        Size = 25,
-        Floor = "15樓",
-        TotalFloors = "30樓",
-        Description = "高樓層景觀佳，採光通風良好，附基本傢俱。",
-        Rules = "禁菸、禁寵物。",
-        ListingPlan = "標準方案",
-        ListingFee = 900,
-        ListingDays = 30,
-        PublishDate = (string)null,
-        ExpiryDate = (string)null,
-        PaymentStatus = "未付款",
-        ComplaintCount = 1
-    };
-    
-    ViewData["PropertyData"] = propertyData;
+	Layout = "_AdminLayout";
 }
 
 <link href="~/css/admin-style.css" rel="stylesheet" />
 
 <div class="container-fluid fade-in" style="margin-bottom: 120px; padding-bottom: 40px;">
-    <!-- 引入各個部分 -->
-    <partial name="_AdminPartial/_PropertyDetails/_HeaderSection" />
-    <partial name="_AdminPartial/_PropertyDetails/_TabNavigation" />
-    <partial name="_AdminPartial/_PropertyDetails/_TabContent" />
-    <partial name="_AdminPartial/_PropertyDetails/_PropertyDetailsModals" />
+	<!-- 引入各個部分 -->
+	<partial name="_AdminPartial/_PropertyDetails/_HeaderSection" />
+	<partial name="_AdminPartial/_PropertyDetails/_TabNavigation" />
+	<partial name="_AdminPartial/_PropertyDetails/_TabContent" />
+	<partial name="_AdminPartial/_PropertyDetails/_PropertyDetailsModals" />
 </div>
 
 <script src="~/js/admin_js/property-details.js"></script>
 <script>
-    // 設定當前房源ID
-    var currentPropertyId = '@propertyData.PropertyId';
-    // 頁面載入完成後設定
-    document.addEventListener('DOMContentLoaded', function() {
-        setCurrentPropertyId(currentPropertyId);
-    });
+	// 設定當前房源ID
+	var currentPropertyId = '@(Model.Data?.PropertyId ?? "")';
+	// 頁面載入完成後設定
+	document.addEventListener('DOMContentLoaded', function() {
+		if (currentPropertyId) {
+			setCurrentPropertyId(currentPropertyId);
+		}
+	});
 </script>
