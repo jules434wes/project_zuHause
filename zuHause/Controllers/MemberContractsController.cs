@@ -440,10 +440,6 @@ namespace zuHause.Controllers
         {
             var html = await GenerateContractHtml(contractId);
             ViewBag.ContractHtml = html;
-            ViewBag.ContractId = contractId;
-            ViewBag.ContractIdLayout = true;
-
-
             return View();
         }
         private int CalculateMonthDifference(DateOnly start, DateOnly? end)
