@@ -116,7 +116,7 @@ namespace zuHause.Controllers
         [RequireAdminPermission(AdminPermissions.PropertyList)]
         public IActionResult admin_propertiesList()
         {
-            var viewModel = new AdminPropertyListViewModel();
+            var viewModel = new AdminPropertyListViewModel(_context);
             return View(viewModel);
         }
         

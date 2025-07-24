@@ -1,4 +1,4 @@
-@model dynamic
+@model zuHause.AdminViewModels.AdminPropertyListViewModel
 
 @{
     var tabId = ViewData["TabId"] as string ?? "all";
@@ -8,6 +8,8 @@
     var selectAllId = ViewData["SelectAllId"] as string ?? "selectAllProperties";
     var tableTitle = ViewData["TableTitle"] as string ?? "屋源列表";
     var paginationLabel = ViewData["PaginationLabel"] as string ?? "屋源分頁";
+    
+    var propertiesToShow = tableType == "pending" ? Model.PendingProperties : Model.Items;
 }
 
 <div class="card mt-3">
@@ -56,146 +58,74 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @if (tableType == "all")
+                    @foreach (var property in propertiesToShow)
                     {
-                        <!-- 全部屋源數據 -->
                         <tr>
-                            <td><input type="checkbox" class="form-check-input @checkboxClass" value="P001"></td>
-                            <td>P001</td>
+                            <td><input type="checkbox" class="form-check-input @checkboxClass" value="@property.PropertyID"></td>
+                            <td>@property.PropertyID</td>
                             <td>
-                                <div><a href="#" target="_blank" class="text-decoration-none fw-bold">台北市信義區豪華套房</a></div>
-                                <div><small class="text-muted">台北市信義區信義路五段150號</small></div>
-                                <div><small class="text-success fw-bold">NT$ 25,000/月</small></div>
+                                <div><a href="#" target="_blank" class="text-decoration-none fw-bold">@property.PropertyTitle</a></div>
+                                <div><small class="text-muted">@property.Address</small></div>
+                                <div><small class="text-success fw-bold">NT$ @property.RentPrice.ToString("N0")/月</small></div>
                             </td>
-                            <td><a href="#" target="_blank" class="text-decoration-none">王大明</a></td>
-                            <td><span class="badge bg-success">審核通過</span></td>
-                            <td>2024-07-01</td>
-                            <td><span class="badge bg-success">付費生效中</span></td>
-                            <td>2024-08-01</td>
-                            <td>2024-07-10 14:30</td>
+                            <td><a href="#" target="_blank" class="text-decoration-none">@property.LandlordName</a></td>
                             <td>
-                                <button class="btn btn-sm btn-outline-primary">查看</button>
-                                <button class="btn btn-sm btn-outline-secondary">編輯</button>
+                                @{
+                                    var statusBadgeClass = property.Status switch
+                                    {
+                                        "審核完成" => "bg-success",
+                                        "未審核" => "bg-warning", 
+                                        "違規下架" => "bg-danger",
+                                        _ => "bg-secondary"
+                                    };
+                                }
+                                <span class="badge @statusBadgeClass">@property.Status</span>
                             </td>
-                        </tr>
-                        <tr>
-                            <td><input type="checkbox" class="form-check-input @checkboxClass" value="P002"></td>
-                            <td>P002</td>
+                            
+                            @if (tableType == "pending")
+                            {
+                                <td>@property.SubmissionDate</td>
+                                <td>
+                                    @if (property.HasDocumentUpload)
+                                    {
+                                        <span class="badge bg-info">已上傳</span><br>
+                                        <button class="btn btn-sm btn-outline-primary mt-1" onclick="openDocumentModal('@property.PropertyID')">查看文件</button>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-warning">未上傳</span>
+                                    }
+                                </td>
+                            }
+                            else
+                            {
+                                <td>@property.SubmissionDate</td>
+                                <td>
+                                    @{
+                                        var paymentBadgeClass = property.PaymentStatus switch
+                                        {
+                                            "已付費" => "bg-success",
+                                            "未付費" => "bg-secondary",
+                                            "已過期" => "bg-danger",
+                                            _ => "bg-secondary"
+                                        };
+                                    }
+                                    <span class="badge @paymentBadgeClass">@property.PaymentStatus</span>
+                                </td>
+                                <td>@property.ExpiryDate</td>
+                            }
+                            
+                            <td>@property.UpdatedDate</td>
                             <td>
-                                <div><a href="#" target="_blank" class="text-decoration-none fw-bold">新北市板橋區溫馨雅房</a></div>
-                                <div><small class="text-muted">新北市板橋區文化路二段88號</small></div>
-                                <div><small class="text-success fw-bold">NT$ 12,000/月</small></div>
-                            </td>
-                            <td><a href="#" target="_blank" class="text-decoration-none">李小華</a></td>
-                            <td><span class="badge bg-warning">待審核</span></td>
-                            <td>2024-07-05</td>
-                            <td><span class="badge bg-warning">等待上架</span></td>
-                            <td>2024-08-05</td>
-                            <td>2024-07-08 09:15</td>
-                            <td>
-                                <button class="btn btn-sm btn-outline-primary">查看</button>
-                                <button class="btn btn-sm btn-outline-secondary">編輯</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td><input type="checkbox" class="form-check-input @checkboxClass" value="P003"></td>
-                            <td>P003</td>
-                            <td>
-                                <div><a href="#" target="_blank" class="text-decoration-none fw-bold">桃園市中壢區學生套房</a></div>
-                                <div><small class="text-muted">桃園市中壢區中大路300號</small></div>
-                                <div><small class="text-success fw-bold">NT$ 8,500/月</small></div>
-                            </td>
-                            <td><a href="#" target="_blank" class="text-decoration-none">張美玲</a></td>
-                            <td><span class="badge bg-success">審核通過</span></td>
-                            <td>2024-06-15</td>
-                            <td><span class="badge bg-success">付費生效中</span></td>
-                            <td>2024-07-15</td>
-                            <td>2024-07-10 08:45</td>
-                            <td>
-                                <button class="btn btn-sm btn-outline-primary">查看</button>
-                                <button class="btn btn-sm btn-outline-secondary">編輯</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td><input type="checkbox" class="form-check-input @checkboxClass" value="P004"></td>
-                            <td>P004</td>
-                            <td>
-                                <div><a href="#" target="_blank" class="text-decoration-none fw-bold">台中市西屯區商務公寓</a></div>
-                                <div><small class="text-muted">台中市西屯區台灣大道三段99號</small></div>
-                                <div><small class="text-success fw-bold">NT$ 18,000/月</small></div>
-                            </td>
-                            <td><a href="#" target="_blank" class="text-decoration-none">陳志偉</a></td>
-                            <td><span class="badge bg-danger">需重新審核</span></td>
-                            <td>2024-06-20</td>
-                            <td><span class="badge bg-warning">等待上架</span></td>
-                            <td>2024-07-20</td>
-                            <td>2024-07-05 16:22</td>
-                            <td>
-                                <button class="btn btn-sm btn-outline-primary">查看</button>
-                                <button class="btn btn-sm btn-outline-secondary">編輯</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td><input type="checkbox" class="form-check-input @checkboxClass" value="P005"></td>
-                            <td>P005</td>
-                            <td>
-                                <div><a href="#" target="_blank" class="text-decoration-none fw-bold">高雄市前鎮區港都小窩</a></div>
-                                <div><small class="text-muted">高雄市前鎮區中華五路777號</small></div>
-                                <div><small class="text-success fw-bold">NT$ 15,000/月</small></div>
-                            </td>
-                            <td><a href="#" target="_blank" class="text-decoration-none">林雅婷</a></td>
-                            <td><span class="badge bg-success">審核通過</span></td>
-                            <td>2024-07-08</td>
-                            <td><span class="badge bg-success">付費生效中</span></td>
-                            <td>2024-08-08</td>
-                            <td>2024-07-10 11:18</td>
-                            <td>
-                                <button class="btn btn-sm btn-outline-primary">查看</button>
-                                <button class="btn btn-sm btn-outline-secondary">編輯</button>
-                            </td>
-                        </tr>
-                    }
-                    else if (tableType == "pending")
-                    {
-                        <!-- 待審核屋源數據 -->
-                        <tr>
-                            <td><input type="checkbox" class="form-check-input @checkboxClass" value="P002"></td>
-                            <td>P002</td>
-                            <td>
-                                <div><a href="#" target="_blank" class="text-decoration-none fw-bold">新北市板橋區溫馨雅房</a></div>
-                                <div><small class="text-muted">新北市板橋區文化路二段88號</small></div>
-                                <div><small class="text-success fw-bold">NT$ 12,000/月</small></div>
-                            </td>
-                            <td><a href="#" target="_blank" class="text-decoration-none">李小華</a></td>
-                            <td><span class="badge bg-warning">待審核</span></td>
-                            <td>2024-07-05 10:30</td>
-                            <td>
-                                <span class="badge bg-info">已上傳</span><br>
-                                <button class="btn btn-sm btn-outline-primary mt-1" onclick="openDocumentModal('P002')">查看文件</button>
-                            </td>
-                            <td>2024-07-08 09:15</td>
-                            <td>
-                                <button class="btn btn-sm btn-primary" onclick="openReviewModal('P002')">進行審核操作</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td><input type="checkbox" class="form-check-input @checkboxClass" value="P006"></td>
-                            <td>P006</td>
-                            <td>
-                                <div><a href="#" target="_blank" class="text-decoration-none fw-bold">台南市安平區海景套房</a></div>
-                                <div><small class="text-muted">台南市安平區安平路123號</small></div>
-                                <div><small class="text-success fw-bold">NT$ 20,000/月</small></div>
-                            </td>
-                            <td><a href="#" target="_blank" class="text-decoration-none">黃建國</a></td>
-                            <td><span class="badge bg-warning">待審核</span></td>
-                            <td>2024-07-07 13:15</td>
-                            <td>
-                                <span class="badge bg-info">已上傳</span><br>
-                                <button class="btn btn-sm btn-outline-primary mt-1" onclick="openDocumentModal('P006')">查看文件</button>
-                            </td>
-                            <td>2024-07-07 12:30</td>
-                            <td>
-                                <button class="btn btn-sm btn-primary" onclick="openReviewModal('P006')">進行審核操作</button>
+                                @if (tableType == "pending")
+                                {
+                                    <button class="btn btn-sm btn-primary" onclick="openReviewModal('@property.PropertyID')">進行審核操作</button>
+                                }
+                                else
+                                {
+                                    <button class="btn btn-sm btn-outline-primary">查看</button>
+                                    <button class="btn btn-sm btn-outline-secondary">編輯</button>
+                                }
                             </td>
                         </tr>
                     }

@@ -472,6 +472,127 @@ namespace zuHause.AdminViewModels
             };
         }
 
+        public AdminPropertyListViewModel(ZuHauseContext context)
+        {
+            PageTitle = "房源管理";
+            Items = LoadPropertiesFromDatabase(context);
+            TotalCount = Items.Count;
+            PendingProperties = LoadPendingProperties(context);
+            
+            BulkConfig = new BulkActionConfig
+            {
+                SelectAllId = "selectAllProperties",
+                CheckboxClass = "property-checkbox",
+                BulkButtonId = "bulkVerifyBtn",
+                BulkButtonText = "批量審核"
+            };
+        }
+
+        public List<PropertyData> PendingProperties { get; set; } = new List<PropertyData>();
+
+        private List<PropertyData> LoadPropertiesFromDatabase(ZuHauseContext context)
+        {
+            var properties = context.Properties
+                .Include(p => p.LandlordMember)
+                .Include(p => p.Approvals.Where(a => a.ModuleCode == "PROPERTY"))
+                .OrderByDescending(p => p.UpdatedAt)
+                .Select(p => new
+                {
+                    PropertyID = p.PropertyId.ToString(),
+                    PropertyTitle = p.Title,
+                    LandlordName = p.LandlordMember.MemberName,
+                    Address = p.AddressLine ?? "",
+                    RentPrice = (int)p.MonthlyRent,
+                    StatusCode = p.StatusCode,
+                    IsPaid = p.IsPaid,
+                    ExpireAt = p.ExpireAt,
+                    SubmissionDate = p.PublishedAt.HasValue ? p.PublishedAt.Value.ToString("yyyy-MM-dd HH:mm:ss") : p.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss"),
+                    UpdatedDate = p.UpdatedAt.ToString("yyyy-MM-dd HH:mm:ss"),
+                    ExpiryDate = p.ExpireAt.HasValue ? p.ExpireAt.Value.ToString("yyyy-MM-dd HH:mm:ss") : "-"
+                })
+                .ToList()
+                .Select(p => new PropertyData
+                {
+                    PropertyID = p.PropertyID,
+                    PropertyTitle = p.PropertyTitle,
+                    LandlordName = p.LandlordName,
+                    Address = p.Address,
+                    RentPrice = p.RentPrice,
+                    Status = GetPropertyStatusDisplay(p.StatusCode, p.IsPaid, p.ExpireAt),
+                    PaymentStatus = GetPaymentStatusDisplay(p.IsPaid, p.ExpireAt),
+                    SubmissionDate = p.SubmissionDate,
+                    UpdatedDate = p.UpdatedDate,
+                    ExpiryDate = p.ExpiryDate
+                })
+                .ToList();
+
+            return properties;
+        }
+
+        private List<PropertyData> LoadPendingProperties(ZuHauseContext context)
+        {
+            var pendingProperties = context.Properties
+                .Include(p => p.LandlordMember)
+                .Include(p => p.Approvals.Where(a => a.ModuleCode == "PROPERTY"))
+                .Where(p => p.StatusCode == "PENDING" || p.StatusCode == "REJECTED")
+                .OrderBy(p => p.CreatedAt)
+                .Select(p => new
+                {
+                    PropertyID = p.PropertyId.ToString(),
+                    PropertyTitle = p.Title,
+                    LandlordName = p.LandlordMember.MemberName,
+                    Address = p.AddressLine ?? "",
+                    RentPrice = (int)p.MonthlyRent,
+                    IsPaid = p.IsPaid,
+                    ExpireAt = p.ExpireAt,
+                    SubmissionDate = p.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss"),
+                    UpdatedDate = p.UpdatedAt.ToString("yyyy-MM-dd HH:mm:ss"),
+                    ExpiryDate = p.ExpireAt.HasValue ? p.ExpireAt.Value.ToString("yyyy-MM-dd HH:mm:ss") : "-",
+                    HasDocumentUpload = !string.IsNullOrEmpty(p.PropertyProofUrl)
+                })
+                .ToList()
+                .Select(p => new PropertyData
+                {
+                    PropertyID = p.PropertyID,
+                    PropertyTitle = p.PropertyTitle,
+                    LandlordName = p.LandlordName,
+                    Address = p.Address,
+                    RentPrice = p.RentPrice,
+                    Status = "未審核",
+                    PaymentStatus = GetPaymentStatusDisplay(p.IsPaid, p.ExpireAt),
+                    SubmissionDate = p.SubmissionDate,
+                    UpdatedDate = p.UpdatedDate,
+                    ExpiryDate = p.ExpiryDate,
+                    HasDocumentUpload = p.HasDocumentUpload
+                })
+                .ToList();
+
+            return pendingProperties;
+        }
+
+        private string GetPropertyStatusDisplay(string statusCode, bool isPaid, DateTime? expireAt)
+        {
+            return statusCode switch
+            {
+                "PENDING" => "未審核",
+                "ACTIVE" => "審核完成",
+                "REJECTED" => "未審核",
+                "BANNED" => "違規下架",
+                _ => "未審核"
+            };
+        }
+
+        private string GetPaymentStatusDisplay(bool isPaid, DateTime? expireAt)
+        {
+            if (!isPaid)
+                return "未付費";
+            
+            if (!expireAt.HasValue)
+                return "已付費";
+                
+            return expireAt.Value > DateTime.Now ? "已付費" : "已過期";
+        }
+
         private List<PropertyData> GenerateMockProperties()
         {
             return new List<PropertyData>
@@ -637,9 +758,12 @@ namespace zuHause.AdminViewModels
         public string PropertyType { get; set; } = string.Empty;
         public int RentPrice { get; set; }
         public string Status { get; set; } = string.Empty;
+        public string PaymentStatus { get; set; } = string.Empty;
         public string SubmissionDate { get; set; } = string.Empty;
+        public string UpdatedDate { get; set; } = string.Empty;
         public string Address { get; set; } = string.Empty;
         public string ExpiryDate { get; set; } = string.Empty;
+        public bool HasDocumentUpload { get; set; } = false;
     }
 
     public class CustomerServiceCase
