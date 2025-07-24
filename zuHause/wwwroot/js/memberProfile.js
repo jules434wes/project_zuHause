@@ -142,16 +142,32 @@ submitIdFile.addEventListener("click", async function () {
         let frontResult = await uploadIdFile(idFrontFormData, "USER_ID_FRONT");
         let backResult = await uploadIdFile(idFBackFormData, "USER_ID_BACK");
         submitIdMsg.classList.remove("text-danger");
-        submitIdMsg.classList.add("text-success");
+        submitIdMsg.classList.add("text-white");
         submitIdMsg.textContent = "上傳成功";
 
+        // 申請驗證
+        const response =  await fetch("/Member/SubmitIdentityApplication", {
+            method: "POST"
+        });
+
+        if (!response.ok) {
+            const errorData = await response.text();
+            throw new Error(errorData);
+        }
+
+        const result = await response.json();
+        console.log("申請結果", result.message);
+
+        submitIdMsg.classList.remove("text-danger");
+        submitIdMsg.classList.add("text-white");
+        submitIdMsg.textContent = result.message;
+
+
     } catch (error) {
-        submitIdMsg.classList.remove("text-success");
+        submitIdMsg.classList.remove("text-white");
         submitIdMsg.classList.add("text-danger");
         submitIdMsg.textContent = `${error.message}，請稍後再試`;
     }
-
-    // 改狀態
 });
 
 function uploadIdFile(formData, UploadTypeCode) {

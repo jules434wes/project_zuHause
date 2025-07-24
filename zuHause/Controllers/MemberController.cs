@@ -10,6 +10,7 @@ using System.Security.Claims;
 using zuHause.Models;
 using zuHause.Services;
 using zuHause.ViewModels.MemberViewModel;
+using System.Text.Json;
 
 namespace zuHause.Controllers
 {
@@ -33,7 +34,7 @@ namespace zuHause.Controllers
         [HttpGet]
         public IActionResult Login(string? ReturnUrl = null)
         {
-            if(User.Identity?.IsAuthenticated == true)
+            if (User.Identity?.IsAuthenticated == true)
             {
                 return RedirectToAction("Index");
             }
@@ -180,7 +181,7 @@ namespace zuHause.Controllers
 
             TempData["SuccessMessageTitle"] = "通知";
             TempData["SuccessMessageContent"] = "您已登出";
-            
+
             // 使用智能重導向邏輯（登出時沒有 ReturnUrl，純粹根據 Referer 判斷）
             var redirectUrl = GetSmartRedirectUrl(null);
             return Redirect(redirectUrl);
@@ -311,7 +312,7 @@ namespace zuHause.Controllers
         [Authorize(AuthenticationSchemes = "MemberCookieAuth")]
         public async Task<IActionResult> ResetPassword(ForgotPasswordViewModel model)
         {
-            if(model.ReturnUrl == null)
+            if (model.ReturnUrl == null)
             {
                 model.ReturnUrl = Url.Action("Index", "Member");
             }
@@ -323,7 +324,7 @@ namespace zuHause.Controllers
 
             var member = await _context.Members.FindAsync(int.Parse(User.FindFirst("UserId")!.Value));
 
-            if(member == null) return View("ResetPasswordConfirmCode", model);
+            if (member == null) return View("ResetPasswordConfirmCode", model);
             bool result = _memberService.verifyPassword(member, model.OriginalPassword!);
 
             if (!result)
@@ -339,7 +340,7 @@ namespace zuHause.Controllers
             TempData["SuccessMessageTitle"] = "成功";
             TempData["SuccessMessageContent"] = "密碼修改完成";
 
-            if(!string.IsNullOrEmpty(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl))
+            if (!string.IsNullOrEmpty(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl))
             {
                 return Redirect(model.ReturnUrl);
             }
@@ -355,7 +356,7 @@ namespace zuHause.Controllers
         public IActionResult RegisterVerifyPhone()
         {
 
-            if(User.Identity?.IsAuthenticated == true)
+            if (User.Identity?.IsAuthenticated == true)
             {
                 return RedirectToAction("Index");
             }
@@ -719,24 +720,25 @@ namespace zuHause.Controllers
             var member = await _context.Members.FindAsync(int.Parse(User.FindFirst("UserId")!.Value));
             if (member == null) return BadRequest(new
             {
-                status= "error",
-                message= "請先登入",
+                status = "error",
+                message = "請先登入",
             });
 
-            var frontLog = await _context.UserUploads.Where(u => u.MemberId == member.MemberId && u.UploadTypeCode == "USER_ID_FRONT").OrderByDescending(x=>x.UploadId).FirstOrDefaultAsync();
+            var frontLog = await _context.UserUploads.Where(u => u.MemberId == member.MemberId && u.UploadTypeCode == "USER_ID_FRONT").OrderByDescending(x => x.UploadId).FirstOrDefaultAsync();
 
 
 
-            var backLog = await _context.UserUploads.Where(u => u.MemberId == member.MemberId && u.UploadTypeCode == "USER_ID_BACK").OrderByDescending(x=>x.UploadId).FirstOrDefaultAsync();
+            var backLog = await _context.UserUploads.Where(u => u.MemberId == member.MemberId && u.UploadTypeCode == "USER_ID_BACK").OrderByDescending(x => x.UploadId).FirstOrDefaultAsync();
 
-            if(backLog == null && frontLog == null) return BadRequest(new
+            if (backLog == null && frontLog == null) return BadRequest(new
             {
                 status = "error",
                 message = "無上傳紀錄",
             });
 
 
-            return Ok(new {
+            return Ok(new
+            {
                 status = "ok",
                 hasFront = frontLog != null,
                 hasBack = backLog != null,
@@ -816,7 +818,7 @@ namespace zuHause.Controllers
 
             if (model.ModuleCode == "MemberInfo" && model.UploadTypeCode == "USER_IMG")
             {
-            _cache.Set($"Avatar_{User.FindFirst("UserId")?.Value}", $"~{storePath}");
+                _cache.Set($"Avatar_{User.FindFirst("UserId")?.Value}", $"~{storePath}");
             }
             return Ok(new
             {
@@ -825,6 +827,70 @@ namespace zuHause.Controllers
                 previewUrl = $"/uploads/{uploadFolderName}/{storeFileName}",
             });
         }
+
+        //會員認證
+
+        [HttpPost]
+        public async Task<IActionResult> SubmitIdentityApplication()
+        {
+
+            int memberId = int.Parse(User.FindFirst("UserId")!.Value);
+
+            var member = await _context.Members
+                .FirstOrDefaultAsync(m => m.MemberId == memberId);
+
+
+            if (member == null)
+                return NotFound("找不到會員");
+
+            var exists = await _context.Approvals.AnyAsync(a =>
+                a.ModuleCode == "IDENTITY" &&
+                a.ApplicantMemberId == memberId &&
+                a.StatusCode == "PENDING");
+
+            if (exists)
+                return BadRequest("已有待審核的申請，不可重複送出");
+
+
+
+
+            var approval = new Approval
+            {
+                ModuleCode = "IDENTITY",
+                ApplicantMemberId = memberId,
+                StatusCode = "PENDING",
+                CurrentApproverId = 0,
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now
+            };
+            _context.Approvals.Add(approval);
+            await _context.SaveChangesAsync();
+            var snapshot = new
+            {
+                memberID = member.MemberId,
+                memberName = member.MemberName,
+                submitTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+                verificationStatus = "pending"
+            };
+            string snapshotJson = JsonSerializer.Serialize(snapshot);
+
+            var item = new ApprovalItem
+            {
+                ApprovalId = approval.ApprovalId,
+                ActionBy = null,
+                ActionType = "SUBMIT",
+                ActionNote = "會員提交身分證驗證申請",
+                SnapshotJson = snapshotJson,
+                CreatedAt = DateTime.Now
+            };
+            _context.ApprovalItems.Add(item);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "身份驗證申請已送出" });
+        }
+
+
+
 
         /// <summary>
         /// 智能重導向輔助方法 - 根據來源判斷要導向家具還是租屋首頁
@@ -846,7 +912,7 @@ namespace zuHause.Controllers
                 if (!string.IsNullOrEmpty(referer))
                 {
                     // 防止無限重導向：如果 Referer 指向登入或登出頁面，跳過檢查
-                    if (referer.Contains("/Member/Login") || 
+                    if (referer.Contains("/Member/Login") ||
                         referer.Contains("/Member/Logout") ||
                         referer.Contains("/Auth/"))
                     {
@@ -855,7 +921,7 @@ namespace zuHause.Controllers
                     else
                     {
                         // 檢查是否來自家具相關頁面
-                        if (referer.Contains("/Furniture/") || 
+                        if (referer.Contains("/Furniture/") ||
                             referer.Contains("FurnitureHomePage") ||
                             referer.Contains("OrderHistory") ||
                             referer.Contains("RentalCart") ||
