@@ -1,11 +1,18 @@
-﻿using Azure.Core;
+﻿using System;
+using System.Data;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
+using System.Security.Claims;
+using System.Text.Json;
+
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+
+using Azure.Core;
+
 using zuHause.Models;
 using zuHause.ViewModels;
-using System.Text.Json;
-using Microsoft.AspNetCore.Authorization;
-using System.Security.Claims;
 
 namespace zuHause.Controllers
 {
@@ -42,6 +49,7 @@ namespace zuHause.Controllers
         /// - 完全權限時：{ "角色名稱": { "all": true } }
         /// - 部分權限時：{ "角色名稱": ["overview", "monitor", ...] }
         /// </remarks>
+        #region 登入API
         [HttpGet("")]
         public IActionResult Index()
         {
@@ -64,7 +72,7 @@ namespace zuHause.Controllers
                 "overview", "monitor", "behavior", "orders", "system",
                 "roles", "Backend_user_list", "contract_template",
                 "platform_fee", "imgup", "furniture_fee", "Marquee_edit", "furniture_management",
-                "announcement_management", "message_template_management", "member_list", "landlord_list", "property_list", 
+                "announcement_management", "message_template_management", "member_list", "landlord_list", "property_list",
                 "property_complaint_list", "customer_service_list", "system_message_list"
             };
 
@@ -98,15 +106,15 @@ namespace zuHause.Controllers
             // 前端 dashboard.js 使用此變數控制左側選單的顯示
             return View();
         }
+        #endregion
 
-
-
+        #region 家具管理分頁
         //家具管理分頁
         [HttpGet("{id}")]
         public IActionResult LoadTab(string id)
         {
             if (string.IsNullOrWhiteSpace(id)) return NotFound();
-            
+
             if (id == "announcement_management")
             {
                 // 取得所有 ANNOUNCEMENT 類型的公告資料，按建立時間排序
@@ -128,7 +136,7 @@ namespace zuHause.Controllers
                         m.UpdatedAt
                     })
                     .ToList();
-                
+
                 return PartialView("~/Views/Dashboard/Partial/announcement_management.cshtml", announcements);
             }
             if (id == "message_template_management")
@@ -202,7 +210,7 @@ namespace zuHause.Controllers
             var product = _context.FurnitureProducts.FirstOrDefault(p => p.FurnitureProductId == id);
             if (product == null)
                 return NotFound("找不到對應的家具資料");
-            product.Status=false; // 先將狀態設為下架,避免使用者誤租
+            product.Status = false; // 先將狀態設為下架,避免使用者誤租
             product.DeletedAt = DateTime.UtcNow;
             product.UpdatedAt = DateTime.UtcNow;
 
@@ -478,7 +486,9 @@ namespace zuHause.Controllers
 
             return Content("✅ 手動庫存異動已紀錄並同步更新快照！");
         }
-        // 房源方案相關 API
+        #endregion
+
+        #region 上架費方案相關 API 
         [HttpGet("GetAllListingPlans")]
         public IActionResult GetAllListingPlans()
         {
@@ -494,7 +504,7 @@ namespace zuHause.Controllers
                     p.StartAt,
                     p.EndAt,
                     p.IsActive
-                   
+
                 })
                 .ToList();
 
@@ -677,7 +687,9 @@ namespace zuHause.Controllers
 
             return Json(scheduled);
         }
-        //運費設定API
+        #endregion
+
+        #region 運費設定API
         //載入所有方案
         [HttpGet("GetAllDeliveryPlans")]
         public IActionResult GetAllDeliveryPlans()
@@ -716,7 +728,7 @@ namespace zuHause.Controllers
             existing.BaseFee = plan.BaseFee;
             existing.RemoteAreaSurcharge = plan.RemoteAreaSurcharge;
             existing.CurrencyCode = plan.CurrencyCode;
-            
+
             existing.StartAt = plan.StartAt;
             existing.EndAt = plan.EndAt;
             existing.UpdatedAt = DateTime.Now;
@@ -748,7 +760,7 @@ namespace zuHause.Controllers
 
         // 取得未來的配送方案，並依 BaseFee 分組
         [HttpGet("GetScheduledDeliveryPlans")]
-        
+
         public IActionResult GetScheduledDeliveryPlans()
         {
             var now = DateTime.Now;
@@ -766,9 +778,9 @@ namespace zuHause.Controllers
 
             return Json(futurePlans);
         }
+        #endregion
 
-
-        // 合約範本相關 API
+        #region 合約範本相關 API
 
         // 取得所有合約範本
         [HttpGet("GetContractTemplates")]
@@ -831,7 +843,9 @@ namespace zuHause.Controllers
 
             return Ok();
         }
-        //輪播圖相關 API
+        #endregion
+
+        #region 輪播圖相關 API
         //取得所有圖片
         [HttpGet("GetCarouselImages")]
         public IActionResult GetCarouselImages()
@@ -900,7 +914,7 @@ namespace zuHause.Controllers
             model.ImageUrl = $"/images/{fileName}";
             model.CreatedAt = DateTime.UtcNow;
             model.UpdatedAt = DateTime.UtcNow;
-            
+
 
             _context.CarouselImages.Add(model);
             await _context.SaveChangesAsync();
@@ -989,7 +1003,7 @@ namespace zuHause.Controllers
             return Ok("✅ 已刪除並調整順序");
         }
         //交換順序
-        
+
         [HttpPost("SwapCarouselOrder")]
         public IActionResult SwapCarouselOrder([FromBody] SwapOrderDto dto)
         {
@@ -1044,7 +1058,8 @@ namespace zuHause.Controllers
             var categories = _context.Pages
                 .Where(p => p.ModuleScope == "carousel" && p.IsActive)
                 .OrderBy(p => p.DisplayOrder)
-                .Select(p => new {
+                .Select(p => new
+                {
                     p.PageCode,
                     p.PageName
                 })
@@ -1052,6 +1067,9 @@ namespace zuHause.Controllers
 
             return Json(categories);
         }
+        #endregion
+
+        #region 跑馬燈相關 API
         //取得訊息表的跑馬燈
         [HttpGet("GetMarquees")]
         public IActionResult GetMarquees(string scope)
@@ -1062,7 +1080,8 @@ namespace zuHause.Controllers
                     m.ModuleScope == scope &&
                     m.DeletedAt == null)
                 .OrderBy(m => m.DisplayOrder)
-                .Select(m => new {
+                .Select(m => new
+                {
                     m.SiteMessagesId,
                     m.Title,
                     m.SiteMessageContent,
@@ -1105,7 +1124,7 @@ namespace zuHause.Controllers
         }
 
 
-        
+
         [HttpPost("BatchUpdateMarquees")]
         public IActionResult BatchUpdateMarquees([FromBody] List<MarqueeUpdateViewModel> updates)
         {
@@ -1143,9 +1162,10 @@ namespace zuHause.Controllers
 
             return Ok(new { success = true });
         }
+        #endregion
 
-        // ========== 公告管理相關 API ==========
-        
+        #region ========== 公告管理相關 API ==========
+
         /// <summary>
         /// 取得所有公告 - 支援分頁和篩選
         /// </summary>
@@ -1159,25 +1179,25 @@ namespace zuHause.Controllers
         {
             var query = _context.SiteMessages
                 .Where(m => m.Category == "ANNOUNCEMENT" && m.DeletedAt == null);
-            
+
             // 依模組範圍篩選
             if (!string.IsNullOrWhiteSpace(scope))
             {
                 query = query.Where(m => m.ModuleScope == scope.ToUpper());
             }
-            
+
             // 關鍵字搜尋 (標題或內容)
             if (!string.IsNullOrWhiteSpace(keyword))
             {
                 query = query.Where(m => m.Title.Contains(keyword) || m.SiteMessageContent.Contains(keyword));
             }
-            
+
             // 發布狀態篩選
             if (status.HasValue)
             {
                 query = query.Where(m => m.IsActive == status.Value);
             }
-            
+
             var total = query.Count();
             var announcements = query
                 .OrderByDescending(m => m.CreatedAt)
@@ -1198,8 +1218,8 @@ namespace zuHause.Controllers
                     UpdatedAt = m.UpdatedAt.ToString("yyyy-MM-dd HH:mm:ss")
                 })
                 .ToList();
-            
-            return Json(new 
+
+            return Json(new
             {
                 data = announcements,
                 total = total,
@@ -1208,7 +1228,7 @@ namespace zuHause.Controllers
                 totalPages = (int)Math.Ceiling(total / (double)pageSize)
             });
         }
-        
+
         /// <summary>
         /// 新增公告
         /// </summary>
@@ -1217,12 +1237,12 @@ namespace zuHause.Controllers
         {
             if (string.IsNullOrWhiteSpace(dto.Title) || string.IsNullOrWhiteSpace(dto.SiteMessageContent))
                 return BadRequest("標題和內容不能為空");
-            
+
             // 驗證模組範圍
             var validScopes = new[] { "TENANT", "LANDLORD", "FURNITURE", "COMMON" };
             if (!validScopes.Contains(dto.ModuleScope?.ToUpper()))
                 return BadRequest("無效的模組範圍，必須是 TENANT、LANDLORD、FURNITURE 或 COMMON");
-            
+
             var announcement = new SiteMessage
             {
                 Title = dto.Title,
@@ -1238,13 +1258,13 @@ namespace zuHause.Controllers
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now
             };
-            
+
             _context.SiteMessages.Add(announcement);
             _context.SaveChanges();
-            
+
             return Ok(new { success = true, id = announcement.SiteMessagesId });
         }
-        
+
         /// <summary>
         /// 更新公告
         /// </summary>
@@ -1252,21 +1272,21 @@ namespace zuHause.Controllers
         public IActionResult UpdateAnnouncement([FromBody] AnnouncementUpdateViewModel dto)
         {
             var announcement = _context.SiteMessages
-                .FirstOrDefault(m => m.SiteMessagesId == dto.SiteMessagesId && 
-                                   m.Category == "ANNOUNCEMENT" && 
+                .FirstOrDefault(m => m.SiteMessagesId == dto.SiteMessagesId &&
+                                   m.Category == "ANNOUNCEMENT" &&
                                    m.DeletedAt == null);
-            
+
             if (announcement == null)
                 return NotFound("找不到指定的公告");
-            
+
             if (string.IsNullOrWhiteSpace(dto.Title) || string.IsNullOrWhiteSpace(dto.SiteMessageContent))
                 return BadRequest("標題和內容不能為空");
-            
+
             // 驗證模組範圍
             var validScopes = new[] { "TENANT", "LANDLORD", "FURNITURE", "COMMON" };
             if (!validScopes.Contains(dto.ModuleScope?.ToUpper()))
                 return BadRequest("無效的模組範圍，必須是 TENANT、LANDLORD、FURNITURE 或 COMMON");
-            
+
             announcement.Title = dto.Title;
             announcement.SiteMessageContent = dto.SiteMessageContent;
             announcement.ModuleScope = dto.ModuleScope.ToUpper();
@@ -1276,12 +1296,12 @@ namespace zuHause.Controllers
             announcement.IsActive = dto.IsActive ?? announcement.IsActive;
             announcement.AttachmentUrl = dto.AttachmentUrl;
             announcement.UpdatedAt = DateTime.Now;
-            
+
             _context.SaveChanges();
-            
+
             return Ok(new { success = true });
         }
-        
+
         /// <summary>
         /// 刪除公告 (軟刪除)
         /// </summary>
@@ -1289,22 +1309,22 @@ namespace zuHause.Controllers
         public IActionResult DeleteAnnouncement([FromBody] int id)
         {
             var announcement = _context.SiteMessages
-                .FirstOrDefault(m => m.SiteMessagesId == id && 
-                                   m.Category == "ANNOUNCEMENT" && 
+                .FirstOrDefault(m => m.SiteMessagesId == id &&
+                                   m.Category == "ANNOUNCEMENT" &&
                                    m.DeletedAt == null);
-            
+
             if (announcement == null)
                 return NotFound("找不到指定的公告");
-            
+
             announcement.IsActive = false;
             announcement.DeletedAt = DateTime.Now;
             announcement.UpdatedAt = DateTime.Now;
-            
+
             _context.SaveChanges();
-            
+
             return Ok(new { success = true });
         }
-        
+
         /// <summary>
         /// 切換公告狀態 (啟用/停用)
         /// </summary>
@@ -1312,21 +1332,21 @@ namespace zuHause.Controllers
         public IActionResult ToggleAnnouncementStatus([FromBody] int id)
         {
             var announcement = _context.SiteMessages
-                .FirstOrDefault(m => m.SiteMessagesId == id && 
-                                   m.Category == "ANNOUNCEMENT" && 
+                .FirstOrDefault(m => m.SiteMessagesId == id &&
+                                   m.Category == "ANNOUNCEMENT" &&
                                    m.DeletedAt == null);
-            
+
             if (announcement == null)
                 return NotFound("找不到指定的公告");
-            
+
             announcement.IsActive = !announcement.IsActive;
             announcement.UpdatedAt = DateTime.Now;
-            
+
             _context.SaveChanges();
-            
+
             return Ok(new { success = true, isActive = announcement.IsActive });
         }
-        
+
         /// <summary>
         /// 取得公告詳細資料
         /// </summary>
@@ -1334,8 +1354,8 @@ namespace zuHause.Controllers
         public IActionResult GetAnnouncementById(int id)
         {
             var announcement = _context.SiteMessages
-                .Where(m => m.SiteMessagesId == id && 
-                          m.Category == "ANNOUNCEMENT" && 
+                .Where(m => m.SiteMessagesId == id &&
+                          m.Category == "ANNOUNCEMENT" &&
                           m.DeletedAt == null)
                 .Select(m => new
                 {
@@ -1352,13 +1372,13 @@ namespace zuHause.Controllers
                     UpdatedAt = m.UpdatedAt.ToString("yyyy-MM-dd HH:mm:ss")
                 })
                 .FirstOrDefault();
-            
+
             if (announcement == null)
                 return NotFound("找不到指定的公告");
-            
+
             return Json(announcement);
         }
-        
+
         /// <summary>
         /// 取得可用的模組範圍清單
         /// </summary>
@@ -1372,7 +1392,7 @@ namespace zuHause.Controllers
                 new { value = "FURNITURE", text = "家具端" },
                 new { value = "COMMON", text = "通用" }
             };
-            
+
             return Json(scopes);
         }
 
@@ -1401,14 +1421,9 @@ namespace zuHause.Controllers
             public bool? IsActive { get; set; }
             public string? AttachmentUrl { get; set; }
         }
+        #endregion
 
-
-
-
-
-
-
-    
+        #region 權限身分表相關 API
         //權限身分表
         [HttpGet("roles/list")]
         public IActionResult GetRolesWithPermissions()
@@ -1417,7 +1432,8 @@ namespace zuHause.Controllers
                 .Where(r => r.IsActive)
                 .OrderBy(r => r.CreatedAt)
                 .ToList() // ✅ 先取出資料
-                .Select(r => new {
+                .Select(r => new
+                {
                     roleCode = r.RoleCode,
                     roleName = r.RoleName,
                     permissions = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, bool>>(r.PermissionsJson)
@@ -1500,7 +1516,8 @@ namespace zuHause.Controllers
         {
             var admins = _context.Admins
                 .Where(a => a.DeletedAt == null && a.IsActive)
-                .Select(a => new {
+                .Select(a => new
+                {
                     a.AdminId,
                     a.Account,
                     a.Name,
@@ -1584,7 +1601,8 @@ namespace zuHause.Controllers
         {
             var admin = _context.Admins
                 .Where(a => a.AdminId == id && a.DeletedAt == null)
-                .Select(a => new {
+                .Select(a => new
+                {
                     a.AdminId,
                     a.Account,
                     a.Name,
@@ -1643,6 +1661,7 @@ namespace zuHause.Controllers
 
             return Ok("刪除成功");
         }
+        #endregion
 
         #region 訊息模板管理 API
 
@@ -1915,8 +1934,357 @@ namespace zuHause.Controllers
         }
 
         #endregion
-        
+
+        [HttpGet("dashboard/stats")]
+        public async Task<IActionResult> GetDashboardStats([FromQuery] string range = "week")
+        {
+            DateTime today = DateTime.Today;
+            DateTime start, end;
+
+            if (int.TryParse(range, out int month)) // 1~12 指定月
+            {
+                start = new DateTime(today.Year, month, 1);
+                end = start.AddMonths(1);
+            }
+            else if (range == "month") // 本月
+            {
+                start = new DateTime(today.Year, today.Month, 1);
+                end = start.AddMonths(1);
+            }
+            else // 預設為本週
+            {
+                start = today.AddDays(-(int)today.DayOfWeek + 1);
+                end = start.AddDays(7);
+            }
+
+            // 今日統計
+            int todayRegister = await _context.Members.CountAsync(m => m.CreatedAt.Date == today);
+            int todayProperty = await _context.Properties.CountAsync(p => p.PublishedAt.HasValue && p.PublishedAt.Value.Date == today && p.DeletedAt == null);
+            int todayFurniture = await _context.FurnitureOrders.CountAsync(f => f.CreatedAt.Date == today && f.DeletedAt == null);
+
+            // 日期文字串（"MM/dd"）
+            var labelDates = Enumerable.Range(0, (end - start).Days)
+                .Select(i => start.AddDays(i).Date)
+                .ToList();
+
+            // 註冊量
+            var dataRegister = await _context.Members
+                .Where(m => m.CreatedAt >= start && m.CreatedAt < end)
+                .GroupBy(m => m.CreatedAt.Date)
+                .Select(g => new { Date = g.Key, Count = g.Count() })
+                .ToListAsync();
+
+            // 上架房源
+            var dataProperty = await _context.Properties
+                .Where(p => p.PublishedAt >= start && p.PublishedAt < end && p.DeletedAt == null)
+                .GroupBy(p => p.PublishedAt.Value.Date)
+                .Select(g => new { Date = g.Key, Count = g.Count() })
+                .ToListAsync();
+
+            // 家具訂單數
+            var dataFurniture = await _context.FurnitureOrders
+                .Where(f => f.CreatedAt >= start && f.CreatedAt < end && f.DeletedAt == null)
+                .GroupBy(f => f.CreatedAt.Date)
+                .Select(g => new { Date = g.Key, Count = g.Count() })
+                .ToListAsync();
+
+            // 家具收入
+            var dataRevenue = await _context.FurnitureOrders
+                .Where(f => f.CreatedAt >= start && f.CreatedAt < end && f.DeletedAt == null)
+                .GroupBy(f => f.CreatedAt.Date)
+                .Select(g => new { Date = g.Key, Sum = g.Sum(x => x.TotalAmount) })
+                .ToListAsync();
+
+            // 上架服務費
+            var dataFee = await _context.Properties
+                .Where(p => p.PublishedAt >= start && p.PublishedAt < end && p.DeletedAt == null && p.ListingFeeAmount.HasValue)
+                .GroupBy(p => p.PublishedAt.Value.Date)
+                .Select(g => new { Date = g.Key, Sum = g.Sum(x => x.ListingFeeAmount!.Value) })
+                .ToListAsync();
+
+            // labels
+            var labels = labelDates.Select(d => d.ToString("MM/dd")).ToList();
+
+            return Json(new
+            {
+                today = new
+                {
+                    register = todayRegister,
+                    property = todayProperty,
+                    furniture = todayFurniture
+                },
+                weekly = new
+                {
+                    labels = labels,
+                    register = labelDates.Select(d => dataRegister.FirstOrDefault(x => x.Date == d)?.Count ?? 0).ToList(),
+                    property = labelDates.Select(d => dataProperty.FirstOrDefault(x => x.Date == d)?.Count ?? 0).ToList(),
+                    furniture = labelDates.Select(d => dataFurniture.FirstOrDefault(x => x.Date == d)?.Count ?? 0).ToList(),
+                    furnitureRevenue = labelDates.Select(d => dataRevenue.FirstOrDefault(x => x.Date == d)?.Sum ?? 0).ToList(),
+                    listingFee = labelDates.Select(d => dataFee.FirstOrDefault(x => x.Date == d)?.Sum ?? 0).ToList()
+                }
+            });
+        }
+
+        [HttpGet("dashboard/hot-rankings")]
+        public async Task<IActionResult> GetHotRankings()
+        {
+            // 熱門家具承租排行榜（依歷史訂單統計）
+            var hotFurniture = await _context.FurnitureOrderHistories
+                .Where(h => h.Product.DeletedAt == null)
+                .GroupBy(h => new { h.ProductId, h.Product.ProductName })
+                .Select(g => new
+                {
+                    Name = g.Key.ProductName,
+                    Count = g.Count()
+                })
+                .OrderByDescending(g => g.Count)
+                .Take(5)
+                .ToListAsync();
+
+            // 熱門租屋地區排行榜（依有效合約 + 房源城市）
+            var hotRentalCities = await (
+                from c in _context.Contracts
+                where c.Status == "SIGNED" && c.RentalApplication != null
+                let property = c.RentalApplication.Property
+                where property != null
+                join d in _context.Districts on property.DistrictId equals d.DistrictId
+                join city in _context.Cities on d.CityId equals city.CityId
+                group c by city.CityName into g
+                orderby g.Count() descending
+                select new
+                {
+                    Name = g.Key,
+                    Count = g.Count()
+                }
+            ).Take(5).ToListAsync();
+            var verifiedProperties = await (
+                from p in _context.Properties
+                join d in _context.Districts on p.DistrictId equals d.DistrictId
+                join city in _context.Cities on d.CityId equals city.CityId
+                where p.StatusCode == "ACTIVE"
+                group p by city.CityName into g
+                orderby g.Count() descending
+                select new
+                {
+                    Name = g.Key,
+                    Count = g.Count()
+                }
+            ).Take(5).ToListAsync();
+
+
+
+            var pendingProperties = await (
+                    from p in _context.Properties
+                    join d in _context.Districts on p.DistrictId equals d.DistrictId
+                    join city in _context.Cities on d.CityId equals city.CityId
+                    where p.StatusCode == "PENDING"
+                    group p by city.CityName into g
+                    orderby g.Count() descending
+                    select new
+                    {
+                        Name = g.Key,
+                        Count = g.Count()
+                    }
+                ).Take(5).ToListAsync();
+
+
+            return Json(new
+            {
+                furniture = hotFurniture,
+                rental = hotRentalCities,
+                verified = verifiedProperties,
+                pending = pendingProperties
+            });
+        }
+        [HttpGet("dashboard/statistics")]
+        public async Task<IActionResult> GetStatistics()
+        {
+            var today = DateTime.Today;
+            var last5Days = Enumerable.Range(0, 5)
+                .Select(i => today.AddDays(-4 + i)) // 從五天前開始
+                .ToList();
+
+            var dauRaw = await _context.Members
+                .Where(m => m.LastLoginAt != null && m.LastLoginAt >= last5Days.First())
+                .GroupBy(m => m.LastLoginAt!.Value.Date)
+                .Select(g => new { Date = g.Key, Count = g.Count() })
+                .ToListAsync();
+
+            // 確保每一天都有資料
+            var dau = last5Days
+                .Select(d => new
+                {
+                    Date = d,
+                    Count = dauRaw.FirstOrDefault(x => x.Date == d)?.Count ?? 0
+                })
+                .ToList();
+
+            // 熱門搜尋關鍵字
+            var hotKeywords = await _context.SearchHistories
+                .Where(h => h.SearchedAt >= today.AddDays(-30))
+                .GroupBy(h => h.Keyword)
+                .Select(g => new
+                {
+                    Keyword = g.Key,
+                    Count = g.Count()
+                })
+                .OrderByDescending(g => g.Count)
+                .Take(10)
+                .ToListAsync();
+
+            return Json(new
+            {
+                dau = dau,
+                keywords = hotKeywords
+            });
+        }
+        [HttpGet("listing-fee-stats")]
+        public IActionResult GetListingFeeStats()
+        {
+            var now = DateTime.Now;
+            var recentDates = Enumerable.Range(0, 5)
+                .Select(offset => now.Date.AddDays(-offset))
+                .OrderBy(d => d)
+                .ToList();
+
+            // 篩選資料
+            var properties = _context.Properties
+                .Where(p => p.ListingFeeAmount != null && p.DeletedAt == null);
+
+            // 總統計
+            var totalDue = properties.Sum(p => p.ListingFeeAmount ?? 0);
+            var totalPaid = properties.Where(p => p.IsPaid).Sum(p => p.ListingFeeAmount ?? 0);
+
+            // 每日統計
+            var trend = recentDates.Select(date => new
+            {
+                date = date.ToString("MM/dd"),
+                due = properties.Where(p => p.PublishedAt.HasValue && p.PublishedAt.Value.Date == date).Sum(p => p.ListingFeeAmount ?? 0),
+                paid = properties.Where(p => p.PaidAt.HasValue && p.PaidAt.Value.Date == date).Sum(p => p.ListingFeeAmount ?? 0)
+            });
+
+            return Json(new
+            {
+                totalDue,
+                totalPaid,
+                trend
+            });
+        }
+        [HttpGet("monthly-trend")]
+        public async Task<IActionResult> GetMonthlyListingFeeTrend()
+        {
+            var today = DateTime.Today;
+            var startOfMonth = new DateTime(today.Year, today.Month, 1);
+            var endOfMonth = startOfMonth.AddMonths(1);
+
+            // 撈資料
+            var rawData = await _context.Properties
+                .Where(p => p.PublishedAt != null &&
+                            p.PublishedAt >= startOfMonth &&
+                            p.PublishedAt < endOfMonth &&
+                            p.ListingFeeAmount != null)
+                .GroupBy(p => p.PublishedAt!.Value.Date)
+                .Select(g => new
+                {
+                    Date = g.Key,
+                    TotalDue = g.Sum(p => p.ListingFeeAmount ?? 0),
+                    TotalPaid = g.Where(p => p.IsPaid).Sum(p => p.ListingFeeAmount ?? 0)
+                })
+                .ToListAsync();
+
+            // 建立本月完整日期
+            var allDates = Enumerable.Range(0, (endOfMonth - startOfMonth).Days)
+                .Select(offset => startOfMonth.AddDays(offset).Date)
+                .ToList();
+
+            // 合併結果
+            var listingData = allDates.Select(date =>
+            {
+                var match = rawData.FirstOrDefault(d => d.Date == date);
+                return new
+                {
+                    date = date.ToString("yyyy-MM-dd"),
+                    totalDue = match?.TotalDue ?? 0,
+                    totalPaid = match?.TotalPaid ?? 0
+                };
+            });
+
+            return Json(listingData);
+        }
+        [HttpGet("order-stats")]
+        public async Task<IActionResult> GetOrderStats()
+        {
+            var today = DateTime.Today;
+
+            // 成交單數：合約已簽署
+            int completedCount = await _context.Contracts
+                .CountAsync(c => c.Status == "SIGNED");
+
+            // 已驗證未付款：尚未付款
+            int unpaidCount = await _context.Properties
+                .CountAsync(c => c.IsPaid == false);
+
+            // 詐欺交易警示：已被舉報並判定成立的訂單
+            int fraudCount = await _context.PropertyComplaints
+                .CountAsync(c => c.StatusCode == "CONFIRMED");
+
+            // 可疑訂單：有檢舉但未確認成立
+            int suspiciousCount = await _context.PropertyComplaints
+                .CountAsync(c => c.StatusCode == "PENDING");
+
+            return Json(new[]
+            {
+        new { type = "✅ 租屋成交單數", count = completedCount, note = "已完成付款並確認租約" },
+        new { type = "💳 已驗證未付款單數", count = unpaidCount, note = "尚未完成金流，等待付款" },
+        new { type = "🔎 詐欺交易警示", count = fraudCount, note = "房東OR租客訂單檢舉成立" },
+        new { type = "❓ 可疑訂單", count = suspiciousCount, note = "房東OR租客對訂單提交檢舉" }
+    });
+        }
+
+
+
+        [HttpGet("server-status")]
+        public IActionResult GetServerStatus()
+        {
+            double cpuUsage = 0;
+            double ramUsageMB = 0;
+
+            // 取得 CPU 使用率（僅 Windows 有效，Linux 會回傳 -1）
+            try
+            {
+                using (var cpuCounter = new System.Diagnostics.PerformanceCounter("Process", "% Processor Time", Process.GetCurrentProcess().ProcessName))
+                {
+                    cpuCounter.NextValue();
+                    System.Threading.Thread.Sleep(500);
+                    cpuUsage = Math.Round(cpuCounter.NextValue() / Environment.ProcessorCount, 1);
+                }
+            }
+            catch
+            {
+                cpuUsage = -1;
+            }
+
+            // 取得應用程式記憶體用量（MB）
+            try
+            {
+                var process = System.Diagnostics.Process.GetCurrentProcess();
+                ramUsageMB = Math.Round(process.WorkingSet64 / 1024.0 / 1024.0, 1);
+            }
+            catch
+            {
+                ramUsageMB = -1;
+            }
+
+            // API 請求數建議用 Middleware 統計，這裡仍用亂數
+            int apiRequest = new Random().Next(100, 300);
+
+            return Json(new
+            {
+                cpu = cpuUsage,
+                ram = ramUsageMB,
+                api = apiRequest
+            });
+        }
+
     }
-
-
 }

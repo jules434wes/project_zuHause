@@ -37,6 +37,10 @@ builder.Services.AddAuthentication(options =>
 {
     options.LoginPath = "/Member/Login";
     options.AccessDeniedPath = "/Member/AccessDenied";
+    options.ExpireTimeSpan = TimeSpan.FromMinutes(15); // Cookie 有效時間 15 分鐘閒置登出
+    options.SlidingExpiration = true; // 滑動期限（有活動就重置15分鐘）
+    options.Cookie.HttpOnly = true; // 增加安全性
+    options.Cookie.IsEssential = true; // 設定為必要的 Cookie
 })
 .AddCookie("AdminCookies", options =>// 管理員登入驗證
 {
@@ -54,6 +58,9 @@ builder.Services.AddDbContext<ZuHauseContext>(
 
 builder.Services.AddMemoryCache();
 
+// 註冊更新申請Log服務
+builder.Services.AddScoped<ApplicationService>();
+
 // 註冊 RealDataSeeder
 builder.Services.AddScoped<RealDataSeeder>();
 
@@ -66,6 +73,12 @@ builder.Services.AddScoped<zuHause.Interfaces.IDisplayOrderManager, zuHause.Serv
 builder.Services.AddScoped<zuHause.Interfaces.IImageQueryService, zuHause.Services.ImageQueryService>();
 builder.Services.AddScoped<zuHause.Interfaces.IImageUploadService, zuHause.Services.ImageUploadService>();
 builder.Services.AddScoped<zuHause.Services.Interfaces.IImageValidationService, zuHause.Services.ImageValidationService>();
+
+// 註冊刊登方案驗證服務
+builder.Services.AddScoped<zuHause.Services.Interfaces.IListingPlanValidationService, zuHause.Services.ListingPlanValidationService>();
+
+// 註冊設備分類查詢服務
+builder.Services.AddScoped<zuHause.Services.Interfaces.IEquipmentCategoryQueryService, zuHause.Services.EquipmentCategoryQueryService>();
 
 // 註冊房源圖片 Facade 服務
 builder.Services.AddScoped<zuHause.Interfaces.IPropertyImageService, zuHause.Services.PropertyImageService>();
@@ -131,8 +144,8 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
+app.UseAuthentication(); // 認證中間件需要在 Session 之前
 app.UseSession(); // 啟用 Session 中間件
-app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 

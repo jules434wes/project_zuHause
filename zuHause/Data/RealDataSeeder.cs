@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using zuHause.Models;
+using zuHause.Services;
 
 namespace zuHause.Data
 {
@@ -11,11 +12,13 @@ namespace zuHause.Data
     {
         private readonly ZuHauseContext _context;
         private readonly ILogger<RealDataSeeder> _logger;
+        private readonly MemberService _memberService;
 
-        public RealDataSeeder(ZuHauseContext context, ILogger<RealDataSeeder> logger)
+        public RealDataSeeder(ZuHauseContext context, ILogger<RealDataSeeder> logger, MemberService memberService)
         {
             _context = context;
             _logger = logger;
+            _memberService = memberService;
         }
 
         /// <summary>
@@ -209,7 +212,6 @@ namespace zuHause.Data
                 MemberName = "張房東",
                 Gender = 1, // 男性
                 BirthDate = new DateOnly(1980, 5, 15),
-                Password = "Test123!",
                 PhoneNumber = "0912345678",
                 Email = $"landlord_{DateTime.Now:yyyyMMddHHmmss}@test.com",
                 MemberTypeId = 2, // 房東
@@ -220,8 +222,8 @@ namespace zuHause.Data
                 UpdatedAt = DateTime.Now
             };
 
-            _context.Members.Add(landlord);
-            await _context.SaveChangesAsync();
+            // 使用 MemberService 正確處理密碼雜湊
+            _memberService.Register(landlord, "Test123!");
 
             _logger.LogInformation($"建立測試房東: {landlord.MemberName} (ID: {landlord.MemberId})");
 
@@ -289,7 +291,6 @@ namespace zuHause.Data
                 MemberName = "李租客",
                 Gender = 2, // 女性
                 BirthDate = new DateOnly(1990, 8, 25),
-                Password = "Test123!",
                 PhoneNumber = "0987654321",
                 Email = $"tenant_{DateTime.Now:yyyyMMddHHmmss}@test.com",
                 MemberTypeId = 1, // 租客
@@ -302,8 +303,8 @@ namespace zuHause.Data
                 UpdatedAt = DateTime.Now
             };
 
-            _context.Members.Add(tenant);
-            await _context.SaveChangesAsync();
+            // 使用 MemberService 正確處理密碼雜湊
+            _memberService.Register(tenant, "Test123!");
 
             _logger.LogInformation($"建立測試租客: {tenant.MemberName} (ID: {tenant.MemberId})");
 

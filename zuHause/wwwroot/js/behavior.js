@@ -1,21 +1,57 @@
 ﻿(() => {
-    const chartDAU = document.getElementById('chartDAU');
-    if (chartDAU) {
-        new Chart(chartDAU, {
-            type: 'line',
-            data: { labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'], datasets: [{ label: 'DAU', data: [120, 132, 109, 121, 128], borderColor: '#36b9cc', fill: false }] }
-        });
+    async function loadStatistics() {
+        try {
+            const res = await fetch("/Dashboard/dashboard/statistics");
+            const data = await res.json();
+
+            // DAU 折線圖
+            const chartDAU = document.getElementById('chartDAU');
+            if (chartDAU) {
+                const labels = data.dau.map(d => new Date(d.date).toLocaleDateString("zh-TW", { weekday: 'short' }));
+                const counts = data.dau.map(d => d.count);
+
+                new Chart(chartDAU, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'DAU',
+                            data: counts,
+                            borderColor: '#36b9cc',
+                            fill: false
+                        }]
+                    }
+                });
+            }
+
+            // 熱門搜尋關鍵字長條圖
+            const chartTags = document.getElementById('chartTags');
+            if (chartTags) {
+                const labels = data.keywords.map(k => k.keyword);
+                const counts = data.keywords.map(k => k.count);
+
+                new Chart(chartTags, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: '搜尋次數',
+                            data: counts,
+                            backgroundColor: '#4e73df'
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y'
+                    }
+                });
+            }
+
+        } catch (err) {
+            console.error("📊 統計圖表載入失敗", err);
+        }
     }
-    const chartTags = document.getElementById('chartTags');
-    if (chartTags) {
-        new Chart(chartTags, {
-            type: 'bar',
-            data: {
-                labels: ['雙人床', '捷運', '書桌', '套房', '陽台', '洗衣機', '收納櫃', '近學校', '家具全配'],
-                datasets: [{ label: '搜尋次數', data: [30, 25, 18, 20, 15, 10, 12, 16, 22], backgroundColor: '#4e73df' }]
-            },
-            options: { indexAxis: 'y' }
-        });
-    }
+
+    // 初始化執行
+    loadStatistics();
 }
 )();

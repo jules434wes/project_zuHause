@@ -261,6 +261,25 @@ function openTab(tabKey) {
                 script.src = scriptMap[tabKey];
 
                 script.onload = () => {
+                    if (tabKey === "monitor") {
+                        if (typeof loadHotRankings === "function") {
+                            loadHotRankings();
+                        }
+                    }
+
+                    if (tabKey === "system") {
+                        if (typeof loadServerStatusChart === "function") {
+                            loadServerStatusChart(); // ✅ 初始化並自動更新
+                        }
+                    }
+
+                  
+                    if (tabKey === "overview") {
+                        if (typeof initOverviewDashboard === "function") {
+                            initOverviewDashboard(); // ✅ 呼叫看板初始化函式
+                        }
+                    }
+
                     if (tabKey === "roles" && typeof updateRoleListWithPermissions === "function") {
                         updateRoleListWithPermissions();
                     }

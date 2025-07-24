@@ -12,8 +12,6 @@ namespace zuHause.Controllers
     {
         private readonly ZuHauseContext _context;
 
-        // 模擬登入中的會員 ID（目前固定為 2 號會員）
-        private readonly int _currentMemberId = 2;
 
         public FurnitureController(ZuHauseContext context)
         {
@@ -49,27 +47,23 @@ namespace zuHause.Controllers
         //會員登入資料
         private void SetCurrentMemberInfo()
         {
-            // ***** 臨時測試修改開始 (請在測試完成後，務必移除或註釋掉這段代碼) *****
-            // 強制設定會員ID為2，並從資料庫抓取其資料
-            int tempMemberId = 2; // 指定臨時使用的會員ID
-            var tempMember = _context.Members.Find(tempMemberId); // 從資料庫查找會員資料
-
-            ViewBag.CurrentMemberId = tempMemberId;
-            ViewBag.CurrentMemberName = tempMember?.MemberName; // 使用資料庫中的會員名稱
-            ViewBag.CurrentMember = tempMember; // 將整個 Member 物件存入 ViewBag
-
-            return; // 直接返回，跳過正常的 Session 判斷
-            // ***** 臨時測試修改結束 *****
-
-
-            /* // 以下是正常的 Session 判斷邏輯，請在測試完成後，恢復這段代碼
-            var memberIdString = HttpContext.Session.GetString("MemberId");
-            if (!string.IsNullOrEmpty(memberIdString) && int.TryParse(memberIdString, out int memberId))
+            // 使用統一的 Cookie 認證機制
+            if (User.Identity?.IsAuthenticated == true)
             {
-                ViewBag.CurrentMemberId = memberId;
-                var member = _context.Members.Find(memberId); // 從資料庫查找實際會員資料
-                ViewBag.CurrentMemberName = member?.MemberName;
-                ViewBag.CurrentMember = member; // 將 Member 物件存入 ViewBag
+                var userIdClaim = User.FindFirst("UserId")?.Value;
+                if (!string.IsNullOrEmpty(userIdClaim) && int.TryParse(userIdClaim, out int memberId))
+                {
+                    ViewBag.CurrentMemberId = memberId;
+                    var member = _context.Members.Find(memberId); // 從資料庫查找實際會員資料
+                    ViewBag.CurrentMemberName = member?.MemberName;
+                    ViewBag.CurrentMember = member; // 將 Member 物件存入 ViewBag
+                }
+                else
+                {
+                    ViewBag.CurrentMemberId = null;
+                    ViewBag.CurrentMemberName = null;
+                    ViewBag.CurrentMember = null;
+                }
             }
             else
             {
@@ -77,7 +71,6 @@ namespace zuHause.Controllers
                 ViewBag.CurrentMemberName = null;
                 ViewBag.CurrentMember = null;
             }
-            */
         }
 
         // 家具分類頁面
@@ -106,7 +99,11 @@ namespace zuHause.Controllers
         {
 
             SetCurrentMemberInfo();
-            int memberId = _currentMemberId;
+            var memberIdString = User.FindFirst("UserId")?.Value;
+            if (string.IsNullOrEmpty(memberIdString) || !int.TryParse(memberIdString, out int memberId))
+            {
+                return RedirectToAction("Login", "Member");
+            }
 
             var product = _context.FurnitureProducts.FirstOrDefault(p => p.FurnitureProductId == id);
 
@@ -574,7 +571,11 @@ namespace zuHause.Controllers
         public IActionResult OrderHistory()
         {
             SetCurrentMemberInfo();
-            int memberId = _currentMemberId;
+            var memberIdString = User.FindFirst("UserId")?.Value;
+            if (string.IsNullOrEmpty(memberIdString) || !int.TryParse(memberIdString, out int memberId))
+            {
+                return RedirectToAction("Login", "Member");
+            }
 
             // 進行中訂單（排除 RETURNED）
             var ongoingOrders = _context.FurnitureOrderItems
@@ -635,7 +636,11 @@ namespace zuHause.Controllers
         public IActionResult ContactRecords()
         {
             SetCurrentMemberInfo();
-            int memberId = _currentMemberId;
+            var memberIdString = User.FindFirst("UserId")?.Value;
+            if (string.IsNullOrEmpty(memberIdString) || !int.TryParse(memberIdString, out int memberId))
+            {
+                return RedirectToAction("Login", "Member");
+            }
 
             var tickets = _context.CustomerServiceTickets
                 .Include(t => t.Member)
@@ -653,7 +658,11 @@ namespace zuHause.Controllers
         public IActionResult ContactUsForm(string orderId)
         {
             SetCurrentMemberInfo();
-            int memberId = _currentMemberId;
+            var memberIdString = User.FindFirst("UserId")?.Value;
+            if (string.IsNullOrEmpty(memberIdString) || !int.TryParse(memberIdString, out int memberId))
+            {
+                return RedirectToAction("Login", "Member");
+            }
 
             var member = _context.Members.FirstOrDefault(m => m.MemberId == memberId);
             var properties = _context.Properties
@@ -678,8 +687,11 @@ namespace zuHause.Controllers
         [HttpPost]
         public IActionResult SubmitContactForm(string Subject, string TicketContent, int? PropertyId)
         {
-
-            int memberId = _currentMemberId;
+            var memberIdString = User.FindFirst("UserId")?.Value;
+            if (string.IsNullOrEmpty(memberIdString) || !int.TryParse(memberIdString, out int memberId))
+            {
+                return RedirectToAction("Login", "Member");
+            }
             var ticket = new CustomerServiceTicket
             {
                 MemberId = memberId,

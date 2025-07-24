@@ -14,9 +14,11 @@ namespace zuHause.Controllers
     public class MemberApplicationsController : Controller
     {
         public readonly ZuHauseContext _context;
-        public MemberApplicationsController(ZuHauseContext context)
+        public readonly ApplicationService _applicationService;
+        public MemberApplicationsController(ZuHauseContext context, ApplicationService applicationService)
         {
             _context = context;
+            _applicationService = applicationService;
         }
 
 
@@ -65,7 +67,7 @@ namespace zuHause.Controllers
                             StatusCode = log.StatusCode,
                             ChangedAt = log.ChangedAt
                         }).ToList()
-                })
+                }).OrderByDescending(x=>x.ApplicationId)
                 .ToListAsync();
 
 
@@ -264,42 +266,14 @@ namespace zuHause.Controllers
         public async Task<IActionResult> UpdateApplicationLog([FromBody] UpdateApplicationViewModel model)
         {
 
+            var (success, message) = await _applicationService.UpdateApplicationStatusAsync(
+        Convert.ToInt32(model.ApplicationId), model.Status!
+    );
 
-            int applicationId = Convert.ToInt32(model.ApplicationId);
-            string status = model.Status!;
+            if (!success)
+                return BadRequest(new { msg = message });
 
-            var application = await _context.RentalApplications.Where(r => r.ApplicationId == applicationId).Include(a => a.ApplicationStatusLogs).FirstOrDefaultAsync();
-            if (application == null)
-            {
-                return NotFound(new { msg = "找不到對應申請" });
-            }
-
-            var lastStatusLog = application?.ApplicationStatusLogs
-            .OrderByDescending(log => log.StatusLogId).FirstOrDefault();
-
-            if (lastStatusLog != null && lastStatusLog.StatusCode == status)
-            {
-                return BadRequest(new { msg = "狀態重複" });
-            }
-
-            var newLog = new ApplicationStatusLog
-            {
-                ApplicationId = applicationId,
-                StatusCode = status,
-                ChangedAt = DateTime.Now,
-                UpdatedAt = DateTime.Now,
-            };
-
-            await _context.ApplicationStatusLogs.AddAsync(newLog);
-
-            application!.CurrentStatus = status;
-            application.UpdatedAt = DateTime.Now;
-
-
-            await _context.SaveChangesAsync();
-
-
-            return Ok(new { msg = "更新狀態成功", applicationId = applicationId, status = status });
+            return Ok(new { msg = message });
         }
 
 
