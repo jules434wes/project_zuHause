@@ -754,31 +754,58 @@ namespace zuHause.AdminViewModels
 
         private List<PropertyImageData> LoadImages(ZuHauseContext context, int propertyId)
         {
-            return context.PropertyImages
-                .Where(pi => pi.PropertyId == propertyId)
-                .Select(pi => new PropertyImageData
+            return context.Images
+                .Where(img => img.EntityType == zuHause.Enums.EntityType.Property && 
+                             img.EntityId == propertyId && 
+                             img.IsActive)
+                .Select(img => new PropertyImageData
                 {
-                    ImageId = pi.ImageId,
-                    ImageUrl = pi.ImagePath,
-                    ImageSize = "Original",
-                    ImageCategory = "房源照片",
-                    DisplayOrder = pi.DisplayOrder,
-                    UploadedAt = pi.CreatedAt
+                    ImageId = (int)img.ImageId,
+                    ImageUrl = img.StoredFileName,
+                    ImageSize = $"{img.Width}x{img.Height}",
+                    ImageCategory = GetImageCategoryDisplay(img.Category),
+                    DisplayOrder = img.DisplayOrder ?? 0,
+                    UploadedAt = img.UploadedAt
                 })
                 .OrderBy(i => i.DisplayOrder)
+                .ThenBy(i => i.UploadedAt)
                 .ToList();
+        }
+
+        private static string GetImageCategoryDisplay(zuHause.Enums.ImageCategory category)
+        {
+            switch (category)
+            {
+                case zuHause.Enums.ImageCategory.BedRoom:
+                    return "臥室";
+                case zuHause.Enums.ImageCategory.Living:
+                    return "客廳";
+                case zuHause.Enums.ImageCategory.Kitchen:
+                    return "廚房";
+                case zuHause.Enums.ImageCategory.Balcony:
+                    return "陽台";
+                case zuHause.Enums.ImageCategory.Gallery:
+                    return "圖片集";
+                default:
+                    return "其他";
+            }
         }
 
         private string GetApprovalStatusDisplay(string statusCode)
         {
-            return statusCode switch
+            switch (statusCode)
             {
-                "PENDING" => "未審核",
-                "ACTIVE" => "審核完成",
-                "REJECTED" => "未審核",
-                "BANNED" => "違規下架",
-                _ => "未審核"
-            };
+                case "PENDING":
+                    return "未審核";
+                case "ACTIVE":
+                    return "審核完成";
+                case "REJECTED":
+                    return "未審核";
+                case "BANNED":
+                    return "違規下架";
+                default:
+                    return "未審核";
+            }
         }
 
         private string GetPaymentStatusDisplay(bool isPaid, DateTime? expireAt)
