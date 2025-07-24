@@ -24,27 +24,7 @@
                 });
             }
 
-            // 熱門搜尋關鍵字長條圖
-            const chartTags = document.getElementById('chartTags');
-            if (chartTags) {
-                const labels = data.keywords.map(k => k.keyword);
-                const counts = data.keywords.map(k => k.count);
-
-                new Chart(chartTags, {
-                    type: 'bar',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: '搜尋次數',
-                            data: counts,
-                            backgroundColor: '#4e73df'
-                        }]
-                    },
-                    options: {
-                        indexAxis: 'y'
-                    }
-                });
-            }
+           
 
         } catch (err) {
             console.error("📊 統計圖表載入失敗", err);

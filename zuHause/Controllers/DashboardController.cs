@@ -2092,23 +2092,12 @@ namespace zuHause.Controllers
                 })
                 .ToList();
 
-            // 熱門搜尋關鍵字
-            var hotKeywords = await _context.SearchHistories
-                .Where(h => h.SearchedAt >= today.AddDays(-30))
-                .GroupBy(h => h.Keyword)
-                .Select(g => new
-                {
-                    Keyword = g.Key,
-                    Count = g.Count()
-                })
-                .OrderByDescending(g => g.Count)
-                .Take(10)
-                .ToListAsync();
+           
 
             return Json(new
             {
-                dau = dau,
-                keywords = hotKeywords
+                dau = dau
+              
             });
         }
         [HttpGet("listing-fee-stats")]
