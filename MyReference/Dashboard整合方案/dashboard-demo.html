@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>zuHause 儀表板 - DEMO</title>
+    
+    <!-- Bootstrap 5.3 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <style>
+        /* 模擬真實系統的樣式 */
+        :root {
+            --primary-color: #0d6efd;
+            --sidebar-width: 280px;
+            --header-height: 60px;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+        }
+        
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: var(--sidebar-width);
+            background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
+            border-right: 1px solid #dee2e6;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        }
+        
+        .main-content {
+            margin-left: var(--sidebar-width);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        
+        .brand-header {
+            padding: 1.5rem;
+            background: linear-gradient(135deg, var(--primary-color) 0%, #0056b3 100%);
+            color: white;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+        
+        .nav-group {
+            margin-bottom: 1.5rem;
+            padding: 0 1rem;
+        }
+        
+        .nav-group-title {
+            font-weight: 600;
+            color: #495057;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.75rem;
+            padding-left: 0.5rem;
+        }
+        
+        .nav-btn {
+            display: block;
+            width: 100%;
+            text-align: left;
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.25rem;
+            border: none;
+            background: transparent;
+            color: #495057;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+        
+        .nav-btn:hover {
+            background-color: #e9ecef;
+            color: var(--primary-color);
+            transform: translateX(4px);
+        }
+        
+        .nav-btn.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .nav-btn i {
+            width: 20px;
+            margin-right: 0.5rem;
+        }
+        
+        .admin-feature {
+            border-left: 3px solid #28a745;
+            background: linear-gradient(135deg, rgba(40, 167, 69, 0.05) 0%, rgba(255, 255, 255, 1) 100%);
+        }
+        
+        .admin-feature:hover {
+            background: linear-gradient(135deg, rgba(40, 167, 69, 0.1) 0%, #e9ecef 100%);
+            border-left-color: #20c997;
+        }
+        
+        .role-badge {
+            background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+            color: #212529;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.75rem;
+        }
+        
+        .user-info {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+        
+        .role-selector {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .content-placeholder {
+            background: white;
+            border-radius: 12px;
+            padding: 3rem;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+            
+            .sidebar.show {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 側邊欄 -->
+    <div class="sidebar" id="sidebar">
+        <!-- 品牌標題 -->
+        <div class="brand-header">
+            <h4 class="mb-1">
+                <i class="bi bi-house-heart"></i> zuHause
+            </h4>
+            <small>管理平台</small>
+        </div>
+        
+        <!-- 用戶資訊 -->
+        <div class="px-3 mb-3">
+            <div class="bg-light rounded p-2 text-center">
+                <div class="fw-bold text-primary" id="employeeDisplay">管理員 (ID: 9528)</div>
+                <span class="role-badge" id="roleDisplay">超級管理員</span>
+            </div>
+        </div>
+        
+        <!-- 導航選單 -->
+        <div id="navigationMenu">
+            <!-- 將由 JavaScript 動態生成 -->
+        </div>
+        
+        <!-- 角色切換器 (DEMO 用) -->
+        <div class="role-selector mx-3">
+            <label class="form-label fw-bold">
+                <i class="bi bi-person-gear"></i> 切換角色 (DEMO)
+            </label>
+            <select class="form-select" id="roleSelector">
+                <option value="超級管理員">超級管理員</option>
+                <option value="管理員">管理員</option>
+                <option value="房源審核員">房源審核員</option>
+                <option value="客服">客服</option>
+            </select>
+        </div>
+    </div>
+    
+    <!-- 主要內容區 -->
+    <div class="main-content">
+        <!-- 頂部資訊 -->
+        <div class="user-info">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-1">歡迎回來！</h5>
+                    <p class="text-muted mb-0">今天是個美好的一天</p>
+                </div>
+                <div class="d-flex align-items-center gap-3">
+                    <button class="btn btn-sm btn-outline-secondary d-md-none" id="sidebarToggle">
+                        <i class="bi bi-list"></i>
+                    </button>
+                    <button class="btn btn-outline-danger">
+                        <i class="bi bi-box-arrow-right"></i> 登出
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 內容展示區 -->
+        <div class="content-placeholder">
+            <i class="bi bi-speedometer2 text-primary" style="font-size: 4rem;"></i>
+            <h3 class="mt-3 mb-3">zuHause 儀表板系統</h3>
+            <p class="text-muted mb-4">
+                這是 Dashboard 頁面的 DEMO 展示。<br>
+                請點擊左側選單來體驗不同功能頁面的導航。
+            </p>
+            
+            <div class="alert alert-info" role="alert">
+                <i class="bi bi-info-circle"></i>
+                <strong>DEMO 說明：</strong>
+                <ul class="mb-0 mt-2 text-start">
+                    <li>使用上方的「切換角色」來查看不同權限的選單差異</li>
+                    <li><strong>「🛠️ 系統管理」群組中的三個功能</strong>（用戶管理、屋源管理、平台訊息服務）<strong>會跳轉到專門的管理介面</strong></li>
+                    <li>注意這些管理功能有綠色左邊框標識，但與其他功能完全整合</li>
+                    <li>所有功能都是模擬展示，實際功能請參考真實系統</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // DEMO 配置數據
+        const roleAccess = {
+            '超級管理員': [
+                'overview', 'monitor', 'behavior', 'orders', 'system', 
+                'roles', 'Backend_user_list', 'contract_template', 
+                'platform_fee', 'imgup', 'furniture_fee', 'Marquee_edit', 
+                'furniture_management', 'user_management', 'property_management', 'platform_service'
+            ],
+            '管理員': [
+                'overview', 'behavior', 'orders', 'roles', 'Backend_user_list',
+                'user_management', 'property_management'
+            ],
+            '房源審核員': ['monitor', 'property_management'],
+            '客服': ['behavior', 'orders', 'platform_service']
+        };
+        
+        const tabNames = {
+            overview: "📊 平台整體概況",
+            monitor: "🧭 商品與房源監控", 
+            behavior: "👣 用戶行為監控",
+            orders: "💳 訂單與金流",
+            system: "🛠️ 系統通知與健康",
+            roles: "🛡️ 身分權限列表",
+            Backend_user_list: "👨‍💻 後臺使用者",
+            contract_template: "📄 合約範本管理",
+            platform_fee: "💰 平台收費設定",
+            imgup: "🖼️ 輪播圖片管理",
+            furniture_fee: "📦 家具配送費",
+            Marquee_edit: "🌀 跑馬燈管理",
+            furniture_management: "🛋️ 家具列表管理",
+            user_management: "👥 用戶管理",
+            property_management: "🏠 屋源管理",
+            platform_service: "📢 平台訊息服務"
+        };
+        
+        const tabGroups = {
+            Dashboard: {
+                title: "📊 儀表板",
+                keys: ['overview', 'monitor', 'behavior', 'orders', 'system']
+            },
+            Permission: {
+                title: "🛡️ 權限管理",
+                keys: ['roles', 'Backend_user_list']
+            },
+            Template: {
+                title: "📂 模板管理",
+                keys: ['contract_template']
+            },
+            Content: {
+                title: "📂 平台內容管理",
+                keys: ['imgup', 'Marquee_edit', 'furniture_management']
+            },
+            Fee: {
+                title: "📁 費用設定",
+                keys: ['platform_fee', 'furniture_fee']
+            },
+            Management: {
+                title: "🛠️ 系統管理",
+                keys: ['user_management', 'property_management', 'platform_service']
+            }
+        };
+        
+        // Admin 頁面路由對應
+        const adminRoutes = {
+            user_management: "admin-demo.html?page=users",
+            property_management: "admin-demo.html?page=properties", 
+            platform_service: "admin-demo.html?page=messages"
+        };
+        
+        let currentRole = '超級管理員';
+        
+        // 初始化頁面
+        function initializePage() {
+            updateRoleDisplay();
+            generateNavigation();
+            bindEvents();
+        }
+        
+        // 更新角色顯示
+        function updateRoleDisplay() {
+            document.getElementById('roleDisplay').textContent = currentRole;
+        }
+        
+        // 生成導航選單
+        function generateNavigation() {
+            const menu = document.getElementById('navigationMenu');
+            menu.innerHTML = '';
+            
+            const userAccess = roleAccess[currentRole] || [];
+            
+            // 生成所有功能群組
+            for (const [groupKey, group] of Object.entries(tabGroups)) {
+                const availableKeys = group.keys.filter(key => userAccess.includes(key));
+                
+                if (availableKeys.length > 0) {
+                    const groupDiv = createNavGroup(group.title, availableKeys);
+                    menu.appendChild(groupDiv);
+                }
+            }
+        }
+        
+        // 創建導航群組
+        function createNavGroup(title, keys) {
+            const groupDiv = document.createElement('div');
+            groupDiv.className = 'nav-group';
+            
+            const titleDiv = document.createElement('div');
+            titleDiv.className = 'nav-group-title';
+            titleDiv.textContent = title;
+            groupDiv.appendChild(titleDiv);
+            
+            keys.forEach(key => {
+                if (tabNames[key]) {
+                    const link = createNavLink(key, tabNames[key]);
+                    groupDiv.appendChild(link);
+                }
+            });
+            
+            return groupDiv;
+        }
+        
+        // 創建導航連結
+        function createNavLink(key, name) {
+            const link = document.createElement('button');
+            link.className = 'nav-btn';
+            
+            // 如果是 Admin 功能，添加特殊樣式標識（但不明顯）
+            if (adminRoutes[key]) {
+                link.style.borderLeft = '3px solid #28a745';
+                link.style.paddingLeft = '13px';
+            }
+            
+            link.innerHTML = name;
+            link.onclick = () => openTab(key);
+            return link;
+        }
+        
+        // 開啟頁籤
+        function openTab(key) {
+            // 檢查是否為 Admin 頁面
+            if (adminRoutes[key]) {
+                // 跳轉到 Admin 頁面，但看起來像在同一個系統中
+                window.open(adminRoutes[key], '_blank', 'width=1200,height=800');
+                return;
+            }
+            
+            // 移除其他 active 狀態
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // 設置當前 active 狀態
+            event.target.classList.add('active');
+            
+            // 更新內容區域
+            updateContent(key, tabNames[key]);
+        }
+        
+        // 更新內容區域
+        function updateContent(key, name) {
+            const content = document.querySelector('.content-placeholder');
+            content.innerHTML = `
+                <i class="bi bi-check-circle text-success" style="font-size: 4rem;"></i>
+                <h3 class="mt-3 mb-3">${name}</h3>
+                <p class="text-muted mb-4">
+                    這是 "${name}" 頁面的模擬內容。<br>
+                    在真實系統中，這裡會顯示對應的功能界面。
+                </p>
+                <button class="btn btn-primary" onclick="location.reload()">
+                    <i class="bi bi-arrow-clockwise"></i> 返回首頁
+                </button>
+            `;
+        }
+        
+        // 綁定事件
+        function bindEvents() {
+            // 角色切換
+            document.getElementById('roleSelector').addEventListener('change', function() {
+                currentRole = this.value;
+                updateRoleDisplay();
+                generateNavigation();
+            });
+            
+            // 側邊欄切換 (行動版)
+            document.getElementById('sidebarToggle').addEventListener('click', function() {
+                document.getElementById('sidebar').classList.toggle('show');
+            });
+        }
+        
+        // 頁面載入完成後初始化
+        document.addEventListener('DOMContentLoaded', initializePage);
+    </script>
+</body>
+</html>

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - System Message List Demo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="../zuHause/wwwroot/css/admin-common.css">
+</head>
+<body>
+    <div class="container-fluid my-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h1 class="h3">系統訊息管理</h1>
+            <a href="#" class="btn btn-primary">
+                <i class="bi bi-plus-circle-fill"></i> 新增訊息
+            </a>
+        </div>
+
+        <!-- Filter and Search Section -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <form class="row g-3 align-items-end">
+                    <div class="col-md-3">
+                        <label for="audienceFilter" class="form-label">發送對象</label>
+                        <select id="audienceFilter" class="form-select">
+                            <option selected>所有對象</option>
+                            <option value="all_members">全體會員</option>
+                            <option value="all_landlords">全體房東</option>
+                            <option value="individual">個別用戶</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="categoryFilter" class="form-label">訊息分類</label>
+                        <select id="categoryFilter" class="form-select">
+                            <option selected>所有分類</option>
+                            <option value="announcement">系統公告</option>
+                            <option value="promotion">優惠活動</option>
+                            <option value="maintenance">維護通知</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="dateRangeFilter" class="form-label">發送日期</label>
+                        <div class="input-group">
+                            <input type="date" class="form-control">
+                            <span class="input-group-text">至</span>
+                            <input type="date" class="form-control">
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-success w-100">篩選</button>
+                    </div>
+                    <div class="col-md-10">
+                        <label for="searchFilter" class="form-label">關鍵字搜尋</label>
+                        <input type="text" id="searchFilter" class="form-control" placeholder="輸入標題或內容關鍵字...">
+                    </div>
+                    <div class="col-md-2">
+                         <button type="submit" class="btn btn-info w-100">搜尋</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Message List Table -->
+        <div class="card">
+            <div class="card-header">訊息歷史紀錄</div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th scope="col">訊息ID</th>
+                            <th scope="col">標題</th>
+                            <th scope="col">發送對象</th>
+                            <th scope="col">接收者</th>
+                            <th scope="col">發送者</th>
+                            <th scope="col">發送時間 <i class="bi bi-arrow-down-up"></i></th>
+                            <th scope="col">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>MSG-00128</td>
+                            <td>【重要】伺服器升級與系統維護公告</td>
+                            <td><span class="badge bg-primary">全體會員</span></td>
+                            <td>-</td>
+                            <td>Admin_Steve</td>
+                            <td>2024-07-15 10:00:00</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#viewMessageModal" data-title="【重要】伺服器升級與系統維護公告" data-content="親愛的會員您好，為提供更優質的服務，本平台將於 2024年7月20日 凌晨 02:00 至 04:00 進行系統維護與升級作業，屆時將暫停所有服務。造成您的不便，敬請見諒。">
+                                    <i class="bi bi-eye"></i> 檢視
+                                </button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>MSG-00127</td>
+                            <td>房東專屬！7月份上架費用8折優惠碼</td>
+                            <td><span class="badge bg-success">全體房東</span></td>
+                            <td>-</td>
+                            <td>Admin_Marketing</td>
+                            <td>2024-07-01 09:30:00</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#viewMessageModal" data-title="房東專屬！7月份上架費用8折優惠碼" data-content="親愛的房東夥伴，感謝您對本平台的支持！即日起至7月31日，於付款時輸入優惠碼 ZUHOUSE-LANDLORD-202407 即可享上架費用8折優惠！">
+                                    <i class="bi bi-eye"></i> 檢視
+                                </button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>MSG-00126</td>
+                            <td>關於您的租約 #C123456 即將到期提醒</td>
+                            <td><span class="badge bg-warning text-dark">個別用戶</span></td>
+                            <td>林小美 (M000789)</td>
+                            <td>SYSTEM</td>
+                            <td>2024-06-28 14:22:00</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#viewMessageModal" data-title="關於您的租約 #C123456 即將到期提醒" data-content="親愛的林小美會員，提醒您，您目前承租的房源租約將於一個月後到期，若有續約需求，請儘速與房東聯繫。">
+                                    <i class="bi bi-eye"></i> 檢視
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-footer">
+                <!-- Pagination can be added here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- View Message Modal -->
+    <div class="modal fade" id="viewMessageModal" tabindex="-1" aria-labelledby="viewMessageModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="viewMessageModalLabel">檢視訊息</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <h6 class="mb-3" id="messageModalTitle"></h6>
+                    <div id="messageModalContent"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">關閉</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const viewMessageModal = document.getElementById('viewMessageModal');
+        viewMessageModal.addEventListener('show.bs.modal', event => {
+            const button = event.relatedTarget;
+            const title = button.getAttribute('data-title');
+            const content = button.getAttribute('data-content');
+
+            const modalTitle = viewMessageModal.querySelector('#messageModalTitle');
+            const modalBody = viewMessageModal.querySelector('#messageModalContent');
+
+            modalTitle.textContent = title;
+            modalBody.innerHTML = content.replace(/\n/g, '<br>');
+        });
+    </script>
+</body>
+</html>

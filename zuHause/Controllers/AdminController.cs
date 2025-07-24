@@ -6,6 +6,7 @@ using System.Linq;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using zuHause.Attributes;
+using zuHause.Interfaces;
 
 namespace zuHause.Controllers
 {
@@ -13,10 +14,12 @@ namespace zuHause.Controllers
     public class AdminController : Controller
     {
         private readonly ZuHauseContext _context;
+        private readonly IImageQueryService _imageQueryService;
 
-        public AdminController(ZuHauseContext context)
+        public AdminController(ZuHauseContext context, IImageQueryService imageQueryService)
         {
             _context = context;
+            _imageQueryService = imageQueryService;
         }
 
         /// <summary>
@@ -148,7 +151,7 @@ namespace zuHause.Controllers
                 return NotFound("房源ID不能為空");
             }
 
-            var viewModel = new AdminPropertyDetailsViewModel(_context, id.Value);
+            var viewModel = new AdminPropertyDetailsViewModel(_context, _imageQueryService, id.Value);
             
             if (viewModel.Data == null)
             {

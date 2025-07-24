@@ -4,6 +4,7 @@ using zuHause.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using System;
+using zuHause.Interfaces;
 
 namespace zuHause.AdminViewModels
 {
@@ -616,14 +617,14 @@ namespace zuHause.AdminViewModels
             PageTitle = "房源詳情";
         }
 
-        public AdminPropertyDetailsViewModel(ZuHauseContext context, int propertyId)
+        public AdminPropertyDetailsViewModel(ZuHauseContext context, IImageQueryService imageQueryService, int propertyId)
         {
             PageTitle = "房源詳情";
             Data = LoadPropertyDetailsFromDatabase(context, propertyId);
             RentalHistory = LoadRentalHistory(context, propertyId);
             Complaints = LoadComplaints(context, propertyId);
             Equipment = LoadEquipment(context, propertyId);
-            Images = LoadImages(context, propertyId);
+            Images = LoadImages(context, imageQueryService, propertyId);
         }
 
         public PropertyDetailsData? Data { get; set; }
@@ -752,24 +753,27 @@ namespace zuHause.AdminViewModels
                 .ToList();
         }
 
-        private List<PropertyImageData> LoadImages(ZuHauseContext context, int propertyId)
+        private List<PropertyImageData> LoadImages(ZuHauseContext context, IImageQueryService imageQueryService, int propertyId)
         {
-            return context.Images
+            // 先從資料庫取得原始圖片資料
+            var images = context.Images
                 .Where(img => img.EntityType == zuHause.Enums.EntityType.Property && 
                              img.EntityId == propertyId && 
                              img.IsActive)
-                .Select(img => new PropertyImageData
-                {
-                    ImageId = (int)img.ImageId,
-                    ImageUrl = img.StoredFileName,
-                    ImageSize = $"{img.Width}x{img.Height}",
-                    ImageCategory = GetImageCategoryDisplay(img.Category),
-                    DisplayOrder = img.DisplayOrder ?? 0,
-                    UploadedAt = img.UploadedAt
-                })
-                .OrderBy(i => i.DisplayOrder)
+                .OrderBy(i => i.DisplayOrder ?? int.MaxValue)
                 .ThenBy(i => i.UploadedAt)
                 .ToList();
+
+            // 使用 ImageQueryService 生成正確的圖片 URL
+            return images.Select(img => new PropertyImageData
+            {
+                ImageId = (int)img.ImageId,
+                ImageUrl = imageQueryService.GenerateImageUrl(img.StoredFileName, zuHause.Enums.ImageSize.Original),
+                ImageSize = $"{img.Width}x{img.Height}",
+                ImageCategory = GetImageCategoryDisplay(img.Category),
+                DisplayOrder = img.DisplayOrder ?? 0,
+                UploadedAt = img.UploadedAt
+            }).ToList();
         }
 
         private static string GetImageCategoryDisplay(zuHause.Enums.ImageCategory category)
