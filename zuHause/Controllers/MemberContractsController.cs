@@ -485,7 +485,7 @@ namespace zuHause.Controllers
             if (contract == null || contract.Template == null)
                 return "<p>合約不存在或無範本</p>";
 
-            // ✅ 使用資料庫中 TemplateContent，不用再從檔案讀取
+            // ✅ 使用資料庫中 TemplateContent
             string templateHtml = contract.Template.TemplateContent;
 
             var landlord = contract.RentalApplication?.Property?.LandlordMember;
@@ -523,13 +523,15 @@ namespace zuHause.Controllers
                 .ToList();
 
 
+            var request = HttpContext.Request;
+            string baseUrl = $"{request.Scheme}://{request.Host}";
 
+            string landlordImagesHtml = string.Join("", landlordExtraFiles.Select(p => $"<img src='{baseUrl}{p}' height='160' />"));
+            string tenantImagesHtml = string.Join("", tenantExtraFiles.Select(p => $"<img src='{baseUrl}{p}' height='160' />"));
 
-            string landlordImagesHtml = string.Join("", landlordExtraFiles.Select(p => $"<img src='{p}' height='160' />"));
-            string tenantImagesHtml = string.Join("", tenantExtraFiles.Select(p => $"<img src='{p}' height='160' />"));
 
             //string testAllUploadsHtml = string.Join("<br>", uploads.Select(u => $"{u.UploadTypeCode} - {u.FilePath} - memberId: {u.MemberId}"));
-            
+
 
             var fields = new Dictionary<string, string>
             {
