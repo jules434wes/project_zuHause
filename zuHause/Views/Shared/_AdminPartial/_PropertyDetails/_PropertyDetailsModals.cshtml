@@ -1,6 +1,4 @@
-@{
-    dynamic propertyData = ViewData["PropertyData"];
-}
+@model zuHause.AdminViewModels.AdminPropertyDetailsViewModel
 
 <!-- 通過審核 Modal -->
 <div class="modal fade" id="approveModal" tabindex="-1" aria-labelledby="approveModalLabel" aria-hidden="true">
@@ -15,7 +13,7 @@
             <div class="modal-body">
                 <div class="alert alert-info">
                     <i class="bi bi-info-circle me-2"></i>
-                    您確定要通過屋源 <strong>@propertyData.Title (ID: @propertyData.PropertyId)</strong> 的審核嗎？
+                    您確定要通過屋源 <strong>@(Model.Data?.Title ?? "-") (ID: @(Model.Data?.PropertyId ?? "-"))</strong> 的審核嗎？
                 </div>
                 <p class="text-muted">通過後，系統將會通知房東進行付款。</p>
             </div>
@@ -44,7 +42,7 @@
             <div class="modal-body">
                 <div class="alert alert-warning">
                     <i class="bi bi-exclamation-triangle me-2"></i>
-                    您將駁回屋源 <strong>@propertyData.Title (ID: @propertyData.PropertyId)</strong> 的申請。
+                    您將駁回屋源 <strong>@(Model.Data?.Title ?? "-") (ID: @(Model.Data?.PropertyId ?? "-"))</strong> 的申請。
                 </div>
                 <div class="mb-3">
                     <label for="rejectionReason" class="form-label">駁回原因 (將會通知房東)</label>
@@ -76,7 +74,7 @@
             <div class="modal-body">
                 <div class="alert alert-warning">
                     <i class="bi bi-exclamation-triangle me-2"></i>
-                    您確定要手動將屋源 <strong>@propertyData.Title (ID: @propertyData.PropertyId)</strong> 標記為「已付款」嗎？
+                    您確定要手動將屋源 <strong>@(Model.Data?.Title ?? "-") (ID: @(Model.Data?.PropertyId ?? "-"))</strong> 標記為「已付款」嗎？
                 </div>
                 <p class="text-danger">
                     <i class="bi bi-exclamation-circle me-2"></i>
@@ -112,7 +110,7 @@
             <div class="modal-body">
                 <div class="alert alert-warning">
                     <i class="bi bi-exclamation-triangle me-2"></i>
-                    您確定要強制下架屋源 <strong>@propertyData.Title (ID: @propertyData.PropertyId)</strong> 嗎？
+                    您確定要強制下架屋源 <strong>@(Model.Data?.Title ?? "-") (ID: @(Model.Data?.PropertyId ?? "-"))</strong> 嗎？
                 </div>
                 <p class="text-danger">
                     <i class="bi bi-ban me-2"></i>強制下架後，該屋源將從前台隱藏，房東需要重新申請上架。
