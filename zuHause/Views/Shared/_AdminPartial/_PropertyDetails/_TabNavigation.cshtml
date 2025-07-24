@@ -1,6 +1,4 @@
-@{
-    dynamic propertyData = ViewData["PropertyData"];
-}
+@model zuHause.AdminViewModels.AdminPropertyDetailsViewModel
 
 <!-- 頁籤導航區 -->
 <ul class="nav nav-tabs" id="propertyDetailsTabs" role="tablist">
@@ -22,9 +20,9 @@
     <li class="nav-item" role="presentation">
         <button class="nav-link" id="complaints-tab" data-bs-toggle="tab" data-bs-target="#complaints" type="button" role="tab" aria-controls="complaints" aria-selected="false">
             收到的檢舉
-            @if (propertyData.ComplaintCount > 0)
+            @if (Model.Complaints.Count > 0)
             {
-                <span class="badge rounded-pill text-bg-danger">@propertyData.ComplaintCount</span>
+                <span class="badge rounded-pill text-bg-danger">@Model.Complaints.Count</span>
             }
         </button>
     </li>
