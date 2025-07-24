@@ -454,7 +454,7 @@ namespace zuHause.Controllers
             return months;
         }
 
-        private async Task<string> GenerateContractHtml(int contractId)
+        private async Task<string> GenerateContractHtml(int contractId, bool isDownload = false)
         {
             var contract = await _context.Contracts
                  .Include(c => c.ContractFurnitureItems)
@@ -522,14 +522,71 @@ namespace zuHause.Controllers
                 .Select(u => u.FilePath)
                 .ToList();
 
+            var request = HttpContext.Request;
+            string baseUrl = $"{request.Scheme}://{request.Host}";
 
-
-
-            string landlordImagesHtml = string.Join("", landlordExtraFiles.Select(p => $"<img src='{p}' height='160' />"));
-            string tenantImagesHtml = string.Join("", tenantExtraFiles.Select(p => $"<img src='{p}' height='160' />"));
+            string landlordImagesHtml = string.Join("", landlordExtraFiles.Select(p => $"<img src='{baseUrl}{p}' />"));
+            string tenantImagesHtml = string.Join("", tenantExtraFiles.Select(p => $"<img src='{baseUrl}{p}' />"));
 
             //string testAllUploadsHtml = string.Join("<br>", uploads.Select(u => $"{u.UploadTypeCode} - {u.FilePath} - memberId: {u.MemberId}"));
-            
+            string landlordSignature = "";
+            string tenantSignature = "";
+
+            if (isDownload)
+            {
+                landlordImagesHtml = string.Join("",
+                landlordExtraFiles.Select(p =>
+                {
+                    var localPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", p.TrimStart('/').Replace("/", Path.DirectorySeparatorChar.ToString()));
+
+                    var fileUri = new Uri(localPath).AbsoluteUri;
+
+                    return System.IO.File.Exists(localPath)
+                        ? $"<img src='{fileUri}' />"
+                        : $"<p style='color:red'>圖片不存在：{fileUri}</p>";
+                }));
+
+                tenantImagesHtml = string.Join("",
+                    tenantExtraFiles.Select(p =>
+                    {
+                        var localPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", p.TrimStart('/').Replace("/", Path.DirectorySeparatorChar.ToString()));
+
+                        var fileUri = new Uri(localPath).AbsoluteUri;
+
+                        return System.IO.File.Exists(localPath)
+                            ? $"<img src='{fileUri}' />"
+                            : $"<p style='color:red'>圖片不存在：{fileUri}</p>";
+                    }));
+
+
+
+
+                var landlordSignaturePath = contract.ContractSignatures
+                    .FirstOrDefault(s => s.SignerRole == "LANDLORD")?.SignatureFileUrl;
+                if (!string.IsNullOrWhiteSpace(landlordSignaturePath))
+                {
+                    var localPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", landlordSignaturePath.TrimStart('/').Replace("/", Path.DirectorySeparatorChar.ToString()));
+                    var fileUri = new Uri(localPath).AbsoluteUri;
+
+                    landlordSignature = System.IO.File.Exists(localPath)
+                        ? fileUri
+                        : $"<p style='color:red'>簽名檔不存在：{fileUri}</p>";
+                }
+
+
+
+                var tenantSignaturePath = contract.ContractSignatures
+                    .FirstOrDefault(s => s.SignerRole == "TENANT")?.SignatureFileUrl;
+                if (!string.IsNullOrWhiteSpace(tenantSignaturePath))
+                {
+                    var localPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", tenantSignaturePath.TrimStart('/').Replace("/", Path.DirectorySeparatorChar.ToString()));
+                    var fileUri = new Uri(localPath).AbsoluteUri;
+
+                    tenantSignature = System.IO.File.Exists(localPath)
+                        ? fileUri
+                        : $"<p style='color:red'>簽名檔不存在：{fileUri}</p>";
+                }
+            }
 
             var fields = new Dictionary<string, string>
             {
@@ -558,25 +615,32 @@ namespace zuHause.Controllers
                 { "{{房源編號}}", contract.RentalApplication?.PropertyId.ToString() ?? "" },
                 { "{{備註條件}}", commentBlock ?? "" },
                 { "{{家具清單}}", GenerateFurnitureHtml(contract.ContractFurnitureItems.ToList()) },
-
-                // 簽名圖片
-                { "{{甲方簽名圖}}", contract.ContractSignatures.FirstOrDefault(s => s.SignerRole == "LANDLORD")?.SignatureFileUrl ?? "" },
-                { "{{乙方簽名圖}}", contract.ContractSignatures.FirstOrDefault(s => s.SignerRole == "TENANT")?.SignatureFileUrl ?? "" }
             };
-
+            // 簽名圖片
+            if (isDownload)
+            {
+                fields.Add("{{甲方簽名圖}}", landlordSignature);
+                fields.Add("{{乙方簽名圖}}", tenantSignature);
+            }
+            else
+            {
+                fields.Add("{{甲方簽名圖}}", contract.ContractSignatures.FirstOrDefault(s => s.SignerRole == "LANDLORD")?.SignatureFileUrl ?? "");
+                fields.Add("{{乙方簽名圖}}", contract.ContractSignatures.FirstOrDefault(s => s.SignerRole == "TENANT")?.SignatureFileUrl ?? "");
+            }
             // HTML 頁面顯示圖片的欄位
             fields.Add("{{甲方附件圖片}}", landlordImagesHtml);
             fields.Add("{{乙方附件圖片}}", tenantImagesHtml);
 
-            // 除錯專用測試文字（可選）
-            //fields.Add("{{測試列印}}", testAllUploadsHtml);
+
+                // 除錯專用測試文字（可選）
+                //fields.Add("{{測試列印}}", testAllUploadsHtml);
 
 
 
-            foreach (var kv in fields)
-            {
-                templateHtml = templateHtml.Replace(kv.Key, kv.Value);
-            }
+                foreach (var kv in fields)
+                {
+                    templateHtml = templateHtml.Replace(kv.Key, kv.Value);
+                }
 
             return templateHtml;
         }
@@ -600,7 +664,7 @@ namespace zuHause.Controllers
 
         public async Task<IActionResult> DownloadPdf(int contractId)
         {
-            var html = await GenerateContractHtml(contractId);
+            var html = await GenerateContractHtml(contractId,true);
 
             var doc = new HtmlToPdfDocument()
             {
