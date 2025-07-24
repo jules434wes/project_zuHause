@@ -484,6 +484,21 @@ namespace zuHause.Controllers
                     c.RentalApplication.PropertyId == selectedPropertyId &&
                     c.Status == "active");
 
+            if (contract != null)
+            {
+                DateOnly endDate = contract.EndDate.Value; 
+                DateTime today = DateTime.Today;
+
+                int availableDays = (endDate.ToDateTime(TimeOnly.MinValue) - today).Days;
+                ViewBag.TotalDays = availableDays > 0 ? availableDays : 0;
+            }
+            else
+            {
+                ViewBag.TotalDays = 0;
+            }
+
+
+
             var member = _context.Members.FirstOrDefault(m => m.MemberId == memberId);
 
             ViewBag.Contract = contract;

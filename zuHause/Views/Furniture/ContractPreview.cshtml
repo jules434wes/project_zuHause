@@ -27,8 +27,15 @@
     <p><strong>房屋地址：</strong> @property.AddressLine</p>
     <p><strong>租期起始日：</strong> @contract.StartDate.ToString("yyyy-MM-dd")</p>
     <p><strong>租期結束日：</strong> @contract.EndDate.ToString("yyyy-MM-dd")</p>
-    <p><strong>總租期：</strong> @totalDays 天</p>
+    
     <h5 class="mt-4">二、租賃家具資訊</h5>
+    <p><strong>家具承租起始日：</strong> @DateTime.Today.ToString("yyyy-MM-dd") </p>
+    <p><strong>家具承租結束日：</strong> @contract.EndDate.ToString("yyyy-MM-dd")</p>
+    <p><strong>總租期：</strong> @totalDays 天</p>
+    @{
+        decimal totalRentalFee = 0m;
+        int deliveryFee = 3000;
+    }
     <table class="table table-bordered">
         <thead>
             <tr>
@@ -43,11 +50,14 @@
             @foreach (var item in cartItems)
             {
                 var product = item.Product;
-                var subtotal = product.DailyRental * item.Quantity * totalDays;
+                var dailyRental = product.DailyRental;
+                var quantity = item.Quantity;
+                var subtotal = dailyRental * quantity * totalDays;
+                totalRentalFee += subtotal;
                 <tr>
                     <td>@product.ProductName</td>
-                    <td>NT$@product.DailyRental</td>
-                    <td>@item.Quantity</td>
+                    <td>NT$@dailyRental</td>
+                    <td>@quantity</td>
                     <td>@totalDays 天</td>
                     <td>NT$@subtotal.ToString("N0")</td>
                 </tr>
@@ -56,12 +66,11 @@
     </table>
 
     <div class="text-end mt-3">
-        <p><strong>總租金：</strong> NT$@cart.TotalAmount.ToString("N0")</p>
-        <p><strong>搬運費：</strong> NT$3000</p>
-        <p class="fs-5 text-danger"><strong>合計金額：</strong> NT$@(cart.TotalAmount + 3000).ToString("N0")</p>
+        <p><strong>總租金：</strong> NT$@totalRentalFee.ToString("N0")</p>
+        <p><strong>搬運費：</strong> NT$@deliveryFee.ToString("N0")</p>
+        <p class="fs-5 text-danger"><strong>合計金額：</strong> NT$@((totalRentalFee + deliveryFee).ToString("N0"))</p>
     </div>
 
-    <p><strong>租期期間：</strong> @DateTime.Now.ToString("yyyy-MM-dd") ～ @contract.EndDate?.ToString("yyyy-MM-dd")</p>
 
     <h5 class="mt-4">三、付款方式</h5>
     <p><strong>付款方式：</strong> 第三方金流</p>
