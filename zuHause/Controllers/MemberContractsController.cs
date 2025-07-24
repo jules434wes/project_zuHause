@@ -605,8 +605,8 @@ namespace zuHause.Controllers
             var doc = new HtmlToPdfDocument()
             {
                 GlobalSettings = {
-            PaperSize = PaperKind.A4,
-            Orientation = Orientation.Portrait
+                PaperSize = PaperKind.A4,
+                Orientation = Orientation.Portrait
         },
                 Objects = {
             new ObjectSettings {
