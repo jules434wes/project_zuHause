@@ -1,9 +1,10 @@
 ﻿@* Views/Shared/_NavigationBar.cshtml *@
 @{
     var categories = ViewBag.categories as List<zuHause.Models.FurnitureCategory>;
-    // 這裡從 ViewBag 獲取 member 物件，它會是資料庫中的實際會員資料
-    var member = ViewBag.CurrentMember as zuHause.Models.Member;
-    var displayName = member != null ? $"{member.MemberName}，歡迎使用" : "訪客";
+    // 使用統一的 Cookie 認證機制
+    var isAuthenticated = User.Identity?.IsAuthenticated == true;
+    var memberName = isAuthenticated ? User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value : null;
+    var displayName = !string.IsNullOrEmpty(memberName) ? $"{memberName}，歡迎使用" : "訪客";
 }
 <!DOCTYPE html>
 <html lang="zh-Hant">
@@ -24,26 +25,29 @@
                 </a>
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     <li class="nav-item"><a class="nav-link" href="@Url.Action("FrontPage", "Tenant")">租屋首頁</a></li>
+                    <li class="nav-item"><a class="nav-link" href="@Url.Action("FurnitureHomePage", "Furniture")">家具首頁</a></li>
                     <li class="nav-item"><a class="nav-link" href="@Url.Action("InstructionsForUse", "Furniture")">租借說明</a></li>
                 </ul>
                 <div class="d-flex align-items-center">
-                    @if (member != null)
+                    @if (isAuthenticated)
                     {
                         <a href="@Url.Action("OrderHistory", "Furniture")" class="text-decoration-none text-dark d-flex align-items-center">
                             <i class="bi bi-person-fill text-purple me-1"></i> @* 確保有 Bootstrap Icons *@
                             <span class="me-3">@displayName</span>
                         </a>
-                        <a href="@Url.Action("Logout", "Member")" class="btn btn-outline-secondary btn-sm me-2">登出</a>
+                        <form asp-controller="Member" asp-action="Logout" method="post" class="d-inline">
+                            <button type="submit" class="btn btn-outline-secondary btn-sm me-2">登出</button>
+                        </form>
                         <a href="@Url.Action("RentalCart", "Furniture")" class="btn btn-outline-primary btn-sm">購物車</a>
                     }
                     else
                     {
-                        <a href="@Url.Action("Login", "Member")" class="text-decoration-none text-dark d-flex align-items-center">
+                        <a href="@Url.Action("Login", "Member", new { ReturnUrl = Context.Request.Path })" class="text-decoration-none text-dark d-flex align-items-center">
                             <i class="bi bi-person-fill text-muted me-1"></i>
                             <span class="me-3">訪客</span>
                         </a>
-                        <a href="@Url.Action("Login", "Member")" class="btn btn-outline-secondary btn-sm me-2">登入</a>
-                        <a href="@Url.Action("Register", "Member")" class="btn btn-outline-primary btn-sm">註冊</a>
+                        <a href="@Url.Action("Login", "Member", new { ReturnUrl = Context.Request.Path })" class="btn btn-outline-secondary btn-sm me-2">登入</a>
+                        <a href="@Url.Action("RegisterVerifyPhone", "Member", new { ReturnUrl = Context.Request.Path })" class="btn btn-outline-primary btn-sm">註冊</a>
                     }
                 </div>
 

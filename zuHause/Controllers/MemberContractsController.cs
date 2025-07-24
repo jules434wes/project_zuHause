@@ -491,9 +491,18 @@ namespace zuHause.Controllers
             var landlord = contract.RentalApplication?.Property?.LandlordMember;
 
             var tenant = contract.RentalApplication?.Member;
+            var applicationId = contract.RentalApplicationId;
+
             var uploads = await _context.UserUploads
-                .Where(u => u.ModuleCode == "CONTRACT" && u.SourceEntityId == contractId && u.IsActive)
+                .Where(u => u.IsActive &&
+                           (
+                               (u.ModuleCode == "ApplyRental" && u.SourceEntityId == applicationId && u.UploadTypeCode == "TENANT_APPLY") ||
+                               (u.ModuleCode == "CONTRACT" && u.SourceEntityId == contractId &&
+                                u.UploadTypeCode == "LANDLORD_APPLY")
+                           ))
                 .ToListAsync();
+
+
 
             var landlordId = contract.RentalApplication?.Property?.LandlordMemberId ?? -1;
             var tenantId = contract.RentalApplication?.MemberId ?? -1;
@@ -501,21 +510,25 @@ namespace zuHause.Controllers
             System.Diagnostics.Debug.WriteLine($"➡️ LandlordId: {landlordId}");
             System.Diagnostics.Debug.WriteLine($"➡️ TenantId: {tenantId}");
 
-            var landlordExtraFiles = uploads
-                .Where(u => u.UploadTypeCode.StartsWith("LANDLORD_"))
-                .Select(u => u.FilePath)
-                .ToList();
-
+            // 租客上傳：申請時期的附件
             var tenantExtraFiles = uploads
-                .Where(u => u.UploadTypeCode.StartsWith("TENANT_"))
+                .Where(u => u.ModuleCode == "ApplyRental" && u.UploadTypeCode == "TENANT_APPLY")
                 .Select(u => u.FilePath)
                 .ToList();
 
-            
-            string landlordImagesHtml = string.Join("", landlordExtraFiles.Select(p => $"<img src='{p}' height='80' />"));
-            string tenantImagesHtml = string.Join("", tenantExtraFiles.Select(p => $"<img src='{p}' height='80' />"));
+            // 房東上傳：合約建立時的附件（不含簽名）
+            var landlordExtraFiles = uploads
+                .Where(u => u.ModuleCode == "CONTRACT" && u.UploadTypeCode == "LANDLORD_APPLY")
+                .Select(u => u.FilePath)
+                .ToList();
 
-            string testAllUploadsHtml = string.Join("<br>", uploads.Select(u => $"{u.UploadTypeCode} - {u.FilePath} - memberId: {u.MemberId}"));
+
+
+
+            string landlordImagesHtml = string.Join("", landlordExtraFiles.Select(p => $"<img src='{p}' height='160' />"));
+            string tenantImagesHtml = string.Join("", tenantExtraFiles.Select(p => $"<img src='{p}' height='160' />"));
+
+            //string testAllUploadsHtml = string.Join("<br>", uploads.Select(u => $"{u.UploadTypeCode} - {u.FilePath} - memberId: {u.MemberId}"));
             
 
             var fields = new Dictionary<string, string>
@@ -556,7 +569,7 @@ namespace zuHause.Controllers
             fields.Add("{{乙方附件圖片}}", tenantImagesHtml);
 
             // 除錯專用測試文字（可選）
-            fields.Add("{{測試列印}}", testAllUploadsHtml);
+            //fields.Add("{{測試列印}}", testAllUploadsHtml);
 
 
 

@@ -37,6 +37,10 @@ builder.Services.AddAuthentication(options =>
 {
     options.LoginPath = "/Member/Login";
     options.AccessDeniedPath = "/Member/AccessDenied";
+    options.ExpireTimeSpan = TimeSpan.FromMinutes(15); // Cookie 有效時間 15 分鐘閒置登出
+    options.SlidingExpiration = true; // 滑動期限（有活動就重置15分鐘）
+    options.Cookie.HttpOnly = true; // 增加安全性
+    options.Cookie.IsEssential = true; // 設定為必要的 Cookie
 })
 .AddCookie("AdminCookies", options =>// 管理員登入驗證
 {
@@ -70,6 +74,12 @@ builder.Services.AddScoped<zuHause.Interfaces.IImageQueryService, zuHause.Servic
 builder.Services.AddScoped<zuHause.Interfaces.IImageUploadService, zuHause.Services.ImageUploadService>();
 builder.Services.AddScoped<zuHause.Services.Interfaces.IImageValidationService, zuHause.Services.ImageValidationService>();
 
+// 註冊刊登方案驗證服務
+builder.Services.AddScoped<zuHause.Services.Interfaces.IListingPlanValidationService, zuHause.Services.ListingPlanValidationService>();
+
+// 註冊設備分類查詢服務
+builder.Services.AddScoped<zuHause.Services.Interfaces.IEquipmentCategoryQueryService, zuHause.Services.EquipmentCategoryQueryService>();
+
 // 註冊房源圖片 Facade 服務
 builder.Services.AddScoped<zuHause.Interfaces.IPropertyImageService, zuHause.Services.PropertyImageService>();
 
@@ -77,6 +87,16 @@ builder.Services.AddScoped<zuHause.Interfaces.IPropertyImageService, zuHause.Ser
 // 用於 AdminController 的後端權限驗證
 // 配合 RequireAdminPermissionAttribute 使用，防止直接 URL 存取無權限功能
 builder.Services.AddScoped<zuHause.Services.Interfaces.IPermissionService, zuHause.Services.PermissionService>();
+
+// === 註冊訊息模板服務 ===
+// 用於參數化模板的解析和替換
+builder.Services.AddScoped<zuHause.Services.MessageTemplateService>();
+
+// === 註冊 Google Maps 整合服務 ===
+// 地理編碼、地點搜尋、距離計算服務
+builder.Services.AddHttpClient<zuHause.Interfaces.IGoogleMapsService, zuHause.Services.GoogleMapsService>();
+builder.Services.AddScoped<zuHause.Interfaces.IApiUsageTracker, zuHause.Services.ApiUsageTracker>();
+builder.Services.AddScoped<zuHause.Interfaces.IPropertyMapCacheService, zuHause.Services.PropertyMapCacheService>();
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
@@ -124,12 +144,11 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
+app.UseAuthentication(); // 認證中間件需要在 Session 之前
 app.UseSession(); // 啟用 Session 中間件
-app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
-// 亂碼請修正 FurnitureController �� FurnitureHomePage
 app.MapControllerRoute(
     name: "default",
 

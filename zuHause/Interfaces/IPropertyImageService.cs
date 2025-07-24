@@ -20,6 +20,24 @@ namespace zuHause.Interfaces
         Task<List<PropertyImageResult>> UploadPropertyImagesAsync(int propertyId, IFormFileCollection files);
 
         /// <summary>
+        /// 批量上傳房源圖片，指定分類
+        /// </summary>
+        /// <param name="propertyId">房源ID</param>
+        /// <param name="files">圖片檔案集合</param>
+        /// <param name="category">圖片分類</param>
+        /// <returns>上傳結果清單</returns>
+        Task<List<PropertyImageResult>> UploadPropertyImagesByCategoryAsync(int propertyId, IFormFileCollection files, ImageCategory category);
+
+        /// <summary>
+        /// 批量上傳房源圖片，使用中文分類（自動轉換為英文儲存）
+        /// </summary>
+        /// <param name="propertyId">房源ID</param>
+        /// <param name="files">圖片檔案集合</param>
+        /// <param name="chineseCategory">中文分類名稱</param>
+        /// <returns>上傳結果清單</returns>
+        Task<List<PropertyImageResult>> UploadPropertyImagesByChineseCategoryAsync(int propertyId, IFormFileCollection files, string chineseCategory);
+
+        /// <summary>
         /// 取得房源主圖
         /// </summary>
         /// <param name="propertyId">房源ID</param>

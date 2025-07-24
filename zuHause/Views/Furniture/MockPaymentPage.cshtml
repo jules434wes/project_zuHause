@@ -1,15 +1,26 @@
 ﻿@{
-    Layout = "~/Views/Shared/_NavigationBar.cshtml";
+    ViewData["Title"] = "付款頁面 - 家具租借";
+    var cartId = ViewBag.CartId as string ?? ""; // 假設你從 Controller 傳入 ViewBag.CartId
 }
 
-@* 模擬 Stripe 支付的頁面 *@
-<div class="container my-5">
-    <h2 class="text-center text-primary">模擬付款畫面</h2>
-    <p class="text-center text-muted">這裡是模擬 Stripe 支付的頁面，你可以在這裡進行付款。</p>
+<div class="container mt-5">
+    <div class="card p-4">
+        <h2 class="text-center mb-4">💳 模擬付款頁面</h2>
 
-    <div class="text-center mt-4">
-        <form method="post" action="/Furniture/ConfirmPayment">
-            <button class="btn btn-success btn-lg">💳 模擬付款成功</button>
-        </form>
+        <p class="text-center text-muted">請選擇是否完成付款：</p>
+
+        <div class="d-flex justify-content-center gap-3">
+            <!-- 確定付款按鈕 -->
+            <form asp-action="ConfirmPayment" asp-controller="Furniture" method="post">
+                <input type="hidden" name="cartId" value="@cartId" />
+                <button type="submit" class="btn btn-success">✅ 確定付款</button>
+            </form>
+
+            <!-- 取消付款按鈕 -->
+            <form asp-action="CancelPayment" asp-controller="Furniture" method="get">
+                <input type="hidden" name="cartId" value="@cartId" />
+                <button type="submit" class="btn btn-outline-danger">❌ 取消付款</button>
+            </form>
+        </div>
     </div>
 </div>

@@ -1,52 +1,113 @@
 ﻿@{
     Layout = "~/Views/Shared/_NavigationBar.cshtml";
-    ViewBag.Title = "簽約預覽";
+    var contract = ViewBag.Contract;
+    var property = ViewBag.Property;
+    var cart = ViewBag.Cart;
+    var cartItems = ViewBag.CartItems as List<FurnitureCartItem>;
+    var totalDays = (int?)ViewBag.TotalDays ?? 0;
+    var member = ViewBag.CurrentMember;
 }
 
-<div class="container my-5">
-    <h2 class="text-center text-primary mb-4">📄 簽約合約預覽</h2>
+<div class="card p-4">
+    <h2 class="text-center mb-4">家具租借合約書</h2>
 
-    @if (ViewBag.SelectedProperty != null && ViewBag.Contract != null)
-    {
-        var property = ViewBag.SelectedProperty;
-        var contract = ViewBag.Contract;
-        var rentalDays = ViewBag.RentalDaysLeft as int? ?? 0;
-        var totalAmount = ViewBag.TotalCartAmount as decimal? ?? 0m;
+    <div class="mb-4">
+        <strong>合約編號：</strong> CT-@contract.ContractId <br />
+        <strong>訂單編號：</strong> ORD-@cart.FurnitureCartId <br />
+        <strong>簽訂日期：</strong> @DateTime.Now.ToString("yyyy-MM-dd")
+    </div>
 
-        <div class="card shadow-sm p-4">
-            <h4 class="mb-3 text-success">🏠 房源資訊</h4>
-            <p><strong>標題：</strong> @property.Title</p>
-            <p><strong>地址：</strong> @property.AddressLine</p>
-            <p><strong>合約狀態：</strong> @contract.Status</p>
-            <p><strong>到期日：</strong> @(((DateOnly)contract.EndDate).ToString("yyyy/MM/dd"))</p>
-            <p><strong>剩餘租期：</strong> @rentalDays 天</p>
-        </div>
+    <h5>一、租賃雙方資訊</h5>
+    <p><strong>出租人（甲方）：</strong> zuHouse 家具租賃平台</p>
+    <p><strong>承租人（乙方）：</strong> @member.MemberName - @member.Email - @member.PhoneNumber</p>
 
-        <div class="card shadow-sm mt-4 p-4">
-            <h4 class="mb-3 text-success">🛒 訂單總金額</h4>
-            <p class="fs-5">本次租借總金額為 <span class="fw-bold text-danger">NT$@totalAmount.ToString("N0")</span></p>
 
-            <form method="post" action="/Furniture/StartCheckout">
-                <input type="hidden" name="selectedPropertyId" value="@property.PropertyId" />
+    <h5 class="mt-4">房源資訊</h5>
+    <p><strong>房屋標題：</strong> @property.Title</p>
+    <p><strong>房屋地址：</strong> @property.AddressLine</p>
+    <p><strong>租期起始日：</strong> @contract.StartDate.ToString("yyyy-MM-dd")</p>
+    <p><strong>租期結束日：</strong> @contract.EndDate.ToString("yyyy-MM-dd")</p>
+    <p><strong>總租期：</strong> @totalDays 天</p>
+    <h5 class="mt-4">二、租賃家具資訊</h5>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>商品名稱</th>
+                <th>每日租金</th>
+                <th>數量</th>
+                <th>租期</th>
+                <th>小計</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in cartItems)
+            {
+                var product = item.Product;
+                var subtotal = product.DailyRental * item.Quantity * totalDays;
+                <tr>
+                    <td>@product.ProductName</td>
+                    <td>NT$@product.DailyRental</td>
+                    <td>@item.Quantity</td>
+                    <td>@totalDays 天</td>
+                    <td>NT$@subtotal.ToString("N0")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
 
-                <div class="form-check my-3">
-                    <input type="checkbox" class="form-check-input" id="agreeTerms" required />
-                    <label class="form-check-label" for="agreeTerms">
-                        我已詳細閱讀並同意上述合約內容與租借條款。
-                    </label>
-                </div>
+    <div class="text-end mt-3">
+        <p><strong>總租金：</strong> NT$@cart.TotalAmount.ToString("N0")</p>
+        <p><strong>搬運費：</strong> NT$3000</p>
+        <p class="fs-5 text-danger"><strong>合計金額：</strong> NT$@(cart.TotalAmount + 3000).ToString("N0")</p>
+    </div>
 
-                <button type="submit" class="btn btn-success">✅ 前往付款</button>
-                <a href="/Furniture/RentalCart" class="btn btn-outline-secondary ms-2">返回購物車</a>
-            </form>
-        </div>
-    }
-    else
-    {
-        <div class="alert alert-danger text-center">
-            無法載入合約或房源資訊，請返回購物車頁面重新操作。
-            <br />
-            <a href="/Furniture/RentalCart" class="btn btn-outline-primary mt-3">返回購物車</a>
-        </div>
-    }
+    <p><strong>租期期間：</strong> @DateTime.Now.ToString("yyyy-MM-dd") ～ @contract.EndDate?.ToString("yyyy-MM-dd")</p>
+
+    <h5 class="mt-4">三、付款方式</h5>
+    <p><strong>付款方式：</strong> 第三方金流</p>
+    <p><strong>付款日期：</strong> @DateTime.Now.ToString("yyyy-MM-dd")</p>
+
+    <h5 class="mt-4">四、配送與安裝</h5>
+    <p><strong>配送日期：</strong> @DateTime.Now.AddDays(2).ToString("yyyy-MM-dd")</p>
+    <p><strong>安裝服務：</strong> 免費安裝</p>
+
+    <h5 class="mt-4">五、承租人責任與限制</h5>
+    <ul>
+        <li>承租人須妥善使用，如有損壞需賠償</li>
+        <li>不得轉租或轉讓家具</li>
+        <li>提前解約需支付總額 30% 作為違約金</li>
+    </ul>
+
+    <h5 class="mt-4">六、退租與取消</h5>
+    <ul>
+        <li>未滿7日可無條件退還，需負擔運費</li>
+        <li>申請退租需提前7日告知平台</li>
+    </ul>
+
+    <h5 class="mt-4">七、其他條款</h5>
+    <p><strong>甲方代表：</strong> zuHouse 發單單位</p>
+    <p><strong>乙方簽名：</strong> <input type="text" class="form-control d-inline-block" style="width: 300px;" placeholder="請於下方 QR Code 進行電子簽名" /></p>
+
+    <div class="text-center my-4">
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=https://example.com/contract/sign/CT-@contract.ContractId" alt="QR Code" />
+        <p class="mt-2">https://example.com/contract/sign/CT-@contract.ContractId</p>
+    </div>
+
+    <div class="form-check mb-3">
+        <input type="checkbox" class="form-check-input" id="confirmCheck">
+        <label class="form-check-label" for="confirmCheck">我已詳細閱讀並同意上述合約內容</label>
+    </div>
+
+    <form method="post" action="/Furniture/StartCheckout">
+        <input type="hidden" name="selectedPropertyId" value="@property.PropertyId" />
+        <button type="submit" class="btn btn-primary" disabled id="confirmBtn">確認簽署</button>
+    </form>
 </div>
+
+@section Scripts {
+    <script>
+        document.getElementById('confirmCheck').addEventListener('change', function () {
+            document.getElementById('confirmBtn').disabled = !this.checked;
+        });
+    </script>
+}

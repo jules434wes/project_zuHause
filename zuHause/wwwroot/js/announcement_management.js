@@ -3,68 +3,69 @@
  * 處理公告的新增、編輯、刪除、搜尋等功能
  */
 
-let currentPage = 1;
-let pageSize = 10;
-let currentFilters = {};
+(() => {
+    let currentPage = 1;
+    let pageSize = 10;
+    let currentFilters = {};
 
-// 初始化公告管理器
-function initAnnouncementManager() {
-    console.log("🚀 初始化公告管理功能");
-    
-    // 綁定事件
-    bindEvents();
-    
+    // 初始化公告管理器
+    function initAnnouncementManager() {
+        console.log("🚀 初始化公告管理功能");
+        
+        // 綁定事件
+        bindEvents();
+        
+        // 載入公告列表
+        loadAnnouncements();
+    }
+
+    // 綁定所有事件
+    function bindEvents() {
+        // 新增公告按鈕
+        const addBtn = document.getElementById('addAnnouncementBtn');
+        if (addBtn) {
+            addBtn.addEventListener('click', showAddModal);
+        }
+        
+        // 搜尋功能
+        const searchBtn = document.getElementById('announcementSearchBtn');
+        const searchInput = document.getElementById('announcementSearchInput');
+        if (searchBtn) {
+            searchBtn.addEventListener('click', performSearch);
+        }
+        if (searchInput) {
+            searchInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    performSearch();
+                }
+            });
+        }
+        
+        // 篩選功能
+        const statusFilter = document.getElementById('announcementStatusFilter');
+        const scopeFilter = document.getElementById('announcementScopeFilter');
+        if (statusFilter) {
+            statusFilter.addEventListener('change', performFilter);
+        }
+        if (scopeFilter) {
+            scopeFilter.addEventListener('change', performFilter);
+        }
+        
+        // 重置按鈕
+        const resetBtn = document.getElementById('announcementResetFiltersBtn');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', resetFilters);
+        }
+        
+        // 表單提交
+        const saveBtn = document.getElementById('saveAnnouncementBtn');
+        if (saveBtn) {
+            saveBtn.addEventListener('click', saveAnnouncement);
+        }
+    }
+
     // 載入公告列表
-    loadAnnouncements();
-}
-
-// 綁定所有事件
-function bindEvents() {
-    // 新增公告按鈕
-    const addBtn = document.getElementById('addAnnouncementBtn');
-    if (addBtn) {
-        addBtn.addEventListener('click', showAddModal);
-    }
-    
-    // 搜尋功能
-    const searchBtn = document.getElementById('searchBtn');
-    const searchInput = document.getElementById('searchInput');
-    if (searchBtn) {
-        searchBtn.addEventListener('click', performSearch);
-    }
-    if (searchInput) {
-        searchInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                performSearch();
-            }
-        });
-    }
-    
-    // 篩選功能
-    const statusFilter = document.getElementById('statusFilter');
-    const scopeFilter = document.getElementById('scopeFilter');
-    if (statusFilter) {
-        statusFilter.addEventListener('change', performFilter);
-    }
-    if (scopeFilter) {
-        scopeFilter.addEventListener('change', performFilter);
-    }
-    
-    // 重置按鈕
-    const resetBtn = document.getElementById('resetFiltersBtn');
-    if (resetBtn) {
-        resetBtn.addEventListener('click', resetFilters);
-    }
-    
-    // 表單提交
-    const saveBtn = document.getElementById('saveAnnouncementBtn');
-    if (saveBtn) {
-        saveBtn.addEventListener('click', saveAnnouncement);
-    }
-}
-
-// 載入公告列表
-async function loadAnnouncements(page = 1) {
+    async function loadAnnouncements(page = 1) {
     try {
         showLoading(true);
         
@@ -92,8 +93,8 @@ async function loadAnnouncements(page = 1) {
     }
 }
 
-// 渲染公告表格
-function renderAnnouncementTable(announcements) {
+    // 渲染公告表格
+    function renderAnnouncementTable(announcements) {
     const tbody = document.getElementById('announcementTableBody');
     if (!tbody) return;
     
@@ -156,8 +157,8 @@ function renderAnnouncementTable(announcements) {
     `).join('');
 }
 
-// 渲染分頁
-function renderPagination(result) {
+    // 渲染分頁
+    function renderPagination(result) {
     const container = document.getElementById('paginationList');
     if (!container) return;
     
@@ -199,15 +200,15 @@ function renderPagination(result) {
     container.innerHTML = pagination;
 }
 
-// 顯示新增模態框
-function showAddModal() {
+    // 顯示新增模態框
+    function showAddModal() {
     clearForm();
     document.getElementById('announcementModalLabel').textContent = '新增公告';
     new bootstrap.Modal(document.getElementById('announcementModal')).show();
 }
 
-// 編輯公告
-async function editAnnouncement(id) {
+    // 編輯公告
+    async function editAnnouncement(id) {
     try {
         const response = await fetch(`/Dashboard/GetAnnouncementById/${id}`);
         const announcement = await response.json();
@@ -225,8 +226,8 @@ async function editAnnouncement(id) {
     }
 }
 
-// 預覽公告
-async function previewAnnouncement(id) {
+    // 預覽公告
+    async function previewAnnouncement(id) {
     try {
         const response = await fetch(`/Dashboard/GetAnnouncementById/${id}`);
         const announcement = await response.json();
@@ -264,8 +265,8 @@ async function previewAnnouncement(id) {
     }
 }
 
-// 切換公告狀態
-async function toggleAnnouncementStatus(id) {
+    // 切換公告狀態
+    async function toggleAnnouncementStatus(id) {
     try {
         const response = await fetch('/Dashboard/ToggleAnnouncementStatus', {
             method: 'POST',
@@ -289,8 +290,8 @@ async function toggleAnnouncementStatus(id) {
     }
 }
 
-// 刪除公告
-async function deleteAnnouncement(id) {
+    // 刪除公告
+    async function deleteAnnouncement(id) {
     if (!confirm('確定要刪除這筆公告嗎？此操作無法復原。')) {
         return;
     }
@@ -318,8 +319,8 @@ async function deleteAnnouncement(id) {
     }
 }
 
-// 儲存公告
-async function saveAnnouncement() {
+    // 儲存公告
+    async function saveAnnouncement() {
     const form = document.getElementById('announcementForm');
     const formData = new FormData(form);
     
@@ -372,9 +373,9 @@ async function saveAnnouncement() {
     }
 }
 
-// 搜尋功能
-function performSearch() {
-    const keyword = document.getElementById('searchInput').value.trim();
+    // 搜尋功能
+    function performSearch() {
+    const keyword = document.getElementById('announcementSearchInput').value.trim();
     
     // 更新關鍵字篩選，保留其他篩選條件
     if (keyword) {
@@ -387,10 +388,10 @@ function performSearch() {
     loadAnnouncements(1);
 }
 
-// 篩選功能
-function performFilter() {
-    const status = document.getElementById('statusFilter').value;
-    const scope = document.getElementById('scopeFilter').value;
+    // 篩選功能
+    function performFilter() {
+    const status = document.getElementById('announcementStatusFilter').value;
+    const scope = document.getElementById('announcementScopeFilter').value;
     
     // 更新篩選條件，保留關鍵字搜尋
     if (status) {
@@ -409,16 +410,16 @@ function performFilter() {
     loadAnnouncements(1);
 }
 
-// 重置篩選功能
-function resetFilters() {
+    // 重置篩選功能
+    function resetFilters() {
     // 清空所有篩選條件
     currentFilters = {};
     currentPage = 1;
     
     // 重置表單元素
-    const searchInput = document.getElementById('searchInput');
-    const statusFilter = document.getElementById('statusFilter');
-    const scopeFilter = document.getElementById('scopeFilter');
+    const searchInput = document.getElementById('announcementSearchInput');
+    const statusFilter = document.getElementById('announcementStatusFilter');
+    const scopeFilter = document.getElementById('announcementScopeFilter');
     
     if (searchInput) {
         searchInput.value = '';
@@ -436,16 +437,16 @@ function resetFilters() {
     console.log('🔄 篩選條件已重置');
 }
 
-// 清空表單
-function clearForm() {
+    // 清空表單
+    function clearForm() {
     const form = document.getElementById('announcementForm');
     form.reset();
     document.getElementById('announcementId').value = '';
     document.getElementById('announcementIsActive').checked = true;
 }
 
-// 填充表單
-function fillForm(announcement) {
+    // 填充表單
+    function fillForm(announcement) {
     document.getElementById('announcementId').value = announcement.siteMessagesId;
     document.getElementById('announcementTitle').value = announcement.title;
     document.getElementById('announcementScope').value = announcement.moduleScope;
@@ -457,8 +458,8 @@ function fillForm(announcement) {
     document.getElementById('announcementAttachmentUrl').value = announcement.attachmentUrl || '';
 }
 
-// 顯示載入狀態
-function showLoading(show) {
+    // 顯示載入狀態
+    function showLoading(show) {
     const tbody = document.getElementById('announcementTableBody');
     if (!tbody) return;
     
@@ -476,8 +477,8 @@ function showLoading(show) {
     }
 }
 
-// 工具函數
-function getScopeBadgeClass(scope) {
+    // 工具函數
+    function getScopeBadgeClass(scope) {
     const classes = {
         'TENANT': 'bg-primary',
         'LANDLORD': 'bg-success',
@@ -487,7 +488,7 @@ function getScopeBadgeClass(scope) {
     return classes[scope] || 'bg-secondary';
 }
 
-function getScopeDisplayName(scope) {
+    function getScopeDisplayName(scope) {
     const names = {
         'TENANT': '租戶端',
         'LANDLORD': '房東端',
@@ -497,7 +498,7 @@ function getScopeDisplayName(scope) {
     return names[scope] || scope;
 }
 
-function formatDate(dateString) {
+    function formatDate(dateString) {
     if (!dateString) return '';
     const date = new Date(dateString);
     return date.toLocaleString('zh-TW', {
@@ -509,32 +510,41 @@ function formatDate(dateString) {
     });
 }
 
-function formatDateTimeLocal(dateString) {
+    function formatDateTimeLocal(dateString) {
     if (!dateString) return '';
     const date = new Date(dateString);
     return date.toISOString().slice(0, 16);
 }
 
-function escapeHtml(text) {
+    function escapeHtml(text) {
     if (!text) return '';
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
 }
 
-function truncateText(text, maxLength) {
+    function truncateText(text, maxLength) {
     if (!text) return '';
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength) + '...';
 }
 
-// 在 dashboard.js 中定義的 showToast 函數
-// 如果不存在，使用備用方案
-if (typeof showToast === 'undefined') {
-    window.showToast = function(message, type = 'success') {
-        console.log(`${type.toUpperCase()}: ${message}`);
-        alert(message);
-    };
-}
+    // 在 dashboard.js 中定義的 showToast 函數
+    // 如果不存在，使用備用方案
+    if (typeof showToast === 'undefined') {
+        window.showToast = function(message, type = 'success') {
+            console.log(`${type.toUpperCase()}: ${message}`);
+            alert(message);
+        };
+    }
 
-console.log("📢 公告管理 JS 已載入");
+    // 暴露需要在HTML中調用的函數到全域
+    window.initAnnouncementManager = initAnnouncementManager;
+    window.editAnnouncement = editAnnouncement;
+    window.previewAnnouncement = previewAnnouncement;
+    window.toggleAnnouncementStatus = toggleAnnouncementStatus;
+    window.deleteAnnouncement = deleteAnnouncement;
+    window.loadAnnouncements = loadAnnouncements;
+
+    console.log("📢 公告管理 JS 已載入");
+})();

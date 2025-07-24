@@ -75,6 +75,8 @@ public partial class ZuHauseContext : DbContext
 
     public virtual DbSet<FurnitureRentalContract> FurnitureRentalContracts { get; set; }
 
+    public virtual DbSet<GoogleMapsApiUsage> GoogleMapsApiUsages { get; set; }
+
     public virtual DbSet<Image> Images { get; set; }
 
     public virtual DbSet<InventoryEvent> InventoryEvents { get; set; }
