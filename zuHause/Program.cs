@@ -7,6 +7,7 @@ using System.Text.Encodings.Web;
 using System.Text.Unicode;
 using zuHause.Data;
 using zuHause.Helpers;
+using zuHause.Middleware;
 using zuHause.Models;
 using zuHause.Services;
 
@@ -143,6 +144,7 @@ app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthentication(); // 認證中間件需要在 Session 之前
 app.UseSession(); // 啟用 Session 中間件
+app.UseMiddleware<ModuleTrackingMiddleware>(); // 模組追蹤中間件
 app.UseAuthorization();
 app.MapControllers();
 
