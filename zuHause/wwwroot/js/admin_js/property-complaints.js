@@ -180,8 +180,12 @@ function renderComplaintsTable(complaints) {
     if (!complaints || complaints.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="8" class="text-center text-muted py-4">
-                    <i class="bi bi-inbox me-2"></i>查無投訴記錄
+                <td colspan="8" class="empty-state">
+                    <div class="empty-state-icon">
+                        <i class="bi bi-inbox"></i>
+                    </div>
+                    <div class="empty-state-title">查無投訴記錄</div>
+                    <div class="empty-state-description">沒有符合條件的投訴案件</div>
                 </td>
             </tr>
         `;
@@ -206,7 +210,8 @@ function renderComplaintsTable(complaints) {
         // 狀態徽章樣式
         const badgeClass = status === 'OPEN' ? 'bg-danger' : 
                           status === 'RESOLVED' ? 'bg-success' : 
-                          status === 'CLOSED' ? 'bg-secondary' : 'bg-dark';
+                          status === 'CLOSED' ? 'bg-secondary' : 
+                          status === 'PENDING' ? 'bg-warning' : 'bg-dark';
         
         // 安全地處理日期格式
         let formattedDate = '無資料';

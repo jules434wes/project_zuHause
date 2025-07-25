@@ -460,6 +460,7 @@ namespace zuHause.Controllers
         {
             return statusCode switch
             {
+                "PENDING" => "待處理",
                 "OPEN" => "處理中",
                 "RESOLVED" => "已處理",
                 "CLOSED" => "已關閉",

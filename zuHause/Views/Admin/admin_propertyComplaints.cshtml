@@ -4,13 +4,13 @@
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
 }
 
-<link href="~/css/admin-layout.css" rel="stylesheet" />
+<link href="~/css/admin-style.css" rel="stylesheet" />
 
 <div class="container-fluid fade-in" style="margin-bottom: 120px; padding-bottom: 40px;">
     <!-- 頁面標題 -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h2 class="fw-bold">⚠️ @Model.PageTitle</h2>
+            <h2>⚠️ @Model.PageTitle</h2>
             <p class="text-muted mb-0">處理和追蹤房源相關投訴案件</p>
             @if (ViewBag.Debug != null)
             {
@@ -27,56 +27,54 @@
     </div>
 
     <!-- 篩選和搜尋區域 -->
-    <div class="card mb-4">
-        <div class="card-body">
-            <form id="searchForm" class="row g-3">
-                <div class="col-md-4">
-                    <label class="form-label">搜尋關鍵字</label>
-                    <div class="input-group">
-                        <select id="searchField" class="form-select" style="flex: 0 0 auto; width: auto;">
-                            <option value="all">全部欄位</option>
-                            <option value="complainantname">投訴人</option>
-                            <option value="propertytitle">房源標題</option>
-                            <option value="landlordname">房東姓名</option>
-                            <option value="complaintcontent">投訴內容</option>
-                        </select>
-                        <input type="text" id="searchKeyword" class="form-control" placeholder="輸入搜尋關鍵字">
-                        <button class="btn btn-outline-secondary" type="button" onclick="performSearch()">
-                            <i class="bi bi-search"></i>
-                        </button>
-                    </div>
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">處理狀態</label>
-                    <select id="statusFilter" class="form-select">
-                        <option value="">全部</option>
-                        <option value="PENDING">待處理</option>
-                        <option value="OPEN">處理中</option>
-                        <option value="RESOLVED">已處理</option>
-                        <option value="CLOSED">已關閉</option>
+    <div class="filter-section">
+        <form id="searchForm" class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">搜尋關鍵字</label>
+                <div class="input-group">
+                    <select id="searchField" class="form-select" style="flex: 0 0 auto; width: auto;">
+                        <option value="all">全部欄位</option>
+                        <option value="complainantname">投訴人</option>
+                        <option value="propertytitle">房源標題</option>
+                        <option value="landlordname">房東姓名</option>
+                        <option value="complaintcontent">投訴內容</option>
                     </select>
+                    <input type="text" id="searchKeyword" class="form-control" placeholder="輸入搜尋關鍵字">
+                    <button class="btn btn-outline-secondary" type="button" onclick="performSearch()">
+                        <i class="bi bi-search"></i>
+                    </button>
                 </div>
-                <div class="col-md-3">
-                    <label class="form-label">日期範圍</label>
-                    <div class="input-group">
-                        <input type="date" id="dateStart" class="form-control">
-                        <span class="input-group-text">至</span>
-                        <input type="date" id="dateEnd" class="form-control">
-                    </div>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">處理狀態</label>
+                <select id="statusFilter" class="form-select">
+                    <option value="">全部</option>
+                    <option value="PENDING">待處理</option>
+                    <option value="OPEN">處理中</option>
+                    <option value="RESOLVED">已處理</option>
+                    <option value="CLOSED">已關閉</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">日期範圍</label>
+                <div class="input-group">
+                    <input type="date" id="dateStart" class="form-control">
+                    <span class="input-group-text">至</span>
+                    <input type="date" id="dateEnd" class="form-control">
                 </div>
-                <div class="col-md-3">
-                    <label class="form-label">&nbsp;</label>
-                    <div class="d-flex gap-2">
-                        <button type="button" class="btn btn-primary" onclick="performSearch()">
-                            <i class="bi bi-search"></i> 搜尋
-                        </button>
-                        <button type="button" class="btn btn-outline-secondary" onclick="resetSearch()">
-                            <i class="bi bi-arrow-clockwise"></i> 重設
-                        </button>
-                    </div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">&nbsp;</label>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-primary" onclick="performSearch()">
+                        <i class="bi bi-search"></i> 搜尋
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="resetSearch()">
+                        <i class="bi bi-arrow-clockwise"></i> 重設
+                    </button>
                 </div>
-            </form>
-        </div>
+            </div>
+        </form>
     </div>
 
     <!-- 投訴列表 -->
@@ -89,8 +87,8 @@
         </div>
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead class="table-light">
+                <table class="table table-striped">
+                    <thead>
                         <tr>
                             <th width="12%">投訴編號</th>
                             <th width="15%">投訴人</th>
@@ -156,8 +154,12 @@
                         else
                         {
                             <tr>
-                                <td colspan="8" class="text-center text-muted py-4">
-                                    <i class="bi bi-inbox me-2"></i>尚無投訴記錄
+                                <td colspan="8" class="empty-state">
+                                    <div class="empty-state-icon">
+                                        <i class="bi bi-inbox"></i>
+                                    </div>
+                                    <div class="empty-state-title">尚無投訴記錄</div>
+                                    <div class="empty-state-description">目前沒有任何房源投訴案件</div>
                                 </td>
                             </tr>
                         }
@@ -195,46 +197,3 @@
 </div>
 
 <script src="~/js/admin_js/property-complaints.js"></script>
-
-<style>
-.fade-in {
-    animation: fadeIn 0.5s ease-in;
-}
-
-@@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.card {
-    border: 1px solid rgba(0, 0, 0, 0.125);
-    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-}
-
-.table th {
-    border-top: none;
-    font-weight: 600;
-    background-color: #f8f9fa;
-}
-
-.badge {
-    font-size: 0.75rem;
-}
-
-.btn-sm {
-    padding: 0.25rem 0.5rem;
-}
-
-.form-label {
-    font-weight: 500;
-    margin-bottom: 0.5rem;
-}
-
-.modal-lg {
-    max-width: 900px;
-}
-
-.bg-light {
-    border: 1px solid #dee2e6;
-}
-</style>
