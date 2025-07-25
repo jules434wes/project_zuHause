@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
+using Stripe.Checkout;
 using System.Security.Claims;
 using zuHause.Models; // EF Core 的資料模型
 
@@ -589,7 +590,6 @@ namespace zuHause.Controllers
             public int SelectedPropertyId { get; set; }
         }
 
-
         //結帳流程
         [HttpPost]
         public IActionResult StartCheckout(int selectedPropertyId)
@@ -606,6 +606,43 @@ namespace zuHause.Controllers
             ViewBag.SelectedPropertyId = selectedPropertyId;
             return View();
         }
+
+        // 串接 Stripe 付款流程
+        [HttpPost]
+        public async Task<IActionResult> CreateCheckoutSession(string furnitureCartId)
+        {
+            var domain = "https://localhost:7010/"; 
+
+            var options = new SessionCreateOptions
+            {
+                PaymentMethodTypes = new List<string> { "card" },
+                LineItems = new List<SessionLineItemOptions>
+        {
+            new SessionLineItemOptions
+            {
+                PriceData = new SessionLineItemPriceDataOptions
+                {
+                    Currency = "twd",
+                    UnitAmount = 50000, // TWD 500.00 → 單位是「分」
+                    ProductData = new SessionLineItemPriceDataProductDataOptions
+                    {
+                        Name = "家具租借費用"
+                    }
+                },
+                Quantity = 1,
+            },
+        },
+                Mode = "payment",
+                SuccessUrl = $"{domain}/Furniture/PaymentSuccess",
+                CancelUrl = $"{domain}/Furniture/CancelPayment?furnitureCartId={furnitureCartId}",
+            };
+
+            var service = new SessionService();
+            Session session = await service.CreateAsync(options);
+
+            return Redirect(session.Url);
+        }
+
 
         //確認支付
         [HttpPost]

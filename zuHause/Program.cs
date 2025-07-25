@@ -2,13 +2,16 @@ using DinkToPdf;
 using DinkToPdf.Contracts;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Stripe;
 using System.Runtime.Loader;
 using System.Text.Encodings.Web;
 using System.Text.Unicode;
 using zuHause.Data;
 using zuHause.Helpers;
+using zuHause.Interfaces;
 using zuHause.Models;
 using zuHause.Services;
+using zuHause.ViewModels;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -58,6 +61,10 @@ builder.Services.AddDbContext<ZuHauseContext>(
 
 builder.Services.AddMemoryCache();
 
+// 註冊 HttpContextAccessor（用於取得 HTTP 上下文）
+builder.Services.AddHttpContextAccessor();
+
+
 // 註冊更新申請Log服務
 builder.Services.AddScoped<ApplicationService>();
 
@@ -97,6 +104,12 @@ builder.Services.AddScoped<zuHause.Services.MessageTemplateService>();
 builder.Services.AddHttpClient<zuHause.Interfaces.IGoogleMapsService, zuHause.Services.GoogleMapsService>();
 builder.Services.AddScoped<zuHause.Interfaces.IApiUsageTracker, zuHause.Services.ApiUsageTracker>();
 builder.Services.AddScoped<zuHause.Interfaces.IPropertyMapCacheService, zuHause.Services.PropertyMapCacheService>();
+
+//註冊 Stripe 第三方金流付款設定
+builder.Services.Configure<StripeSettings>(builder.Configuration.GetSection("StripeSettings"));
+StripeConfiguration.ApiKey = builder.Configuration["StripeSettings:SecretKey"];
+
+
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
