@@ -2,7 +2,7 @@
     ViewBag.Title = "合約預覽";
     Layout = "~/Views/Shared/_NavigationBar.cshtml";
 }
-
+@model Int32
 
 <div class="container my-4">
     <h2 class="text-center mb-4">合約預覽</h2>
@@ -11,6 +11,15 @@
     </div>
 
     <div class="mt-4 text-center">
-        <a class="btn btn-secondary" href="@Url.Action("Index", "MemberContracts")">返回合約列表</a>
+        <div class="row justify-content-center">
+            <div class="col-3">
+                <a class="btn btn-secondary w-100" href="@Url.Action("Index", "MemberContracts")">返回合約列表</a>
+            </div>
+            <div class="col-3">
+                <a href="@Url.Action("DownloadPdf", "MemberContracts", new { contractId = Model })" class="btn btn-outline-secondary w-100" target="_blank">
+                    下載合約
+                </a>
+            </div>
+        </div>
     </div>
 </div>

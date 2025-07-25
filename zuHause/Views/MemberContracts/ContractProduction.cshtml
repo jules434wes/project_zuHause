@@ -6,19 +6,18 @@
         <div class="col-12 d-flex justify-content-start flex-column
           align-items-center">
             <div class="row w-100">
-                <h1 class="fs-3 text-white px-0">合約製作</h1>
+                <h1 class="fs-3 text-white px-0">擬定合約</h1>
                 <div class="col-12 mt-3 bg-white rounded-1 p-3" id="applyRental">
                     <div class="tab-content" id="ApplicationTypeContent">
                         <div class="tab-pane fade show active py-3 w-100 gap-2" id="allItemTab-pane" role="tabpanel"
                              aria-labelledby="allItemTab" tabindex="0">
                             <div class="row w-100 mx-0 gy-3">
-                                <h5 class="col-12 px-0 mb-0">合約範本</h5>
+                                <h5 class="col-12 px-0 mb-0">請選擇合約範本</h5>
                                 <div class="col-12 mx-0 gy-3">
                                     <div class="row m-0 gap-1 align-items-center">
                                         <label asp-for="SelectedTemplateId" class="col-3 py-0"></label>
                                         <div class="col-5 pe-0">
                                             <select class="form-select form-select-sm" asp-for="SelectedTemplateId" asp-items="Model.TemplateOptions">
-                                                <option selected value="0">請選擇範本</option>
                                             </select>
                                         </div>
                                         <span class="text-danger" asp-validation-for="SelectedTemplateId"></span>
@@ -208,7 +207,7 @@
                                                     若提前解約，需另行給付甲方相當於：
                                                 </label>
                                                 <div class="col-3 pe-0">
-                                                    <input class="form-control form-control-sm" type="text" placeholder="月數" asp-for="PenaltyAmount">
+                                                    <input class="form-control form-control-sm" type="text" placeholder="賠償月數" asp-for="PenaltyAmount">
                                                 </div>
                                                 <div class="col-auto">
                                                     個月之租金金額
@@ -301,7 +300,7 @@
                                     <div class="row m-0 align-items-start note-item w-100">
                                         <h6 class="col-auto mb-0 px-0 py-2">備註：</h6>
                                         <div class="col-9 gap-2 p-0 d-flex">
-                                            <div class="row align-items-start">
+                                            <div class="row align-items-start w-100 gx-2">
                                                 <div class="col p-0">
                                                     <textarea class="form-control w-100" placeholder="限100字內"
                                                               style="resize: none; height: 4rem;"></textarea>

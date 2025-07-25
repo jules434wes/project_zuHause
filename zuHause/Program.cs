@@ -10,6 +10,8 @@ using zuHause.Helpers;
 using zuHause.Middleware;
 using zuHause.Models;
 using zuHause.Services;
+using zuHause.Options;
+using zuHause.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -58,6 +60,33 @@ builder.Services.AddDbContext<ZuHauseContext>(
 
 
 builder.Services.AddMemoryCache();
+
+// 註冊 HttpContextAccessor（用於取得 HTTP 上下文）
+builder.Services.AddHttpContextAccessor();
+
+// === Azure Blob Storage 配置與服務註冊 ===
+builder.Services.Configure<BlobStorageOptions>(
+    builder.Configuration.GetSection(BlobStorageOptions.SectionName));
+
+// 註冊 Azure Blob Storage 服務
+builder.Services.AddScoped<IBlobStorageConnectionTest, BlobStorageConnectionTest>();
+
+// === 註冊臨時會話管理服務 ===
+builder.Services.AddScoped<ITempSessionService, TempSessionService>();
+
+// === 註冊 URL 生成與 Blob 操作服務 ===
+builder.Services.AddScoped<IBlobUrlGenerator, BlobUrlGenerator>();
+builder.Services.AddScoped<IBlobStorageService, BlobStorageService>();
+
+// === 註冊檔案遷移服務 ===
+builder.Services.AddScoped<IBlobMigrationService, BlobMigrationService>();
+
+// === 註冊本地到雲端遷移服務 ===
+builder.Services.AddScoped<ILocalToBlobMigrationService, LocalToBlobMigrationService>();
+
+// === 註冊臨時檔案清理服務 ===
+builder.Services.AddScoped<ITempFileCleanupService, TempFileCleanupService>();
+builder.Services.AddHostedService<TempFileCleanupService>();
 
 // 註冊更新申請Log服務
 builder.Services.AddScoped<ApplicationService>();
@@ -149,6 +178,8 @@ app.UseAuthentication(); // 認證中間件需要在 Session 之前
 app.UseSession(); // 啟用 Session 中間件
 app.UseMiddleware<ModuleTrackingMiddleware>(); // 模組追蹤中間件
 app.UseAuthorization();
+
+// 先註冊 API Controllers 路由
 app.MapControllers();
 
 app.MapControllerRoute(
