@@ -500,7 +500,7 @@ namespace zuHause.Controllers
 
             if (contract != null)
             {
-                DateOnly endDate = contract.EndDate.Value; 
+                DateOnly endDate = contract.EndDate.Value;
                 DateTime today = DateTime.Today;
 
                 int availableDays = (endDate.ToDateTime(TimeOnly.MinValue) - today).Days;
@@ -594,7 +594,7 @@ namespace zuHause.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateCheckoutSession(string furnitureCartId, int totalAmount)
         {
-            var domain = "https://localhost:7010"; 
+            var domain = "https://localhost:7010";
 
             var options = new SessionCreateOptions
             {
@@ -636,7 +636,7 @@ namespace zuHause.Controllers
 
         //付款取消
         [HttpPost]
-        public IActionResult CancelPayment(string FurnitureCartId)
+        public IActionResult CancelPayment(int selectedPropertyId)
         {
             var memberId = HttpContext.Session.GetInt32("MemberId");
             if (memberId == null)
@@ -818,7 +818,7 @@ namespace zuHause.Controllers
             return RedirectToAction("ContactRecords");
         }
 
-      
+
 
     }
 }

@@ -11,6 +11,7 @@ using zuHause.Helpers;
 using zuHause.Interfaces;
 using zuHause.Models;
 using zuHause.Services;
+using zuHause.ViewModels;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -159,8 +160,6 @@ app.UseRouting();
 app.UseAuthentication(); // 認證中間件需要在 Session 之前
 app.UseSession(); // 啟用 Session 中間件
 app.UseAuthorization();
-
-// 先註冊 API Controllers 路由
 app.MapControllers();
 
 app.MapControllerRoute(
