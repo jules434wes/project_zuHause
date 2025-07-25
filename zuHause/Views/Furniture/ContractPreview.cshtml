@@ -9,6 +9,29 @@
     var totalDays = (int?)ViewBag.TotalDays ?? 0;
     var member = ViewBag.CurrentMember;
 }
+<style>
+    .modal-backdrop-custom {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background-color: rgba(0,0,0,0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+    }
+
+    .modal-content-custom {
+        background-color: #fff;
+        padding: 20px 30px;
+        border-radius: 10px;
+        text-align: center;
+        font-size: 1.2rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+</style>
 
 <div class="card p-4">
     <h2 class="text-center mb-4">家具租借合約書</h2>
@@ -233,23 +256,33 @@
             .then(res => {
                 if (res.ok) {
                     // ✅ 簽署成功提示 + 倒數跳轉
-                    const message = document.createElement("div");
-                    message.style.marginTop = "20px";
-                    message.style.color = "green";
-                    message.style.fontWeight = "bold";
-                    message.innerText = "簽署成功，將於 3 秒後前往第三方支付...";
+                          // ✅ 顯示彈窗方式倒數提示
+                    const backdrop = document.createElement("div");
+                    backdrop.className = "modal-backdrop-custom";
 
-                    confirmBtn.insertAdjacentElement("afterend", message);
+                    const modal = document.createElement("div");
+                    modal.className = "modal-content-custom";
+
+                    modal.innerHTML = `
+                        <div>簽署成功！<br><br>
+                        將於 <span id="countdown">3</span> 秒後前往第三方支付...</div>
+                    `;
+
+                    backdrop.appendChild(modal);
+                    document.body.appendChild(backdrop);
 
                     let countdown = 3;
+                    const countdownSpan = modal.querySelector("#countdown");
+
                     const interval = setInterval(() => {
                         countdown--;
-                        message.innerText = `簽署成功，將於 ${countdown} 秒後前往第三方支付...`;
+                        countdownSpan.innerText = countdown;
                         if (countdown === 0) {
                             clearInterval(interval);
                             window.location.href = "/Furniture/MockPaymentPage?selectedPropertyId=" + @ViewBag.SelectedPropertyId;
                         }
                     }, 1000);
+
                 } else {
                     alert("儲存簽名失敗，請稍後再試");
                     confirmBtn.disabled = false;

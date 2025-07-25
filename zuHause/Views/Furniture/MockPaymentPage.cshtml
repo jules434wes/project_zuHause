@@ -1,7 +1,9 @@
-﻿@{
+﻿@* /Furniture/mockpaymentpage *@
+
+@{
     ViewData["Title"] = "付款頁面 - 家具租借";
-    Layout = "~/Views/Shared/_Layout.cshtml";
-    var cartId = ViewBag.CartId as string ?? ""; // 假設你從 Controller 傳入 ViewBag.CartId
+    Layout = "~/Views/Shared/_NavigationBar.cshtml";
+    var FurnitureCartId = ViewBag.FurnitureCartId as string ?? "";
 }
 
 <div class="container mt-5">
@@ -13,13 +15,13 @@
         <div class="d-flex justify-content-center gap-3">
             <!-- 確定付款按鈕 -->
             <form method="post" action="/Furniture/ConfirmPayment">
-                <input type="hidden" name="selectedPropertyId" value="@ViewBag.SelectedPropertyId" />
+                <input type="hidden" name="FurnitureCartId" value="@FurnitureCartId" />
                 <button type="submit" class="btn btn-success">✅ 確定付款</button>
             </form>
 
             <!-- 取消付款按鈕 -->
             <form method="post" action="/Furniture/CancelPayment">
-                <input type="hidden" name="selectedPropertyId" value="@ViewBag.SelectedPropertyId" />
+                <input type="hidden" name="FurnitureCartId" value="@FurnitureCartId" />
                 <button type="submit" class="btn btn-outline-danger">❌ 取消付款</button>
             </form>
         </div>
@@ -33,7 +35,7 @@
             btn.disabled = true;
             btn.innerText = "處理中...";
 
-            const cartId = "@cartId";
+            const cartId = "@FurnitureCartId";
 
             const response = await fetch("/Furniture/ConfirmPayment?cartId=" + cartId, {
                 method: "POST"
