@@ -14,15 +14,24 @@ namespace zuHause.Controllers
     public class PropertyApiController : ControllerBase
     {
         private readonly ZuHauseContext _context;
+        private readonly IImageUploadService _imageUploadService;
+        private readonly IBlobMigrationService _blobMigrationService;
+        private readonly ITempSessionService _tempSessionService;
         private readonly IPropertyImageService _propertyImageService;
         private readonly ILogger<PropertyApiController> _logger;
 
         public PropertyApiController(
-            ZuHauseContext context, 
+            ZuHauseContext context,
+            IImageUploadService imageUploadService,
+            IBlobMigrationService blobMigrationService,
+            ITempSessionService tempSessionService,
             IPropertyImageService propertyImageService,
             ILogger<PropertyApiController> logger)
         {
             _context = context;
+            _imageUploadService = imageUploadService;
+            _blobMigrationService = blobMigrationService;
+            _tempSessionService = tempSessionService;
             _propertyImageService = propertyImageService;
             _logger = logger;
         }
@@ -225,14 +234,24 @@ namespace zuHause.Controllers
             }
         }
 
+        /// <summary>
+        /// 房源圖片上傳 - 支援雙模式：直接上傳和臨時圖片遷移 (Azure Blob Storage 整合)
+        /// </summary>
+        /// <param name="propertyId">房源ID</param>
+        /// <param name="files">圖片檔案（直接上傳模式）</param>
+        /// <param name="tempSessionId">臨時會話ID（遷移模式）</param>
+        /// <param name="category">圖片分類（預設為Gallery）</param>
+        /// <returns>上傳結果</returns>
         [HttpPost("{propertyId}/images")]
         public async Task<ActionResult<List<ImageDto>>> UploadImages(
             int propertyId,
-            [FromForm] List<IFormFile> images)
+            [FromForm] IFormFileCollection files,
+            [FromForm] string? tempSessionId = null,
+            [FromForm] string category = "Gallery")
         {
             try
             {
-                // Validate property exists
+                // 驗證房源是否存在
                 var property = await _context.Properties
                     .FirstOrDefaultAsync(p => p.PropertyId == propertyId);
 
@@ -241,86 +260,143 @@ namespace zuHause.Controllers
                     return NotFound(new { message = "房源不存在" });
                 }
 
-                // TODO: Add authentication - check if user owns this property
-                // For now, skip ownership check
+                // TODO: 驗證房源所有權
+                // var currentUserId = await GetCurrentUserIdAsync();
+                // if (property.LandlordMemberId != currentUserId) return Forbid();
 
-                // Validate file count
-                if (images == null || images.Count == 0)
+                // 解析圖片分類
+                if (!Enum.TryParse<ImageCategory>(category, true, out var imageCategory))
                 {
-                    return BadRequest(new { message = "請選擇要上傳的圖片" });
+                    return BadRequest(new { message = $"無效的圖片分類: {category}" });
                 }
 
-                if (images.Count > 10)
+                List<ImageUploadResult> uploadResults;
+
+                // 雙模式處理：臨時圖片遷移 vs 直接上傳
+                if (!string.IsNullOrEmpty(tempSessionId))
                 {
-                    return BadRequest(new { message = "最多只能上傳10張圖片" });
+                    // 模式1: 臨時圖片遷移
+                    var isValidSession = await _tempSessionService.IsValidTempSessionAsync(tempSessionId);
+                    if (!isValidSession)
+                    {
+                        return BadRequest(new { message = "無效的臨時會話ID" });
+                    }
+
+                    // 取得臨時圖片列表
+                    var tempImages = await _tempSessionService.GetTempImagesAsync(tempSessionId);
+                    var imageGuids = tempImages.Select(img => img.ImageGuid).ToList();
+
+                    if (!imageGuids.Any())
+                    {
+                        return BadRequest(new { message = "沒有可遷移的臨時圖片" });
+                    }
+
+                    // 使用 MoveTempToPermanentAsync 方法
+                    var migrationResult = await _blobMigrationService.MoveTempToPermanentAsync(
+                        tempSessionId, 
+                        imageGuids,
+                        imageCategory,
+                        propertyId
+                    );
+
+                    if (!migrationResult.IsSuccess)
+                    {
+                        return BadRequest(new { message = migrationResult.ErrorMessage });
+                    }
+
+                    // 轉換為 ImageUploadResult 格式 (從遷移結果轉換)
+                    uploadResults = new List<ImageUploadResult>();
+                    foreach (var detail in migrationResult.Details)
+                    {
+                        var imageGuid = detail.Key;
+                        var sizeResults = detail.Value;
+                        var isSuccess = sizeResults.Values.All(r => r.Success);
+                        
+                        // 建立對應的 ImageUploadResult
+                        var uploadResult = new ImageUploadResult
+                        {
+                            Success = isSuccess,
+                            ImageGuid = imageGuid,
+                            EntityType = EntityType.Property,
+                            EntityId = propertyId,
+                            Category = imageCategory,
+                            OriginalFileName = $"migrated-{imageGuid}.webp",
+                            StoredFileName = sizeResults.ContainsKey(ImageSize.Original) ? 
+                                sizeResults[ImageSize.Original].BlobPath ?? "" : "",
+                            ErrorMessage = isSuccess ? null : 
+                                string.Join(", ", sizeResults.Values.Where(r => !r.Success).Select(r => r.Message))
+                        };
+                        
+                        uploadResults.Add(uploadResult);
+                    }
+                    _logger.LogInformation("完成臨時圖片遷移: PropertyId={PropertyId}, TempSessionId={TempSessionId}, Count={Count}", 
+                        propertyId, tempSessionId, uploadResults.Count);
+                }
+                else if (files != null && files.Count > 0)
+                {
+                    // 模式2: 直接上傳
+                    uploadResults = await _imageUploadService.UploadImagesAsync(
+                        files, 
+                        EntityType.Property, 
+                        propertyId, 
+                        imageCategory,
+                        skipEntityValidation: false
+                    );
+
+                    _logger.LogInformation("完成直接圖片上傳: PropertyId={PropertyId}, Count={Count}", 
+                        propertyId, uploadResults.Count);
+                }
+                else
+                {
+                    return BadRequest(new { message = "請提供檔案或有效的臨時會話ID" });
                 }
 
-                var uploadedImages = new List<ImageDto>();
-                var uploadsPath = Path.Combine("wwwroot", "uploads", "properties", propertyId.ToString());
-                
-                // Create directory if it doesn't exist
-                if (!Directory.Exists(uploadsPath))
+                // 處理上傳結果
+                var successResults = uploadResults.Where(r => r.Success).ToList();
+                var failedResults = uploadResults.Where(r => !r.Success).ToList();
+
+                if (!successResults.Any())
                 {
-                    Directory.CreateDirectory(uploadsPath);
-                }
-
-                // Get next display order
-                var maxDisplayOrder = await _context.PropertyImages
-                    .Where(pi => pi.PropertyId == propertyId)
-                    .MaxAsync(pi => (int?)pi.DisplayOrder) ?? 0;
-
-                foreach (var (image, index) in images.Select((img, idx) => (img, idx)))
-                {
-                    // Validate file
-                    if (image.Length > 5 * 1024 * 1024) // 5MB limit
-                    {
-                        return BadRequest(new { message = $"圖片 {image.FileName} 超過5MB大小限制" });
-                    }
-
-                    var allowedExtensions = new[] { ".jpg", ".jpeg", ".png" };
-                    var extension = Path.GetExtension(image.FileName).ToLowerInvariant();
-                    
-                    if (!allowedExtensions.Contains(extension))
-                    {
-                        return BadRequest(new { message = $"圖片 {image.FileName} 格式不支援，僅支援 JPG, JPEG, PNG" });
-                    }
-
-                    // Generate unique filename
-                    var fileName = $"{Guid.NewGuid()}{extension}";
-                    var filePath = Path.Combine(uploadsPath, fileName);
-
-                    // Save file
-                    using (var stream = new FileStream(filePath, FileMode.Create))
-                    {
-                        await image.CopyToAsync(stream);
-                    }
-
-                    // Create database record
-                    var propertyImage = new PropertyImage
-                    {
-                        PropertyId = propertyId,
-                        ImagePath = $"/uploads/properties/{propertyId}/{fileName}",
-                        DisplayOrder = maxDisplayOrder + index + 1,
-                        CreatedAt = DateTime.Now
-                    };
-
-                    _context.PropertyImages.Add(propertyImage);
-                    await _context.SaveChangesAsync();
-
-                    uploadedImages.Add(new ImageDto
-                    {
-                        ImageId = propertyImage.ImageId,
-                        ImageUrl = propertyImage.ImagePath,
-                        IsMainImage = maxDisplayOrder == 0 && index == 0, // First image is main
-                        UploadTime = propertyImage.CreatedAt
+                    return BadRequest(new { 
+                        message = "所有圖片上傳失敗", 
+                        errors = failedResults.Select(r => new { 
+                            fileName = r.OriginalFileName, 
+                            error = r.ErrorMessage 
+                        })
                     });
                 }
 
-                return Ok(uploadedImages);
+                // 建構回應資料
+                var imageDtos = successResults.Select(r => new ImageDto
+                {
+                    ImageId = (int)(r.ImageId ?? 0),
+                    ImageUrl = r.StoredFileName ?? "",
+                    IsMainImage = r.IsMainImage,
+                    UploadTime = DateTime.Now
+                }).ToList();
+
+                var response = new
+                {
+                    success = true,
+                    message = $"成功上傳 {successResults.Count} 張圖片" + 
+                             (failedResults.Any() ? $"，{failedResults.Count} 張失敗" : ""),
+                    propertyId = propertyId,
+                    category = category,
+                    uploadedCount = successResults.Count,
+                    failedCount = failedResults.Count,
+                    images = imageDtos,
+                    failedUploads = failedResults.Any() ? failedResults.Select(r => new { 
+                        fileName = r.OriginalFileName, 
+                        error = r.ErrorMessage 
+                    }).ToList() : null
+                };
+
+                return Ok(response);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "上傳圖片時發生錯誤", error = ex.Message });
+                _logger.LogError(ex, "上傳房源圖片時發生錯誤，PropertyId: {PropertyId}", propertyId);
+                return StatusCode(500, new { message = "上傳圖片時發生系統錯誤" });
             }
         }
 
@@ -449,49 +525,47 @@ namespace zuHause.Controllers
         }
 
         /// <summary>
-        /// 獲取當前登入使用者的ID
-        /// 這裡需要根據實際的認證系統來實作
+        /// 獲取單一房源資訊 - 用於 CreatedAtAction 的參考
         /// </summary>
-        /// <returns>使用者ID，如果未登入則返回 null</returns>
-        private async Task<int?> GetCurrentUserIdAsync()
+        /// <param name="id">房源ID</param>
+        /// <returns>房源資訊</returns>
+        [HttpGet("{id:int}")]
+        public async Task<ActionResult<PropertyDto>> GetProperty(int id)
         {
-            // 方式1: 從 Session 取得
-            if (HttpContext.Session.TryGetValue("UserId", out var userIdBytes))
+            try
             {
-                return BitConverter.ToInt32(userIdBytes, 0);
-            }
-            
-            // 方式2: 從 JWT Token 取得 (如果有實作 JWT 認證)
-            // var userIdClaim = User.FindFirst("UserId") ?? User.FindFirst(ClaimTypes.NameIdentifier);
-            // if (userIdClaim != null && int.TryParse(userIdClaim.Value, out var userId))
-            // {
-            //     return userId;
-            // }
-            
-            // 方式3: 從 Cookie 或其他認證方式取得
-            // if (Request.Cookies.TryGetValue("UserId", out var userIdCookie) && int.TryParse(userIdCookie, out var cookieUserId))
-            // {
-            //     return cookieUserId;
-            // }
-            
-            // 如果都取不到，返回 null 表示未登入
-            return null;
-        }
+                var property = await _context.Properties
+                    .Include(p => p.PropertyImages)
+                    .FirstOrDefaultAsync(p => p.PropertyId == id);
 
-        /// <summary>
-        /// 驗證指定使用者是否為房東
-        /// </summary>
-        /// <param name="userId">使用者ID</param>
-        /// <returns>是否為房東</returns>
-        private async Task<bool> IsUserLandlordAsync(int userId)
-        {
-            var user = await _context.Members
-                .FirstOrDefaultAsync(m => m.MemberId == userId && 
-                                         m.IsActive && 
-                                         m.IsLandlord && 
-                                         m.MemberTypeId == 2);
-            
-            return user != null;
+                if (property == null)
+                {
+                    return NotFound(new { message = "找不到指定的房源" });
+                }
+
+                var propertyDto = new PropertyDto
+                {
+                    Id = property.PropertyId,
+                    Title = property.Title,
+                    Location = "台北市", // TODO: 查詢城市名稱
+                    Address = property.AddressLine ?? "",
+                    Price = property.MonthlyRent,
+                    PropertyType = "一般", // TODO: 增加房型欄位
+                    MainImageUrl = property.PropertyImages?.FirstOrDefault()?.ImagePath ?? "/images/placeholder.jpg",
+                    Bedrooms = property.RoomCount,
+                    Bathrooms = property.BathroomCount,
+                    Area = property.Area,
+                    IsFeatured = false, // TODO: 增加精選欄位
+                    CreateTime = property.CreatedAt
+                };
+
+                return Ok(propertyDto);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "獲取房源資訊時發生錯誤，房源ID: {PropertyId}", id);
+                return StatusCode(500, new { message = "獲取房源資訊時發生錯誤" });
+            }
         }
 
         /// <summary>
@@ -501,7 +575,7 @@ namespace zuHause.Controllers
         /// <param name="files">圖片檔案</param>
         /// <param name="chineseCategory">中文分類</param>
         /// <returns>上傳結果</returns>
-        [HttpPost("{propertyId:int}/images")]
+        [HttpPost("{propertyId:int}/images/chinese-category")]
         public async Task<ActionResult> UploadPropertyImages(
             int propertyId,
             [FromForm] IFormFileCollection files,
@@ -580,51 +654,53 @@ namespace zuHause.Controllers
             }
         }
 
+        // === 私有輔助方法 ===
+
         /// <summary>
-        /// 獲取單一房源資訊 - 用於 CreatedAtAction 的參考
+        /// 獲取當前登入使用者的ID
+        /// 這裡需要根據實際的認證系統來實作
         /// </summary>
-        /// <param name="id">房源ID</param>
-        /// <returns>房源資訊</returns>
-        [HttpGet("{id:int}")]
-        public async Task<ActionResult<PropertyDto>> GetProperty(int id)
+        /// <returns>使用者ID，如果未登入則返回 null</returns>
+        private async Task<int?> GetCurrentUserIdAsync()
         {
-            try
+            // 方式1: 從 Session 取得
+            if (HttpContext.Session.TryGetValue("UserId", out var userIdBytes))
             {
-                var property = await _context.Properties
-                    .Include(p => p.PropertyImages)
-                    .FirstOrDefaultAsync(p => p.PropertyId == id);
-
-                if (property == null)
-                {
-                    return NotFound(new { message = "找不到指定的房源" });
-                }
-
-                var propertyDto = new PropertyDto
-                {
-                    Id = property.PropertyId,
-                    Title = property.Title,
-                    Location = "台北市", // TODO: 查詢城市名稱
-                    Address = property.AddressLine ?? "",
-                    Price = property.MonthlyRent,
-                    PropertyType = "一般", // TODO: 增加房型欄位
-                    MainImageUrl = property.PropertyImages?.FirstOrDefault()?.ImagePath ?? "/images/placeholder.jpg",
-                    Bedrooms = property.RoomCount,
-                    Bathrooms = property.BathroomCount,
-                    Area = property.Area,
-                    IsFeatured = false, // TODO: 增加精選欄位
-                    CreateTime = property.CreatedAt
-                };
-
-                return Ok(propertyDto);
+                return BitConverter.ToInt32(userIdBytes, 0);
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "獲取房源資訊時發生錯誤，房源ID: {PropertyId}", id);
-                return StatusCode(500, new { message = "獲取房源資訊時發生錯誤" });
-            }
+            
+            // 方式2: 從 JWT Token 取得 (如果有實作 JWT 認證)
+            // var userIdClaim = User.FindFirst("UserId") ?? User.FindFirst(ClaimTypes.NameIdentifier);
+            // if (userIdClaim != null && int.TryParse(userIdClaim.Value, out var userId))
+            // {
+            //     return userId;
+            // }
+            
+            // 方式3: 從 Cookie 或其他認證方式取得
+            // if (Request.Cookies.TryGetValue("UserId", out var userIdCookie) && int.TryParse(userIdCookie, out var cookieUserId))
+            // {
+            //     return cookieUserId;
+            // }
+            
+            // 如果都取不到，返回 null 表示未登入
+            return null;
         }
 
-        // === 私有輔助方法 ===
+        /// <summary>
+        /// 驗證指定使用者是否為房東
+        /// </summary>
+        /// <param name="userId">使用者ID</param>
+        /// <returns>是否為房東</returns>
+        private async Task<bool> IsUserLandlordAsync(int userId)
+        {
+            var user = await _context.Members
+                .FirstOrDefaultAsync(m => m.MemberId == userId && 
+                                         m.IsActive && 
+                                         m.IsLandlord && 
+                                         m.MemberTypeId == 2);
+            
+            return user != null;
+        }
 
         /// <summary>
         /// 驗證PropertyCreateDto

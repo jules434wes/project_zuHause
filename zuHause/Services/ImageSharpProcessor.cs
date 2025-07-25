@@ -4,6 +4,8 @@ using SixLabors.ImageSharp.Formats.Webp;
 using SixLabors.ImageSharp.Processing;
 using zuHause.DTOs;
 using zuHause.Interfaces;
+using zuHause.Models;
+using zuHause.Enums;
 
 namespace zuHause.Services
 {
@@ -31,7 +33,7 @@ namespace zuHause.Services
                 sourceStream.Position = 0;
 
                 // 載入圖片並偵測原始格式
-                using var image = await Image.LoadAsync(sourceStream);
+                using var image = await SixLabors.ImageSharp.Image.LoadAsync(sourceStream);
                 var originalFormat = image.Metadata.DecodedImageFormat?.Name ?? "Unknown";
 
                 // 如果指定了最大寬度，進行等比例縮放
@@ -103,7 +105,7 @@ namespace zuHause.Services
                 sourceStream.Position = 0;
 
                 // 載入圖片並偵測原始格式
-                using var image = await Image.LoadAsync(sourceStream);
+                using var image = await SixLabors.ImageSharp.Image.LoadAsync(sourceStream);
                 var originalFormat = image.Metadata.DecodedImageFormat?.Name ?? "Unknown";
 
                 // 產生縮圖 - 使用固定尺寸裁切模式
@@ -148,6 +150,114 @@ namespace zuHause.Services
             catch (Exception ex)
             {
                 return ImageProcessingResult.CreateFailure($"縮圖生成失敗: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 處理多尺寸圖片 - 針對臨時區域上傳使用
+        /// 生成 4 種尺寸：Original, Large, Medium, Thumbnail
+        /// </summary>
+        /// <param name="sourceStream">來源圖片串流</param>
+        /// <param name="imageGuid">圖片 GUID</param>
+        /// <param name="originalFileName">原始檔案名稱</param>
+        /// <param name="quality">WebP 品質 (1-100，預設 90)</param>
+        /// <returns>多尺寸處理結果</returns>
+        public async Task<MultiSizeProcessingResult> ProcessMultipleSizesAsync(
+            Stream sourceStream, 
+            Guid imageGuid,
+            string originalFileName,
+            int quality = 90)
+        {
+            // 檔案大小限制 (2MB)
+            const long MaxFileSizeBytes = 2 * 1024 * 1024;
+            
+            if (sourceStream.Length > MaxFileSizeBytes)
+            {
+                return MultiSizeProcessingResult.CreateFailure(
+                    imageGuid,
+                    originalFileName,
+                    $"檔案大小超過限制 {MaxFileSizeBytes / (1024 * 1024)}MB");
+            }
+
+            var results = new Dictionary<ImageSize, Stream>();
+            
+            try
+            {
+                // 重置串流位置
+                sourceStream.Position = 0;
+                
+                // 載入圖片並偵測原始格式
+                using var image = await SixLabors.ImageSharp.Image.LoadAsync(sourceStream);
+                var originalFormat = image.Metadata.DecodedImageFormat?.Name ?? "Unknown";
+                
+                // 處理每個尺寸
+                foreach (var (size, (width, height)) in ImageSizeSpecs.Dimensions)
+                {
+                    var processedStream = new MemoryStream();
+                    
+                    // 建立調整尺寸選項
+                    var resizeOptions = new ResizeOptions
+                    {
+                        Size = new Size(width, height),
+                        Mode = size == ImageSize.Original ? ResizeMode.Max : ResizeMode.Crop,
+                        Position = AnchorPositionMode.Center
+                    };
+                    
+                    // 複製圖片並進行處理
+                    using var imageClone = image.Clone(x => x.Resize(resizeOptions));
+                    
+                    // 轉換為 WebP 格式
+                    var webpEncoder = new WebpEncoder 
+                    { 
+                        Quality = quality,
+                        Method = WebpEncodingMethod.BestQuality
+                    };
+                    
+                    await imageClone.SaveAsync(processedStream, webpEncoder);
+                    processedStream.Position = 0;
+                    
+                    results[size] = processedStream;
+                }
+                
+                return MultiSizeProcessingResult.CreateSuccess(
+                    imageGuid,
+                    results,
+                    originalFileName,
+                    originalFormat,
+                    sourceStream.Length);
+            }
+            catch (UnknownImageFormatException)
+            {
+                // 清理已分配的串流
+                foreach (var stream in results.Values)
+                    stream?.Dispose();
+                    
+                return MultiSizeProcessingResult.CreateFailure(
+                    imageGuid,
+                    originalFileName,
+                    "不支援的圖片格式");
+            }
+            catch (InvalidImageContentException)
+            {
+                // 清理已分配的串流
+                foreach (var stream in results.Values)
+                    stream?.Dispose();
+                    
+                return MultiSizeProcessingResult.CreateFailure(
+                    imageGuid,
+                    originalFileName,
+                    "無效的圖片內容");
+            }
+            catch (Exception ex)
+            {
+                // 清理已分配的串流
+                foreach (var stream in results.Values)
+                    stream?.Dispose();
+                    
+                return MultiSizeProcessingResult.CreateFailure(
+                    imageGuid,
+                    originalFileName,
+                    $"圖片處理失敗: {ex.Message}");
             }
         }
     }
