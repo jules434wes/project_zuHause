@@ -2,15 +2,15 @@ using DinkToPdf;
 using DinkToPdf.Contracts;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Stripe;
 using System.Runtime.Loader;
 using System.Text.Encodings.Web;
 using System.Text.Unicode;
 using zuHause.Data;
 using zuHause.Helpers;
+using zuHause.Interfaces;
 using zuHause.Models;
 using zuHause.Services;
-using zuHause.Options;
-using zuHause.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -63,29 +63,6 @@ builder.Services.AddMemoryCache();
 // 註冊 HttpContextAccessor（用於取得 HTTP 上下文）
 builder.Services.AddHttpContextAccessor();
 
-// === Azure Blob Storage 配置與服務註冊 ===
-builder.Services.Configure<BlobStorageOptions>(
-    builder.Configuration.GetSection(BlobStorageOptions.SectionName));
-
-// 註冊 Azure Blob Storage 服務
-builder.Services.AddScoped<IBlobStorageConnectionTest, BlobStorageConnectionTest>();
-
-// === 註冊臨時會話管理服務 ===
-builder.Services.AddScoped<ITempSessionService, TempSessionService>();
-
-// === 註冊 URL 生成與 Blob 操作服務 ===
-builder.Services.AddScoped<IBlobUrlGenerator, BlobUrlGenerator>();
-builder.Services.AddScoped<IBlobStorageService, BlobStorageService>();
-
-// === 註冊檔案遷移服務 ===
-builder.Services.AddScoped<IBlobMigrationService, BlobMigrationService>();
-
-// === 註冊本地到雲端遷移服務 ===
-builder.Services.AddScoped<ILocalToBlobMigrationService, LocalToBlobMigrationService>();
-
-// === 註冊臨時檔案清理服務 ===
-builder.Services.AddScoped<ITempFileCleanupService, TempFileCleanupService>();
-builder.Services.AddHostedService<TempFileCleanupService>();
 
 // 註冊更新申請Log服務
 builder.Services.AddScoped<ApplicationService>();
@@ -126,6 +103,12 @@ builder.Services.AddScoped<zuHause.Services.MessageTemplateService>();
 builder.Services.AddHttpClient<zuHause.Interfaces.IGoogleMapsService, zuHause.Services.GoogleMapsService>();
 builder.Services.AddScoped<zuHause.Interfaces.IApiUsageTracker, zuHause.Services.ApiUsageTracker>();
 builder.Services.AddScoped<zuHause.Interfaces.IPropertyMapCacheService, zuHause.Services.PropertyMapCacheService>();
+
+//註冊 Stripe 第三方金流付款設定
+builder.Services.Configure<StripeSettings>(builder.Configuration.GetSection("StripeSettings"));
+StripeConfiguration.ApiKey = builder.Configuration["StripeSettings:SecretKey"];
+
+
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
