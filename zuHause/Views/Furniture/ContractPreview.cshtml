@@ -135,9 +135,10 @@
     </div>
 
     <div style="margin-top: 20px;">
-        <form method="post" action="/Furniture/MockPaymentPage">
-            <input type="hidden" name="selectedPropertyId" value="@ViewBag.SelectedPropertyId" />
-            <button id="confirmBtn" type="button" disabled>確認簽署 </button>
+        <form id="stripeForm" method="post" action="/Furniture/CreateCheckoutSession">
+            <input type="hidden" name="furnitureCartId" value="@ViewBag.FurnitureCartId" />
+            <input type="hidden" name="totalAmount" value="@(totalRentalFee + deliveryFee)" />
+            <button id="confirmBtn" type="button" class="btn btn-primary">💳 使用 Stripe 測試付款</button>
         </form>
     </div>
 
@@ -206,30 +207,7 @@
         checkbox.addEventListener("change", updateButtonState);
         document.querySelector("button[onclick='clearSignature()']").addEventListener("click", clearSignature);
 
-        // 簽名預覽圖
-        // function showSignaturePreview() {
-        //     const dataURL = canvas.toDataURL("image/png");
-        //     if (!signatureImg) {
-        //         signatureImg = document.createElement("img");
-        //         signatureImg.style.border = "1px solid #ccc";
-        //         signatureImg.style.marginTop = "10px";
-        //         signatureImg.style.maxWidth = "100%";
-        //         previewContainer.appendChild(signatureImg);
-        //     }
-        //     signatureImg.src = dataURL;
-        // }
-
-        // function clearPreview() {
-        //     if (signatureImg) {
-        //         signatureImg.remove();
-        //         signatureImg = null;
-        //     }
-        // }
-
-        // ✅ 送出簽名
-        confirmBtn.addEventListener("click", function () {
-            if (confirmBtn.disabled) return; // 防止重複點擊
-
+               confirmBtn.addEventListener("click", function () {
             if (!checkbox.checked) {
                 alert("請勾選同意合約條款");
                 return;
@@ -240,14 +218,12 @@
                 return;
             }
 
+            // 把簽名圖送去後端儲存
             const dataURL = canvas.toDataURL("image/png");
-            confirmBtn.disabled = true; // 鎖定按鈕防止重複點擊
 
             fetch("/Furniture/SaveSignature", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     signatureDataUrl: dataURL,
                     selectedPropertyId: @ViewBag.SelectedPropertyId
@@ -255,42 +231,14 @@
             })
             .then(res => {
                 if (res.ok) {
-                    // ✅ 簽署成功提示 + 倒數跳轉
-                          // ✅ 顯示彈窗方式倒數提示
-                    const backdrop = document.createElement("div");
-                    backdrop.className = "modal-backdrop-custom";
-
-                    const modal = document.createElement("div");
-                    modal.className = "modal-content-custom";
-
-                    modal.innerHTML = `
-                        <div>簽署成功！<br><br>
-                        將於 <span id="countdown">3</span> 秒後前往第三方支付...</div>
-                    `;
-
-                    backdrop.appendChild(modal);
-                    document.body.appendChild(backdrop);
-
-                    let countdown = 3;
-                    const countdownSpan = modal.querySelector("#countdown");
-
-                    const interval = setInterval(() => {
-                        countdown--;
-                        countdownSpan.innerText = countdown;
-                        if (countdown === 0) {
-                            clearInterval(interval);
-                            window.location.href = "/Furniture/MockPaymentPage?selectedPropertyId=" + @ViewBag.SelectedPropertyId;
-                        }
-                    }, 1000);
-
+                    // ✅ 簽名儲存成功，開始送 Stripe 表單
+                    document.getElementById("stripeForm").submit();
                 } else {
-                    alert("儲存簽名失敗，請稍後再試");
-                    confirmBtn.disabled = false;
+                    alert("簽名儲存失敗，請稍後再試");
                 }
             })
             .catch(() => {
                 alert("傳送失敗，請檢查網路");
-                confirmBtn.disabled = false;
             });
         });
     </script>
@@ -298,3 +246,4 @@
 
 
 
+                            

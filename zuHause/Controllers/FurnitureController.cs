@@ -590,28 +590,11 @@ namespace zuHause.Controllers
             public int SelectedPropertyId { get; set; }
         }
 
-        //結帳流程
-        [HttpPost]
-        public IActionResult StartCheckout(int selectedPropertyId)
-        {
-            Console.WriteLine("🟢 DEBUG: StartCheckout triggered with propertyId = " + selectedPropertyId);
-            return RedirectToAction("MockPaymentPage", new { selectedPropertyId });
-        }
-
-        //暫時模擬付款畫面
-        [HttpGet]
-        public IActionResult MockPaymentPage(int selectedPropertyId)
-        {
-            SetCurrentMemberInfo();
-            ViewBag.SelectedPropertyId = selectedPropertyId;
-            return View();
-        }
-
         // 串接 Stripe 付款流程
         [HttpPost]
-        public async Task<IActionResult> CreateCheckoutSession(string furnitureCartId)
+        public async Task<IActionResult> CreateCheckoutSession(string furnitureCartId, int totalAmount)
         {
-            var domain = "https://localhost:7010/"; 
+            var domain = "https://localhost:7010"; 
 
             var options = new SessionCreateOptions
             {
@@ -622,19 +605,20 @@ namespace zuHause.Controllers
             {
                 PriceData = new SessionLineItemPriceDataOptions
                 {
-                    Currency = "twd",
-                    UnitAmount = 50000, // TWD 500.00 → 單位是「分」
+                     Currency = "twd",
+                    UnitAmount = totalAmount * 100, // 例如 500 會變 50000，Stripe 以「分」為單位
                     ProductData = new SessionLineItemPriceDataProductDataOptions
                     {
-                        Name = "家具租借費用"
+                        Name = "家具租借總金額",
+                        Description = "總租金 + 搬運費"
                     }
                 },
                 Quantity = 1,
             },
         },
                 Mode = "payment",
-                SuccessUrl = $"{domain}/Furniture/PaymentSuccess",
-                CancelUrl = $"{domain}/Furniture/CancelPayment?furnitureCartId={furnitureCartId}",
+                SuccessUrl = $"{domain}/Furniture/Success",
+                CancelUrl = $"{domain}/Furniture/CancelPayment?selectedPropertyId={furnitureCartId}",
             };
 
             var service = new SessionService();
@@ -644,140 +628,6 @@ namespace zuHause.Controllers
         }
 
 
-        //確認支付
-        [HttpPost]
-        public async Task<IActionResult> ConfirmPayment(int selectedPropertyId)
-        {
-            Console.WriteLine("Session MemberId: " + HttpContext.Session.GetInt32("MemberId"));
-
-
-            var memberId = HttpContext.Session.GetInt32("MemberId");
-            if (memberId == null)
-                return RedirectToAction("Login", "Member");
-
-            var member = _context.Members.FirstOrDefault(m => m.MemberId == memberId);
-            if (member == null)
-                return RedirectToAction("Login", "Member");
-
-            var claims = new List<Claim>
-                {
-                    new Claim("UserId", member.MemberId.ToString()),
-                    new Claim(ClaimTypes.Name, member.MemberName ?? "")
-                };
-            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-            var principal = new ClaimsPrincipal(identity);
-            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
-
-            var rentalApp = _context.RentalApplications
-            .FirstOrDefault(r => r.MemberId == member.MemberId && r.PropertyId == selectedPropertyId);
-
-            // 1. 建立正式合約與簽名紀錄
-            var contract = new Contract
-            {
-                RentalApplicationId = rentalApp?.ApplicationId ?? 0,
-                StartDate = DateOnly.FromDateTime(DateTime.Today),
-                EndDate = rentalApp?.RentalEndDate ?? DateOnly.FromDateTime(DateTime.Today.AddMonths(6)),
-                Status = "active",
-                CourtJurisdiction = "台北地方法院"
-            };
-            _context.Contracts.Add(contract);
-            _context.SaveChanges();
-
-            var signature = new ContractSignature
-            {
-                ContractId = contract.ContractId,
-                SignedAt = DateTime.Now,
-                SignatureFileUrl = HttpContext.Session.GetString("SignatureBase64") ?? ""
-            };
-            _context.ContractSignatures.Add(signature);
-
-            // 2. 取得該房源的購物車與項目
-            var cart = _context.FurnitureCarts
-                .Include(c => c.FurnitureCartItems)
-                .ThenInclude(i => i.Product)
-                .FirstOrDefault(c => c.MemberId == member.MemberId && c.PropertyId == selectedPropertyId && c.Status != "ORDERED");
-
-            if (cart == null) return RedirectToAction("RentalCart");
-
-            // 3. 建立訂單與明細
-            var order = new FurnitureOrder
-            {
-                MemberId = member.MemberId,
-                PropertyId = selectedPropertyId,
-                CreatedAt = DateTime.Now,
-                Status = "已付款"
-            };
-            _context.FurnitureOrders.Add(order);
-            _context.SaveChanges();
-
-            foreach (var item in cart.FurnitureCartItems)
-            {
-                //計算剩餘租期天數
-                DateOnly contractEndDate = contract.EndDate.Value;
-                DateOnly today = DateOnly.FromDateTime(DateTime.Today);
-                int availableDays = (contractEndDate.DayNumber - today.DayNumber) > 0
-                                    ? (contractEndDate.DayNumber - today.DayNumber)
-                                    : 0;
-                var rentalStart = DateOnly.FromDateTime(DateTime.Today);
-                var rentalEnd = rentalStart.AddDays(availableDays);
-
-                // 明細
-                var orderItem = new FurnitureOrderItem
-                {
-                    OrderId = order.FurnitureOrderId,
-                    ProductId = item.ProductId,
-                    Quantity = item.Quantity,
-                    DailyRentalSnapshot = item.Product.DailyRental,
-                    RentalDays = availableDays
-                };
-                _context.FurnitureOrderItems.Add(orderItem);
-
-                
-                // 歷史
-                var history = new FurnitureOrderHistory
-                {
-                    FurnitureOrderHistoryId = Guid.NewGuid().ToString("N"),
-                    OrderId = order.FurnitureOrderId,
-                    ProductId = item.ProductId,
-                    ProductNameSnapshot = item.Product.ProductName,
-                    DailyRentalSnapshot = item.Product.DailyRental,
-                    Quantity = item.Quantity,
-                    RentalStart = rentalStart,
-                    RentalEnd = rentalEnd,
-                    SubTotal = item.Product.DailyRental * item.Quantity * availableDays,
-                    ItemStatus = "已成立",
-                    CreatedAt = DateTime.Now
-                };
-                _context.FurnitureOrderHistories.Add(history);
-
-                // 異動庫存
-                var inventory = _context.FurnitureInventories.FirstOrDefault(i => i.ProductId == item.ProductId);
-                if (inventory != null)
-                {
-                    inventory.AvailableQuantity -= item.Quantity;
-                    inventory.RentedQuantity += item.Quantity;
-
-                    _context.InventoryEvents.Add(new InventoryEvent
-                    {
-                        FurnitureInventoryId = Guid.NewGuid(),
-                        ProductId = item.ProductId,
-                        EventType = "減少庫存",
-                        Quantity = -item.Quantity,
-                        SourceType = "訂單",                          //事件類型
-                        SourceId = order.FurnitureOrderId,             // 對應訂單 ID
-                        OccurredAt = DateTime.Now,
-                        RecordedAt = DateTime.Now
-                    });
-                }
-            }
-
-            // 4. 更新購物車狀態為已完成
-            cart.Status = "ORDERED";
-            _context.SaveChanges();
-
-            return View("Success");
-        }
-
         //支付成功
         public IActionResult Success()
         {
@@ -786,15 +636,15 @@ namespace zuHause.Controllers
 
         //付款取消
         [HttpPost]
-        public IActionResult CancelPayment(string FurnitureCartId)
+        public IActionResult CancelPayment(int selectedPropertyId)
         {
             var memberId = HttpContext.Session.GetInt32("MemberId");
             if (memberId == null)
-                return RedirectToAction("Login", "Member");
+                return RedirectToAction("Login", "Member", new { ReturnUrl = HttpContext.Request.Path + HttpContext.Request.QueryString });
 
             var cart = _context.FurnitureCarts
                 .Include(c => c.FurnitureCartItems)
-                .FirstOrDefault(c => c.MemberId == memberId && c.FurnitureCartId == FurnitureCartId);
+                .FirstOrDefault(c => c.MemberId == memberId && c.PropertyId == selectedPropertyId);
 
             if (cart != null)
             {
