@@ -611,16 +611,16 @@ namespace zuHause.Controllers
         [HttpPost]
         public async Task<IActionResult> ConfirmPayment(int selectedPropertyId)
         {
-            Console.WriteLine("Session MemberId: " + HttpContext.Session.GetInt32("MemberId"));
-
-
-            var memberId = HttpContext.Session.GetInt32("MemberId");
-            if (memberId == null)
-                return RedirectToAction("Login", "Member", new { ReturnUrl = HttpContext.Request.Path + HttpContext.Request.QueryString });
+            SetCurrentMemberInfo();
+            var memberIdString = User.FindFirst("UserId")?.Value;
+            if (string.IsNullOrEmpty(memberIdString) || !int.TryParse(memberIdString, out int memberId))
+            {
+                return RedirectToAction("Login", "Member");
+            }
 
             var member = _context.Members.FirstOrDefault(m => m.MemberId == memberId);
             if (member == null)
-                return RedirectToAction("Login", "Member", new { ReturnUrl = HttpContext.Request.Path + HttpContext.Request.QueryString });
+                return RedirectToAction("Login", "Member");
 
             var claims = new List<Claim>
                 {
@@ -751,9 +751,12 @@ namespace zuHause.Controllers
         [HttpPost]
         public IActionResult CancelPayment(int selectedPropertyId)
         {
-            var memberId = HttpContext.Session.GetInt32("MemberId");
-            if (memberId == null)
-                return RedirectToAction("Login", "Member", new { ReturnUrl = HttpContext.Request.Path + HttpContext.Request.QueryString });
+            SetCurrentMemberInfo();
+            var memberIdString = User.FindFirst("UserId")?.Value;
+            if (string.IsNullOrEmpty(memberIdString) || !int.TryParse(memberIdString, out int memberId))
+            {
+                return RedirectToAction("Login", "Member");
+            }
 
             var cart = _context.FurnitureCarts
                 .Include(c => c.FurnitureCartItems)
