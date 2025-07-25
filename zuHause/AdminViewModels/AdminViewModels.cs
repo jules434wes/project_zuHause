@@ -1207,4 +1207,87 @@ namespace zuHause.AdminViewModels
             _ => "未分類"
         };
     }
+
+    // 房源投訴管理相關 ViewModels
+    public class AdminPropertyComplaintsViewModel : BaseListViewModel<PropertyComplaintData>
+    {
+        public AdminPropertyComplaintsViewModel()
+        {
+            PageTitle = "房源投訴管理";
+            Items = new List<PropertyComplaintData>();
+            TotalCount = 0;
+            HasBulkActions = false;
+        }
+
+        public AdminPropertyComplaintsViewModel(ZuHauseContext context)
+        {
+            PageTitle = "房源投訴管理";
+            Items = LoadComplaintsFromDatabase(context);
+            TotalCount = Items.Count;
+            HasBulkActions = false;
+        }
+
+        private List<PropertyComplaintData> LoadComplaintsFromDatabase(ZuHauseContext context)
+        {
+            // 正確的查詢方式：在Select中直接導航，不需要Include
+            var complaints = context.PropertyComplaints
+                .OrderByDescending(pc => pc.CreatedAt)
+                .Select(pc => new PropertyComplaintData
+                {
+                    ComplaintId = pc.ComplaintId,
+                    ComplainantName = pc.Complainant != null ? pc.Complainant.MemberName : "未知用戶",
+                    ComplainantId = pc.ComplainantId,
+                    PropertyTitle = pc.Property != null ? pc.Property.Title : "未知房源",
+                    PropertyId = pc.PropertyId,
+                    LandlordName = pc.Landlord != null ? pc.Landlord.MemberName : "未知房東",
+                    LandlordId = pc.LandlordId,
+                    ComplaintContent = pc.ComplaintContent ?? "",
+                    Status = pc.StatusCode ?? "UNKNOWN",
+                    CreatedAt = pc.CreatedAt,
+                    UpdatedAt = pc.UpdatedAt,
+                    ResolvedAt = pc.ResolvedAt,
+                    InternalNote = pc.InternalNote,
+                    HandledBy = pc.HandledBy
+                })
+                .ToList();
+
+            return complaints;
+        }
+    }
+
+    // 房源投訴資料模型
+    public class PropertyComplaintData
+    {
+        public int ComplaintId { get; set; }
+        public string ComplainantName { get; set; } = string.Empty;
+        public int ComplainantId { get; set; }
+        public string PropertyTitle { get; set; } = string.Empty;
+        public int PropertyId { get; set; }
+        public string LandlordName { get; set; } = string.Empty;
+        public int LandlordId { get; set; }
+        public string ComplaintContent { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+        public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
+        public DateTime? ResolvedAt { get; set; }
+        public string? InternalNote { get; set; }
+        public int? HandledBy { get; set; }
+
+        // 格式化屬性
+        public string ComplaintIdDisplay => $"CMPL-{ComplaintId:0000}";
+        public string StatusDisplay => Status switch
+        {
+            "OPEN" => "處理中",
+            "RESOLVED" => "已處理",
+            "CLOSED" => "已關閉",
+            _ => "未知"
+        };
+        public string Summary => ComplaintContent.Length > 50 
+            ? ComplaintContent.Substring(0, 50) + "..."
+            : ComplaintContent;
+        public string ComplaintUrl => $"/Admin/admin_propertyComplaints/{ComplaintId}";
+        public string PropertyUrl => $"/Admin/admin_propertyDetails/{PropertyId}";
+        public string ComplainantUrl => $"/Admin/admin_userDetails/{ComplainantId}";
+        public string LandlordUrl => $"/Admin/admin_userDetails/{LandlordId}";
+    }
 }
