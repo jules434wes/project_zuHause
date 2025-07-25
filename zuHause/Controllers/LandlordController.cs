@@ -1,7 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
 using zuHause.Models;
 using zuHause.ViewModels;
+using zuHause.DTOs;
+using zuHause.Helpers;
 using System.Security.Claims;
 
 namespace zuHause.Controllers
@@ -79,6 +82,161 @@ namespace zuHause.Controllers
             }
             
             return RedirectToAction("Become");
+        }
+
+        /// <summary>
+        /// 房源管理主頁面
+        /// </summary>
+        [HttpGet("landlord/propertymanagement")]
+        [Authorize(AuthenticationSchemes = "MemberCookieAuth")]
+        public async Task<IActionResult> PropertyManagement()
+        {
+            try
+            {
+                // 1. 房東身份驗證
+                var landlordId = GetCurrentLandlordId();
+                if (landlordId == null)
+                {
+                    TempData["ErrorMessage"] = "無效的房東身份，請重新登入";
+                    return RedirectToAction("Login", "Member");
+                }
+
+                // 2. 查詢房東房源（直接 EF 查詢，無額外 Service 層）
+                var properties = await _context.Properties
+                    .Where(p => p.LandlordMemberId == landlordId.Value && p.DeletedAt == null)
+                    .AsNoTracking()
+                    .OrderByDescending(p => p.CreatedAt)
+                    .Select(p => new PropertyManagementDto
+                    {
+                        PropertyId = p.PropertyId,
+                        Title = p.Title,
+                        MonthlyRent = p.MonthlyRent,
+                        Address = p.AddressLine ?? string.Empty,
+                        StatusCode = p.StatusCode,
+                        RoomCount = p.RoomCount,
+                        LivingRoomCount = p.LivingRoomCount,
+                        BathroomCount = p.BathroomCount,
+                        Area = p.Area,
+                        CurrentFloor = p.CurrentFloor,
+                        TotalFloors = p.TotalFloors,
+                        ThumbnailUrl = p.PreviewImageUrl ?? "/images/property-placeholder.jpg",
+                        CreatedAt = p.CreatedAt,
+                        UpdatedAt = p.UpdatedAt,
+                        PublishedAt = p.PublishedAt,
+                        ExpireAt = p.ExpireAt,
+                        IsPaid = p.IsPaid,
+                        // TODO: 統計資料需要從相關表查詢
+                        ViewCount = 0,
+                        FavoriteCount = 0,
+                        ApplicationCount = 0
+                    })
+                    .ToListAsync();
+
+                // 3. 建立統計資料
+                var stats = new PropertyManagementStatsDto
+                {
+                    TotalProperties = properties.Count(),
+                    ListedProperties = properties.Count(p => p.StatusCode == "LISTED"),
+                    RentedProperties = properties.Count(p => p.StatusCode == "ALREADY_RENTED"),
+                    PendingActionProperties = properties.Count(p => p.RequiresAction),
+                    BannedProperties = properties.Count(p => p.StatusCode == "BANNED"),
+                    MonthlyViews = properties.Sum(p => p.ViewCount),
+                    MonthlyApplications = properties.Sum(p => p.ApplicationCount),
+                    AverageViewsPerProperty = properties.Count() > 0 ? 
+                        Math.Round((decimal)properties.Sum(p => p.ViewCount) / properties.Count(), 1) : 0
+                };
+
+                // 4. 狀態摘要統計
+                var statusSummary = properties
+                    .GroupBy(p => p.StatusCode)
+                    .ToDictionary(g => g.Key, g => g.Count());
+
+                // 5. 建立回應 DTO
+                var response = new PropertyManagementListResponseDto
+                {
+                    Properties = properties,
+                    TotalCount = properties.Count(),
+                    Stats = stats,
+                    StatusSummary = statusSummary
+                };
+
+                return View(response);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "房源管理頁面載入失敗，房東ID: {LandlordId}", GetCurrentLandlordId());
+                TempData["ErrorMessage"] = "載入房源資料時發生錯誤，請稍後再試";
+                return RedirectToAction("Index", "Home");
+            }
+        }
+
+        /// <summary>
+        /// 審核不通過資料補充頁面
+        /// </summary>
+        [HttpGet("property/supplement/{propertyId:int}")]
+        [Authorize(AuthenticationSchemes = "MemberCookieAuth")]
+        public async Task<IActionResult> PropertySupplement(int propertyId)
+        {
+            try
+            {
+                // 1. 房東身份驗證
+                var landlordId = GetCurrentLandlordId();
+                if (landlordId == null)
+                {
+                    return Unauthorized("無效的房東身份");
+                }
+
+                // 2. 查詢房源並驗證狀態
+                var property = await _context.Properties
+                    .FirstOrDefaultAsync(p => p.PropertyId == propertyId 
+                                           && p.LandlordMemberId == landlordId.Value
+                                           && p.DeletedAt == null);
+
+                if (property == null)
+                {
+                    TempData["ErrorMessage"] = "找不到指定的房源";
+                    return RedirectToAction("PropertyManagement");
+                }
+
+                // 3. 驗證房源狀態（僅限 REJECT_REVISE）
+                if (property.StatusCode != "REJECT_REVISE")
+                {
+                    TempData["ErrorMessage"] = "此房源不需要補充資料";
+                    return RedirectToAction("PropertyManagement");
+                }
+
+                // 4. TODO: 查詢審核不通過的具體原因
+                // 這部分需要從 approvals 和 approvalItems 表查詢具體的補件要求
+
+                return View(property);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "載入房源補充頁面失敗，房源ID: {PropertyId}", propertyId);
+                TempData["ErrorMessage"] = "載入頁面時發生錯誤";
+                return RedirectToAction("PropertyManagement");
+            }
+        }
+
+        /// <summary>
+        /// 取得當前房東ID
+        /// 驗證房東身份：IsLandlord == true && MemberTypeId == 2 && IdentityVerifiedAt != null
+        /// </summary>
+        private int? GetCurrentLandlordId()
+        {
+            // 從 MemberCookieAuth 取得會員ID
+            var userIdClaim = User.FindFirst("UserId")?.Value;
+            if (!int.TryParse(userIdClaim, out var memberId))
+                return null;
+
+            // 驗證是否為已驗證的房東
+            var member = _context.Members.FirstOrDefault(m => 
+                m.MemberId == memberId 
+                && m.IsLandlord 
+                && m.MemberTypeId == 2 
+                && m.IdentityVerifiedAt != null);
+
+            return member?.MemberId;
         }
         
         private bool CheckEligibility(Member member, out string errorMessage)
