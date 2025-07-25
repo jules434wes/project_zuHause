@@ -453,20 +453,6 @@ namespace zuHause.Controllers
             }
         }
 
-        /// <summary>
-        /// 取得投訴狀態顯示文字
-        /// </summary>
-        private static string GetComplaintStatusDisplay(string statusCode)
-        {
-            return statusCode switch
-            {
-                "PENDING" => "待處理",
-                "OPEN" => "處理中",
-                "RESOLVED" => "已處理",
-                "CLOSED" => "已關閉",
-                _ => "未知"
-            };
-        }
 
         // AJAX endpoints for dynamic data
         [HttpPost]
@@ -674,12 +660,13 @@ namespace zuHause.Controllers
         {
             try
             {
+                System.Diagnostics.Debug.WriteLine($"FilterComplaints called with parameters: keyword={keyword}, searchField={searchField}, status={status}, dateStart={dateStart}, dateEnd={dateEnd}, page={page}");
+                
                 var query = _context.PropertyComplaints.AsQueryable();
                 
-                // 調試：檢查總共有多少投訴記錄
+                // 檢查總記錄數
                 var totalRecords = query.Count();
-                System.Diagnostics.Debug.WriteLine($"FilterComplaints: Total records = {totalRecords}");
-                System.Diagnostics.Debug.WriteLine($"FilterComplaints: Parameters - keyword={keyword}, searchField={searchField}, status={status}");
+                System.Diagnostics.Debug.WriteLine($"Total PropertyComplaints records: {totalRecords}");
                 
                 if (totalRecords == 0)
                 {
@@ -695,106 +682,126 @@ namespace zuHause.Controllers
                     });
                 }
 
-                // 關鍵字搜尋 - 使用 Join 代替直接導航以避免 EF 問題
-                if (!string.IsNullOrEmpty(keyword))
+                // 關鍵字搜尋 - 使用更高效的 Join 查詢
+                if (!string.IsNullOrEmpty(keyword?.Trim()))
                 {
+                    keyword = keyword.Trim();
+                    System.Diagnostics.Debug.WriteLine($"Applying keyword filter: {keyword} in field: {searchField}");
+                    
                     switch (searchField?.ToLower())
                     {
                         case "complainantname":
-                            query = query.Where(pc => 
-                                _context.Members.Any(m => m.MemberId == pc.ComplainantId && m.MemberName.Contains(keyword)));
+                            query = from pc in query
+                                   join m in _context.Members on pc.ComplainantId equals m.MemberId
+                                   where m.MemberName.Contains(keyword)
+                                   select pc;
                             break;
                         case "propertytitle":
-                            query = query.Where(pc => 
-                                _context.Properties.Any(p => p.PropertyId == pc.PropertyId && p.Title.Contains(keyword)));
+                            query = from pc in query
+                                   join p in _context.Properties on pc.PropertyId equals p.PropertyId
+                                   where p.Title.Contains(keyword)
+                                   select pc;
                             break;
                         case "landlordname":
-                            query = query.Where(pc => 
-                                _context.Members.Any(m => m.MemberId == pc.LandlordId && m.MemberName.Contains(keyword)));
+                            query = from pc in query
+                                   join m in _context.Members on pc.LandlordId equals m.MemberId
+                                   where m.MemberName.Contains(keyword)
+                                   select pc;
                             break;
                         case "complaintcontent":
                             query = query.Where(pc => pc.ComplaintContent.Contains(keyword));
                             break;
+                        case "all":
                         default:
-                            // 全部欄位搜尋
-                            query = query.Where(pc => 
-                                _context.Members.Any(m => m.MemberId == pc.ComplainantId && m.MemberName.Contains(keyword)) ||
-                                _context.Properties.Any(p => p.PropertyId == pc.PropertyId && p.Title.Contains(keyword)) ||
-                                _context.Members.Any(m => m.MemberId == pc.LandlordId && m.MemberName.Contains(keyword)) ||
-                                pc.ComplaintContent.Contains(keyword));
+                            // 全部欄位搜尋 - 使用複合查詢
+                            var complainantMatches = from pc in query
+                                                   join m in _context.Members on pc.ComplainantId equals m.MemberId
+                                                   where m.MemberName.Contains(keyword)
+                                                   select pc.ComplaintId;
+                            
+                            var propertyMatches = from pc in query
+                                                join p in _context.Properties on pc.PropertyId equals p.PropertyId
+                                                where p.Title.Contains(keyword)
+                                                select pc.ComplaintId;
+                            
+                            var landlordMatches = from pc in query
+                                                 join m in _context.Members on pc.LandlordId equals m.MemberId
+                                                 where m.MemberName.Contains(keyword)
+                                                 select pc.ComplaintId;
+                            
+                            var contentMatches = query.Where(pc => pc.ComplaintContent.Contains(keyword))
+                                                    .Select(pc => pc.ComplaintId);
+                            
+                            var allMatchIds = complainantMatches.Union(propertyMatches)
+                                                               .Union(landlordMatches)
+                                                               .Union(contentMatches);
+                            
+                            query = query.Where(pc => allMatchIds.Contains(pc.ComplaintId));
                             break;
                     }
                 }
 
                 // 狀態篩選
-                if (!string.IsNullOrEmpty(status))
+                if (!string.IsNullOrEmpty(status?.Trim()))
                 {
-                    query = query.Where(pc => pc.StatusCode == status);
+                    System.Diagnostics.Debug.WriteLine($"Applying status filter: {status}");
+                    query = query.Where(pc => pc.StatusCode == status.Trim());
                 }
 
                 // 日期範圍篩選
                 if (dateStart.HasValue)
                 {
-                    query = query.Where(pc => pc.CreatedAt >= dateStart.Value);
+                    var startDate = dateStart.Value.Date;
+                    System.Diagnostics.Debug.WriteLine($"Applying date start filter: {startDate}");
+                    query = query.Where(pc => pc.CreatedAt >= startDate);
                 }
                 if (dateEnd.HasValue)
                 {
-                    var endDate = dateEnd.Value.Date.AddDays(1);
+                    var endDate = dateEnd.Value.Date.AddDays(1); // 包含當天結束
+                    System.Diagnostics.Debug.WriteLine($"Applying date end filter: {endDate}");
                     query = query.Where(pc => pc.CreatedAt < endDate);
                 }
 
-                // 總數計算
+                // 計算篩選後的總數
                 var totalCount = query.Count();
+                System.Diagnostics.Debug.WriteLine($"Filtered count: {totalCount}");
 
-                // 分頁處理 - 使用 Join 來正確取得關聯資料
-                var complaintsData = query
+                // 分頁查詢 - 使用 Include 來載入相關資料
+                var pagedComplaints = query
+                    .Include(pc => pc.Complainant)
+                    .Include(pc => pc.Property)
+                    .Include(pc => pc.Landlord)
                     .OrderByDescending(pc => pc.CreatedAt)
                     .Skip((page - 1) * pageSize)
                     .Take(pageSize)
-                    .Join(_context.Members, pc => pc.ComplainantId, m => m.MemberId, (pc, complainant) => new { pc, complainant })
-                    .Join(_context.Properties, x => x.pc.PropertyId, p => p.PropertyId, (x, property) => new { x.pc, x.complainant, property })
-                    .Join(_context.Members, x => x.pc.LandlordId, l => l.MemberId, (x, landlord) => new { x.pc, x.complainant, x.property, landlord })
-                    .Select(x => new
-                    {
-                        ComplaintId = x.pc.ComplaintId,
-                        ComplainantName = x.complainant.MemberName ?? "未知用戶",
-                        ComplainantId = x.pc.ComplainantId,
-                        PropertyTitle = x.property.Title ?? "未知房源",
-                        PropertyId = x.pc.PropertyId,
-                        LandlordName = x.landlord.MemberName ?? "未知房東",
-                        LandlordId = x.pc.LandlordId,
-                        ComplaintContent = x.pc.ComplaintContent ?? "",
-                        Status = x.pc.StatusCode ?? "UNKNOWN",
-                        CreatedAt = x.pc.CreatedAt,
-                        UpdatedAt = x.pc.UpdatedAt,
-                        ResolvedAt = x.pc.ResolvedAt
-                    })
                     .ToList();
-                
-                System.Diagnostics.Debug.WriteLine($"FilterComplaints: Loaded {complaintsData.Count} complaints data items");
 
-                // 在記憶體中處理格式化
-                var complaints = complaintsData.Select(pc => new
+                System.Diagnostics.Debug.WriteLine($"Paged complaints loaded: {pagedComplaints.Count}");
+
+                // 格式化輸出資料
+                var complaints = pagedComplaints.Select(pc => new
                 {
                     ComplaintId = pc.ComplaintId,
                     ComplaintIdDisplay = $"CMPL-{pc.ComplaintId:0000}",
-                    ComplainantName = pc.ComplainantName,
+                    ComplainantName = pc.Complainant?.MemberName ?? "未知用戶",
                     ComplainantId = pc.ComplainantId,
-                    PropertyTitle = pc.PropertyTitle,
+                    PropertyTitle = pc.Property?.Title ?? "未知房源",
                     PropertyId = pc.PropertyId,
-                    LandlordName = pc.LandlordName,
+                    LandlordName = pc.Landlord?.MemberName ?? "未知房東",
                     LandlordId = pc.LandlordId,
-                    ComplaintContent = pc.ComplaintContent, // 加上完整內容
-                    Summary = pc.ComplaintContent.Length > 50 
+                    ComplaintContent = pc.ComplaintContent ?? "",
+                    Summary = (pc.ComplaintContent?.Length > 50) 
                         ? pc.ComplaintContent.Substring(0, 50) + "..."
-                        : pc.ComplaintContent,
-                    Status = pc.Status,
-                    StatusDisplay = GetComplaintStatusDisplay(pc.Status),
+                        : (pc.ComplaintContent ?? "無內容"),
+                    Status = pc.StatusCode ?? "PENDING",
+                    StatusDisplay = GetComplaintStatusDisplay(pc.StatusCode ?? "PENDING"),
                     CreatedAt = pc.CreatedAt,
                     UpdatedAt = pc.UpdatedAt,
                     ResolvedAt = pc.ResolvedAt
                 }).ToList();
 
+                System.Diagnostics.Debug.WriteLine($"Formatted complaints: {complaints.Count}");
+                
                 return Json(new
                 {
                     success = true,
@@ -802,17 +809,36 @@ namespace zuHause.Controllers
                     totalCount = totalCount,
                     currentPage = page,
                     pageSize = pageSize,
-                    totalPages = (int)Math.Ceiling((double)totalCount / pageSize)
+                    totalPages = (int)Math.Ceiling((double)totalCount / pageSize),
+                    message = totalCount == 0 ? "沒有符合條件的投訴記錄" : null
                 });
             }
             catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine($"FilterComplaints error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
+                
                 return Json(new
                 {
                     success = false,
-                    message = "篩選投訴記錄時發生錯誤：" + ex.Message
+                    message = $"篩選投訴記錄時發生錯誤：{ex.Message}"
                 });
             }
+        }
+
+        /// <summary>
+        /// 取得投訴狀態顯示文字
+        /// </summary>
+        private string GetComplaintStatusDisplay(string statusCode)
+        {
+            return statusCode switch
+            {
+                "PENDING" => "待處理",
+                "OPEN" => "處理中",
+                "RESOLVED" => "已處理", 
+                "CLOSED" => "已關閉",
+                _ => "未知狀態"
+            };
         }
     }
 }

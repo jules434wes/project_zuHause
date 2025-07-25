@@ -10,14 +10,14 @@
     <!-- 頁面標題 -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h2>⚠️ @Model.PageTitle</h2>
+            <h2>@Model.PageTitle</h2>
             <p class="text-muted mb-0">處理和追蹤房源相關投訴案件</p>
-            @if (ViewBag.Debug != null)
+            @* @if (ViewBag.Debug != null)
             {
                 <div class="alert alert-info mt-2">
                     <strong>調試資訊:</strong> @ViewBag.Debug
                 </div>
-            }
+            } *@
         </div>
         <div id="statusSummary">
             <span class="badge bg-danger me-2">處理中: <span id="openCount">0</span></span>
@@ -40,7 +40,7 @@
                         <option value="complaintcontent">投訴內容</option>
                     </select>
                     <input type="text" id="searchKeyword" class="form-control" placeholder="輸入搜尋關鍵字">
-                    <button class="btn btn-outline-secondary" type="button" onclick="performSearch()">
+                    <button class="btn btn-outline-secondary" type="button" id="quickSearchBtn">
                         <i class="bi bi-search"></i>
                     </button>
                 </div>
@@ -66,10 +66,10 @@
             <div class="col-md-3">
                 <label class="form-label">&nbsp;</label>
                 <div class="d-flex gap-2">
-                    <button type="button" class="btn btn-primary" onclick="performSearch()">
+                    <button type="submit" class="btn btn-primary" id="searchBtn">
                         <i class="bi bi-search"></i> 搜尋
                     </button>
-                    <button type="button" class="btn btn-outline-secondary" onclick="resetSearch()">
+                    <button type="button" class="btn btn-outline-secondary" id="resetBtn">
                         <i class="bi bi-arrow-clockwise"></i> 重設
                     </button>
                 </div>
@@ -90,20 +90,29 @@
                 <table class="table table-striped">
                     <thead>
                         <tr>
-                            <th width="12%">投訴編號</th>
+                            @* <th width="12%">投訴編號</th>
                             <th width="15%">投訴人</th>
                             <th width="20%">房源標題</th>
                             <th width="15%">房東</th>
                             <th width="25%">投訴內容摘要</th>
                             <th width="8%">狀態</th>
                             <th width="12%">投訴時間</th>
-                            <th width="8%">操作</th>
+                            <th width="8%">操作</th> *@
+                            <th >投訴編號</th>
+                            <th >投訴人</th>
+                            <th >房源標題</th>
+                            <th >房東</th>
+                            <th >投訴內容摘要</th>
+                            <th >狀態</th>
+                            <th >投訴時間</th>
+                            <th >操作</th>
+
                         </tr>
                     </thead>
                     <tbody id="complaintsTableBody">
                         @if (Model.Items.Any())
                         {
-                            @foreach (var complaint in Model.Items)
+                            foreach (var complaint in Model.Items)
                             {
                                 <tr>
                                     <td>
@@ -142,10 +151,11 @@
                                     </td>
                                     <td>@complaint.CreatedAt.ToString("yyyy-MM-dd HH:mm")</td>
                                     <td>
-                                        <button type="button" class="btn btn-sm btn-outline-primary" 
+                                        <button type="button" class="btn btn-outline-primary" 
                                                 onclick="showComplaintDetails(@complaint.ComplaintId)" 
                                                 title="檢視詳情">
-                                            <i class="bi bi-eye"></i>
+                                                編輯
+                                            @* <i class="bi bi-eye"></i> *@
                                         </button>
                                     </td>
                                 </tr>

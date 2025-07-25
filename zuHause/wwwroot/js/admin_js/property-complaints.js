@@ -27,14 +27,32 @@ document.addEventListener('DOMContentLoaded', function() {
  * 初始化搜尋表單事件
  */
 function initializeSearchForm() {
-    // 搜尋按鈕事件
-    const searchButtons = document.querySelectorAll('button[onclick="performSearch()"]');
-    searchButtons.forEach(button => {
-        button.addEventListener('click', function(e) {
+    // 搜尋表單提交事件
+    const searchForm = document.getElementById('searchForm');
+    if (searchForm) {
+        searchForm.addEventListener('submit', function(e) {
             e.preventDefault();
             performSearch(1);
         });
-    });
+    }
+    
+    // 快速搜尋按鈕事件
+    const quickSearchBtn = document.getElementById('quickSearchBtn');
+    if (quickSearchBtn) {
+        quickSearchBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            performSearch(1);
+        });
+    }
+    
+    // 重設按鈕事件
+    const resetBtn = document.getElementById('resetBtn');
+    if (resetBtn) {
+        resetBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            resetSearch();
+        });
+    }
     
     // Enter 鍵搜尋
     const searchInput = document.getElementById('searchKeyword');
@@ -47,10 +65,39 @@ function initializeSearchForm() {
         });
     }
     
+    // 搜尋欄位選擇變更事件
+    const searchField = document.getElementById('searchField');
+    if (searchField) {
+        searchField.addEventListener('change', function() {
+            // 只有在有關鍵字時才觸發搜尋
+            const keyword = document.getElementById('searchKeyword')?.value?.trim();
+            if (keyword) {
+                performSearch(1);
+            }
+        });
+    }
+    
     // 狀態篩選變更事件
     const statusFilter = document.getElementById('statusFilter');
     if (statusFilter) {
         statusFilter.addEventListener('change', function() {
+            performSearch(1);
+        });
+    }
+    
+    // 日期篩選變更事件
+    const dateStart = document.getElementById('dateStart');
+    const dateEnd = document.getElementById('dateEnd');
+    
+    if (dateStart) {
+        dateStart.addEventListener('change', function() {
+            // 延遲執行，讓用戶有時間設定結束日期
+            setTimeout(() => performSearch(1), 300);
+        });
+    }
+    
+    if (dateEnd) {
+        dateEnd.addEventListener('change', function() {
             performSearch(1);
         });
     }
@@ -71,58 +118,101 @@ function performSearch(page = 1) {
     // 顯示載入狀態
     showLoadingState();
     
+    // 收集搜尋參數並進行驗證
+    const keyword = document.getElementById('searchKeyword')?.value?.trim() || '';
+    const searchField = document.getElementById('searchField')?.value || 'all';
+    const status = document.getElementById('statusFilter')?.value || '';
+    const dateStart = document.getElementById('dateStart')?.value || '';
+    const dateEnd = document.getElementById('dateEnd')?.value || '';
+    
+    // 日期驗證
+    if (dateStart && dateEnd && new Date(dateStart) > new Date(dateEnd)) {
+        showErrorMessage('開始日期不能晚於結束日期');
+        isLoading = false;
+        hideLoadingState();
+        return;
+    }
+    
     const formData = new FormData();
-    formData.append('keyword', document.getElementById('searchKeyword')?.value || '');
-    formData.append('searchField', document.getElementById('searchField')?.value || 'all');
-    formData.append('status', document.getElementById('statusFilter')?.value || '');
-    formData.append('dateStart', document.getElementById('dateStart')?.value || '');
-    formData.append('dateEnd', document.getElementById('dateEnd')?.value || '');
-    formData.append('page', page);
-    formData.append('pageSize', 10);
+    formData.append('keyword', keyword);
+    formData.append('searchField', searchField);
+    formData.append('status', status);
+    formData.append('dateStart', dateStart);
+    formData.append('dateEnd', dateEnd);
+    formData.append('page', page.toString());
+    formData.append('pageSize', '10');
     
     console.log('Performing search with params:', {
-        keyword: formData.get('keyword'),
-        searchField: formData.get('searchField'),
-        status: formData.get('status'),
-        dateStart: formData.get('dateStart'),
-        dateEnd: formData.get('dateEnd'),
-        page: formData.get('page'),
-        pageSize: formData.get('pageSize')
+        keyword: keyword,
+        searchField: searchField,
+        status: status,
+        dateStart: dateStart,
+        dateEnd: dateEnd,
+        page: page,
+        pageSize: 10
     });
     
     fetch('/Admin/FilterComplaints', {
         method: 'POST',
-        body: formData
+        body: formData,
+        headers: {
+            'RequestVerificationToken': document.querySelector('input[name=\"__RequestVerificationToken\"]')?.value || ''
+        }
     })
     .then(response => {
-        console.log('Response status:', response.status);
+        console.log('Response status:', response.status, response.statusText);
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
         return response.json();
     })
     .then(data => {
-        console.log('Search response:', data);
+        console.log('Search response received:', data);
         
-        if (data.success) {
-            renderComplaintsTable(data.data || []);
+        if (data && data.success) {
+            // 確保 data.data 是陣列
+            const complaintsData = Array.isArray(data.data) ? data.data : [];
+            
+            renderComplaintsTable(complaintsData);
             renderPagination(data.currentPage || 1, data.totalPages || 0, data.totalCount || 0);
             updateTotalCount(data.totalCount || 0);
+            updateStatusSummaryFromTable();
             
-            // 如果有 message，顯示在控制台
+            // 顯示服務器消息（如果有）
             if (data.message) {
                 console.log('Server message:', data.message);
+                // 如果是空結果消息，可以選擇顯示給用戶
+                if (data.totalCount === 0 && data.message.includes('沒有符合條件')) {
+                    showInfoMessage(data.message);
+                }
             }
         } else {
-            console.error('Search failed:', data.message);
-            showErrorMessage('搜尋失敗：' + (data.message || '未知錯誤'));
+            const errorMsg = data?.message || '搜尋失敗，請稍後再試';
+            console.error('Search failed:', errorMsg);
+            showErrorMessage(errorMsg);
             renderComplaintsTable([]);
+            renderPagination(1, 0, 0);
+            updateTotalCount(0);
         }
     })
     .catch(error => {
         console.error('Search error:', error);
-        showErrorMessage('搜尋時發生錯誤：' + error.message);
+        let errorMsg = '搜尋時發生錯誤';
+        
+        if (error.message.includes('HTTP 404')) {
+            errorMsg = '搜尋功能暫時無法使用，請聯絡系統管理員';
+        } else if (error.message.includes('HTTP 500')) {
+            errorMsg = '服務器內部錯誤，請稍後再試';
+        } else if (error.message.includes('NetworkError') || error.message.includes('fetch')) {
+            errorMsg = '網路連接錯誤，請檢查網路狀態';
+        } else {
+            errorMsg += '：' + error.message;
+        }
+        
+        showErrorMessage(errorMsg);
         renderComplaintsTable([]);
+        renderPagination(1, 0, 0);
+        updateTotalCount(0);
     })
     .finally(() => {
         isLoading = false;
@@ -161,7 +251,17 @@ function hideLoadingState() {
  */
 function showErrorMessage(message) {
     // 可以改為使用 Bootstrap Toast 或其他通知機制
-    alert(message);
+    console.error('Error:', message);
+    alert('錯誤：' + message);
+}
+
+/**
+ * 顯示信息訊息
+ */
+function showInfoMessage(message) {
+    console.info('Info:', message);
+    // 可以改為使用 Bootstrap Toast 顯示信息
+    // 目前暫時不顯示彈窗，避免干擾用戶
 }
 
 /**
@@ -175,9 +275,15 @@ function renderComplaintsTable(complaints) {
         return;
     }
     
+    // 確保 complaints 是陣列
+    if (!Array.isArray(complaints)) {
+        console.error('complaints is not an array:', typeof complaints, complaints);
+        complaints = [];
+    }
+    
     console.log('Rendering complaints table with', complaints.length, 'items');
     
-    if (!complaints || complaints.length === 0) {
+    if (complaints.length === 0) {
         tbody.innerHTML = `
             <tr>
                 <td colspan="8" class="empty-state">
@@ -194,18 +300,18 @@ function renderComplaintsTable(complaints) {
     
     tbody.innerHTML = complaints.map(complaint => {
         // 安全地處理所有可能為 null/undefined 的值
-        const complaintId = complaint.ComplaintId || 0;
-        const complaintIdDisplay = complaint.ComplaintIdDisplay || complaint.ComplaintId ? `CMPL-${String(complaint.ComplaintId).padStart(4, '0')}` : 'N/A';
-        const complainantName = complaint.ComplainantName || '未知用戶';
-        const complainantId = complaint.ComplainantId || '';
-        const propertyTitle = complaint.PropertyTitle || '未知房源';
-        const propertyId = complaint.PropertyId || '';
-        const landlordName = complaint.LandlordName || '未知房東';
-        const landlordId = complaint.LandlordId || '';
-        const complaintContent = complaint.ComplaintContent || '';
-        const summary = complaint.Summary || complaintContent || '無內容';
-        const status = complaint.Status || 'UNKNOWN';
-        const statusDisplay = complaint.StatusDisplay || getStatusDisplay(status);
+        const complaintId = complaint.complaintId || 0;
+        const complaintIdDisplay = complaint.complaintIdDisplay || (complaint.complaintId ? `CMPL-${String(complaint.complaintId).padStart(4, '0')}` : 'N/A');
+        const complainantName = complaint.complainantName || '未知用戶';
+        const complainantId = complaint.complainantId || 0;
+        const propertyTitle = complaint.propertyTitle || '未知房源';
+        const propertyId = complaint.propertyId || 0;
+        const landlordName = complaint.landlordName || '未知房東';
+        const landlordId = complaint.landlordId || 0;
+        const complaintContent = complaint.complaintContent || '';
+        const summary = complaint.summary || complaintContent || '無內容';
+        const status = complaint.status || 'UNKNOWN';
+        const statusDisplay = complaint.statusDisplay || getStatusDisplay(status);
         
         // 狀態徽章樣式
         const badgeClass = status === 'OPEN' ? 'bg-danger' : 
@@ -216,8 +322,8 @@ function renderComplaintsTable(complaints) {
         // 安全地處理日期格式
         let formattedDate = '無資料';
         try {
-            if (complaint.CreatedAt) {
-                const createdDate = new Date(complaint.CreatedAt);
+            if (complaint.createdAt) {
+                const createdDate = new Date(complaint.createdAt);
                 if (!isNaN(createdDate.getTime())) {
                     formattedDate = createdDate.toLocaleString('zh-TW', {
                         year: 'numeric', 
@@ -340,6 +446,14 @@ function updateTotalCount(count) {
  * 重設搜尋 - 全域函數，供 HTML onclick 使用
  */
 function resetSearch() {
+    if (isLoading) {
+        console.log('Reset search blocked: search already in progress');
+        return;
+    }
+    
+    console.log('Resetting search form and filters');
+    
+    // 重設表單欄位
     const searchKeyword = document.getElementById('searchKeyword');
     const searchField = document.getElementById('searchField');
     const statusFilter = document.getElementById('statusFilter');
@@ -347,11 +461,12 @@ function resetSearch() {
     const dateEnd = document.getElementById('dateEnd');
     
     if (searchKeyword) searchKeyword.value = '';
-    if (searchField) searchField.selectedIndex = 0;
-    if (statusFilter) statusFilter.selectedIndex = 0;
+    if (searchField) searchField.selectedIndex = 0; // 選擇第一個選項（全部欄位）
+    if (statusFilter) statusFilter.selectedIndex = 0; // 選擇第一個選項（全部）
     if (dateStart) dateStart.value = '';
     if (dateEnd) dateEnd.value = '';
     
+    // 執行不帶任何搜尋條件的查詢，顯示所有記錄
     performSearch(1);
 }
 
