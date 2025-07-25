@@ -30,14 +30,42 @@
                                 <button type="button" class="btn btn-aqua py-0 w-100 d-none" id="uploadButton">確認上傳</button>
                             </div>
                         </div>
-                        <span class="invalid-feedback opacity-100 d-block text-center"
+                        <span class="invalid-feedback opacity-100 d-none text-center"
                               id="userUploadStatus"></span>
                     </div>
 
                     <div class="col">
                         <ul class="list-group list-group-horizontal">
                             <li class="list-group-item w-50 border-0 d-flex align-items-center">歡迎回來，@Model.MemberName</li>
+                            
                             <li class="list-group-item w-50 border-0">
+                                <div class="row">
+                                    <div class="col-auto d-flex align-items-center gap-1">
+                                        <div class="d-flex align-items-center gap-1">
+                                            <i class="bi bi-person-vcard-fill"></i>
+                                            <span>身分認證</span>
+                                        </div>
+                                        <div class="review-status d-flex align-items-center gap-1">
+                                            
+                                                @if(!Model.IdentityVerifiedAt.HasValue)
+                                                {
+                                                <span>
+                                                    <i class="bi bi-exclamation-circle-fill fs-6"></i>
+                                                    尚未驗證
+                                                </span>
+                                                }
+                                                else
+                                                {
+                                                <span class="text-aqua">
+                                                    <i class="bi bi-check-circle-fill fs-6"></i>
+                                                    已完成認證
+                                                </span>
+                                                }
+                                        </div>
+                                    </div>
+                                </div>
+                            </li>
+                            @* <li class="list-group-item w-50 border-0">
                                 <div class="row">
                                     <div class="col-auto d-flex align-items-center gap-1">
                                         <div class="d-flex align-items-center gap-1">
@@ -50,7 +78,7 @@
                                         </div>
                                     </div>
                                 </div>
-                            </li>
+                            </li> *@
                         </ul>
                         <ul class="list-group list-group-horizontal-sm">
                             <li class="list-group-item w-50 border-0 d-flex align-items-center gap-2">
@@ -92,24 +120,10 @@
                                 }
 
                             </li>
-                            <li class="list-group-item w-50 border-0">
-                                <div class="row">
-                                    <div class="col-auto d-flex align-items-center gap-1">
-                                        <div class="d-flex align-items-center gap-1">
-                                            <i class="bi bi-person-vcard-fill"></i>
-                                            <span>身分認證</span>
-                                        </div>
-                                        <div class="review-status d-flex align-items-center gap-1">
-                                            <i class="bi bi-exclamation-circle-fill fs-6"></i>
-                                            <small>審核失敗</small>
-                                        </div>
-                                    </div>
-                                </div>
-                            </li>
                         </ul>
                         <ul class="list-group list-group-horizontal-md">
                             <li class="list-group-item w-50 border-0 flex-fill d-flex align-items-center">註冊日期：@Model.CreatedAt</li>
-                            <li class="list-group-item w-50 border-0">
+                            @* <li class="list-group-item w-50 border-0">
                                 <div class="row">
                                     <div class="col-auto d-flex align-items-center gap-1">
                                         <div class="d-flex align-items-center gap-1">
@@ -122,7 +136,7 @@
                                         </div> -->
                                     </div>
                                 </div>
-                            </li>
+                            </li> *@
                         </ul>
                     </div>
 
@@ -140,7 +154,7 @@
                     <div class="col-auto d-flex align-items-center gap-3">
                         <input type="hidden" readonly class="form-control-plaintext" asp-for="PhoneNumber">
                         <p class="m-0">@Model.PhoneNumber</p>
-                        <div class="review-status d-flex align-items-center gap-1">
+                        @* <div class="review-status d-flex align-items-center gap-1">
                             @if (Model.EmailVerifiedAt != null)
                             {
                                 <i class="bi bi-check-circle-fill fs-6"></i>
@@ -150,7 +164,7 @@
                             {
                                 <small>未認證</small>
                             }
-                        </div>
+                        </div> *@
                     </div>
                 </div>
                 <div class="row align-items-center w-100">
@@ -177,8 +191,10 @@
                             <input type="hidden" readonly class="form-control-plaintext" asp-for="MemberName">
                             <p class="m-0">@Model.MemberName</p>
                             <div class="review-status d-flex align-items-center gap-1">
-                                <i class="bi bi-check-circle-fill fs-6"></i>
-                                <small>已實名認證</small>
+                                <span class="text-white">
+                                    <i class="bi bi-check-circle-fill fs-6"></i>
+                                    已實名認證
+                                </span>
                             </div>
                         </div>
                     }
@@ -197,7 +213,9 @@
                     <label asp-for="NationalIdNo" class="col-2 col-form-label text-end">身分證字號</label>
                     <div class="col-auto d-flex align-items-center gap-3">
                         <input type="hidden" readonly class="form-control-plaintext" asp-for="NationalIdNo">
-                        <p class="m-0">@Model.NationalIdNo</p>
+                        <p class="m-0">
+                         @(Model.NationalIdNo != null ? Model.NationalIdNo : "")    
+                        </p>
                     </div>
                 </div>
                 <div class="row align-items-center w-100">
@@ -332,8 +350,20 @@
                                    placeholder="請上傳身分證正面照片">
                             <div class="col-auto id-error-msg"></div>
                             <div class="review-status d-flex align-items-center gap-1 col-auto">
-                                <i class="bi bi-check-circle-fill fs-6"></i>
-                                <small>已完成審核</small>
+                                @if(!Model.IdentityVerifiedAt.HasValue)
+                                {
+                                <span>
+                                    <i class="bi bi-exclamation-circle-fill fs-6"></i>
+                                    尚未通過驗證
+                                </span>
+                                }
+                                else
+                                {
+                                <span class="text-white">
+                                    <i class="bi bi-check-circle-fill fs-6"></i>
+                                    已完成審核
+                                </span>
+                                }
                             </div>
                         </div>
                     </div>
@@ -348,8 +378,20 @@
                                    placeholder="請上傳身分證反面照片">
                             <div class="col-auto id-error-msg"></div>
                             <div class="review-status d-flex align-items-center gap-1 col-auto">
-                                <i class="bi bi-check-circle-fill fs-6"></i>
-                                <small>已完成審核</small>
+                                @if(!Model.IdentityVerifiedAt.HasValue)
+                                {
+                                <span>
+                                    <i class="bi bi-exclamation-circle-fill fs-6"></i>
+                                    尚未通過驗證
+                                </span>
+                                }
+                                else
+                                {
+                                <span class="text-white">
+                                    <i class="bi bi-check-circle-fill fs-6"></i>
+                                    已完成審核
+                                </span>
+                                }
                             </div>
                         </div>
                     </div>

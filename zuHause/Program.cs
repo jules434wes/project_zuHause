@@ -58,6 +58,9 @@ builder.Services.AddDbContext<ZuHauseContext>(
 
 builder.Services.AddMemoryCache();
 
+// 註冊更新申請Log服務
+builder.Services.AddScoped<ApplicationService>();
+
 // 註冊 RealDataSeeder
 builder.Services.AddScoped<RealDataSeeder>();
 

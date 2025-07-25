@@ -1906,6 +1906,33 @@ namespace zuHause.Controllers
             public bool IsActive { get; set; }
         }
 
+        /// <summary>
+        /// 取得平台公告專用的模板選項 (用於公告新增功能)
+        /// </summary>
+        [HttpGet("GetPlatformAnnounceTemplates")]
+        public IActionResult GetPlatformAnnounceTemplates()
+        {
+            try
+            {
+                var templates = _context.AdminMessageTemplates
+                    .Where(t => t.CategoryCode == "PLATFORM_ANNOUNCE" && t.IsActive == true)
+                    .OrderBy(t => t.Title)
+                    .Select(t => new
+                    {
+                        templateId = t.TemplateId,
+                        title = t.Title,
+                        templateContent = t.TemplateContent
+                    })
+                    .ToList();
+
+                return Ok(new { success = true, data = templates });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = "載入平台公告模板時發生錯誤：" + ex.Message });
+            }
+        }
+
         #endregion
 
         [HttpGet("dashboard/stats")]

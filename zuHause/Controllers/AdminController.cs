@@ -6,6 +6,7 @@ using System.Linq;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using zuHause.Attributes;
+using zuHause.Interfaces;
 
 namespace zuHause.Controllers
 {
@@ -13,10 +14,12 @@ namespace zuHause.Controllers
     public class AdminController : Controller
     {
         private readonly ZuHauseContext _context;
+        private readonly IImageQueryService _imageQueryService;
 
-        public AdminController(ZuHauseContext context)
+        public AdminController(ZuHauseContext context, IImageQueryService imageQueryService)
         {
             _context = context;
+            _imageQueryService = imageQueryService;
         }
 
         /// <summary>
@@ -116,7 +119,7 @@ namespace zuHause.Controllers
         [RequireAdminPermission(AdminPermissions.PropertyList)]
         public IActionResult admin_propertiesList()
         {
-            var viewModel = new AdminPropertyListViewModel();
+            var viewModel = new AdminPropertyListViewModel(_context);
             return View(viewModel);
         }
         
@@ -141,9 +144,21 @@ namespace zuHause.Controllers
         /// 需要 property_list 權限才能存取（與房源列表使用相同權限）
         /// </summary>
         [RequireAdminPermission(AdminPermissions.PropertyDetails)]
-        public IActionResult admin_propertyDetails()
+        public IActionResult admin_propertyDetails(int? id)
         {
-            return View();
+            if (!id.HasValue)
+            {
+                return NotFound("房源ID不能為空");
+            }
+
+            var viewModel = new AdminPropertyDetailsViewModel(_context, _imageQueryService, id.Value);
+            
+            if (viewModel.Data == null)
+            {
+                return NotFound($"找不到房源ID: {id}");
+            }
+
+            return View(viewModel);
         }
 
         /// <summary>
