@@ -616,11 +616,11 @@ namespace zuHause.Controllers
 
             var memberId = HttpContext.Session.GetInt32("MemberId");
             if (memberId == null)
-                return RedirectToAction("Login", "Member");
+                return RedirectToAction("Login", "Member", new { ReturnUrl = HttpContext.Request.Path + HttpContext.Request.QueryString });
 
             var member = _context.Members.FirstOrDefault(m => m.MemberId == memberId);
             if (member == null)
-                return RedirectToAction("Login", "Member");
+                return RedirectToAction("Login", "Member", new { ReturnUrl = HttpContext.Request.Path + HttpContext.Request.QueryString });
 
             var claims = new List<Claim>
                 {
@@ -749,15 +749,15 @@ namespace zuHause.Controllers
 
         //付款取消
         [HttpPost]
-        public IActionResult CancelPayment(string FurnitureCartId)
+        public IActionResult CancelPayment(int selectedPropertyId)
         {
             var memberId = HttpContext.Session.GetInt32("MemberId");
             if (memberId == null)
-                return RedirectToAction("Login", "Member");
+                return RedirectToAction("Login", "Member", new { ReturnUrl = HttpContext.Request.Path + HttpContext.Request.QueryString });
 
             var cart = _context.FurnitureCarts
                 .Include(c => c.FurnitureCartItems)
-                .FirstOrDefault(c => c.MemberId == memberId && c.FurnitureCartId == FurnitureCartId);
+                .FirstOrDefault(c => c.MemberId == memberId && c.PropertyId == selectedPropertyId);
 
             if (cart != null)
             {

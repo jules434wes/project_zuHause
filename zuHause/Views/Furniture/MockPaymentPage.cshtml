@@ -15,13 +15,13 @@
         <div class="d-flex justify-content-center gap-3">
             <!-- 確定付款按鈕 -->
             <form method="post" action="/Furniture/ConfirmPayment">
-                <input type="hidden" name="FurnitureCartId" value="@FurnitureCartId" />
+                <input type="hidden" name="selectedPropertyId" value="@ViewBag.SelectedPropertyId" />
                 <button type="submit" class="btn btn-success">✅ 確定付款</button>
             </form>
 
             <!-- 取消付款按鈕 -->
             <form method="post" action="/Furniture/CancelPayment">
-                <input type="hidden" name="FurnitureCartId" value="@FurnitureCartId" />
+                <input type="hidden" name="selectedPropertyId" value="@ViewBag.SelectedPropertyId" />
                 <button type="submit" class="btn btn-outline-danger">❌ 取消付款</button>
             </form>
         </div>
