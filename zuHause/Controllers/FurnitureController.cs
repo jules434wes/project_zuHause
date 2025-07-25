@@ -201,7 +201,8 @@ namespace zuHause.Controllers
 
             if (ViewBag.CurrentMemberId == null)
             {
-                return RedirectToAction("Login", "Member");
+                var returnUrl = Url.Action("RentalCart", "Furniture", new { selectedPropertyId });
+                return RedirectToAction("Login", "Member", new { ReturnUrl = returnUrl });
             }
 
             ViewBag.SelectedPropertyId = selectedPropertyId;
@@ -610,6 +611,9 @@ namespace zuHause.Controllers
         [HttpPost]
         public async Task<IActionResult> ConfirmPayment(int selectedPropertyId)
         {
+            Console.WriteLine("Session MemberId: " + HttpContext.Session.GetInt32("MemberId"));
+
+
             var memberId = HttpContext.Session.GetInt32("MemberId");
             if (memberId == null)
                 return RedirectToAction("Login", "Member");
@@ -745,7 +749,7 @@ namespace zuHause.Controllers
 
         //付款取消
         [HttpPost]
-        public IActionResult CancelPayment(int selectedPropertyId)
+        public IActionResult CancelPayment(string FurnitureCartId)
         {
             var memberId = HttpContext.Session.GetInt32("MemberId");
             if (memberId == null)
@@ -753,7 +757,7 @@ namespace zuHause.Controllers
 
             var cart = _context.FurnitureCarts
                 .Include(c => c.FurnitureCartItems)
-                .FirstOrDefault(c => c.MemberId == memberId && c.PropertyId == selectedPropertyId && c.Status != "ORDERED");
+                .FirstOrDefault(c => c.MemberId == memberId && c.FurnitureCartId == FurnitureCartId);
 
             if (cart != null)
             {
