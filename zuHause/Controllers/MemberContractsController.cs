@@ -485,7 +485,7 @@ namespace zuHause.Controllers
             if (contract == null || contract.Template == null)
                 return "<p>合約不存在或無範本</p>";
 
-            // ✅ 使用資料庫中 TemplateContent，不用再從檔案讀取
+            // ✅ 使用資料庫中 TemplateContent
             string templateHtml = contract.Template.TemplateContent;
 
             var landlord = contract.RentalApplication?.Property?.LandlordMember;
@@ -573,6 +573,7 @@ namespace zuHause.Controllers
                         : $"<p style='color:red'>簽名檔不存在：{fileUri}</p>";
                 }
 
+            
 
 
                 var tenantSignaturePath = contract.ContractSignatures

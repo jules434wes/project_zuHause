@@ -601,24 +601,46 @@ namespace zuHause.Controllers
                 PaymentMethodTypes = new List<string> { "card" },
                 LineItems = new List<SessionLineItemOptions>
         {
-            new SessionLineItemOptions
+            SetCurrentMemberInfo();
+            var memberIdString = User.FindFirst("UserId")?.Value;
+            if (string.IsNullOrEmpty(memberIdString) || !int.TryParse(memberIdString, out int memberId))
             {
-                PriceData = new SessionLineItemPriceDataOptions
+                return RedirectToAction("Login", "Member");
+            }
+
+            var member = _context.Members.FirstOrDefault(m => m.MemberId == memberId);
+            if (member == null)
+                return RedirectToAction("Login", "Member");
+
+            var claims = new List<Claim>
                 {
-                     Currency = "twd",
-                    UnitAmount = totalAmount * 100, // 例如 500 會變 50000，Stripe 以「分」為單位
-                    ProductData = new SessionLineItemPriceDataProductDataOptions
-                    {
-                        Name = "家具租借總金額",
-                        Description = "總租金 + 搬運費"
-                    }
-                },
-                Quantity = 1,
-            },
-        },
-                Mode = "payment",
-                SuccessUrl = $"{domain}/Furniture/Success",
-                CancelUrl = $"{domain}/Furniture/CancelPayment?selectedPropertyId={furnitureCartId}",
+                    new Claim("UserId", member.MemberId.ToString()),
+                    new Claim(ClaimTypes.Name, member.MemberName ?? "")
+                };
+            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            var principal = new ClaimsPrincipal(identity);
+            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
+
+            var rentalApp = _context.RentalApplications
+            .FirstOrDefault(r => r.MemberId == member.MemberId && r.PropertyId == selectedPropertyId);
+
+            // 1. 建立正式合約與簽名紀錄
+            var contract = new Contract
+            {
+                RentalApplicationId = rentalApp?.ApplicationId ?? 0,
+                StartDate = DateOnly.FromDateTime(DateTime.Today),
+                EndDate = rentalApp?.RentalEndDate ?? DateOnly.FromDateTime(DateTime.Today.AddMonths(6)),
+                Status = "active",
+                CourtJurisdiction = "台北地方法院"
+            };
+            _context.Contracts.Add(contract);
+            _context.SaveChanges();
+
+            var signature = new ContractSignature
+            {
+                ContractId = contract.ContractId,
+                SignedAt = DateTime.Now,
+                SignatureFileUrl = HttpContext.Session.GetString("SignatureBase64") ?? ""
             };
 
             var service = new SessionService();
@@ -638,9 +660,12 @@ namespace zuHause.Controllers
         [HttpPost]
         public IActionResult CancelPayment(int selectedPropertyId)
         {
-            var memberId = HttpContext.Session.GetInt32("MemberId");
-            if (memberId == null)
-                return RedirectToAction("Login", "Member", new { ReturnUrl = HttpContext.Request.Path + HttpContext.Request.QueryString });
+            SetCurrentMemberInfo();
+            var memberIdString = User.FindFirst("UserId")?.Value;
+            if (string.IsNullOrEmpty(memberIdString) || !int.TryParse(memberIdString, out int memberId))
+            {
+                return RedirectToAction("Login", "Member");
+            }
 
             var cart = _context.FurnitureCarts
                 .Include(c => c.FurnitureCartItems)

@@ -893,7 +893,8 @@ namespace zuHause.Controllers
 
 
         /// <summary>
-        /// 智能重導向輔助方法 - 根據來源判斷要導向家具還是租屋首頁
+        /// 智能重導向輔助方法 - 結合Session模組追蹤和Referer判斷來決定轉導目標
+        /// 優先順序：明確ReturnUrl > Session記錄 > Referer判斷 > 預設首頁
         /// </summary>
         /// <param name="returnUrl">明確指定的回傳URL</param>
         /// <returns>重導向URL</returns>
@@ -901,45 +902,47 @@ namespace zuHause.Controllers
         {
             try
             {
-                // 如果有明確的 ReturnUrl，優先使用（保持現有邏輯不變）
+                // 第一優先：如果有明確的 ReturnUrl，優先使用
                 if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
                 {
                     return returnUrl;
                 }
 
-                // 檢查 HTTP Referer 來判斷用戶來源
+                // 第二優先：檢查Session中記錄的最後模組
+                var lastModule = HttpContext.Session.GetString("LastModule");
+                if (!string.IsNullOrEmpty(lastModule))
+                {
+                    return lastModule switch
+                    {
+                        "Furniture" => Url.Action("FurnitureHomePage", "Furniture") ?? "/Furniture/FurnitureHomePage",
+                        "Rental" => Url.Action("FrontPage", "Tenant") ?? "/Tenant/FrontPage",
+                        _ => Url.Action("FrontPage", "Tenant") ?? "/Tenant/FrontPage"
+                    };
+                }
+
+                // 第三優先：回退到Referer判斷 (針對Session過期或新用戶)
                 var referer = Request.Headers["Referer"].ToString();
                 if (!string.IsNullOrEmpty(referer))
                 {
-                    // 防止無限重導向：如果 Referer 指向登入或登出頁面，跳過檢查
-                    if (referer.Contains("/Member/Login") ||
-                        referer.Contains("/Member/Logout") ||
-                        referer.Contains("/Auth/"))
+                    // 防止無限重導向：跳過系統頁面
+                    if (!referer.Contains("/Member/") && 
+                        !referer.Contains("/Auth/") &&
+                        !referer.Contains("/Admin/"))
                     {
-                        // 跳過，使用預設行為
-                    }
-                    else
-                    {
-                        // 檢查是否來自家具相關頁面
-                        if (referer.Contains("/Furniture/") ||
-                            referer.Contains("FurnitureHomePage") ||
-                            referer.Contains("OrderHistory") ||
-                            referer.Contains("RentalCart") ||
-                            referer.Contains("ProductPurchasePage"))
+                        // 使用Controller路徑自動判斷（移除硬編碼頁面清單）
+                        if (referer.Contains("/Furniture/", StringComparison.OrdinalIgnoreCase))
                         {
-                            var furnitureUrl = Url.Action("FurnitureHomePage", "Furniture");
-                            return !string.IsNullOrEmpty(furnitureUrl) ? furnitureUrl : "/Furniture/FurnitureHomePage";
+                            return Url.Action("FurnitureHomePage", "Furniture") ?? "/Furniture/FurnitureHomePage";
                         }
                     }
                 }
 
-                // 預設導向租客首頁（維持原有行為）
-                var tenantUrl = Url.Action("FrontPage", "Tenant");
-                return !string.IsNullOrEmpty(tenantUrl) ? tenantUrl : "/Tenant/FrontPage";
+                // 預設：導向租屋首頁
+                return Url.Action("FrontPage", "Tenant") ?? "/Tenant/FrontPage";
             }
             catch (Exception)
             {
-                // 如果發生任何錯誤，回到安全的預設頁面
+                // 異常處理：回到安全的預設頁面
                 return "/Tenant/FrontPage";
             }
         }

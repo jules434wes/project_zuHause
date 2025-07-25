@@ -231,8 +231,34 @@
             })
             .then(res => {
                 if (res.ok) {
-                    // ✅ 簽名儲存成功，開始送 Stripe 表單
-                    document.getElementById("stripeForm").submit();
+                    // ✅ 簽署成功提示 + 倒數跳轉
+                          // ✅ 顯示彈窗方式倒數提示
+                    const backdrop = document.createElement("div");
+                    backdrop.className = "modal-backdrop-custom";
+
+                    const modal = document.createElement("div");
+                    modal.className = "modal-content-custom";
+
+                    modal.innerHTML = `
+                        <div>簽署成功！<br><br>
+                        將於 <span id="countdown">3</span> 秒後前往第三方支付...</div>
+                    `;
+
+                    backdrop.appendChild(modal);
+                    document.body.appendChild(backdrop);
+
+                    let countdown = 3;
+                    const countdownSpan = modal.querySelector("#countdown");
+
+                    const interval = setInterval(() => {
+                        countdown--;
+                        countdownSpan.innerText = countdown;
+                        if (countdown === 0) {
+                            clearInterval(interval);
+                            window.location.href = "/Furniture/MockPaymentPage?selectedPropertyId=" + @ViewBag.SelectedPropertyId;
+                        }
+                    }, 1000);
+
                 } else {
                     alert("簽名儲存失敗，請稍後再試");
                 }
