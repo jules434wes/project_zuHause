@@ -1,4 +1,9 @@
-﻿.property-img {
+﻿ul, li {
+    list-style: none;
+}
+
+
+.property-img {
     height: 100%;
 }
 

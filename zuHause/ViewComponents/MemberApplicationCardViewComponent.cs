@@ -43,11 +43,14 @@ namespace zuHause.ViewComponents
             },
             ["RENTAL"] = new() // 租賃
             {
-                "APPLIED",       // 已申請
-                "PENDING",       // 待審核
-                "APPROVED",      // 已同意申請
-                "SIGNING",       // 合約簽署中
-                "CONTRACTED"         // 合約已完成
+
+                "APPLIED", // 已申請
+                "PENDING", // 待審核
+                "WAITING_CONTRACT", // 租約編輯中
+                "SIGNING", // 待租客簽署
+                "WAIT_TENANT_AGREE", // 待租客同意
+                "WAIT_LANDLORD_AGREE", // 待房東同意
+                "CONTRACTED", // 租約已成立
             },
             ["REJECTED_FLOW"] = new() // 看房/租賃被拒絕
             {

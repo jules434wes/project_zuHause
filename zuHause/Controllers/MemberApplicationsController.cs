@@ -22,8 +22,9 @@ namespace zuHause.Controllers
         }
 
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string type = "ALL")
         {
+            ViewBag.type = type;
             if (User.Identity?.IsAuthenticated != true)
                 return RedirectToAction("Login", "Member");
 
@@ -32,6 +33,9 @@ namespace zuHause.Controllers
 
             var viewModel = await _context.RentalApplications
                 .Where(app => app.MemberId == memberId && app.IsActive && app.DeletedAt == null)
+                .Where(app=> (type == "ALL" || type == "") && (app.ApplicationType == "HOUSE_VIEWING" || app.ApplicationType == "RENTAL") ||
+                                (type == "HOUSE_VIEWING" && app.ApplicationType == "HOUSE_VIEWING") ||
+                                (type == "RENTAL" && app.ApplicationType == "RENTAL"))
                 .Include(app => app.ApplicationStatusLogs)
                 .Include(app => app.Contracts)
                 .Include(app => app.Property)

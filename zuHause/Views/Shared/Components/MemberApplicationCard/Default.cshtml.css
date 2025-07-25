@@ -44,6 +44,30 @@
 .active-5 [data-num="4"] .step-area-line-before,
 .active-5 [data-num="4"] .step-area-line-after,
 .active-5 [data-num="5"] .step-area-line-before
+/*6*/
+.active-6 [data-num="1"] .step-area-line-after,
+.active-6 [data-num="2"] .step-area-line-before,
+.active-6 [data-num="2"] .step-area-line-after,
+.active-6 [data-num="3"] .step-area-line-before,
+.active-6 [data-num="3"] .step-area-line-after,
+.active-6 [data-num="4"] .step-area-line-before,
+.active-6 [data-num="4"] .step-area-line-after,
+.active-6 [data-num="5"] .step-area-line-before,
+.active-6 [data-num="5"] .step-area-line-after,
+.active-6 [data-num="6"] .step-area-line-before,
+/*7*/
+.active-7 [data-num="1"] .step-area-line-after,
+.active-7 [data-num="2"] .step-area-line-before,
+.active-7 [data-num="2"] .step-area-line-after,
+.active-7 [data-num="3"] .step-area-line-before,
+.active-7 [data-num="3"] .step-area-line-after,
+.active-7 [data-num="4"] .step-area-line-before,
+.active-7 [data-num="4"] .step-area-line-after,
+.active-7 [data-num="5"] .step-area-line-before,
+.active-7 [data-num="5"] .step-area-line-after,
+.active-7 [data-num="6"] .step-area-line-before,
+.active-7 [data-num="6"] .step-area-line-after,
+.active-7 [data-num="7"] .step-area-line-before
 {
     background-color: #40b0ae;
 }
@@ -65,8 +89,23 @@
 .active-5 [data-num="1"] .icon,
 .active-5 [data-num="2"] .icon,
 .active-5 [data-num="3"] .icon,
-.active-5 [data-num="4"] .icon, 
-.active-5 [data-num="5"] .icon
+.active-5 [data-num="4"] .icon,
+.active-5 [data-num="5"] .icon,
+/*6*/
+.active-6 [data-num="1"] .icon,
+.active-6 [data-num="2"] .icon,
+.active-6 [data-num="3"] .icon,
+.active-6 [data-num="4"] .icon,
+.active-6 [data-num="5"] .icon,
+.active-6 [data-num="6"] .icon,
+/*7*/
+.active-7 [data-num="1"] .icon,
+.active-7 [data-num="2"] .icon,
+.active-7 [data-num="3"] .icon,
+.active-7 [data-num="4"] .icon,
+.active-7 [data-num="5"] .icon,
+.active-7 [data-num="6"] .icon,
+.active-7 [data-num="7"] .icon
 {
     background-color: #225e5d;
     --bs-border-color: #225e5d;
