@@ -98,13 +98,13 @@
                             <th width="8%">狀態</th>
                             <th width="12%">投訴時間</th>
                             <th width="8%">操作</th> *@
-                            <th >投訴編號</th>
-                            <th >投訴人</th>
+                            <th width="9%">投訴編號</th>
+                            <th width="8%">投訴人</th>
                             <th >房源標題</th>
-                            <th >房東</th>
+                            <th width="8%">房東</th>
                             <th >投訴內容摘要</th>
                             <th >狀態</th>
-                            <th >投訴時間</th>
+                            <th width="13%">投訴時間</th>
                             <th >操作</th>
 
                         </tr>
@@ -151,10 +151,11 @@
                                     </td>
                                     <td>@complaint.CreatedAt.ToString("yyyy-MM-dd HH:mm")</td>
                                     <td>
-                                        <button type="button" class="btn btn-outline-primary" 
+                                        <button type="button" class="btn btn-sm btn-outline-primary text-nowrap"
                                                 onclick="showComplaintDetails(@complaint.ComplaintId)" 
                                                 title="檢視詳情">
-                                                編輯
+                                                編輯 
+                                            @* <i class="bi bi-pencil-square"></i> *@
                                             @* <i class="bi bi-eye"></i> *@
                                         </button>
                                     </td>

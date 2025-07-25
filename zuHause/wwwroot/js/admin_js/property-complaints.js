@@ -348,8 +348,8 @@ function renderComplaintsTable(complaints) {
                 <td><span class="badge ${badgeClass}">${statusDisplay}</span></td>
                 <td>${formattedDate}</td>
                 <td>
-                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="showComplaintDetails(${complaintId})" title="檢視詳情">
-                        <i class="bi bi-eye"></i>
+                    <button type="button" class="btn btn-sm btn-outline-primary text-nowrap" onclick="showComplaintDetails(${complaintId})" title="編輯">
+                        編輯
                     </button>
                 </td>
             </tr>
