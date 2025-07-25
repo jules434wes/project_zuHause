@@ -310,23 +310,27 @@ namespace zuHause.Controllers
         {
             try
             {
+                // 使用 Join 來正確取得關聯資料，避免 EF 導航屬性問題
                 var complaint = _context.PropertyComplaints
                     .Where(pc => pc.ComplaintId == complaintId)
-                    .Select(pc => new {
-                        ComplaintId = pc.ComplaintId,
-                        ComplainantName = pc.Complainant != null ? pc.Complainant.MemberName : "未知用戶",
-                        ComplainantId = pc.ComplainantId,
-                        PropertyTitle = pc.Property != null ? pc.Property.Title : "未知房源",
-                        PropertyId = pc.PropertyId,
-                        LandlordName = pc.Landlord != null ? pc.Landlord.MemberName : "未知房東",
-                        LandlordId = pc.LandlordId,
-                        ComplaintContent = pc.ComplaintContent ?? "",
-                        StatusCode = pc.StatusCode ?? "UNKNOWN",
-                        CreatedAt = pc.CreatedAt,
-                        UpdatedAt = pc.UpdatedAt,
-                        ResolvedAt = pc.ResolvedAt,
-                        InternalNote = pc.InternalNote,
-                        HandledBy = pc.HandledBy
+                    .Join(_context.Members, pc => pc.ComplainantId, m => m.MemberId, (pc, complainant) => new { pc, complainant })
+                    .Join(_context.Properties, x => x.pc.PropertyId, p => p.PropertyId, (x, property) => new { x.pc, x.complainant, property })
+                    .Join(_context.Members, x => x.pc.LandlordId, l => l.MemberId, (x, landlord) => new { x.pc, x.complainant, x.property, landlord })
+                    .Select(x => new {
+                        ComplaintId = x.pc.ComplaintId,
+                        ComplainantName = x.complainant.MemberName ?? "未知用戶",
+                        ComplainantId = x.pc.ComplainantId,
+                        PropertyTitle = x.property.Title ?? "未知房源",
+                        PropertyId = x.pc.PropertyId,
+                        LandlordName = x.landlord.MemberName ?? "未知房東",
+                        LandlordId = x.pc.LandlordId,
+                        ComplaintContent = x.pc.ComplaintContent ?? "",
+                        StatusCode = x.pc.StatusCode ?? "UNKNOWN",
+                        CreatedAt = x.pc.CreatedAt,
+                        UpdatedAt = x.pc.UpdatedAt,
+                        ResolvedAt = x.pc.ResolvedAt,
+                        InternalNote = x.pc.InternalNote,
+                        HandledBy = x.pc.HandledBy
                     })
                     .FirstOrDefault();
 

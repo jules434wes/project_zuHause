@@ -203,10 +203,11 @@ function renderComplaintsTable(complaints) {
         const status = complaint.Status || 'UNKNOWN';
         const statusDisplay = complaint.StatusDisplay || getStatusDisplay(status);
         
-        // 狀態徽章樣式
+        // 狀態徽章樣式 - 兼容多種狀態值
         const badgeClass = status === 'OPEN' ? 'bg-danger' : 
                           status === 'RESOLVED' ? 'bg-success' : 
-                          status === 'CLOSED' ? 'bg-secondary' : 'bg-dark';
+                          status === 'CLOSED' ? 'bg-secondary' : 
+                          status === 'PENDING' ? 'bg-warning' : 'bg-dark';
         
         // 安全地處理日期格式
         let formattedDate = '無資料';
@@ -254,6 +255,7 @@ function getStatusDisplay(status) {
         case 'OPEN': return '處理中';
         case 'RESOLVED': return '已處理';
         case 'CLOSED': return '已關閉';
+        case 'PENDING': return '待處理';
         default: return '未知';
     }
 }
@@ -362,7 +364,7 @@ function updateStatusSummary() {
     .then(data => {
         if (data.success && data.data) {
             const complaints = data.data;
-            const openCount = complaints.filter(c => c.Status === 'OPEN').length;
+            const openCount = complaints.filter(c => c.Status === 'OPEN' || c.Status === 'PENDING').length;
             const resolvedCount = complaints.filter(c => c.Status === 'RESOLVED').length;
             const closedCount = complaints.filter(c => c.Status === 'CLOSED').length;
             
@@ -392,7 +394,7 @@ function updateStatusSummaryFromTable() {
         const statusBadge = row.querySelector('.badge');
         if (statusBadge) {
             const statusText = statusBadge.textContent.trim();
-            if (statusText === '處理中') openCount++;
+            if (statusText === '處理中' || statusText === '待處理') openCount++;
             else if (statusText === '已處理') resolvedCount++;
             else if (statusText === '已關閉') closedCount++;
         }
@@ -408,6 +410,309 @@ function updateStatusSummaryFromTable() {
     if (closedCountElement) closedCountElement.textContent = closedCount;
 }
 
+/**
+ * 顯示投訴詳情 Modal
+ */
+function showComplaintDetails(complaintId) {
+    console.log('Loading complaint details for ID:', complaintId);
+    
+    // 先顯示 Modal
+    const modal = new bootstrap.Modal(document.getElementById('complaintDetailsModal'), {
+        backdrop: 'static',
+        keyboard: false
+    });
+    modal.show();
+    
+    // 顯示載入狀態
+    const content = document.getElementById('complaintDetailsContent');
+    if (!content) {
+        console.error('complaintDetailsContent element not found');
+        return;
+    }
+    
+    content.innerHTML = `
+        <div class="text-center py-4">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">載入中...</span>
+            </div>
+            <p class="mt-2">載入投訴詳情中...</p>
+        </div>
+    `;
+    
+    // 載入投訴詳情
+    fetch(`/Admin/GetComplaintDetails?complaintId=${complaintId}`)
+        .then(response => {
+            console.log('Response status:', response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Received complaint data:', data);
+            if (data.success && data.data) {
+                renderComplaintDetails(data.data);
+            } else {
+                console.error('Server error:', data.message || 'No data received');
+                const errorMessage = data.message || '無法載入投訴詳情資料';
+                content.innerHTML = `
+                    <div class="alert alert-danger">
+                        <strong>錯誤：</strong>${errorMessage}
+                        <br><small>投訴ID: ${complaintId}</small>
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Fetch error:', error);
+            content.innerHTML = `
+                <div class="alert alert-danger">
+                    <strong>網路錯誤：</strong>${error.message}
+                    <br><small>請檢查網路連接或聯絡系統管理員</small>
+                    <br><small>投訴ID: ${complaintId}</small>
+                </div>
+            `;
+        });
+}
+
+/**
+ * 取得投訴狀態顯示文字 - 處理所有可能的狀態值
+ */
+function getComplaintStatusDisplay(status) {
+    switch (status) {
+        case 'OPEN': return '處理中';
+        case 'RESOLVED': return '已處理';
+        case 'CLOSED': return '已關閉';
+        case 'PENDING': return '待處理';
+        default: return '未知';
+    }
+}
+
+/**
+ * 渲染投訴詳情
+ */
+function renderComplaintDetails(complaint) {
+    console.log('Rendering complaint details:', complaint);
+    
+    const content = document.getElementById('complaintDetailsContent');
+    
+    if (!complaint) {
+        content.innerHTML = `
+            <div class="alert alert-warning">
+                <strong>警告：</strong>無法載入投訴詳情資料
+            </div>
+        `;
+        return;
+    }
+    
+    // 驗證必要資料欄位 - 處理後端欄位名稱不一致問題
+    const complaintId = complaint.ComplaintId || complaint.complaintId;
+    if (!complaintId) {
+        content.innerHTML = `
+            <div class="alert alert-danger">
+                <strong>錯誤：</strong>投訴資料不完整，缺少投訴ID
+                <br><small>收到的資料: ${JSON.stringify(complaint, null, 2)}</small>
+            </div>
+        `;
+        return;
+    }
+    
+    // 處理狀態樣式 - 兼容多種狀態值
+    const currentStatus = complaint.Status || complaint.status || 'UNKNOWN';
+    const statusBadgeClass = currentStatus === 'OPEN' ? 'bg-danger' : 
+                           currentStatus === 'RESOLVED' ? 'bg-success' : 
+                           currentStatus === 'CLOSED' ? 'bg-secondary' : 
+                           currentStatus === 'PENDING' ? 'bg-warning' : 'bg-dark';
+    
+    // 安全地處理日期格式 - 後端已經格式化過，直接使用
+    const formatDate = (dateStr) => {
+        if (!dateStr) return '無資料';
+        // 後端已經以 "yyyy-MM-dd HH:mm:ss" 格式返回，直接使用
+        if (typeof dateStr === 'string' && dateStr.includes('-')) {
+            // 移除秒數部分，只顯示到分鐘
+            return dateStr.substring(0, 16).replace(' ', ' ');
+        }
+        // 如果是其他格式，嘗試解析
+        try {
+            const date = new Date(dateStr);
+            if (isNaN(date.getTime())) return '無效日期';
+            return date.toLocaleString('zh-TW', {
+                year: 'numeric', 
+                month: '2-digit', 
+                day: '2-digit', 
+                hour: '2-digit', 
+                minute: '2-digit'
+            });
+        } catch (error) {
+            console.warn('Date parsing error:', error);
+            return dateStr; // 如果解析失敗，直接返回原始字串
+        }
+    };
+    
+    // 安全地處理所有數據欄位 - 處理後端欄位名稱不一致問題
+    const safeComplaint = {
+        ComplaintId: complaint.ComplaintId || complaint.complaintId || 0,
+        ComplaintIdDisplay: complaint.ComplaintIdDisplay || complaint.complaintIdDisplay || `CMPL-${(complaint.ComplaintId || complaint.complaintId || 0).toString().padStart(4, '0')}`,
+        ComplainantName: complaint.ComplainantName || complaint.complainantName || '未知用戶',
+        ComplainantId: complaint.ComplainantId || complaint.complainantId || 0,
+        PropertyTitle: complaint.PropertyTitle || complaint.propertyTitle || '未知房源',
+        PropertyId: complaint.PropertyId || complaint.propertyId || 0,
+        LandlordName: complaint.LandlordName || complaint.landlordName || '未知房東',
+        LandlordId: complaint.LandlordId || complaint.landlordId || 0,
+        ComplaintContent: complaint.ComplaintContent || complaint.complaintContent || '無投訴內容',
+        Status: complaint.Status || complaint.status || 'UNKNOWN',
+        StatusDisplay: complaint.StatusDisplay || complaint.statusDisplay || getComplaintStatusDisplay(complaint.Status || complaint.status || 'UNKNOWN'),
+        CreatedAt: complaint.CreatedAt || complaint.createdAt,
+        UpdatedAt: complaint.UpdatedAt || complaint.updatedAt,
+        ResolvedAt: complaint.ResolvedAt || complaint.resolvedAt,
+        InternalNote: complaint.InternalNote || complaint.internalNote || ''
+    };
+
+    content.innerHTML = `
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">投訴編號</label>
+                    <p class="text-primary">${safeComplaint.ComplaintIdDisplay}</p>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">投訴人</label>
+                    <p><a href="/Admin/admin_userDetails/${safeComplaint.ComplainantId}" class="text-decoration-none">${safeComplaint.ComplainantName}</a></p>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">房源標題</label>
+                    <p><a href="/Admin/admin_propertyDetails/${safeComplaint.PropertyId}" class="text-decoration-none">${safeComplaint.PropertyTitle}</a></p>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">房東</label>
+                    <p><a href="/Admin/admin_userDetails/${safeComplaint.LandlordId}" class="text-decoration-none">${safeComplaint.LandlordName}</a></p>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">處理狀態</label>
+                    <div>
+                        <span class="badge ${statusBadgeClass} me-2">${safeComplaint.StatusDisplay}</span>
+                        <select id="statusSelect" class="form-select form-select-sm d-inline-block" style="width: auto;" onchange="updateComplaintStatus(${safeComplaint.ComplaintId}, this.value)">
+                            <option value="PENDING" ${safeComplaint.Status === 'PENDING' ? 'selected' : ''}>待處理</option>
+                            <option value="OPEN" ${safeComplaint.Status === 'OPEN' ? 'selected' : ''}>處理中</option>
+                            <option value="RESOLVED" ${safeComplaint.Status === 'RESOLVED' ? 'selected' : ''}>已處理</option>
+                            <option value="CLOSED" ${safeComplaint.Status === 'CLOSED' ? 'selected' : ''}>已關閉</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">投訴時間</label>
+                    <p>${formatDate(safeComplaint.CreatedAt)}</p>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">最後更新</label>
+                    <p id="lastUpdated">${formatDate(safeComplaint.UpdatedAt)}</p>
+                </div>
+                ${safeComplaint.ResolvedAt ? `
+                <div class="mb-3">
+                    <label class="form-label fw-bold">結案時間</label>
+                    <p>${formatDate(safeComplaint.ResolvedAt)}</p>
+                </div>
+                ` : ''}
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-12">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">投訴內容</label>
+                    <div class="p-3 bg-light rounded">
+                        ${safeComplaint.ComplaintContent.replace(/\n/g, '<br>')}
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">內部註記</label>
+                    <textarea id="internalNote" class="form-control" rows="4" placeholder="請輸入內部處理註記...">${safeComplaint.InternalNote}</textarea>
+                    <input type="hidden" id="currentComplaintId" value="${safeComplaint.ComplaintId}">
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * 儲存內部註記
+ */
+function saveInternalNote() {
+    const complaintId = document.getElementById('currentComplaintId')?.value;
+    const internalNote = document.getElementById('internalNote')?.value || '';
+    
+    if (!complaintId) {
+        alert('無法取得投訴ID');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('complaintId', complaintId);
+    formData.append('internalNote', internalNote);
+    
+    fetch('/Admin/UpdateInternalNote', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('內部註記已更新');
+            const lastUpdatedElement = document.getElementById('lastUpdated');
+            if (lastUpdatedElement && data.data && data.data.UpdatedAt) {
+                // 後端返回已格式化的日期字串，直接使用並移除秒數
+                const formattedDate = data.data.UpdatedAt.substring(0, 16);
+                lastUpdatedElement.textContent = formattedDate;
+            }
+            // 重新載入表格
+            performSearch(currentPage);
+        } else {
+            alert('更新失敗：' + (data.message || '未知錯誤'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('更新時發生錯誤：' + error.message);
+    });
+}
+
+/**
+ * 更新投訴狀態
+ */
+function updateComplaintStatus(complaintId, status) {
+    const formData = new FormData();
+    formData.append('complaintId', complaintId);
+    formData.append('status', status);
+    
+    fetch('/Admin/UpdateComplaintStatus', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('投訴狀態已更新');
+            const lastUpdatedElement = document.getElementById('lastUpdated');
+            if (lastUpdatedElement && data.data && data.data.UpdatedAt) {
+                // 後端返回已格式化的日期字串，直接使用並移除秒數
+                const formattedDate = data.data.UpdatedAt.substring(0, 16);
+                lastUpdatedElement.textContent = formattedDate;
+            }
+            // 重新載入表格
+            performSearch(currentPage);
+            // 更新狀態統計
+            updateStatusSummary();
+        } else {
+            alert('更新失敗：' + (data.message || '未知錯誤'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('更新時發生錯誤：' + error.message);
+    });
+}
+
 // 使函數在全域可用，供 HTML onclick 屬性使用
 window.performSearch = performSearch;
 window.resetSearch = resetSearch;
@@ -415,3 +720,7 @@ window.renderComplaintsTable = renderComplaintsTable;
 window.renderPagination = renderPagination;
 window.updateStatusSummary = updateStatusSummary;
 window.updateStatusSummaryFromTable = updateStatusSummaryFromTable;
+window.showComplaintDetails = showComplaintDetails;
+window.renderComplaintDetails = renderComplaintDetails;
+window.saveInternalNote = saveInternalNote;
+window.updateComplaintStatus = updateComplaintStatus;
