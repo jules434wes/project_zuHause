@@ -18,7 +18,9 @@ namespace zuHause.Services
         private readonly IEntityExistenceChecker _entityExistenceChecker;
         private readonly IDisplayOrderManager _displayOrderManager;
         private readonly ILogger<ImageUploadService> _logger;
-        private readonly IWebHostEnvironment _env;
+        private readonly IBlobStorageService _blobStorageService;
+        private readonly ITempSessionService _tempSessionService;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
         // 上傳限制常數
         private const int MaxFileSize = 10 * 1024 * 1024; // 10MB
@@ -32,14 +34,18 @@ namespace zuHause.Services
             IEntityExistenceChecker entityExistenceChecker,
             IDisplayOrderManager displayOrderManager,
             ILogger<ImageUploadService> logger,
-            IWebHostEnvironment env)
+            IBlobStorageService blobStorageService,
+            ITempSessionService tempSessionService,
+            IHttpContextAccessor httpContextAccessor)
         {
             _context = context;
             _imageProcessor = imageProcessor;
             _entityExistenceChecker = entityExistenceChecker;
             _displayOrderManager = displayOrderManager;
             _logger = logger;
-            _env = env;
+            _blobStorageService = blobStorageService;
+            _tempSessionService = tempSessionService;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         /// <summary>
@@ -553,8 +559,6 @@ namespace zuHause.Services
                 // 生成唯一識別碼
                 var imageGuid = Guid.NewGuid();
 
-                // 寫檔前先處理圖片
-
                 // 使用圖片處理器將圖片轉換為 WebP
                 var processingResult = await _imageProcessor.ConvertToWebPAsync(imageStream, 1200, 90);
                 if (!processingResult.Success)
@@ -563,59 +567,84 @@ namespace zuHause.Services
                 }
 
                 var processedFormat = processingResult.ProcessedFormat.ToLowerInvariant(); // webp
-                var storedFileName = $"{imageGuid}.{processedFormat}";
 
-                // === 將處理後的串流寫入 wwwroot/images/original ===
+                // === 上傳至 Azure Blob Storage 臨時區域 ===
                 try
                 {
-                    var originalFolder = Path.Combine(_env.WebRootPath, "images", "original");
-                    Directory.CreateDirectory(originalFolder);
-                    var filePath = Path.Combine(originalFolder, storedFileName);
+                    // 獲取臨時會話 ID
+                    var httpContext = _httpContextAccessor.HttpContext;
+                    if (httpContext == null)
+                    {
+                        _logger.LogError("無法取得 HttpContext");
+                        return ImageUploadResult.CreateFailure(originalFileName, "系統錯誤：無法取得會話資訊");
+                    }
+                    
+                    var tempSessionId = _tempSessionService.GetOrCreateTempSessionId(httpContext);
+                    
+                    // 建立多尺寸串流字典
+                    var streams = new Dictionary<ImageSize, Stream>
+                    {
+                        { ImageSize.Original, processingResult.ProcessedStream! }
+                    };
+                    
+                    // 建立基礎路徑
+                    var basePath = $"temp/{tempSessionId}/{category.ToString().ToLowerInvariant()}/{entityId}/{imageGuid}";
+                    
+                    // 上傳至臨時區域的多個尺寸
+                    var uploadResult = await _blobStorageService.UploadMultipleSizesAsync(
+                        streams,
+                        basePath,
+                        $"image/{processedFormat}");
+                    
+                    if (!uploadResult.Success)
+                    {
+                        _logger.LogError("上傳至 Azure Blob Storage 失敗: {Error}", uploadResult.Message);
+                        return ImageUploadResult.CreateFailure(originalFileName, $"雲端儲存失敗: {uploadResult.Message}");
+                    }
 
-                    await using var fs = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None);
-                    processingResult.ProcessedStream!.Position = 0;
-                    await processingResult.ProcessedStream.CopyToAsync(fs);
+                    // 儲存 Blob 路徑作為 StoredFileName（用於後續識別）
+                    var storedFileName = $"temp/{tempSessionId}/{category.ToString().ToLowerInvariant()}/{entityId}/{imageGuid}.{processedFormat}";
+
+                    // 儲存到資料庫
+                    var image = new Image
+                    {
+                        ImageGuid = imageGuid,
+                        EntityType = entityType,
+                        EntityId = entityId,
+                        Category = category,
+                        MimeType = $"image/{processingResult.ProcessedFormat}",
+                        OriginalFileName = originalFileName,
+                        StoredFileName = storedFileName,
+                        FileSizeBytes = processingResult.SizeBytes,
+                        Width = processingResult.Width,
+                        Height = processingResult.Height,
+                        DisplayOrder = null, // 稍後批次分配
+                        IsActive = true,
+                        UploadedByMemberId = uploadedByMemberId,
+                        UploadedAt = DateTime.UtcNow
+                    };
+
+                    _context.Images.Add(image);
+                    await _context.SaveChangesAsync();
+
+                    return ImageUploadResult.CreateSuccess(
+                        image.ImageId,
+                        imageGuid,
+                        originalFileName,
+                        storedFileName,
+                        entityType,
+                        entityId,
+                        category,
+                        processingResult.SizeBytes,
+                        processingResult.Width,
+                        processingResult.Height,
+                        $"image/{processingResult.ProcessedFormat}");
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "寫入圖片檔案失敗: {FileName}", storedFileName);
-                    return ImageUploadResult.CreateFailure(originalFileName, "儲存圖片檔案失敗");
+                    _logger.LogError(ex, "上傳圖片至雲端儲存失敗: {FileName}", originalFileName);
+                    return ImageUploadResult.CreateFailure(originalFileName, $"雲端儲存失敗: {ex.Message}");
                 }
-
-                // 儲存到資料庫
-                var image = new Image
-                {
-                    ImageGuid = imageGuid,
-                    EntityType = entityType,
-                    EntityId = entityId,
-                    Category = category,
-                    MimeType = $"image/{processingResult.ProcessedFormat}",
-                    OriginalFileName = originalFileName,
-                    StoredFileName = storedFileName,
-                    FileSizeBytes = processingResult.SizeBytes,
-                    Width = processingResult.Width,
-                    Height = processingResult.Height,
-                    DisplayOrder = null, // 稍後批次分配
-                    IsActive = true,
-                    UploadedByMemberId = uploadedByMemberId,
-                    UploadedAt = DateTime.UtcNow
-                };
-
-                _context.Images.Add(image);
-                await _context.SaveChangesAsync();
-
-                return ImageUploadResult.CreateSuccess(
-                    image.ImageId,
-                    imageGuid,
-                    originalFileName,
-                    storedFileName,
-                    entityType,
-                    entityId,
-                    category,
-                    processingResult.SizeBytes,
-                    processingResult.Width,
-                    processingResult.Height,
-                    $"image/{processingResult.ProcessedFormat}");
             }
             catch (Exception ex)
             {

@@ -62,6 +62,18 @@
         if (saveBtn) {
             saveBtn.addEventListener('click', saveAnnouncement);
         }
+        
+        // 模板選擇功能
+        const templateSelect = document.getElementById('announcementTemplateSelect');
+        if (templateSelect) {
+            templateSelect.addEventListener('change', insertTemplate);
+        }
+        
+        // 重置表單按鈕
+        const resetFormBtn = document.getElementById('announcementResetFormBtn');
+        if (resetFormBtn) {
+            resetFormBtn.addEventListener('click', resetAnnouncementForm);
+        }
     }
 
     // 載入公告列表
@@ -204,8 +216,93 @@
     function showAddModal() {
     clearForm();
     document.getElementById('announcementModalLabel').textContent = '新增公告';
+    
+    // 顯示模板選擇區塊並載入模板選項
+    const templateSection = document.getElementById('announcementTemplateSection');
+    if (templateSection) {
+        templateSection.style.display = 'block';
+        loadTemplateOptions();
+    }
+    
     new bootstrap.Modal(document.getElementById('announcementModal')).show();
 }
+
+    // 載入平台公告模板選項
+    async function loadTemplateOptions() {
+        try {
+            const response = await fetch('/Dashboard/GetPlatformAnnounceTemplates');
+            const result = await response.json();
+            
+            if (response.ok && result.success) {
+                const templateSelect = document.getElementById('announcementTemplateSelect');
+                
+                // 清空現有選項，保留預設選項
+                templateSelect.innerHTML = '<option value="">請選擇模板...</option>';
+                
+                // 添加模板選項
+                result.data.forEach(template => {
+                    const option = document.createElement('option');
+                    option.value = template.templateId;
+                    option.textContent = template.title;
+                    templateSelect.appendChild(option);
+                });
+            } else {
+                console.error('載入模板選項失敗:', result.message);
+            }
+        } catch (error) {
+            console.error('載入模板選項時發生錯誤:', error);
+        }
+    }
+    
+    // 插入選中的模板
+    async function insertTemplate() {
+        const templateSelect = document.getElementById('announcementTemplateSelect');
+        const templateId = templateSelect.value;
+        
+        if (!templateId) {
+            return;
+        }
+        
+        try {
+            const response = await fetch('/Dashboard/GetPlatformAnnounceTemplates');
+            const result = await response.json();
+            
+            if (response.ok && result.success) {
+                const selectedTemplate = result.data.find(t => t.templateId == templateId);
+                
+                if (selectedTemplate) {
+                    // 填入標題和內容
+                    document.getElementById('announcementTitle').value = selectedTemplate.title;
+                    document.getElementById('announcementContent').value = selectedTemplate.templateContent;
+                    
+                    console.log('📝 已插入模板:', selectedTemplate.title);
+                }
+            }
+        } catch (error) {
+            console.error('插入模板時發生錯誤:', error);
+            showToast('插入模板時發生錯誤', 'error');
+        }
+    }
+    
+    // 重置公告表單
+    function resetAnnouncementForm() {
+        const form = document.getElementById('announcementForm');
+        form.reset();
+        
+        // 重置隱藏欄位
+        document.getElementById('announcementId').value = '';
+        
+        // 重置模板選擇
+        const templateSelect = document.getElementById('announcementTemplateSelect');
+        if (templateSelect) {
+            templateSelect.value = '';
+        }
+        
+        // 重置checkbox預設狀態
+        document.getElementById('announcementIsActive').checked = true;
+        
+        console.log('🔄 公告表單已重置');
+    }
 
     // 編輯公告
     async function editAnnouncement(id) {
@@ -216,6 +313,13 @@
         if (response.ok) {
             fillForm(announcement);
             document.getElementById('announcementModalLabel').textContent = '編輯公告';
+            
+            // 隱藏模板選擇區塊（編輯模式不需要）
+            const templateSection = document.getElementById('announcementTemplateSection');
+            if (templateSection) {
+                templateSection.style.display = 'none';
+            }
+            
             new bootstrap.Modal(document.getElementById('announcementModal')).show();
         } else {
             showToast('載入公告資料失敗', 'error');
@@ -545,6 +649,7 @@
     window.toggleAnnouncementStatus = toggleAnnouncementStatus;
     window.deleteAnnouncement = deleteAnnouncement;
     window.loadAnnouncements = loadAnnouncements;
+    window.resetAnnouncementForm = resetAnnouncementForm;
 
     console.log("📢 公告管理 JS 已載入");
 })();

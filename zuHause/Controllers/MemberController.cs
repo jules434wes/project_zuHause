@@ -10,6 +10,7 @@ using System.Security.Claims;
 using zuHause.Models;
 using zuHause.Services;
 using zuHause.ViewModels.MemberViewModel;
+using System.Text.Json;
 
 namespace zuHause.Controllers
 {
@@ -33,7 +34,7 @@ namespace zuHause.Controllers
         [HttpGet]
         public IActionResult Login(string? ReturnUrl = null)
         {
-            if(User.Identity?.IsAuthenticated == true)
+            if (User.Identity?.IsAuthenticated == true)
             {
                 return RedirectToAction("Index");
             }
@@ -128,9 +129,8 @@ namespace zuHause.Controllers
 
             var authProperties = new AuthenticationProperties
             {
-                IsPersistent = true,
-                ExpiresUtc = DateTimeOffset.UtcNow.AddHours(72)
-
+                IsPersistent = false // 瀏覽器關閉後登出，15分鐘閒置自動登出
+                // 移除手動過期設定，使用 Program.cs 中的統一配置
             };
 
             var photoPath = _context.Members.Join(_context.UserUploads,
@@ -165,17 +165,13 @@ namespace zuHause.Controllers
             TempData["SuccessMessageTitle"] = "通知";
             TempData["SuccessMessageContent"] = "登入成功";
 
-            if (!string.IsNullOrEmpty(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl))
-            {
-                return Redirect(model.ReturnUrl);
-            }
-            else
-            {
-                return RedirectToAction("Index");
-            }
+            // 使用智能重導向邏輯
+            var redirectUrl = GetSmartRedirectUrl(model.ReturnUrl);
+            return Redirect(redirectUrl);
 
         }
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
         {
             var memberId = User.FindFirst("UserId")?.Value;
@@ -185,7 +181,10 @@ namespace zuHause.Controllers
 
             TempData["SuccessMessageTitle"] = "通知";
             TempData["SuccessMessageContent"] = "您已登出";
-            return RedirectToAction("Index");
+
+            // 使用智能重導向邏輯（登出時沒有 ReturnUrl，純粹根據 Referer 判斷）
+            var redirectUrl = GetSmartRedirectUrl(null);
+            return Redirect(redirectUrl);
         }
         [HttpPost]
         [Authorize(AuthenticationSchemes = "MemberCookieAuth")]
@@ -275,9 +274,8 @@ namespace zuHause.Controllers
             var claimsIdentity = new ClaimsIdentity(claims, "MemberCookieAuth");
             var authProperties = new AuthenticationProperties
             {
-                IsPersistent = true,
-                ExpiresUtc = DateTimeOffset.UtcNow.AddHours(72)
-
+                IsPersistent = false // 瀏覽器關閉後登出，15分鐘閒置自動登出
+                // 移除手動過期設定，使用 Program.cs 中的統一配置
             };
 
             await HttpContext.SignOutAsync("MemberCookieAuth");
@@ -314,7 +312,7 @@ namespace zuHause.Controllers
         [Authorize(AuthenticationSchemes = "MemberCookieAuth")]
         public async Task<IActionResult> ResetPassword(ForgotPasswordViewModel model)
         {
-            if(model.ReturnUrl == null)
+            if (model.ReturnUrl == null)
             {
                 model.ReturnUrl = Url.Action("Index", "Member");
             }
@@ -326,7 +324,7 @@ namespace zuHause.Controllers
 
             var member = await _context.Members.FindAsync(int.Parse(User.FindFirst("UserId")!.Value));
 
-            if(member == null) return View("ResetPasswordConfirmCode", model);
+            if (member == null) return View("ResetPasswordConfirmCode", model);
             bool result = _memberService.verifyPassword(member, model.OriginalPassword!);
 
             if (!result)
@@ -342,7 +340,7 @@ namespace zuHause.Controllers
             TempData["SuccessMessageTitle"] = "成功";
             TempData["SuccessMessageContent"] = "密碼修改完成";
 
-            if(!string.IsNullOrEmpty(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl))
+            if (!string.IsNullOrEmpty(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl))
             {
                 return Redirect(model.ReturnUrl);
             }
@@ -358,7 +356,7 @@ namespace zuHause.Controllers
         public IActionResult RegisterVerifyPhone()
         {
 
-            if(User.Identity?.IsAuthenticated == true)
+            if (User.Identity?.IsAuthenticated == true)
             {
                 return RedirectToAction("Index");
             }
@@ -509,9 +507,8 @@ namespace zuHause.Controllers
             var claimsIdentity = new ClaimsIdentity(claims, "MemberCookieAuth");
             var authProperties = new AuthenticationProperties
             {
-                IsPersistent = true,
-                ExpiresUtc = DateTimeOffset.UtcNow.AddHours(72)
-
+                IsPersistent = false // 瀏覽器關閉後登出，15分鐘閒置自動登出
+                // 移除手動過期設定，使用 Program.cs 中的統一配置
             };
 
 
@@ -630,7 +627,7 @@ namespace zuHause.Controllers
                 PhoneVerifiedAt = member.PhoneVerifiedAt,
                 EmailVerifiedAt = member.EmailVerifiedAt,
                 IdentityVerifiedAt = member.IdentityVerifiedAt,
-                NationalIdNo = member.NationalIdNo != null ? member.NationalIdNo : "尚未認證",
+                NationalIdNo = member.NationalIdNo,
                 CreatedAt = member.CreatedAt,
                 CityOptions = cities,
                 ResidenceDistrictOptions = residenceDistrict,
@@ -723,24 +720,25 @@ namespace zuHause.Controllers
             var member = await _context.Members.FindAsync(int.Parse(User.FindFirst("UserId")!.Value));
             if (member == null) return BadRequest(new
             {
-                status= "error",
-                message= "請先登入",
+                status = "error",
+                message = "請先登入",
             });
 
-            var frontLog = await _context.UserUploads.Where(u => u.MemberId == member.MemberId && u.UploadTypeCode == "USER_ID_FRONT").OrderByDescending(x=>x.UploadId).FirstOrDefaultAsync();
+            var frontLog = await _context.UserUploads.Where(u => u.MemberId == member.MemberId && u.UploadTypeCode == "USER_ID_FRONT").OrderByDescending(x => x.UploadId).FirstOrDefaultAsync();
 
 
 
-            var backLog = await _context.UserUploads.Where(u => u.MemberId == member.MemberId && u.UploadTypeCode == "USER_ID_BACK").OrderByDescending(x=>x.UploadId).FirstOrDefaultAsync();
+            var backLog = await _context.UserUploads.Where(u => u.MemberId == member.MemberId && u.UploadTypeCode == "USER_ID_BACK").OrderByDescending(x => x.UploadId).FirstOrDefaultAsync();
 
-            if(backLog == null && frontLog == null) return BadRequest(new
+            if (backLog == null && frontLog == null) return BadRequest(new
             {
                 status = "error",
                 message = "無上傳紀錄",
             });
 
 
-            return Ok(new {
+            return Ok(new
+            {
                 status = "ok",
                 hasFront = frontLog != null,
                 hasBack = backLog != null,
@@ -817,13 +815,136 @@ namespace zuHause.Controllers
             };
             _context.UserUploads.Add(uploadInfo);
             await _context.SaveChangesAsync();
-            _cache.Set($"Avatar_{User.FindFirst("UserId")?.Value}", $"~{storePath}");
+
+            if (model.ModuleCode == "MemberInfo" && model.UploadTypeCode == "USER_IMG")
+            {
+                _cache.Set($"Avatar_{User.FindFirst("UserId")?.Value}", $"~{storePath}");
+            }
             return Ok(new
             {
                 originalFileName = model.UploadFile.FileName,
                 storedFileName = storeFileName,
                 previewUrl = $"/uploads/{uploadFolderName}/{storeFileName}",
             });
+        }
+
+        //會員認證
+
+        [HttpPost]
+        public async Task<IActionResult> SubmitIdentityApplication()
+        {
+
+            int memberId = int.Parse(User.FindFirst("UserId")!.Value);
+
+            var member = await _context.Members
+                .FirstOrDefaultAsync(m => m.MemberId == memberId);
+
+
+            if (member == null)
+                return NotFound("找不到會員");
+
+            var exists = await _context.Approvals.AnyAsync(a =>
+                a.ModuleCode == "IDENTITY" &&
+                a.ApplicantMemberId == memberId &&
+                a.StatusCode == "PENDING");
+
+            if (exists)
+                return BadRequest("已有待審核的申請，不可重複送出");
+
+
+
+
+            var approval = new Approval
+            {
+                ModuleCode = "IDENTITY",
+                ApplicantMemberId = memberId,
+                StatusCode = "PENDING",
+                CurrentApproverId = 0,
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now
+            };
+            _context.Approvals.Add(approval);
+            await _context.SaveChangesAsync();
+            var snapshot = new
+            {
+                memberID = member.MemberId,
+                memberName = member.MemberName,
+                submitTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+                verificationStatus = "pending"
+            };
+            string snapshotJson = JsonSerializer.Serialize(snapshot);
+
+            var item = new ApprovalItem
+            {
+                ApprovalId = approval.ApprovalId,
+                ActionBy = null,
+                ActionType = "SUBMIT",
+                ActionNote = "會員提交身分證驗證申請",
+                SnapshotJson = snapshotJson,
+                CreatedAt = DateTime.Now
+            };
+            _context.ApprovalItems.Add(item);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "身份驗證申請已送出" });
+        }
+
+
+
+
+        /// <summary>
+        /// 智能重導向輔助方法 - 結合Session模組追蹤和Referer判斷來決定轉導目標
+        /// 優先順序：明確ReturnUrl > Session記錄 > Referer判斷 > 預設首頁
+        /// </summary>
+        /// <param name="returnUrl">明確指定的回傳URL</param>
+        /// <returns>重導向URL</returns>
+        private string GetSmartRedirectUrl(string? returnUrl)
+        {
+            try
+            {
+                // 第一優先：如果有明確的 ReturnUrl，優先使用
+                if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+                {
+                    return returnUrl;
+                }
+
+                // 第二優先：檢查Session中記錄的最後模組
+                var lastModule = HttpContext.Session.GetString("LastModule");
+                if (!string.IsNullOrEmpty(lastModule))
+                {
+                    return lastModule switch
+                    {
+                        "Furniture" => Url.Action("FurnitureHomePage", "Furniture") ?? "/Furniture/FurnitureHomePage",
+                        "Rental" => Url.Action("FrontPage", "Tenant") ?? "/Tenant/FrontPage",
+                        _ => Url.Action("FrontPage", "Tenant") ?? "/Tenant/FrontPage"
+                    };
+                }
+
+                // 第三優先：回退到Referer判斷 (針對Session過期或新用戶)
+                var referer = Request.Headers["Referer"].ToString();
+                if (!string.IsNullOrEmpty(referer))
+                {
+                    // 防止無限重導向：跳過系統頁面
+                    if (!referer.Contains("/Member/") && 
+                        !referer.Contains("/Auth/") &&
+                        !referer.Contains("/Admin/"))
+                    {
+                        // 使用Controller路徑自動判斷（移除硬編碼頁面清單）
+                        if (referer.Contains("/Furniture/", StringComparison.OrdinalIgnoreCase))
+                        {
+                            return Url.Action("FurnitureHomePage", "Furniture") ?? "/Furniture/FurnitureHomePage";
+                        }
+                    }
+                }
+
+                // 預設：導向租屋首頁
+                return Url.Action("FrontPage", "Tenant") ?? "/Tenant/FrontPage";
+            }
+            catch (Exception)
+            {
+                // 異常處理：回到安全的預設頁面
+                return "/Tenant/FrontPage";
+            }
         }
     }
 }

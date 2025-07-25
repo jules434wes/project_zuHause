@@ -12,12 +12,12 @@ namespace zuHause.Services
     public class ImageQueryService : IImageQueryService
     {
         private readonly ZuHauseContext _context;
-        private readonly string _baseImageUrl;
+        private readonly IBlobUrlGenerator _blobUrlGenerator;
 
-        public ImageQueryService(ZuHauseContext context, IConfiguration configuration)
+        public ImageQueryService(ZuHauseContext context, IBlobUrlGenerator blobUrlGenerator)
         {
             _context = context;
-            _baseImageUrl = configuration["ImageSettings:BaseUrl"] ?? "/images/";
+            _blobUrlGenerator = blobUrlGenerator;
         }
 
         /// <summary>
@@ -128,16 +128,105 @@ namespace zuHause.Services
             if (string.IsNullOrWhiteSpace(storedFileName))
                 return string.Empty;
 
+            // 檢查是否為新的 Blob 路徑格式（包含 temp/ 或分類路徑）
+            if (IsNewBlobFormat(storedFileName))
+            {
+                // 新格式：解析 Blob 路徑並生成 Azure Blob Storage URL
+                return GenerateBlobUrl(storedFileName, size);
+            }
+            else
+            {
+                // 舊格式：向下相容，假設為舊的本地檔案格式
+                // 直接使用 Azure Blob Storage 的基礎 URL 加上檔名
+                return GenerateLegacyUrl(storedFileName, size);
+            }
+        }
+
+        /// <summary>
+        /// 檢查是否為新的 Blob 路徑格式
+        /// </summary>
+        /// <param name="storedFileName">儲存檔名</param>
+        /// <returns>是否為新格式</returns>
+        private bool IsNewBlobFormat(string storedFileName)
+        {
+            // 新格式特徵：包含路徑分隔符且不只是檔名
+            return storedFileName.Contains("/") || 
+                   storedFileName.StartsWith("temp/") ||
+                   storedFileName.StartsWith("property/") ||
+                   storedFileName.StartsWith("furniture/") ||
+                   storedFileName.StartsWith("legacy/");
+        }
+
+        /// <summary>
+        /// 根據 Blob 路徑生成 URL
+        /// </summary>
+        /// <param name="storedFileName">Blob 路徑</param>
+        /// <param name="size">圖片尺寸</param>
+        /// <returns>完整 URL</returns>
+        private string GenerateBlobUrl(string storedFileName, ImageSize size)
+        {
+            try
+            {
+                // 解析 Blob 路徑格式
+                var parts = storedFileName.Split('/');
+                
+                if (parts.Length >= 4 && parts[0] == "temp")
+                {
+                    // 臨時檔案格式：temp/{sessionId}/{category}/{entityId}/{imageGuid}.webp
+                    var tempSessionId = parts[1];
+                    var fileName = Path.GetFileNameWithoutExtension(parts[parts.Length - 1]);
+                    if (Guid.TryParse(fileName, out var imageGuid))
+                    {
+                        return _blobUrlGenerator.GenerateTempImageUrl(tempSessionId, imageGuid, size);
+                    }
+                }
+                else if (parts.Length >= 3)
+                {
+                    // 正式檔案格式：{category}/{entityId}/{imageGuid}.webp
+                    var categoryStr = parts[0];
+                    if (Enum.TryParse<ImageCategory>(categoryStr, true, out var category) &&
+                        int.TryParse(parts[1], out var entityId))
+                    {
+                        var fileName = Path.GetFileNameWithoutExtension(parts[parts.Length - 1]);
+                        if (Guid.TryParse(fileName, out var imageGuid))
+                        {
+                            return _blobUrlGenerator.GenerateImageUrl(category, entityId, imageGuid, size);
+                        }
+                    }
+                }
+
+                // 無法解析，使用原始路徑
+                return GenerateLegacyUrl(storedFileName, size);
+            }
+            catch
+            {
+                // 解析失敗，使用原始路徑
+                return GenerateLegacyUrl(storedFileName, size);
+            }
+        }
+
+        /// <summary>
+        /// 生成舊格式的 URL（向下相容）
+        /// </summary>
+        /// <param name="storedFileName">儲存檔名</param>
+        /// <param name="size">圖片尺寸</param>
+        /// <returns>URL</returns>
+        private string GenerateLegacyUrl(string storedFileName, ImageSize size)
+        {
+            // 使用 Azure Blob Storage 的基礎 URL
+            // 這裡暫時使用硬編碼，實際上應該從配置中取得
+            var baseUrl = "https://zuhauseimg.blob.core.windows.net/zuhaus-images";
+            
             var sizeFolder = size switch
             {
                 ImageSize.Thumbnail => "thumbnails",
-                ImageSize.Medium => "medium",
+                ImageSize.Medium => "medium", 
                 ImageSize.Large => "large",
                 ImageSize.Original => "original",
                 _ => "original"
             };
 
-            return $"{_baseImageUrl.TrimEnd('/')}/{sizeFolder}/{storedFileName}";
+            return $"{baseUrl}/legacy/{sizeFolder}/{storedFileName}";
         }
 
         /// <summary>

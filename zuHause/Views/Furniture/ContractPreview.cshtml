@@ -1,5 +1,7 @@
-﻿@{
-    Layout = "~/Views/Shared/_Layout.cshtml"; // 根據你的架構請確認 Layout 位置
+﻿
+@{
+    ViewBag.Title = "合約簽屬";
+    Layout = "~/Views/Shared/_NavigationBar.cshtml";
     var contract = ViewBag.Contract;
     var property = ViewBag.Property;
     var cart = ViewBag.Cart;
@@ -7,6 +9,29 @@
     var totalDays = (int?)ViewBag.TotalDays ?? 0;
     var member = ViewBag.CurrentMember;
 }
+<style>
+    .modal-backdrop-custom {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background-color: rgba(0,0,0,0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+    }
+
+    .modal-content-custom {
+        background-color: #fff;
+        padding: 20px 30px;
+        border-radius: 10px;
+        text-align: center;
+        font-size: 1.2rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+</style>
 
 <div class="card p-4">
     <h2 class="text-center mb-4">家具租借合約書</h2>
@@ -27,8 +52,15 @@
     <p><strong>房屋地址：</strong> @property.AddressLine</p>
     <p><strong>租期起始日：</strong> @contract.StartDate.ToString("yyyy-MM-dd")</p>
     <p><strong>租期結束日：</strong> @contract.EndDate.ToString("yyyy-MM-dd")</p>
-    <p><strong>總租期：</strong> @totalDays 天</p>
+    
     <h5 class="mt-4">二、租賃家具資訊</h5>
+    <p><strong>家具承租起始日：</strong> @DateTime.Today.ToString("yyyy-MM-dd") </p>
+    <p><strong>家具承租結束日：</strong> @contract.EndDate.ToString("yyyy-MM-dd")</p>
+    <p><strong>總租期：</strong> @totalDays 天</p>
+    @{
+        decimal totalRentalFee = 0m;
+        int deliveryFee = 3000;
+    }
     <table class="table table-bordered">
         <thead>
             <tr>
@@ -43,11 +75,14 @@
             @foreach (var item in cartItems)
             {
                 var product = item.Product;
-                var subtotal = product.DailyRental * item.Quantity * totalDays;
+                var dailyRental = product.DailyRental;
+                var quantity = item.Quantity;
+                var subtotal = dailyRental * quantity * totalDays;
+                totalRentalFee += subtotal;
                 <tr>
                     <td>@product.ProductName</td>
-                    <td>NT$@product.DailyRental</td>
-                    <td>@item.Quantity</td>
+                    <td>NT$@dailyRental</td>
+                    <td>@quantity</td>
                     <td>@totalDays 天</td>
                     <td>NT$@subtotal.ToString("N0")</td>
                 </tr>
@@ -56,12 +91,11 @@
     </table>
 
     <div class="text-end mt-3">
-        <p><strong>總租金：</strong> NT$@cart.TotalAmount.ToString("N0")</p>
-        <p><strong>搬運費：</strong> NT$3000</p>
-        <p class="fs-5 text-danger"><strong>合計金額：</strong> NT$@(cart.TotalAmount + 3000).ToString("N0")</p>
+        <p><strong>總租金：</strong> NT$@totalRentalFee.ToString("N0")</p>
+        <p><strong>搬運費：</strong> NT$@deliveryFee.ToString("N0")</p>
+        <p class="fs-5 text-danger"><strong>合計金額：</strong> NT$@((totalRentalFee + deliveryFee).ToString("N0"))</p>
     </div>
 
-    <p><strong>租期期間：</strong> @DateTime.Now.ToString("yyyy-MM-dd") ～ @contract.EndDate?.ToString("yyyy-MM-dd")</p>
 
     <h5 class="mt-4">三、付款方式</h5>
     <p><strong>付款方式：</strong> 第三方金流</p>
@@ -86,28 +120,181 @@
 
     <h5 class="mt-4">七、其他條款</h5>
     <p><strong>甲方代表：</strong> zuHouse 發單單位</p>
-    <p><strong>乙方簽名：</strong> <input type="text" class="form-control d-inline-block" style="width: 300px;" placeholder="請於下方 QR Code 進行電子簽名" /></p>
-
-    <div class="text-center my-4">
-        <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=https://example.com/contract/sign/CT-@contract.ContractId" alt="QR Code" />
-        <p class="mt-2">https://example.com/contract/sign/CT-@contract.ContractId</p>
+    <div style="margin-bottom: 20px;">
+        <label><strong>乙方簽名：</strong></label>
+        <br />
+        <canvas id="signaturePad" width="500" height="200" style="border:1px solid #ccc;"></canvas>
+        <br />
+        <button type="button" onclick="clearSignature()">清除簽名</button>
+        <input type="hidden" id="signatureImage" name="signatureImage" />
     </div>
 
     <div class="form-check mb-3">
-        <input type="checkbox" class="form-check-input" id="confirmCheck">
-        <label class="form-check-label" for="confirmCheck">我已詳細閱讀並同意上述合約內容</label>
+        <input type="checkbox" id="agreeTerms" class="form-check-input" />
+        <label class="form-check-label" for="agreeTerms">我已詳細閱讀並同意上述合約內容</label>
     </div>
 
-    <form method="post" action="/Furniture/StartCheckout">
-        <input type="hidden" name="selectedPropertyId" value="@property.PropertyId" />
-        <button type="submit" class="btn btn-primary" disabled id="confirmBtn">確認簽署</button>
-    </form>
+    <div style="margin-top: 20px;">
+        <form method="post" action="/Furniture/MockPaymentPage">
+            <input type="hidden" name="selectedPropertyId" value="@ViewBag.SelectedPropertyId" />
+            <button id="confirmBtn" type="button" disabled>確認簽署 </button>
+        </form>
+    </div>
+
+
 </div>
 
 @section Scripts {
     <script>
-        document.getElementById('confirmCheck').addEventListener('change', function () {
-            document.getElementById('confirmBtn').disabled = !this.checked;
+        const canvas = document.getElementById("signaturePad");
+        const ctx = canvas.getContext("2d");
+        let drawing = false;
+        let hasSigned = false;
+        const checkbox = document.getElementById("agreeTerms");
+        const confirmBtn = document.getElementById("confirmBtn");
+        const previewContainer = document.createElement("div");
+        let signatureImg = null;
+
+        // 放在 canvas 下方插入預覽圖容器
+        canvas.insertAdjacentElement("afterend", previewContainer);
+
+        // 更新按鈕啟用狀態
+        function updateButtonState() {
+            confirmBtn.disabled = !(checkbox.checked && hasSigned);
+        }
+
+        // 畫布簽名邏輯
+        canvas.addEventListener("mousedown", () => drawing = true);
+        canvas.addEventListener("mouseup", () => {
+            drawing = false;
+            ctx.beginPath();
+        });
+        canvas.addEventListener("mousemove", draw);
+        canvas.addEventListener("mouseleave", () => drawing = false);
+
+        function draw(event) {
+            if (!drawing) return;
+            const rect = canvas.getBoundingClientRect();
+            ctx.lineWidth = 2;
+            ctx.lineCap = "round";
+            ctx.strokeStyle = "black";
+            ctx.lineTo(event.clientX - rect.left, event.clientY - rect.top);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(event.clientX - rect.left, event.clientY - rect.top);
+            hasSigned = true;
+            updateButtonState();
+
+            // 實時更新預覽圖
+            showSignaturePreview();
+        }
+
+        function clearSignature() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            hasSigned = false;
+            updateButtonState();
+            clearPreview();
+        }
+
+        function isCanvasBlank(c) {
+            const blank = document.createElement("canvas");
+            blank.width = c.width;
+            blank.height = c.height;
+            return c.toDataURL() === blank.toDataURL();
+        }
+
+        checkbox.addEventListener("change", updateButtonState);
+        document.querySelector("button[onclick='clearSignature()']").addEventListener("click", clearSignature);
+
+        // 簽名預覽圖
+        // function showSignaturePreview() {
+        //     const dataURL = canvas.toDataURL("image/png");
+        //     if (!signatureImg) {
+        //         signatureImg = document.createElement("img");
+        //         signatureImg.style.border = "1px solid #ccc";
+        //         signatureImg.style.marginTop = "10px";
+        //         signatureImg.style.maxWidth = "100%";
+        //         previewContainer.appendChild(signatureImg);
+        //     }
+        //     signatureImg.src = dataURL;
+        // }
+
+        // function clearPreview() {
+        //     if (signatureImg) {
+        //         signatureImg.remove();
+        //         signatureImg = null;
+        //     }
+        // }
+
+        // ✅ 送出簽名
+        confirmBtn.addEventListener("click", function () {
+            if (confirmBtn.disabled) return; // 防止重複點擊
+
+            if (!checkbox.checked) {
+                alert("請勾選同意合約條款");
+                return;
+            }
+
+            if (isCanvasBlank(canvas)) {
+                alert("請先簽名再進行提交");
+                return;
+            }
+
+            const dataURL = canvas.toDataURL("image/png");
+            confirmBtn.disabled = true; // 鎖定按鈕防止重複點擊
+
+            fetch("/Furniture/SaveSignature", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    signatureDataUrl: dataURL,
+                    selectedPropertyId: @ViewBag.SelectedPropertyId
+                })
+            })
+            .then(res => {
+                if (res.ok) {
+                    // ✅ 簽署成功提示 + 倒數跳轉
+                          // ✅ 顯示彈窗方式倒數提示
+                    const backdrop = document.createElement("div");
+                    backdrop.className = "modal-backdrop-custom";
+
+                    const modal = document.createElement("div");
+                    modal.className = "modal-content-custom";
+
+                    modal.innerHTML = `
+                        <div>簽署成功！<br><br>
+                        將於 <span id="countdown">3</span> 秒後前往第三方支付...</div>
+                    `;
+
+                    backdrop.appendChild(modal);
+                    document.body.appendChild(backdrop);
+
+                    let countdown = 3;
+                    const countdownSpan = modal.querySelector("#countdown");
+
+                    const interval = setInterval(() => {
+                        countdown--;
+                        countdownSpan.innerText = countdown;
+                        if (countdown === 0) {
+                            clearInterval(interval);
+                            window.location.href = "/Furniture/MockPaymentPage?selectedPropertyId=" + @ViewBag.SelectedPropertyId;
+                        }
+                    }, 1000);
+
+                } else {
+                    alert("儲存簽名失敗，請稍後再試");
+                    confirmBtn.disabled = false;
+                }
+            })
+            .catch(() => {
+                alert("傳送失敗，請檢查網路");
+                confirmBtn.disabled = false;
+            });
         });
     </script>
 }
+
+
+

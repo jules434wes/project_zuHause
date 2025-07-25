@@ -1,23 +1,32 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
-@{
+﻿@{
 }
-<div class='row g-3'>
-    <div class='col-md-6'>
-        <canvas id='chartPay'>
-        </canvas>
-
+<div class="row g-3">
+    <!-- 圓餅圖 -->
+    <div class="col-md-6">
+        <canvas id="chartPay"></canvas>
+        <hr />
+        <!-- 總金額 -->
+        <div class="card p-3">💰 上架服務費應收總額：<h4 id="totalDue">Loading...</h4></div>
+        <br />
+        <div class="card p-3">💵 上架服務費實收總額：<h4 id="totalPaid">Loading...</h4></div>
     </div>
-    <div class='col-md-6'>
-        <div class='card p-3'>💰 上架服務費應收總額：<h4>NT$ 86,400</h4></div>
-        <br>
-        <div class='card p-3'>💵 上架服務費實收總額：<h4>NT$ 56,400</h4></div>
-        <br>
+
+    <!-- 近五日折線圖 + 本月走勢圖 -->
+    <div class="col-md-6">
+        <div class="row">
+            <div class="col-md-12">
+                <canvas id="chartTrend"></canvas>
+            </div>
+            <div class="col-md-12 mt-4">
+                <canvas id="chartMonthlyPay"></canvas>
+            </div>
+        </div>
     </div>
 </div>
+
+
+<!-- 訂單統計 -->
 <div class="card p-3 mb-3">
     <h5 class="mb-3">📅 當日租屋與租家具訂單概況</h5>
-    <div id="orderStatsTable"></div>
-    <!-- ⭐ 這是你要插入表格的位置 -->
+    <div id="orderStatsTable">Loading...</div>
 </div>

@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 using zuHause.Models;
+using zuHause.Services;
 using zuHause.ViewModels.MemberViewModel;
 
 namespace zuHause.Controllers
@@ -16,10 +17,13 @@ namespace zuHause.Controllers
     {
         public readonly ZuHauseContext _context;
         private readonly IConverter _converter;
-        public MemberContractsController(ZuHauseContext context, IConverter converter)
+        public readonly ApplicationService _applicationService;
+        public MemberContractsController(ZuHauseContext context, IConverter converter, ApplicationService applicationService)
         {
             _context = context;
             _converter = converter;
+            _applicationService = applicationService;
+
         }
         public async Task<IActionResult> Index()
         {
@@ -408,9 +412,9 @@ namespace zuHause.Controllers
 
 
             await _context.SaveChangesAsync();
+            await _applicationService.UpdateApplicationStatusAsync(model.RentalApplicationId!.Value, "SIGNING");
 
-            //還沒決定好會去哪一頁    
-            return RedirectToAction("ContractList");
+            return RedirectToAction("Index", "MemberApplications");
         }
 
 
@@ -436,7 +440,7 @@ namespace zuHause.Controllers
         {
             var html = await GenerateContractHtml(contractId);
             ViewBag.ContractHtml = html;
-            return View();
+            return View(contractId);
         }
         private int CalculateMonthDifference(DateOnly start, DateOnly? end)
         {
@@ -450,7 +454,7 @@ namespace zuHause.Controllers
             return months;
         }
 
-        private async Task<string> GenerateContractHtml(int contractId)
+        private async Task<string> GenerateContractHtml(int contractId, bool isDownload = false)
         {
             var contract = await _context.Contracts
                  .Include(c => c.ContractFurnitureItems)
@@ -481,15 +485,24 @@ namespace zuHause.Controllers
             if (contract == null || contract.Template == null)
                 return "<p>合約不存在或無範本</p>";
 
-            // ✅ 使用資料庫中 TemplateContent，不用再從檔案讀取
+            // ✅ 使用資料庫中 TemplateContent
             string templateHtml = contract.Template.TemplateContent;
 
             var landlord = contract.RentalApplication?.Property?.LandlordMember;
 
             var tenant = contract.RentalApplication?.Member;
+            var applicationId = contract.RentalApplicationId;
+
             var uploads = await _context.UserUploads
-                .Where(u => u.ModuleCode == "CONTRACT" && u.SourceEntityId == contractId && u.IsActive)
+                .Where(u => u.IsActive &&
+                           (
+                               (u.ModuleCode == "ApplyRental" && u.SourceEntityId == applicationId && u.UploadTypeCode == "TENANT_APPLY") ||
+                               (u.ModuleCode == "CONTRACT" && u.SourceEntityId == contractId &&
+                                u.UploadTypeCode == "LANDLORD_APPLY")
+                           ))
                 .ToListAsync();
+
+
 
             var landlordId = contract.RentalApplication?.Property?.LandlordMemberId ?? -1;
             var tenantId = contract.RentalApplication?.MemberId ?? -1;
@@ -497,22 +510,84 @@ namespace zuHause.Controllers
             System.Diagnostics.Debug.WriteLine($"➡️ LandlordId: {landlordId}");
             System.Diagnostics.Debug.WriteLine($"➡️ TenantId: {tenantId}");
 
-            var landlordExtraFiles = uploads
-                .Where(u => u.UploadTypeCode.StartsWith("LANDLORD_"))
-                .Select(u => u.FilePath)
-                .ToList();
-
+            // 租客上傳：申請時期的附件
             var tenantExtraFiles = uploads
-                .Where(u => u.UploadTypeCode.StartsWith("TENANT_"))
+                .Where(u => u.ModuleCode == "ApplyRental" && u.UploadTypeCode == "TENANT_APPLY")
                 .Select(u => u.FilePath)
                 .ToList();
 
-            
-            string landlordImagesHtml = string.Join("", landlordExtraFiles.Select(p => $"<img src='{p}' height='80' />"));
-            string tenantImagesHtml = string.Join("", tenantExtraFiles.Select(p => $"<img src='{p}' height='80' />"));
+            // 房東上傳：合約建立時的附件（不含簽名）
+            var landlordExtraFiles = uploads
+                .Where(u => u.ModuleCode == "CONTRACT" && u.UploadTypeCode == "LANDLORD_APPLY")
+                .Select(u => u.FilePath)
+                .ToList();
 
-            string testAllUploadsHtml = string.Join("<br>", uploads.Select(u => $"{u.UploadTypeCode} - {u.FilePath} - memberId: {u.MemberId}"));
+            var request = HttpContext.Request;
+            string baseUrl = $"{request.Scheme}://{request.Host}";
+
+            string landlordImagesHtml = string.Join("", landlordExtraFiles.Select(p => $"<img src='{baseUrl}{p}' />"));
+            string tenantImagesHtml = string.Join("", tenantExtraFiles.Select(p => $"<img src='{baseUrl}{p}' />"));
+
+            //string testAllUploadsHtml = string.Join("<br>", uploads.Select(u => $"{u.UploadTypeCode} - {u.FilePath} - memberId: {u.MemberId}"));
+            string landlordSignature = "";
+            string tenantSignature = "";
+
+            if (isDownload)
+            {
+                landlordImagesHtml = string.Join("",
+                landlordExtraFiles.Select(p =>
+                {
+                    var localPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", p.TrimStart('/').Replace("/", Path.DirectorySeparatorChar.ToString()));
+
+                    var fileUri = new Uri(localPath).AbsoluteUri;
+
+                    return System.IO.File.Exists(localPath)
+                        ? $"<img src='{fileUri}' />"
+                        : $"<p style='color:red'>圖片不存在：{fileUri}</p>";
+                }));
+
+                tenantImagesHtml = string.Join("",
+                    tenantExtraFiles.Select(p =>
+                    {
+                        var localPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", p.TrimStart('/').Replace("/", Path.DirectorySeparatorChar.ToString()));
+
+                        var fileUri = new Uri(localPath).AbsoluteUri;
+
+                        return System.IO.File.Exists(localPath)
+                            ? $"<img src='{fileUri}' />"
+                            : $"<p style='color:red'>圖片不存在：{fileUri}</p>";
+                    }));
+
+
+
+
+                var landlordSignaturePath = contract.ContractSignatures
+                    .FirstOrDefault(s => s.SignerRole == "LANDLORD")?.SignatureFileUrl;
+                if (!string.IsNullOrWhiteSpace(landlordSignaturePath))
+                {
+                    var localPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", landlordSignaturePath.TrimStart('/').Replace("/", Path.DirectorySeparatorChar.ToString()));
+                    var fileUri = new Uri(localPath).AbsoluteUri;
+
+                    landlordSignature = System.IO.File.Exists(localPath)
+                        ? fileUri
+                        : $"<p style='color:red'>簽名檔不存在：{fileUri}</p>";
+                }
+
             
+
+
+                var tenantSignaturePath = contract.ContractSignatures
+                    .FirstOrDefault(s => s.SignerRole == "TENANT")?.SignatureFileUrl;
+                if (!string.IsNullOrWhiteSpace(tenantSignaturePath))
+                {
+                    var localPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", tenantSignaturePath.TrimStart('/').Replace("/", Path.DirectorySeparatorChar.ToString()));
+                    var fileUri = new Uri(localPath).AbsoluteUri;
+
+                    tenantSignature = System.IO.File.Exists(localPath)
+                        ? fileUri
+                        : $"<p style='color:red'>簽名檔不存在：{fileUri}</p>";
+                }
+            }
 
             var fields = new Dictionary<string, string>
             {
@@ -541,25 +616,32 @@ namespace zuHause.Controllers
                 { "{{房源編號}}", contract.RentalApplication?.PropertyId.ToString() ?? "" },
                 { "{{備註條件}}", commentBlock ?? "" },
                 { "{{家具清單}}", GenerateFurnitureHtml(contract.ContractFurnitureItems.ToList()) },
-
-                // 簽名圖片
-                { "{{甲方簽名圖}}", contract.ContractSignatures.FirstOrDefault(s => s.SignerRole == "LANDLORD")?.SignatureFileUrl ?? "" },
-                { "{{乙方簽名圖}}", contract.ContractSignatures.FirstOrDefault(s => s.SignerRole == "TENANT")?.SignatureFileUrl ?? "" }
             };
-
+            // 簽名圖片
+            if (isDownload)
+            {
+                fields.Add("{{甲方簽名圖}}", landlordSignature);
+                fields.Add("{{乙方簽名圖}}", tenantSignature);
+            }
+            else
+            {
+                fields.Add("{{甲方簽名圖}}", contract.ContractSignatures.FirstOrDefault(s => s.SignerRole == "LANDLORD")?.SignatureFileUrl ?? "");
+                fields.Add("{{乙方簽名圖}}", contract.ContractSignatures.FirstOrDefault(s => s.SignerRole == "TENANT")?.SignatureFileUrl ?? "");
+            }
             // HTML 頁面顯示圖片的欄位
             fields.Add("{{甲方附件圖片}}", landlordImagesHtml);
             fields.Add("{{乙方附件圖片}}", tenantImagesHtml);
 
-            // 除錯專用測試文字（可選）
-            fields.Add("{{測試列印}}", testAllUploadsHtml);
+
+                // 除錯專用測試文字（可選）
+                //fields.Add("{{測試列印}}", testAllUploadsHtml);
 
 
 
-            foreach (var kv in fields)
-            {
-                templateHtml = templateHtml.Replace(kv.Key, kv.Value);
-            }
+                foreach (var kv in fields)
+                {
+                    templateHtml = templateHtml.Replace(kv.Key, kv.Value);
+                }
 
             return templateHtml;
         }
@@ -583,13 +665,13 @@ namespace zuHause.Controllers
 
         public async Task<IActionResult> DownloadPdf(int contractId)
         {
-            var html = await GenerateContractHtml(contractId);
+            var html = await GenerateContractHtml(contractId,true);
 
             var doc = new HtmlToPdfDocument()
             {
                 GlobalSettings = {
-            PaperSize = PaperKind.A4,
-            Orientation = Orientation.Portrait
+                PaperSize = PaperKind.A4,
+                Orientation = Orientation.Portrait
         },
                 Objects = {
             new ObjectSettings {

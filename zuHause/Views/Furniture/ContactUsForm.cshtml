@@ -1,4 +1,5 @@
 ﻿<!--https://localhost:7010/Furniture/ContactUsForm-->
+
 @{
     Layout = "~/Views/Shared/_NavigationBar.cshtml";
     ViewBag.Title = "聯絡我們";
@@ -43,9 +44,14 @@
             <select class="form-select" name="PropertyId">
                 <option value="">請選擇房源</option>
                 @foreach (var p in properties)
-                {
-                    <option value="@p.PropertyId">A@p.PropertyId - @p.CityId/@p.DistrictId</option>
-                }
+                    {
+                        var isSelected = (ViewBag.SelectedPropertyId != null && (int)ViewBag.SelectedPropertyId == p.PropertyId)
+                                         ? "selected" : "";
+                        var displayText = $"A{p.PropertyId} - {p.CityId}/{p.DistrictId}";
+
+                        @:<option value="@p.PropertyId" @isSelected>@displayText</option>
+                    }
+
             </select>
         </div>
         <div class="col-12">

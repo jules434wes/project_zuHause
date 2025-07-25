@@ -58,8 +58,12 @@
             <div class="col-auto d-flex flex-column align-items-start justify-content-start px-0 gap-2">
                 @if (record.ContractId != null)
                 {
-                    <a href="@Url.Action("Detail", "Contracts", new { id = record.ContractId })" class="btn btn-aqua py-0 w-100">查看租賃合約</a>
-                    @await Component.InvokeAsync("SignContractModal", new { applicationId = @record.ApplicationId, contractId = record.ContractId })
+
+                    <a href="@Url.Action("Preview", "MemberContracts", new { contractId = record.ContractId })" class="btn btn-outline-secondary py-0 w-100" target="_blank">
+                        預覽合約
+                    </a>
+                    // @await Component.InvokeAsync("SignContractModal", new { applicationId = @record.ApplicationId, contractId = record.ContractId })
+                    @await Html.PartialAsync("_PartialSignContract", new TenantSignViewModel { RentalApplicationId = @record.ApplicationId, ContractId = record.ContractId.Value })
                 }
                 else
                 {

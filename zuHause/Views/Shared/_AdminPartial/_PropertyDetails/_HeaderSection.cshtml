@@ -1,6 +1,4 @@
-@{
-    dynamic propertyData = ViewData["PropertyData"];
-}
+@model zuHause.AdminViewModels.AdminPropertyDetailsViewModel
 
 <!-- 頂部標題區 & 快速操作區 -->
 <div class="card mb-4">
@@ -8,50 +6,43 @@
         <div class="d-flex justify-content-between align-items-center flex-wrap">
             <div>
                 <h2 class="mb-1">
-                    <i class="bi bi-house-door me-2"></i>@propertyData.Title
+                    <i class="bi bi-house-door me-2"></i>@(Model.Data?.Title ?? "房源標題")
                 </h2>
-                <p class="text-muted mb-1">屋源ID: @propertyData.PropertyId</p>
+                <p class="text-muted mb-1">屋源ID: @(Model.Data?.PropertyId ?? "")</p>
                 <div class="d-flex align-items-center mb-2">
-                    <p class="text-muted mb-0 me-2">房東: @propertyData.LandlordName (ID: @propertyData.LandlordId)</p>
-                    <a href="#" class="btn btn-outline-secondary btn-sm">
+                    <p class="text-muted mb-0 me-2">房東: @(Model.Data?.LandlordName ?? "") (ID: @(Model.Data?.LandlordId ?? ""))</p>
+                    <a href="/Admin/admin_userDetails/@(Model.Data?.LandlordId ?? "")" class="btn btn-outline-secondary btn-sm">
                         <i class="bi bi-person-circle me-1"></i>查看房東詳情
                     </a>
                 </div>
                 <div>
-                    @if (propertyData.ApprovalStatus == "待審核")
-                    {
-                        <span class="badge fs-6 text-bg-warning">@propertyData.ApprovalStatus</span>
+                    @{
+                        var approvalStatus = Model.Data?.ApprovalStatus ?? "";
+                        var approvalBadgeClass = approvalStatus switch
+                        {
+                            "未審核" => "text-bg-warning",
+                            "審核完成" => "text-bg-success", 
+                            "違規下架" => "text-bg-danger",
+                            _ => "text-bg-dark"
+                        };
+                        
+                        var paymentStatus = Model.Data?.PaymentStatus ?? "";
+                        var paymentBadgeClass = paymentStatus switch
+                        {
+                            "已付費" => "text-bg-primary",
+                            "未付費" => "text-bg-secondary",
+                            "已過期" => "text-bg-warning",
+                            _ => "text-bg-secondary"
+                        };
                     }
-                    else if (propertyData.ApprovalStatus == "審核通過")
-                    {
-                        <span class="badge fs-6 text-bg-success">@propertyData.ApprovalStatus</span>
-                    }
-                    else if (propertyData.ApprovalStatus == "審核失敗")
-                    {
-                        <span class="badge fs-6 text-bg-danger">@propertyData.ApprovalStatus</span>
-                    }
-                    else
-                    {
-                        <span class="badge fs-6 text-bg-dark">@propertyData.ApprovalStatus</span>
-                    }
-
-                    @if (propertyData.ListingStatus == "已上架")
-                    {
-                        <span class="badge fs-6 text-bg-primary">@propertyData.ListingStatus</span>
-                    }
-                    else if (propertyData.ListingStatus == "未上架")
-                    {
-                        <span class="badge fs-6 text-bg-secondary">@propertyData.ListingStatus</span>
-                    }
-                    else
-                    {
-                        <span class="badge fs-6 text-bg-warning">@propertyData.ListingStatus</span>
-                    }
+                    
+                    <span class="badge fs-6 @approvalBadgeClass">@approvalStatus</span>
+                    <span class="badge fs-6 @paymentBadgeClass">@paymentStatus</span>
                 </div>
             </div>
             <div class="text-end mt-2 mt-md-0">
                 <div>
-                    @if (propertyData.IsActive)
+                    @if (Model.Data?.IsActive == true)
                     {
                         <button class="btn btn-outline-danger" onclick="openForceRemoveModal()">
                             <i class="bi bi-trash me-1"></i>強制下架
@@ -60,7 +51,7 @@
                     <button class="btn btn-outline-primary">
                         <i class="bi bi-pencil-square me-1"></i>編輯屋源
                     </button>
-                    <a href="#" class="btn btn-outline-info" target="_blank">
+                    <a href="/Property/Details/@(Model.Data?.PropertyId ?? "")" class="btn btn-outline-info" target="_blank">
                         <i class="bi bi-arrows-angle-expand me-1"></i>查看前台頁面
                     </a>
                 </div>

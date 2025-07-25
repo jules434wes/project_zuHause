@@ -1,4 +1,6 @@
 using zuHause.DTOs;
+using zuHause.Models;
+using zuHause.Enums;
 
 namespace zuHause.Interfaces
 {
@@ -31,5 +33,20 @@ namespace zuHause.Interfaces
             Stream sourceStream, 
             int width, 
             int height);
+
+        /// <summary>
+        /// 處理多尺寸圖片 - 針對臨時區域上傳使用
+        /// 生成 4 種尺寸：Original, Large, Medium, Thumbnail
+        /// </summary>
+        /// <param name="sourceStream">來源圖片串流</param>
+        /// <param name="imageGuid">圖片 GUID</param>
+        /// <param name="originalFileName">原始檔案名稱</param>
+        /// <param name="quality">WebP 品質 (1-100，預設 90)</param>
+        /// <returns>多尺寸處理結果</returns>
+        Task<MultiSizeProcessingResult> ProcessMultipleSizesAsync(
+            Stream sourceStream, 
+            Guid imageGuid,
+            string originalFileName,
+            int quality = 90);
     }
 }
