@@ -573,8 +573,7 @@ namespace zuHause.Controllers
                         : $"<p style='color:red'>簽名檔不存在：{fileUri}</p>";
                 }
 
-            string landlordImagesHtml = string.Join("", landlordExtraFiles.Select(p => $"<img src='{baseUrl}{p}' height='160' />"));
-            string tenantImagesHtml = string.Join("", tenantExtraFiles.Select(p => $"<img src='{baseUrl}{p}' height='160' />"));
+            
 
 
                 var tenantSignaturePath = contract.ContractSignatures
