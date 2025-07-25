@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.IdentityModel.Tokens;
+using zuHause.Configs;
 using zuHause.Models;
 using zuHause.Services;
 using zuHause.ViewModels.MemberViewModel;
@@ -22,7 +23,7 @@ namespace zuHause.Controllers
         }
 
 
-        public async Task<IActionResult> Index(string type = "ALL")
+        public async Task<IActionResult> Index(string type = "ALL" , string? statusFilter = null)
         {
             ViewBag.type = type;
             if (User.Identity?.IsAuthenticated != true)
@@ -36,6 +37,7 @@ namespace zuHause.Controllers
                 .Where(app=> (type == "ALL" || type == "") && (app.ApplicationType == "HOUSE_VIEWING" || app.ApplicationType == "RENTAL") ||
                                 (type == "HOUSE_VIEWING" && app.ApplicationType == "HOUSE_VIEWING") ||
                                 (type == "RENTAL" && app.ApplicationType == "RENTAL"))
+                .Where(app => string.IsNullOrEmpty(statusFilter) || app.CurrentStatus == statusFilter)
                 .Include(app => app.ApplicationStatusLogs)
                 .Include(app => app.Contracts)
                 .Include(app => app.Property)
@@ -80,8 +82,27 @@ namespace zuHause.Controllers
             .Where(s => s.CodeCategory == "USER_APPLY_STATUS" && s.IsActive)
             .OrderBy(s => s.DisplayOrder)
             .ToDictionaryAsync(s => s.Code, s => s.CodeName);
+            //變成字典例如："APPLIED","已申請"
 
-            ViewBag.ApplicationStatusOptions = applicationStatusCodes;
+            List<string>? allowedStatusCodes = null;
+            if(type == "HOUSE_VIEWING" || type == "RENTAL" || type == "REJECTED_FLOW")
+            {
+                allowedStatusCodes = ApplicationFlowConfig.ApplicationStepsMap.GetValueOrDefault(type);
+                // 取出對應清單
+            }
+
+            Dictionary<string, string> filteredStatusDict;
+            if(allowedStatusCodes is not null)
+            {
+                filteredStatusDict = applicationStatusCodes
+                    .Where(kv => allowedStatusCodes.Contains(kv.Key))
+                    .ToDictionary(kv =>  kv.Key, kv => kv.Value);
+            }
+            else
+            {
+                filteredStatusDict = applicationStatusCodes; // 如果有狀態就篩選符合List的列表出來，也存成字典
+            }
+                ViewBag.ApplicationStatusOptions = filteredStatusDict;
 
 
             return View(viewModel);

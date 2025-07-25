@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 using System.Text.Json;
 using zuHause.Models;
 using zuHause.Services;
@@ -408,13 +409,18 @@ namespace zuHause.Controllers
                 _context.ContractSignatures.Add(contractSignature);
 
             }
+            string? roleType = null;
+            if(@User.FindFirst(ClaimTypes.Role)?.Value == "1")
+            {
+                roleType = "LANDLORD_NEED_AGREE";
+            }else if(@User.FindFirst(ClaimTypes.Role)?.Value == "2")
+            {
+                roleType = "TENANT_NEED_AGREE";
+            }
 
-
-
-            await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync();
             await _applicationService.UpdateApplicationStatusAsync(model.RentalApplicationId!.Value, "SIGNING");
-
-            return RedirectToAction("Index", "MemberApplications");
+            return RedirectToAction("Preview", "MemberContracts", new { contractId = model.ContractId , type= roleType});
         }
 
 
@@ -436,12 +442,18 @@ namespace zuHause.Controllers
                 contractName = contractName
             });
         }
-        public async Task<IActionResult> Preview(int contractId)
+        public async Task<IActionResult> Preview(int contractId, string? type = null)
         {
             var html = await GenerateContractHtml(contractId);
             ViewBag.ContractHtml = html;
+            if(type != null) // 這裡要判斷身分，看是房東還是房客，要打不同的狀態來控制顯示
+            {
+                ViewBag.type = type;
+            }
             return View(contractId);
         }
+
+
         private int CalculateMonthDifference(DateOnly start, DateOnly? end)
         {
             if (end == null) return 0;
@@ -685,6 +697,29 @@ namespace zuHause.Controllers
         }
 
 
+        public async Task<IActionResult> AgreeContract(int contractId, string type)
+        {
+            var contract = _context.Contracts.Where(c => c.ContractId == contractId).FirstOrDefault();
+            if (contract == null)
+            {
+                TempData["Error"] = "找不到合約";
+                return RedirectToAction("Index","MemberApplication");
+            }
+            int applicationId = contract.RentalApplicationId!.Value;
+            (bool success,string msg) =  await _applicationService.UpdateApplicationStatusAsync(applicationId, type == "LANDLORD_NEED_AGREE" ? "CONTRACTED" : "WAIT_LANDLORD_AGREE");
+
+            TempData["SuccessMessageTitle"] = "成功";
+            TempData["SuccessMessageContent"] = "簽署成功";
+
+            if(type == "LANDLORD_NEED_AGREE")
+            {
+                return RedirectToAction("Index", "MemberContracts");
+            }
+            else
+            {
+                return RedirectToAction("Index", "MemberApplications");
+            }
+        }
 
 
     }

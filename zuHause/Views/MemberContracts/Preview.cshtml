@@ -20,6 +20,14 @@
                     下載合約
                 </a>
             </div>
+            @if (ViewBag.type != null)
+            {
+                <div class="col-3">
+                    <a href="@Url.Action("AgreeContract", "MemberContracts", new { contractId = Model, type = ViewBag.type })" class="btn btn-outline-secondary w-100" target="_blank">
+                        同意合約
+                    </a>
+                </div>
+            }
         </div>
     </div>
 </div>
