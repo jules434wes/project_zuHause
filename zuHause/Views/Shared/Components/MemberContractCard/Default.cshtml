@@ -1,5 +1,9 @@
 ﻿@using zuHause.ViewModels.MemberViewModel
+@using System.Security.Claims
 @model ContractsViewModel
+@{
+    string userRole = User.FindFirst(ClaimTypes.Role)?.Value ?? "";
+}
 
 
 <div class="card col-12 active-0">
@@ -46,20 +50,34 @@
                     <span class="fs-6" title="房屋租金">房屋租金：NT$@Model.MonthlyRent.ToString("0") 元 / 月</span>
                 </div>
             </div>
-            <div class="col-auto d-flex flex-column align-items-start justify-content-start px-0 gap-2">
+            <div class="col-2 d-flex flex-column align-items-start justify-content-start px-0 gap-2">
 
 
 
                 @if (Model.Status == "SIGNED")
                 {
-                    <a href="@Url.Action("DownloadPdf", "MemberContracts", new { contractId = Model.ContractId })" class="btn btn-outline-secondary py-0">
-                        下載合約
+                    <a href="@Url.Action("DownloadPdf", "MemberContracts", new { contractId = Model.ContractId })" class="btn btn-outline-secondary py-0 w-100">
+                        下載租賃合約
                     </a>
                 }
                 <a href="@Url.Action("Preview", "MemberContracts", new { contractId = Model.ContractId })"
                    class="btn btn-aqua py-0 w-100" target="_blank">
-                    查看合約
+                    @if (Model.CurrentStatus == "WAIT_LANDLORD_AGREE")
+                    {
+                        @:審閱並同意合約
+                    }
+                    else
+                    {
+                        @:查看租賃合約
+                    }
                 </a>
+                @if (!string.IsNullOrEmpty(Model.HaveFurniture) && userRole=="1")
+                {
+                    <a href="@Url.Action("OrderHistory", "Furniture")" class="btn btn-aqua py-0 w-100" target="_blank">
+                        查看家具租賃訂單
+                    </a>
+                }
+
                 @* @await Html.PartialAsync("_PartialRentalApplicationsModal",Model) *@
 
                 @* <a href="#" class="btn btn-aqua py-0 w-100">頁面快照</a> *@
@@ -68,9 +86,12 @@
                         data-bs-target="#contactService@(@Model.ContractId)">
                     聯絡客服
                 </button>
-                <button type="button" class="btn btn-outline-danger py-0 w-100">
-                    取消合約
-                </button>
+                @if (Model.Status == "DRAFT" || Model.Status == "BESIGNED")
+                {
+                    <button type="button" class="btn btn-outline-danger py-0 w-100">
+                        取消合約
+                    </button>
+                }
             </div>
         </div>
     </div>

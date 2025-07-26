@@ -57,7 +57,7 @@
                     </div>
                 }
             </div>
-            <div class="col-auto d-flex flex-column align-items-start justify-content-start px-0 gap-2">
+            <div class="col-2 d-flex flex-column align-items-start justify-content-start px-0 gap-2">
                 @if (record.ApplicationType == "RENTAL")
                 {
                     @if (statusName == "SIGNING")
@@ -75,8 +75,6 @@
 
 
                 }
-
-
                 <a href="@Url.Action("Message", "Chat", new { landlordId = record.LandlordMemberId })" class="btn btn-aqua py-0 w-100">查看房源</a>
 
                 <button type="button" class="btn btn-aqua py-0 w-100" data-bs-toggle="modal"

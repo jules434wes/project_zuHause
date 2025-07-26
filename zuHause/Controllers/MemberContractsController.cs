@@ -455,17 +455,12 @@ namespace zuHause.Controllers
                 _context.ContractSignatures.Add(contractSignature);
 
             }
-            string? roleType = null;
-            if(@User.FindFirst(ClaimTypes.Role)?.Value == "1")
-            {
-                roleType = "TENANT_NEED_AGREE";
-            }
 
             await _context.SaveChangesAsync();
             await _applicationService.UpdateApplicationStatusAsync(model.RentalApplicationId!.Value, "WAIT_TENANT_AGREE");
 
 
-            return RedirectToAction("Preview", "MemberContracts", new { contractId = model.ContractId , type= roleType});
+            return RedirectToAction("Preview", "MemberContracts", new { contractId = model.ContractId });
         }
 
 
@@ -504,8 +499,6 @@ namespace zuHause.Controllers
 
             string? actionType = null;
 
-            System.Diagnostics.Debug.WriteLine($"==========={contract.RentalApplication.CurrentStatus}=================");
-            System.Diagnostics.Debug.WriteLine($"==========={contract.RentalApplication!.Property.LandlordMemberId == userId}=================");
 
             //擬定合約
             if (userRole == "2" && contract.RentalApplication!.Property.LandlordMemberId == userId &&
