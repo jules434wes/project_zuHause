@@ -106,7 +106,7 @@ const CustomerServiceManager = {
             const searchParams = params || this.getSearchParams();
             
             // 根據當前頁籤調整篩選條件
-            if (currentTab === 'unresolved') {
+            if (currentTab === 'unresolved' && !searchParams.status) {
                 searchParams.status = 'PENDING,PROGRESS';
             }
 
