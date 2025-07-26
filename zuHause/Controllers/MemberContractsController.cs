@@ -13,7 +13,6 @@ using zuHause.ViewModels.MemberViewModel;
 namespace zuHause.Controllers
 {
     [Authorize(AuthenticationSchemes = "MemberCookieAuth")]
-    //[Authorize(Roles = "1", AuthenticationSchemes = "MemberCookieAuth")]
     public class MemberContractsController : Controller
     {
         public readonly ZuHauseContext _context;
@@ -37,6 +36,12 @@ namespace zuHause.Controllers
             string? role = User.FindFirst(ClaimTypes.Role)?.Value;
 
             List<ContractsViewModel> contractsLog;
+
+            var codeDict = await _context.SystemCodes
+                .Where(s => s.CodeCategory == "CONTRACT_STATUS")
+                .ToDictionaryAsync(s => s.Code, s => s.CodeName);
+
+
 
             if (role == "1") // 房客
             {
@@ -79,7 +84,7 @@ namespace zuHause.Controllers
                             AddressLine = rcfp.p.AddressLine,
                             MonthlyRent = rcfp.p.MonthlyRent,
                             PreviewImageUrl = rcfp.p.PreviewImageUrl,
-                            StatusDisplayName = GetStatusDisplayName(rcfp.rcf.rc.c.Status),
+                            StatusDisplayName = GetStatusDisplayName(rcfp.rcf.rc.c.Status, codeDict),
                             ApplicantName = m.MemberName,
                             ApplicantBath = m.BirthDate,
                         }).OrderByDescending(x=>x.ContractId)
@@ -113,7 +118,7 @@ namespace zuHause.Controllers
                         AddressLine = c.RentalApplication.Property.AddressLine,
                         MonthlyRent = c.RentalApplication.Property.MonthlyRent,
                         PreviewImageUrl = c.RentalApplication.Property.PreviewImageUrl,
-                        StatusDisplayName = GetStatusDisplayName(c.Status),
+                        StatusDisplayName = GetStatusDisplayName(c.Status,codeDict),
                         ApplicantName = c.RentalApplication.Member.MemberName,
                         ApplicantBath = c.RentalApplication.Member.BirthDate,
                     }).OrderByDescending(x => x.ContractId)
@@ -132,28 +137,32 @@ namespace zuHause.Controllers
 
             foreach (SystemCode item in contractStatus)
             {
-                item.CodeName = GetStatusDisplayName(item.Code);
+                item.CodeName = GetStatusDisplayName(item.Code, codeDict);
             }
 
             ViewBag.codeCategory = contractStatus;
 
+
+
+            string? filterStatus = Request.Query["statusFilter"];
+
+            if (!string.IsNullOrEmpty(filterStatus))
+            {
+                contractsLog = contractsLog
+                    .Where(c => c.Status == filterStatus)
+                    .ToList();
+            }
+
+
             return View(contractsLog);
         }
 
-        public static string GetStatusDisplayName(string? code)
+        public static string GetStatusDisplayName(string? code, Dictionary<string, string> codeDict)
         {
-            return code switch
-            {
-                "ACTIVE" => "進行中",
-                "EXPIRED" => "已到期",
-                "RENEWABLE" => "可續約",
-                "TERMINATED" => "已終止",
-                "RELISTABLE" => "已下架",
-                "BESIGNED" => "待簽約",
-                "SIGNED" => "已簽約",
-                _ => "狀態名稱"
-            };
+            if (string.IsNullOrEmpty(code)) return "狀態不明";
+            return codeDict.TryGetValue(code, out var name) ? name : "未知狀態";
         }
+
 
 
         public async Task<IActionResult> ContractProduction(int applicationId)
@@ -240,7 +249,7 @@ namespace zuHause.Controllers
             {
                 RentalApplicationId = model.RentalApplicationId!.Value,
                 LandlordHouseholdAddress = fullAddress,
-                Status = "BESIGNED",
+                Status = "DRAFT",
                 CourtJurisdiction = model.CourtJurisdiction,
                 IsSublettable = model.IsSublettable,
                 UsagePurpose = model.UsagePurpose,
@@ -377,8 +386,7 @@ namespace zuHause.Controllers
 
             await _context.SaveChangesAsync();
 
-            //還沒決定好會去哪一頁    
-            return RedirectToAction("Preview", new { contractId = contractId, type = "SEND_CONTRACT"});
+            return RedirectToAction("Preview", new { contractId = contractId });
         }
 
 
@@ -499,6 +507,13 @@ namespace zuHause.Controllers
             System.Diagnostics.Debug.WriteLine($"==========={contract.RentalApplication.CurrentStatus}=================");
             System.Diagnostics.Debug.WriteLine($"==========={contract.RentalApplication!.Property.LandlordMemberId == userId}=================");
 
+            //擬定合約
+            if (userRole == "2" && contract.RentalApplication!.Property.LandlordMemberId == userId &&
+                contract.RentalApplication.CurrentStatus == "WAITING_CONTRACT")
+            {
+                actionType = "SEND_CONTRACT";
+            }
+
             if (userRole == "1" && contract.RentalApplication!.MemberId == userId &&
             contract.RentalApplication.CurrentStatus == "WAIT_TENANT_AGREE")
             {
@@ -508,10 +523,6 @@ namespace zuHause.Controllers
             if (userRole == "2" && contract.RentalApplication!.Property.LandlordMemberId == userId &&
                 contract.RentalApplication.CurrentStatus == "WAIT_LANDLORD_AGREE")
             {
-
-
-
-
                 actionType = "LANDLORD_NEED_AGREE";
             }
 
@@ -545,7 +556,15 @@ namespace zuHause.Controllers
             if (!success)
                 return BadRequest(new { msg = message });
 
-            return RedirectToAction("Index", "MemberApplications", new { msg = message });
+
+            contract.Status = "BESIGNED";
+            contract.UpdatedAt = DateTime.Now;
+            _context.Update(contract);
+            await _context.SaveChangesAsync();
+
+
+
+            return RedirectToAction("Index", "MemberContracts", new { msg = message });
         }
 
 
@@ -789,7 +808,7 @@ namespace zuHause.Controllers
             };
 
             var file = _converter.Convert(doc);
-            return File(file, "application/pdf", $"Contract_{contractId}.pdf");
+            return File(file, "application/pdf", $"Contract_{contractId}_{DateTime.Today.ToString("yyyy-MM-dd")}.pdf");
         }
 
 
@@ -817,6 +836,12 @@ namespace zuHause.Controllers
             else if (type == "LANDLORD_NEED_AGREE" && contract!.RentalApplication!.Property.LandlordMemberId == userId)
             {
                 await _applicationService.UpdateApplicationStatusAsync(contract!.RentalApplicationId!.Value, "CONTRACTED");
+
+                contract.Status = "SIGNED";
+                contract.UpdatedAt = DateTime.Now;
+                _context.Update(contract);
+                await _context.SaveChangesAsync();
+
                 return RedirectToAction("Index", "MemberContracts");
             }
             else

@@ -47,17 +47,29 @@
                 </div>
             </div>
             <div class="col-auto d-flex flex-column align-items-start justify-content-start px-0 gap-2">
+
+
+
+                @if (Model.Status == "SIGNED")
+                {
+                    <a href="@Url.Action("DownloadPdf", "MemberContracts", new { contractId = Model.ContractId })" class="btn btn-outline-secondary py-0">
+                        下載合約
+                    </a>
+                }
                 <a href="@Url.Action("Preview", "MemberContracts", new { contractId = Model.ContractId })"
-                   class="btn btn-outline-secondary py-0 w-100" target="_blank">
+                   class="btn btn-aqua py-0 w-100" target="_blank">
                     查看合約
                 </a>
-                @await Html.PartialAsync("_PartialRentalApplicationsModal",Model)
+                @* @await Html.PartialAsync("_PartialRentalApplicationsModal",Model) *@
 
                 @* <a href="#" class="btn btn-aqua py-0 w-100">頁面快照</a> *@
-                <a href="#" class="btn btn-aqua py-0 w-100">傳送訊息給房東</a>
+                @* <a href="#" class="btn btn-aqua py-0 w-100">傳送訊息給房東</a> *@
                 <button type="button" class="btn btn-aqua py-0 w-100" data-bs-toggle="modal"
                         data-bs-target="#contactService@(@Model.ContractId)">
                     聯絡客服
+                </button>
+                <button type="button" class="btn btn-outline-danger py-0 w-100">
+                    取消合約
                 </button>
             </div>
         </div>

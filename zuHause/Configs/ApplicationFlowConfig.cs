@@ -18,7 +18,7 @@
                 "APPLIED", // 已申請 -> 已送出申請
                 "PENDING", // 待審核 -> 已審核
                 "WAITING_CONTRACT", // 租約編輯中 -> 合約建立中
-                "SIGNING", // 待租客簽署 -> 已發出合約
+                "SIGNING", // 待租客簽署 -> 可簽署合約
                 "WAIT_TENANT_AGREE", // 待租客同意 -> 合約簽署中
                 "WAIT_LANDLORD_AGREE", // 待房東同意 -> 等待確認
                 "CONTRACTED", // 租約已成立 -> 租約成立

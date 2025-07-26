@@ -1,56 +1,60 @@
 ﻿@{
-    
+
     ViewBag.Title = "合約預覽";
 }
 @model Int32
 
 <div class="row w-100 gx-5 justify-content-center position-relative h-100">
-        <div class="col-10 d-flex justify-content-start flex-column align-items-center">
-            <div class="row w-100">
-                <h1 class="fs-3 text-white px-0 mb-3">合約預覽</h1>
-                <hr />
-                <div class="col-12 px-0">
-                    <div class="bg-white p-4 shadow-sm rounded">
-                        @Html.Raw(ViewBag.ContractHtml)
-                    </div>
+    <div class="col-10 d-flex justify-content-start flex-column align-items-center">
+        <div class="row w-100">
+            <h1 class="fs-3 text-white px-0 mb-3">合約預覽</h1>
+            <hr />
+            <div class="col-12 px-0">
+                <div class="bg-white p-4 shadow-sm rounded">
+                    @Html.Raw(ViewBag.ContractHtml)
+                </div>
 
-                    <div class="mt-4 text-center">
-                        <div class="row justify-content-center">
-                            <div class="col-3">
-                                <a class="btn btn-secondary w-100" href="@Url.Action("Index", "MemberContracts")">返回合約列表</a>
-                            </div>
-                            <div class="col-3">
-                                <a href="@Url.Action("DownloadPdf", "MemberContracts", new { contractId = Model })" class="btn btn-outline-secondary w-100" target="_blank">
-                                    下載合約
-                                </a>
-                            </div>
+                <div class="mt-4 text-center">
+                    <div class="row justify-content-center">
+                        <div class="col-3">
+                            <a class="btn btn-secondary w-100" href="@Url.Action("Index", "MemberContracts")">返回合約列表</a>
                         </div>
+                        <div class="col-3">
+                            <a href="@Url.Action("DownloadPdf", "MemberContracts", new { contractId = Model })" class="btn btn-outline-secondary w-100">
+                                下載合約
+                            </a>
+                        </div>
+                        @if (ViewBag.type != null)
+                        {
+                            if (ViewBag.type == "SEND_CONTRACT")
+                            {
+                                <div class="col-3">
+                                    <form asp-action="SendContract" asp-controller="MemberContracts" method="post">
+                                        <input type="hidden" name="contractId" value="@Model" />
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-primary w-100">送出合約</button>
+                                    </form>
+                                </div>
+                            }
+                            else if (ViewBag.type == "TENANT_NEED_AGREE" || ViewBag.type == "LANDLORD_NEED_AGREE")
+                            {
+                                <div class="col-3">
+                                    <form asp-action="AgreeContract" asp-controller="MemberContracts" method="post">
+                                        <input type="hidden" name="contractId" value="@Model" />
+                                        <input type="hidden" name="type" value="@(ViewBag.type)" />
+                                        <button type="submit" class="btn btn-primary w-100">同意合約</button>
+                                    </form>
+                                </div>
+                            }
+                        }
+
+
+
+
                     </div>
                 </div>
             </div>
-            @if (ViewBag.type != null)
-            {
-                if (ViewBag.type == "SEND_CONTRACT")
-                {
-                    <div class="col-3">
-                        <form asp-action="SendContract" asp-controller="MemberContracts" method="post" class="w-100">
-                            <input type="hidden" name="contractId" value="@Model" />
-                            @Html.AntiForgeryToken()
-                            <button type="submit" class="btn btn-outline-secondary w-100">送出合約</button>
-                        </form>
-                    </div>
-                }
-                else if (ViewBag.type == "TENANT_NEED_AGREE" || ViewBag.type == "LANDLORD_NEED_AGREE")
-                {
-                <div class="col-3">
-                    <form asp-action="AgreeContract" asp-controller="MemberContracts" method="post">
-                        <input type="hidden" name="contractId" value="@Model" />
-                        <input type="hidden" name="type" value="@(ViewBag.type)" />
-                        <button type="submit" class="btn btn-primary">同意合約</button>
-                    </form>
-                 </div>
-                }
-            }
         </div>
     </div>
+</div>
 

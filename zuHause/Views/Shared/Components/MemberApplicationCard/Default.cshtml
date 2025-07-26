@@ -13,7 +13,6 @@
     string? statusName = ViewData["StepsName"]!.ToString();
 }
 
-<p>@(ViewData["StepsName"])</p>
 <div class="card col-12 @(activeStep > 0 ? $"active-{activeStep}" : "active-0")">
     <div class="card-body p-3">
         <div class="row mb-2">

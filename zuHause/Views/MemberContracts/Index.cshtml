@@ -17,17 +17,20 @@
                          aria-labelledby="allItemTab" tabindex="0">
                         <div class="row w-100 mx-0 mb-3 align-items-center justify-content-end">
                             <div class="col-auto px-0">
-                                <select class="form-select" aria-label="Default select example">
-                                    <option selected>合約狀態</option>
+                                <form asp-action="Index" asp-controller="MemberContracts" method="get">
+                                    <select class="form-select" id="statusFilter" name="statusFilter" onchange="this.form.submit()">
+                                        <option value="">合約狀態</option>
+                                        @foreach (SystemCode item in ViewBag.codeCategory)
+                                        {
+                                            if (item.Code == "DRAFT") { continue; }
+                                            var isSelected = (item.Code == Context.Request.Query["statusFilter"]);
+                                            <option value="@item.Code" selected="@(isSelected ? "selected" : null)">
+                                                @item.CodeName
+                                            </option>
+                                        }
+                                    </select>
+                                </form>
 
-                                    @foreach (SystemCode item in ViewBag.codeCategory)
-                                    {
-
-                                        <option value="@item.Code">@item.CodeName</option>
-
-                                    }
-
-                                </select>
                             </div>
                         </div>
                         <div class="row w-100 mx-0 gy-3">
@@ -35,7 +38,10 @@
 
                             @foreach (ContractsViewModel item in Model)
                             {
-                                @await Component.InvokeAsync("MemberContractCard", new { model = item })
+                                if(item.Status != "DRAFT")
+                                {
+                                    @await Component.InvokeAsync("MemberContractCard", new { model = item })
+                                }
                             }
 
                         </div>
