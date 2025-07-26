@@ -9,24 +9,119 @@
     <div class="row">
         <div class="col-12">
             <!-- 頁面標題區 -->
-            <partial name="_AdminPartial/_CustomerService/_HeaderSection" />
-            
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2>客服案件管理</h2>
+                    <p class="text-muted mb-0">處理和追蹤平台客戶服務請求</p>
+                </div>
+                <div id="statusSummary">
+                    <span class="badge badge-subtle-warning me-2">待處理: <span id="pendingCount">3</span></span>
+                    <span class="badge badge-subtle-primary me-2">處理中: <span id="progressCount">3</span></span>
+                    <span class="badge badge-subtle-secondary">已處理: <span id="resolvedCount">3</span></span>
+                </div>
+            </div>
+
+            <!-- 篩選搜尋區域 -->
+            <partial name="_AdminPartial/_CustomerService/_FilterSection" />
+
             <!-- 頁籤切換區 -->
             <ul class="nav nav-tabs" id="ticketTabs" role="tablist">
                 <li class="nav-item" role="presentation">
                     <button class="nav-link active" id="all-tab" data-bs-toggle="tab" data-bs-target="#all-tickets" type="button" role="tab" aria-controls="all-tickets" aria-selected="true">
-                        全部案件 <span class="badge badge-subtle-primary ms-2">8</span>
+                        全部案件 <span class="badge badge-subtle-primary ms-2" id="allTicketsCount">9</span>
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="unresolved-tab" data-bs-toggle="tab" data-bs-target="#unresolved-tickets" type="button" role="tab" aria-controls="unresolved-tickets" aria-selected="false">
-                        未結案 <span class="badge badge-subtle-warning ms-2">5</span>
+                        未結案 <span class="badge badge-subtle-warning ms-2" id="unresolvedCount">6</span>
                     </button>
                 </li>
             </ul>
 
-            <!-- 頁籤內容區 -->
-            <partial name="_AdminPartial/_CustomerService/_TabContent" />
+            <!-- 案件列表區 -->
+            <div class="tab-content">
+                <div class="tab-pane fade show active" id="all-tickets">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">客服案件列表</h5>
+                            <div class="text-muted">
+                                共 <span id="totalCount">9</span> 筆案件記錄
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th width="10%">案件編號</th>
+                                            <th width="10%">會員姓名</th>
+                                            <th width="25%">主旨</th>
+                                            <th width="10%">類別</th>
+                                            <th width="10%">狀態</th>
+                                            <th width="15%">建立時間</th>
+                                            <th width="10%">處理人員</th>
+                                            <th width="10%">操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="ticketsTableBody">
+                                        <!-- 動態載入案件資料 -->
+                                        <tr>
+                                            <td colspan="8" class="text-center py-4">
+                                                <div class="spinner-border text-primary" role="status">
+                                                    <span class="visually-hidden">載入中...</span>
+                                                </div>
+                                                <div class="mt-2">載入案件資料中...</div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <!-- 分頁控制 -->
+                            <nav aria-label="客服案件分頁" class="mt-3" id="pagination">
+                                <!-- 分頁內容將透過 JavaScript 動態生成 -->
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tab-pane fade" id="unresolved-tickets">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">未結案案件</h5>
+                            <div class="text-muted">
+                                共 <span id="unresolvedTotalCount">6</span> 筆未結案記錄
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th width="10%">案件編號</th>
+                                            <th width="10%">會員姓名</th>
+                                            <th width="25%">主旨</th>
+                                            <th width="10%">類別</th>
+                                            <th width="10%">狀態</th>
+                                            <th width="15%">建立時間</th>
+                                            <th width="10%">處理人員</th>
+                                            <th width="10%">操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="unresolvedTableBody">
+                                        <!-- 動態載入未結案資料 -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <!-- 分頁控制 -->
+                            <nav aria-label="未結案案件分頁" class="mt-3" id="unresolvedPagination">
+                                <!-- 分頁內容將透過 JavaScript 動態生成 -->
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>

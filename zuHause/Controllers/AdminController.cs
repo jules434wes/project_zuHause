@@ -176,16 +176,356 @@ namespace zuHause.Controllers
         /// 需要 customer_service_list 權限才能存取（與客服列表使用相同權限）
         /// </summary>
         [RequireAdminPermission(AdminPermissions.CustomerServiceDetails)]
-        public IActionResult admin_customerServiceDetails(string id = "CS001")
+        public IActionResult admin_customerServiceDetails(int ticketId)
         {
-            var viewModel = new AdminCustomerServiceDetailsViewModel(id);
+            try
+            {
+                var ticket = _context.CustomerServiceTickets
+                    .Include(t => t.Member)
+                    .Include(t => t.Property)
+                    .Include(t => t.Contract)
+                    .Include(t => t.FurnitureOrder)
+                    .FirstOrDefault(t => t.TicketId == ticketId);
+
+                if (ticket == null)
+                {
+                    TempData["ErrorMessage"] = "找不到指定的客服案件";
+                    return RedirectToAction("admin_customerServiceList");
+                }
+
+                var viewModel = new AdminCustomerServiceDetailsViewModel
+                {
+                    TicketId = ticket.TicketId,
+                    TicketIdDisplay = $"CS-{ticket.TicketId:D4}",
+                    MemberName = ticket.Member.MemberName,
+                    Subject = ticket.Subject,
+                    CategoryCode = ticket.CategoryCode,
+                    CategoryDisplay = GetCategoryDisplay(ticket.CategoryCode),
+                    TicketContent = ticket.TicketContent,
+                    ReplyContent = ticket.ReplyContent,
+                    StatusCode = ticket.StatusCode,
+                    StatusDisplay = GetStatusDisplay(ticket.StatusCode),
+                    CreatedAt = ticket.CreatedAt,
+                    ReplyAt = ticket.ReplyAt,
+                    UpdatedAt = ticket.UpdatedAt,
+                    HandledBy = ticket.HandledBy,
+                    HandledByName = GetHandledByName(ticket.HandledBy),
+                    IsResolved = ticket.IsResolved,
+                    PageTitle = $"客服案件詳情 - CS-{ticket.TicketId:D4}"
+                };
+                
+                // 取得當前管理員資訊
+                ViewBag.CurrentAdminId = GetCurrentAdminId();
+                ViewBag.CurrentAdminName = GetCurrentAdminName();
+                ViewBag.CurrentAdminAccount = GetCurrentAdminAccount();
+                
+                return View(viewModel);
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = "載入客服案件詳情時發生錯誤";
+                return RedirectToAction("admin_customerServiceList");
+            }
+        }
+
+        /// <summary>
+        /// 客服案件篩選 API
+        /// </summary>
+        [HttpPost]
+        [RequireAdminPermission(AdminPermissions.CustomerServiceList)]
+        public async Task<IActionResult> FilterCustomerService([FromForm] CustomerServiceFilterDto filter)
+        {
+            try
+            {
+                var query = _context.CustomerServiceTickets
+                    .Include(t => t.Member)
+                    .Include(t => t.Property)
+                    .Include(t => t.Contract)
+                    .Include(t => t.FurnitureOrder)
+                    .AsQueryable();
+
+                // 關鍵字搜尋
+                if (!string.IsNullOrEmpty(filter.Keyword))
+                {
+                    query = filter.SearchField switch
+                    {
+                        "subject" => query.Where(t => t.Subject.Contains(filter.Keyword)),
+                        "memberName" => query.Where(t => t.Member.MemberName.Contains(filter.Keyword)),
+                        "content" => query.Where(t => t.TicketContent.Contains(filter.Keyword)),
+                        _ => query.Where(t => t.Subject.Contains(filter.Keyword) || 
+                                             t.Member.MemberName.Contains(filter.Keyword) ||
+                                             t.TicketContent.Contains(filter.Keyword))
+                    };
+                }
+
+                // 狀態篩選
+                if (!string.IsNullOrEmpty(filter.Status))
+                    query = query.Where(t => t.StatusCode == filter.Status);
+                
+                // 類別篩選
+                if (!string.IsNullOrEmpty(filter.Category))
+                    query = query.Where(t => t.CategoryCode == filter.Category);
+
+                // 日期範圍篩選
+                if (filter.DateStart.HasValue)
+                    query = query.Where(t => t.CreatedAt >= filter.DateStart.Value);
+                
+                if (filter.DateEnd.HasValue)
+                    query = query.Where(t => t.CreatedAt <= filter.DateEnd.Value.AddDays(1));
+
+                // 計算總數
+                var totalCount = await query.CountAsync();
+
+                // 分頁處理
+                var page = filter.Page ?? 1;
+                var pageSize = filter.PageSize ?? 10;
+                var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
+
+                var tickets = await query
+                    .OrderByDescending(t => t.CreatedAt)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .Select(t => new
+                    {
+                        TicketId = t.TicketId,
+                        TicketIdDisplay = $"CS-{t.TicketId:D4}",
+                        MemberName = t.Member.MemberName,
+                        MemberId = t.MemberId,
+                        Subject = t.Subject,
+                        CategoryCode = t.CategoryCode,
+                        CategoryDisplay = GetCategoryDisplay(t.CategoryCode),
+                        StatusCode = t.StatusCode,
+                        StatusDisplay = GetStatusDisplay(t.StatusCode),
+                        CreatedAt = t.CreatedAt,
+                        HandledByName = GetHandledByName(t.HandledBy),
+                        HasReply = !string.IsNullOrEmpty(t.ReplyContent),
+                        IsUrgent = (t.CategoryCode == "CONTRACT" && (DateTime.Now - t.CreatedAt).TotalHours > 24 && !t.IsResolved)
+                    })
+                    .ToListAsync();
+
+                return Json(new
+                {
+                    success = true,
+                    data = tickets,
+                    totalCount = totalCount,
+                    currentPage = page,
+                    pageSize = pageSize,
+                    totalPages = totalPages
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new
+                {
+                    success = false,
+                    message = "篩選客服案件時發生錯誤",
+                    error = ex.Message
+                });
+            }
+        }
+
+        /// <summary>
+        /// 更新客服案件回覆 API
+        /// </summary>
+        [HttpPost]
+        [RequireAdminPermission(AdminPermissions.CustomerServiceList)]
+        public async Task<IActionResult> UpdateCustomerServiceReply([FromForm] UpdateCustomerServiceReplyDto dto)
+        {
+            try
+            {
+                var ticket = await _context.CustomerServiceTickets
+                    .FirstOrDefaultAsync(t => t.TicketId == dto.TicketId);
+
+                if (ticket == null)
+                {
+                    return Json(new { success = false, message = "找不到指定的客服案件" });
+                }
+
+                // 自動抓取當前登入管理員ID
+                var currentAdminId = int.Parse(GetCurrentAdminId());
+
+                // 更新案件資訊
+                ticket.ReplyContent = dto.ReplyContent;
+                ticket.StatusCode = dto.StatusCode;
+                ticket.HandledBy = currentAdminId;
+                ticket.ReplyAt = DateTime.Now;
+                ticket.UpdatedAt = DateTime.Now;
+                ticket.IsResolved = (dto.StatusCode == "RESOLVED");
+
+                await _context.SaveChangesAsync();
+
+                return Json(new
+                {
+                    success = true,
+                    message = "客服回覆已更新",
+                    data = new
+                    {
+                        TicketId = ticket.TicketId,
+                        StatusCode = ticket.StatusCode,
+                        StatusDisplay = GetStatusDisplay(ticket.StatusCode),
+                        ReplyAt = ticket.ReplyAt,
+                        UpdatedAt = ticket.UpdatedAt,
+                        HandledBy = ticket.HandledBy
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new
+                {
+                    success = false,
+                    message = "更新客服回覆時發生錯誤",
+                    error = ex.Message
+                });
+            }
+        }
+
+        /// <summary>
+        /// 取得回覆模板 API
+        /// </summary>
+        [HttpGet]
+        [RequireAdminPermission(AdminPermissions.CustomerServiceList)]
+        public async Task<IActionResult> GetMessageTemplates(string categoryCode)
+        {
+            try
+            {
+                var templates = await _context.AdminMessageTemplates
+                    .Where(t => t.CategoryCode == categoryCode && t.IsActive)
+                    .OrderBy(t => t.Title)
+                    .Select(t => new
+                    {
+                        TemplateId = t.TemplateId,
+                        Title = t.Title,
+                        Content = t.TemplateContent,
+                        CategoryCode = t.CategoryCode,
+                        IsActive = t.IsActive
+                    })
+                    .ToListAsync();
+
+                return Json(new
+                {
+                    success = true,
+                    data = templates
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new
+                {
+                    success = false,
+                    message = "載入回覆模板時發生錯誤",
+                    error = ex.Message
+                });
+            }
+        }
+
+        /// <summary>
+        /// 取得客服案件詳情 API
+        /// </summary>
+        [HttpGet]
+        [RequireAdminPermission(AdminPermissions.CustomerServiceDetails)]
+        public async Task<IActionResult> GetCustomerServiceDetails(int ticketId)
+        {
+            try
+            {
+                var ticket = await _context.CustomerServiceTickets
+                    .Include(t => t.Member)
+                    .Include(t => t.Property)
+                    .Include(t => t.Contract)
+                    .Include(t => t.FurnitureOrder)
+                    .FirstOrDefaultAsync(t => t.TicketId == ticketId);
+
+                if (ticket == null)
+                {
+                    return Json(new { success = false, message = "找不到指定的客服案件" });
+                }
+
+                var result = new
+                {
+                    success = true,
+                    data = new
+                    {
+                        TicketId = ticket.TicketId,
+                        TicketIdDisplay = $"CS-{ticket.TicketId:D4}",
+                        Member = new
+                        {
+                            MemberId = ticket.MemberId,
+                            MemberName = ticket.Member.MemberName,
+                            Email = ticket.Member.Email,
+                            PhoneNumber = ticket.Member.PhoneNumber
+                        },
+                        Subject = ticket.Subject,
+                        CategoryCode = ticket.CategoryCode,
+                        CategoryDisplay = GetCategoryDisplay(ticket.CategoryCode),
+                        TicketContent = ticket.TicketContent,
+                        ReplyContent = ticket.ReplyContent,
+                        StatusCode = ticket.StatusCode,
+                        StatusDisplay = GetStatusDisplay(ticket.StatusCode),
+                        CreatedAt = ticket.CreatedAt,
+                        ReplyAt = ticket.ReplyAt,
+                        UpdatedAt = ticket.UpdatedAt,
+                        HandledBy = ticket.HandledBy,
+                        HandledByName = GetHandledByName(ticket.HandledBy),
+                        IsResolved = ticket.IsResolved,
+                        RelatedInfo = new
+                        {
+                            ContractId = ticket.ContractId,
+                            PropertyId = ticket.PropertyId,
+                            FurnitureOrderId = ticket.FurnitureOrderId
+                        }
+                    }
+                };
+
+                return Json(result);
+            }
+            catch (Exception ex)
+            {
+                return Json(new
+                {
+                    success = false,
+                    message = "載取客服案件詳情時發生錯誤",
+                    error = ex.Message
+                });
+            }
+        }
+
+        /// <summary>
+        /// 取得類別顯示名稱
+        /// </summary>
+        private string GetCategoryDisplay(string categoryCode)
+        {
+            return categoryCode switch
+            {
+                "PROPERTY" => "房源",
+                "CONTRACT" => "合約",
+                "FURNITURE" => "家具",
+                _ => categoryCode
+            };
+        }
+
+        /// <summary>
+        /// 取得狀態顯示名稱
+        /// </summary>
+        private string GetStatusDisplay(string statusCode)
+        {
+            return statusCode switch
+            {
+                "PENDING" => "待處理",
+                "PROGRESS" => "處理中",
+                "RESOLVED" => "已處理",
+                _ => statusCode
+            };
+        }
+
+        /// <summary>
+        /// 取得處理人員姓名
+        /// </summary>
+        private string GetHandledByName(int? handledBy)
+        {
+            if (!handledBy.HasValue) return "---";
             
-            // 示範：取得當前管理員資訊
-            ViewBag.CurrentAdminId = GetCurrentAdminId();
-            ViewBag.CurrentAdminName = GetCurrentAdminName();
-            ViewBag.CurrentAdminAccount = GetCurrentAdminAccount();
-            
-            return View(viewModel);
+            var admin = _context.Admins.FirstOrDefault(a => a.AdminId == handledBy.Value);
+            return admin?.AdminName ?? "未知管理員";
         }
 
         /// <summary>
