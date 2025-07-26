@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using zuHause.Attributes;
 using zuHause.Interfaces;
+using zuHause.AdminDTOs;
 
 namespace zuHause.Controllers
 {
@@ -281,27 +282,41 @@ namespace zuHause.Controllers
                 var pageSize = filter.PageSize ?? 10;
                 var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
 
-                var tickets = await query
+                var ticketData = await query
                     .OrderByDescending(t => t.CreatedAt)
                     .Skip((page - 1) * pageSize)
                     .Take(pageSize)
                     .Select(t => new
                     {
                         TicketId = t.TicketId,
-                        TicketIdDisplay = $"CS-{t.TicketId:D4}",
                         MemberName = t.Member.MemberName,
                         MemberId = t.MemberId,
                         Subject = t.Subject,
                         CategoryCode = t.CategoryCode,
-                        CategoryDisplay = GetCategoryDisplay(t.CategoryCode),
                         StatusCode = t.StatusCode,
-                        StatusDisplay = GetStatusDisplay(t.StatusCode),
                         CreatedAt = t.CreatedAt,
-                        HandledByName = GetHandledByName(t.HandledBy),
+                        HandledBy = t.HandledBy,
                         HasReply = !string.IsNullOrEmpty(t.ReplyContent),
-                        IsUrgent = (t.CategoryCode == "CONTRACT" && (DateTime.Now - t.CreatedAt).TotalHours > 24 && !t.IsResolved)
+                        IsResolved = t.IsResolved
                     })
                     .ToListAsync();
+
+                var tickets = ticketData.Select(t => new
+                {
+                    TicketId = t.TicketId,
+                    TicketIdDisplay = $"CS-{t.TicketId:D4}",
+                    MemberName = t.MemberName,
+                    MemberId = t.MemberId,
+                    Subject = t.Subject,
+                    CategoryCode = t.CategoryCode,
+                    CategoryDisplay = GetCategoryDisplay(t.CategoryCode),
+                    StatusCode = t.StatusCode,
+                    StatusDisplay = GetStatusDisplay(t.StatusCode),
+                    CreatedAt = t.CreatedAt,
+                    HandledByName = GetHandledByName(t.HandledBy),
+                    HasReply = t.HasReply,
+                    IsUrgent = (t.CategoryCode == "CONTRACT" && (DateTime.Now - t.CreatedAt).TotalHours > 24 && !t.IsResolved)
+                }).ToList();
 
                 return Json(new
                 {
@@ -525,7 +540,7 @@ namespace zuHause.Controllers
             if (!handledBy.HasValue) return "---";
             
             var admin = _context.Admins.FirstOrDefault(a => a.AdminId == handledBy.Value);
-            return admin?.AdminName ?? "未知管理員";
+            return admin?.Name ?? "未知管理員";
         }
 
         /// <summary>

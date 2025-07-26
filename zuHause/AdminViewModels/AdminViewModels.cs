@@ -824,31 +824,7 @@ namespace zuHause.AdminViewModels
         }
     }
 
-    // 客服管理相關 ViewModels
-    public class AdminCustomerServiceDetailsViewModel : BaseDetailsViewModel<CustomerServiceCase>
-    {
-        public AdminCustomerServiceDetailsViewModel(string caseId = "CS001")
-        {
-            PageTitle = "客服案件詳情";
-            Data = GenerateMockCase(caseId);
-            IsEditMode = true;
-        }
-
-        private CustomerServiceCase GenerateMockCase(string caseId)
-        {
-            return new CustomerServiceCase
-            {
-                CaseID = caseId,
-                CaseTitle = "租屋糾紛處理",
-                MemberName = "王小明",
-                Category = "rental_dispute",
-                Priority = "high",
-                Status = "processing",
-                CreatedDate = "2024-07-10",
-                AssignedAdmin = "Admin001"
-            };
-        }
-    }
+    
 
     // 系統訊息相關 ViewModels
     public class AdminSystemMessageListViewModel : BaseListViewModel<SystemMessageData>

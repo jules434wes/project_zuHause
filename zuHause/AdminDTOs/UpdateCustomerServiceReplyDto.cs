@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace zuHause.DTOs
+namespace zuHause.AdminDTOs
 {
     /// <summary>
     /// 更新客服案件回覆 DTO

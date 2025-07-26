@@ -1,6 +1,6 @@
 using System;
 
-namespace zuHause.DTOs
+namespace zuHause.AdminDTOs
 {
     /// <summary>
     /// 客服案件篩選參數 DTO

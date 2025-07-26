@@ -110,12 +110,12 @@ const CustomerServiceManager = {
                 searchParams.status = searchParams.status || 'PENDING,PROGRESS';
             }
 
+            const formData = new FormData();
+            Object.keys(searchParams).forEach(key => formData.append(key, searchParams[key]));
+
             const response = await fetch('/Admin/FilterCustomerService', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: new URLSearchParams(searchParams)
+                body: formData
             });
 
             const result = await response.json();
