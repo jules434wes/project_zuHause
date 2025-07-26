@@ -469,6 +469,14 @@ namespace zuHause.DTOs
         /// </summary>
         [JsonPropertyName("propertyProofUrl")]
         public string? PropertyProofUrl { get; set; }
+
+        // === 編輯模式支援 ===
+
+        /// <summary>
+        /// 房源ID（編輯模式使用）
+        /// </summary>
+        [JsonPropertyName("propertyId")]
+        public int? PropertyId { get; set; }
     }
 
     /// <summary>

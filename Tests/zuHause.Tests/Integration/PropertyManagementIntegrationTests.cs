@@ -11,6 +11,8 @@ using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Xunit;
+using zuHause.Tests.Integration;
+using zuHause.Interfaces;
 
 namespace zuHause.Tests.Integration;
 
@@ -18,29 +20,30 @@ namespace zuHause.Tests.Integration;
 /// 房源管理功能整合測試
 /// 驗證12個房源狀態的三分組邏輯和條件式操作
 /// </summary>
-public class PropertyManagementIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
+public class PropertyManagementIntegrationTests : IClassFixture<TestWebApplicationFactory<Program>>
 {
-    private readonly WebApplicationFactory<Program> _factory;
+    private readonly TestWebApplicationFactory<Program> _factory;
     private readonly ZuHauseContext _context;
     private readonly LandlordController _controller;
     private readonly ILogger<LandlordController> _logger;
 
-    public PropertyManagementIntegrationTests(WebApplicationFactory<Program> factory)
+    public PropertyManagementIntegrationTests(TestWebApplicationFactory<Program> factory)
     {
         _factory = factory;
         
         // 設定環境變數跳過 PDF 庫載入
         Environment.SetEnvironmentVariable("SKIP_PDF_LIBRARY", "true");
         
-        // 使用真實資料庫連線
-        var scope = _factory.Services.CreateScope();
-        _context = scope.ServiceProvider.GetRequiredService<ZuHauseContext>();
+        // 使用測試專用的資料庫連線，確保不影響真實資料庫
+        _context = _factory.CreateDbContext();
         
-        // 建立 Logger  
+        // 建立 Logger (使用 factory 的服務)
+        using var scope = _factory.Services.CreateScope();
         _logger = scope.ServiceProvider.GetRequiredService<ILogger<LandlordController>>();
+        var imageQueryService = scope.ServiceProvider.GetRequiredService<IImageQueryService>();
         
         // 建立 Controller
-        _controller = new LandlordController(_logger, _context);
+        _controller = new LandlordController(_logger, _context, imageQueryService);
     }
 
     /// <summary>
@@ -454,6 +457,8 @@ public class PropertyManagementIntegrationTests : IClassFixture<WebApplicationFa
 
             for (int i = 0; i < testProperties.Length; i++)
             {
+                var isPaid = testProperties[i] == "LISTED" || testProperties[i] == "CONTRACT_ISSUED";
+                
                 var property = new Property
                 {
                     PropertyId = maxPropertyId + i + 1,
@@ -481,7 +486,9 @@ public class PropertyManagementIntegrationTests : IClassFixture<WebApplicationFa
                     ListingFeeAmount = listingPlan.PricePerDay * listingPlan.MinListingDays,
                     ListingPlanId = listingPlan.PlanId,
                     StatusCode = testProperties[i],
-                    IsPaid = testProperties[i] == "LISTED" || testProperties[i] == "CONTRACT_ISSUED",
+                    IsPaid = isPaid,
+                    // 遵循 CHECK 約束：IsPaid 為 true 時必須設定 PaidAt
+                    PaidAt = isPaid ? DateTime.Now.AddDays(-i - 1) : null,
                     CreatedAt = DateTime.Now.AddDays(-i),
                     UpdatedAt = DateTime.Now.AddDays(-i + 1)
                 };
@@ -493,7 +500,9 @@ public class PropertyManagementIntegrationTests : IClassFixture<WebApplicationFa
             Console.WriteLine($"Controller測試：成功建立 {testProperties.Length} 筆測試房源");
 
             // 建立獨立的 Controller 實例
-            var testController = new LandlordController(testLogger, testContext);
+            using var testScope = _factory.Services.CreateScope();
+            var testImageQueryService = testScope.ServiceProvider.GetRequiredService<IImageQueryService>();
+            var testController = new LandlordController(testLogger, testContext, testImageQueryService);
             SetupControllerUserContext(testController, landlordId);
 
             // Act

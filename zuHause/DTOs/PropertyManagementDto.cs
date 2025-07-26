@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using zuHause.Helpers;
 
 namespace zuHause.DTOs
@@ -18,16 +19,22 @@ namespace zuHause.DTOs
         /// <summary>
         /// 房源標題
         /// </summary>
+        [Required(ErrorMessage = "房源標題為必填項目")]
+        [StringLength(100, MinimumLength = 5, ErrorMessage = "房源標題長度須介於5-100字元")]
         public string Title { get; set; } = string.Empty;
 
         /// <summary>
         /// 月租金
         /// </summary>
+        [Required(ErrorMessage = "月租金為必填項目")]
+        [Range(1, 500000, ErrorMessage = "月租金須介於1-500,000元")]
         public decimal MonthlyRent { get; set; }
 
         /// <summary>
         /// 完整地址
         /// </summary>
+        [Required(ErrorMessage = "房源地址為必填項目")]
+        [StringLength(200, MinimumLength = 10, ErrorMessage = "地址長度須介於10-200字元")]
         public string Address { get; set; } = string.Empty;
 
         /// <summary>
@@ -40,31 +47,37 @@ namespace zuHause.DTOs
         /// <summary>
         /// 房數
         /// </summary>
+        [Range(1, 50, ErrorMessage = "房數須介於1-50之間")]
         public int RoomCount { get; set; }
 
         /// <summary>
         /// 廳數
         /// </summary>
+        [Range(0, 20, ErrorMessage = "廳數須介於0-20之間")]
         public int LivingRoomCount { get; set; }
 
         /// <summary>
         /// 衛數
         /// </summary>
+        [Range(1, 20, ErrorMessage = "衛數須介於1-20之間")]
         public int BathroomCount { get; set; }
 
         /// <summary>
         /// 坪數
         /// </summary>
+        [Range(1, 1000, ErrorMessage = "坪數須介於1-1000坪")]
         public decimal? Area { get; set; }
 
         /// <summary>
         /// 所在樓層
         /// </summary>
+        [Range(1, 100, ErrorMessage = "所在樓層須介於1-100樓")]
         public int CurrentFloor { get; set; }
 
         /// <summary>
         /// 總樓層數
         /// </summary>
+        [Range(1, 100, ErrorMessage = "總樓層數須介於1-100樓")]
         public int TotalFloors { get; set; }
 
         // === 圖片與媒體 ===

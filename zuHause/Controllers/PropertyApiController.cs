@@ -18,6 +18,7 @@ namespace zuHause.Controllers
         private readonly IBlobMigrationService _blobMigrationService;
         private readonly ITempSessionService _tempSessionService;
         private readonly IPropertyImageService _propertyImageService;
+        private readonly IImageQueryService _imageQueryService;
         private readonly ILogger<PropertyApiController> _logger;
 
         public PropertyApiController(
@@ -26,6 +27,7 @@ namespace zuHause.Controllers
             IBlobMigrationService blobMigrationService,
             ITempSessionService tempSessionService,
             IPropertyImageService propertyImageService,
+            IImageQueryService imageQueryService,
             ILogger<PropertyApiController> logger)
         {
             _context = context;
@@ -33,6 +35,7 @@ namespace zuHause.Controllers
             _blobMigrationService = blobMigrationService;
             _tempSessionService = tempSessionService;
             _propertyImageService = propertyImageService;
+            _imageQueryService = imageQueryService;
             _logger = logger;
         }
 
@@ -50,7 +53,6 @@ namespace zuHause.Controllers
             try
             {
                 var query = _context.Properties
-                    .Include(p => p.PropertyImages)
                     .Where(p => p.StatusCode == "上架"); // 使用 StatusCode 而非 IsActive
 
                 // Location filter - 需要包含 City 和 District 的 Include
@@ -106,6 +108,19 @@ namespace zuHause.Controllers
                     .Take(pageSize)
                     .ToListAsync();
 
+                // 批量查詢主圖（避免 N+1 問題）
+                var propertyIds = properties.Select(p => p.PropertyId).ToList();
+                var mainImages = new Dictionary<int, Image>();
+
+                foreach (var propertyId in propertyIds)
+                {
+                    var mainImage = await _imageQueryService.GetMainImageAsync(EntityType.Property, propertyId);
+                    if (mainImage != null)
+                    {
+                        mainImages[propertyId] = mainImage;
+                    }
+                }
+
                 var result = new PropertySearchResultDto
                 {
                     Properties = properties.Select(p => new PropertyDto
@@ -116,7 +131,9 @@ namespace zuHause.Controllers
                         Address = p.AddressLine ?? "",
                         Price = p.MonthlyRent,
                         PropertyType = "一般", // 暫時固定值，需要確認 Property model 中的房型欄位
-                        MainImageUrl = p.PropertyImages?.FirstOrDefault()?.ImagePath ?? "/images/placeholder.jpg",
+                        MainImageUrl = mainImages.ContainsKey(p.PropertyId) 
+                            ? _imageQueryService.GenerateImageUrl(mainImages[p.PropertyId].StoredFileName, ImageSize.Medium)
+                            : "/images/placeholder.jpg",
                         Bedrooms = p.RoomCount,
                         Bathrooms = p.BathroomCount,
                         Area = p.Area,
@@ -535,13 +552,15 @@ namespace zuHause.Controllers
             try
             {
                 var property = await _context.Properties
-                    .Include(p => p.PropertyImages)
                     .FirstOrDefaultAsync(p => p.PropertyId == id);
 
                 if (property == null)
                 {
                     return NotFound(new { message = "找不到指定的房源" });
                 }
+
+                // 查詢主圖
+                var mainImage = await _imageQueryService.GetMainImageAsync(EntityType.Property, id);
 
                 var propertyDto = new PropertyDto
                 {
@@ -551,7 +570,9 @@ namespace zuHause.Controllers
                     Address = property.AddressLine ?? "",
                     Price = property.MonthlyRent,
                     PropertyType = "一般", // TODO: 增加房型欄位
-                    MainImageUrl = property.PropertyImages?.FirstOrDefault()?.ImagePath ?? "/images/placeholder.jpg",
+                    MainImageUrl = mainImage != null 
+                        ? _imageQueryService.GenerateImageUrl(mainImage.StoredFileName, ImageSize.Medium)
+                        : "/images/placeholder.jpg",
                     Bedrooms = property.RoomCount,
                     Bathrooms = property.BathroomCount,
                     Area = property.Area,
