@@ -23,7 +23,7 @@ namespace zuHause.Controllers
         }
 
 
-        public async Task<IActionResult> Index(string type = "ALL" , string? statusFilter = null)
+        public async Task<IActionResult> Index(string type = "ALL", string? statusFilter = null)
         {
             ViewBag.type = type;
             if (User.Identity?.IsAuthenticated != true)
@@ -34,7 +34,7 @@ namespace zuHause.Controllers
 
             var viewModel = await _context.RentalApplications
                 .Where(app => app.MemberId == memberId && app.IsActive && app.DeletedAt == null)
-                .Where(app=> (type == "ALL" || type == "") && (app.ApplicationType == "HOUSE_VIEWING" || app.ApplicationType == "RENTAL") ||
+                .Where(app => (type == "ALL" || type == "") && (app.ApplicationType == "HOUSE_VIEWING" || app.ApplicationType == "RENTAL") ||
                                 (type == "HOUSE_VIEWING" && app.ApplicationType == "HOUSE_VIEWING") ||
                                 (type == "RENTAL" && app.ApplicationType == "RENTAL"))
                 .Where(app => string.IsNullOrEmpty(statusFilter) || app.CurrentStatus == statusFilter)
@@ -73,7 +73,7 @@ namespace zuHause.Controllers
                             StatusCode = log.StatusCode,
                             ChangedAt = log.ChangedAt
                         }).ToList()
-                }).OrderByDescending(x=>x.ApplicationId)
+                }).OrderByDescending(x => x.ApplicationId)
                 .ToListAsync();
 
 
@@ -85,24 +85,24 @@ namespace zuHause.Controllers
             //變成字典例如："APPLIED","已申請"
 
             List<string>? allowedStatusCodes = null;
-            if(type == "HOUSE_VIEWING" || type == "RENTAL" || type == "REJECTED_FLOW")
+            if (type == "HOUSE_VIEWING" || type == "RENTAL" || type == "REJECTED_FLOW")
             {
                 allowedStatusCodes = ApplicationFlowConfig.ApplicationStepsMap.GetValueOrDefault(type);
                 // 取出對應清單
             }
 
             Dictionary<string, string> filteredStatusDict;
-            if(allowedStatusCodes is not null)
+            if (allowedStatusCodes is not null)
             {
                 filteredStatusDict = applicationStatusCodes
                     .Where(kv => allowedStatusCodes.Contains(kv.Key))
-                    .ToDictionary(kv =>  kv.Key, kv => kv.Value);
+                    .ToDictionary(kv => kv.Key, kv => kv.Value);
             }
             else
             {
                 filteredStatusDict = applicationStatusCodes; // 如果有狀態就篩選符合List的列表出來，也存成字典
             }
-                ViewBag.ApplicationStatusOptions = filteredStatusDict;
+            ViewBag.ApplicationStatusOptions = filteredStatusDict;
 
 
             return View(viewModel);
@@ -159,7 +159,7 @@ namespace zuHause.Controllers
 
             var newLog = new ApplicationStatusLog
             {
-                ApplicationId = application.ApplicationId, 
+                ApplicationId = application.ApplicationId,
                 StatusCode = "APPLIED",
                 ChangedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now,
@@ -226,7 +226,7 @@ namespace zuHause.Controllers
 
             var newLog = new ApplicationStatusLog
             {
-                ApplicationId = rentalApp.ApplicationId, 
+                ApplicationId = rentalApp.ApplicationId,
                 StatusCode = "APPLIED",
                 ChangedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now,
@@ -292,8 +292,8 @@ namespace zuHause.Controllers
         {
 
             var (success, message) = await _applicationService.UpdateApplicationStatusAsync(
-        Convert.ToInt32(model.ApplicationId), model.Status!
-    );
+            Convert.ToInt32(model.ApplicationId), model.Status!
+            );
 
             if (!success)
                 return BadRequest(new { msg = message });

@@ -94,7 +94,7 @@ namespace zuHause.Controllers
             {
                 isValid = _memberService.verifyPassword(member, model.UserPassword!);
             }
-            catch (FormatException ex)
+            catch (FormatException)
             {
                 ModelState.AddModelError("LoginStatus", "帳號或密碼錯誤");
                 return View(model);
@@ -791,7 +791,7 @@ namespace zuHause.Controllers
                     await model.UploadFile.CopyToAsync(stream);
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return StatusCode(500, "檔案儲存失敗，請稍後再試");
             }

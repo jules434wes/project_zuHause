@@ -59,8 +59,6 @@ namespace zuHause.ViewModels.MemberViewModel
         [Display(Name = "合約範本")]
         public int SelectedTemplateId { get; set; }
 
-        public List<SelectListItem> TemplateOptions { get; set; } = new();
-
         // --- 備註 (ContractComment) ---
         public List<CommentItem> Comments { get; set; } = new();
 

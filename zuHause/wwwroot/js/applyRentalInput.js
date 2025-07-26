@@ -73,7 +73,6 @@ addBtn.addEventListener("click", function () {
 const form = document.querySelector(".apply-rental-form");
 
 form.addEventListener("submit", function (e) {
-    console.log(111111);
     const inputItems = uploadInputArea.querySelectorAll(".input-item");
     let hasError = false;
 
@@ -113,16 +112,13 @@ form.addEventListener("submit", function (e) {
     let signatureError = false;
 
     if (document.querySelector(".furniture-body")) {
-        console.log(1);
         furnitureError = validateFurnitureTable();
     }
 
     if (document.querySelector(".note-area")) {
-        console.log(2);
         notesError = validateNotes();
     }
     if (document.querySelector(".signature-upload-area")) {
-        console.log(3);
     signatureError = validateSignatureFile();   
     }
     console.log("==== submit 開始 ====");

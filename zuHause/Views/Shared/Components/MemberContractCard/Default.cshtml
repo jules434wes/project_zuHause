@@ -47,14 +47,9 @@
                 </div>
             </div>
             <div class="col-auto d-flex flex-column align-items-start justify-content-start px-0 gap-2">
-                @* 接查看的API *@
-                <form asp-action="ViewContract" method="post" target="_blank" class="w-100">
-                    <input type="hidden" name="contractId" value="@Model.ContractId" />
-                    <button type="submit" class="btn btn-aqua py-0 w-100">查看租賃合約</button>
-                </form>
                 <a href="@Url.Action("Preview", "MemberContracts", new { contractId = Model.ContractId })"
                    class="btn btn-outline-secondary py-0 w-100" target="_blank">
-                    預覽合約
+                    查看合約
                 </a>
                 @await Html.PartialAsync("_PartialRentalApplicationsModal",Model)
 

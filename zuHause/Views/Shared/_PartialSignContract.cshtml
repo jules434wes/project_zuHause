@@ -36,8 +36,8 @@
                                 <h6 class="col-auto mb-0 px-0 py-2">上傳簽名檔：</h6>
                                 <div class="col-auto gap-2 py-0">
                                     <div class="row align-items-center">
-                                        <label asp-for="SignatureFile" class="col-auto border border-1 px-2 py-1" role="button">選擇檔案</label>
-                                        <input type="file" asp-for="SignatureFile" class="d-none">
+                                        <label for="SignatureFile@(Model.RentalApplicationId)" name="SignatureFile" class="col-auto border border-1 px-2 py-1" role="button">選擇檔案</label>
+                                        <input asp-for="SignatureFile" type="file" id="SignatureFile@(Model.RentalApplicationId)" class="d-none">
                                         <div class="col-auto input-file-name"></div>
                                     </div>
                                     <div class="row input-feedback mt-1">
@@ -53,7 +53,6 @@
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
                     <button type="submit" class="btn btn-aqua">同意並送出</button>
 
-                    @* 這裡應再跳出確認最終同意申請，並必須點同意，會影響的狀態為？ *@
                 </div>
             </form>
         </div>

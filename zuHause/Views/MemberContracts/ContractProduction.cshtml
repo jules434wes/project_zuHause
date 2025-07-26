@@ -12,20 +12,6 @@
                         <div class="tab-pane fade show active py-3 w-100 gap-2" id="allItemTab-pane" role="tabpanel"
                              aria-labelledby="allItemTab" tabindex="0">
                             <div class="row w-100 mx-0 gy-3">
-                                <h5 class="col-12 px-0 mb-0">請選擇合約範本</h5>
-                                <div class="col-12 mx-0 gy-3">
-                                    <div class="row m-0 gap-1 align-items-center">
-                                        <label asp-for="SelectedTemplateId" class="col-3 py-0"></label>
-                                        <div class="col-5 pe-0">
-                                            <select class="form-select form-select-sm" asp-for="SelectedTemplateId" asp-items="Model.TemplateOptions">
-                                            </select>
-                                        </div>
-                                        <span class="text-danger" asp-validation-for="SelectedTemplateId"></span>
-                                    </div>
-                                </div>
-                            </div>
-                            <hr />
-                            <div class="row w-100 mx-0 gy-3">
                                 <h5 class="col-12 px-0 mb-0">房源資訊</h5>
                                 <input type="hidden" asp-for="Title" />
                                 <input type="hidden" asp-for="PropertyId" />
@@ -37,6 +23,7 @@
                                 <input type="hidden" asp-for="RentalStartDate" />
                                 <input type="hidden" asp-for="RentalEndDate" />
                                 <input type="hidden" asp-for="RentalApplicationId" />
+                                <input type="hidden" asp-for="SelectedTemplateId" />
 
                                 <div class="col-9">
                                     <div class="row flex-column gap-2">

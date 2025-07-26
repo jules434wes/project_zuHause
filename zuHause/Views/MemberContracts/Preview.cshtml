@@ -3,7 +3,7 @@
     Layout = "~/Views/Shared/_NavigationBar.cshtml";
 }
 @model Int32
-
+<p>@(ViewBag.type)</p>
 <div class="container my-4">
     <h2 class="text-center mb-4">合約預覽</h2>
     <div class="bg-white p-4 shadow-sm rounded">
@@ -22,11 +22,26 @@
             </div>
             @if (ViewBag.type != null)
             {
+                if (ViewBag.type == "SEND_CONTRACT")
+                {
+                    <div class="col-3">
+                        <form asp-action="SendContract" asp-controller="MemberContracts" method="post" class="w-100">
+                            <input type="hidden" name="contractId" value="@Model" />
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-outline-secondary w-100">送出合約</button>
+                        </form>
+                    </div>
+                }
+                else if (ViewBag.type == "TENANT_NEED_AGREE" || ViewBag.type == "LANDLORD_NEED_AGREE")
+                {
                 <div class="col-3">
-                    <a href="@Url.Action("AgreeContract", "MemberContracts", new { contractId = Model, type = ViewBag.type })" class="btn btn-outline-secondary w-100" target="_blank">
-                        同意合約
-                    </a>
-                </div>
+                    <form asp-action="AgreeContract" asp-controller="MemberContracts" method="post">
+                        <input type="hidden" name="contractId" value="@Model" />
+                        <input type="hidden" name="type" value="@(ViewBag.type)" />
+                        <button type="submit" class="btn btn-primary">同意合約</button>
+                    </form>
+                 </div>
+                }
             }
         </div>
     </div>

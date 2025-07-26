@@ -27,6 +27,7 @@ namespace zuHause.ViewComponents
             // 加進 ViewData 傳入 View
             ViewData["Steps"] = steps;
             ViewData["ActiveStep"] = activeStep;
+            ViewData["StepsName"] = latestStatus;
 
             return View(model);
         }
