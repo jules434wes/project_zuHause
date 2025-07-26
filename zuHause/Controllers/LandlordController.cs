@@ -101,49 +101,41 @@ namespace zuHause.Controllers
                     return RedirectToAction("Login", "Member");
                 }
 
-                // 2. 查詢房東房源（直接 EF 查詢，無額外 Service 層）
-                var properties = await _context.Properties
-                    .Where(p => p.LandlordMemberId == landlordId.Value && p.DeletedAt == null)
-                    .AsNoTracking()
-                    .OrderByDescending(p => p.CreatedAt)
-                    .Select(p => new PropertyManagementDto
-                    {
-                        PropertyId = p.PropertyId,
-                        Title = p.Title,
-                        MonthlyRent = p.MonthlyRent,
-                        Address = p.AddressLine ?? string.Empty,
-                        StatusCode = p.StatusCode,
-                        RoomCount = p.RoomCount,
-                        LivingRoomCount = p.LivingRoomCount,
-                        BathroomCount = p.BathroomCount,
-                        Area = p.Area,
-                        CurrentFloor = p.CurrentFloor,
-                        TotalFloors = p.TotalFloors,
-                        ThumbnailUrl = p.PreviewImageUrl ?? "/images/property-placeholder.jpg",
-                        CreatedAt = p.CreatedAt,
-                        UpdatedAt = p.UpdatedAt,
-                        PublishedAt = p.PublishedAt,
-                        ExpireAt = p.ExpireAt,
-                        IsPaid = p.IsPaid,
-                        // TODO: 統計資料需要從相關表查詢
-                        ViewCount = 0,
-                        FavoriteCount = 0,
-                        ApplicationCount = 0
-                    })
-                    .ToListAsync();
+                // 2. 查詢房東房源（直接 EF 查詢，包含城市和區域資訊）
+                var properties = await (from p in _context.Properties
+                                      join c in _context.Cities on p.CityId equals c.CityId
+                                      join d in _context.Districts on p.DistrictId equals d.DistrictId
+                                      where p.LandlordMemberId == landlordId.Value && p.DeletedAt == null
+                                      orderby p.CreatedAt descending
+                                      select new PropertyManagementDto
+                                      {
+                                          PropertyId = p.PropertyId,
+                                          Title = p.Title,
+                                          MonthlyRent = p.MonthlyRent,
+                                          Address = $"{c.CityName}{d.DistrictName}{p.AddressLine ?? string.Empty}",
+                                          StatusCode = p.StatusCode,
+                                          RoomCount = p.RoomCount,
+                                          LivingRoomCount = p.LivingRoomCount,
+                                          BathroomCount = p.BathroomCount,
+                                          Area = p.Area,
+                                          CurrentFloor = p.CurrentFloor,
+                                          TotalFloors = p.TotalFloors,
+                                          ThumbnailUrl = p.PreviewImageUrl ?? "/images/property-placeholder.jpg",
+                                          CreatedAt = p.CreatedAt,
+                                          UpdatedAt = p.UpdatedAt,
+                                          PublishedAt = p.PublishedAt,
+                                          ExpireAt = p.ExpireAt,
+                                          IsPaid = p.IsPaid,
+                                          // TODO: 統計資料需要從相關表查詢
+                                          ViewCount = 0,
+                                          FavoriteCount = 0,
+                                          ApplicationCount = 0
+                                      }).ToListAsync();
 
-                // 3. 建立統計資料
+                // 3. 建立統計資料（簡化版）
                 var stats = new PropertyManagementStatsDto
                 {
-                    TotalProperties = properties.Count(),
-                    ListedProperties = properties.Count(p => p.StatusCode == "LISTED"),
-                    RentedProperties = properties.Count(p => p.StatusCode == "ALREADY_RENTED"),
-                    PendingActionProperties = properties.Count(p => p.RequiresAction),
-                    BannedProperties = properties.Count(p => p.StatusCode == "BANNED"),
-                    MonthlyViews = properties.Sum(p => p.ViewCount),
-                    MonthlyApplications = properties.Sum(p => p.ApplicationCount),
-                    AverageViewsPerProperty = properties.Count() > 0 ? 
-                        Math.Round((decimal)properties.Sum(p => p.ViewCount) / properties.Count(), 1) : 0
+                    TotalProperties = properties.Count()
                 };
 
                 // 4. 狀態摘要統計

@@ -206,9 +206,9 @@ namespace zuHause.DTOs
         public PropertyViewMode ViewMode => PropertyStatusHelper.GetViewMode(StatusCode);
 
         /// <summary>
-        /// 是否為過時狀態（如DRAFT）
+        /// 是否為過時狀態（如DRAFT） - 當前版本中移除DRAFT狀態，保留此屬性用於向後相容
         /// </summary>
-        public bool IsLegacyStatus => PropertyStatusHelper.IsLegacyStatus(StatusCode);
+        public bool IsLegacyStatus => false; // 移除DRAFT狀態後，目前無過時狀態
     }
 
     /// <summary>
@@ -278,7 +278,7 @@ namespace zuHause.DTOs
     }
 
     /// <summary>
-    /// 房源管理統計 DTO
+    /// 房源管理統計 DTO（簡化版）
     /// </summary>
     public class PropertyManagementStatsDto
     {
@@ -286,43 +286,6 @@ namespace zuHause.DTOs
         /// 總房源數
         /// </summary>
         public int TotalProperties { get; set; }
-
-        /// <summary>
-        /// 上架中房源數
-        /// </summary>
-        public int ListedProperties { get; set; }
-
-        /// <summary>
-        /// 出租中房源數
-        /// </summary>
-        public int RentedProperties { get; set; }
-
-        /// <summary>
-        /// 需要行動的房源數
-        /// </summary>
-        public int PendingActionProperties { get; set; }
-
-        /// <summary>
-        /// 封鎖房源數
-        /// </summary>
-        public int BannedProperties { get; set; }
-
-        // === 簡化統計（移除複雜統計功能） ===
-
-        /// <summary>
-        /// 當月瀏覽數
-        /// </summary>
-        public int MonthlyViews { get; set; }
-
-        /// <summary>
-        /// 當月申請數
-        /// </summary>
-        public int MonthlyApplications { get; set; }
-
-        /// <summary>
-        /// 平均每房源瀏覽數
-        /// </summary>
-        public decimal AverageViewsPerProperty { get; set; }
     }
 
     /// <summary>

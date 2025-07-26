@@ -20,13 +20,10 @@ namespace zuHause.Helpers
             { "LISTED", "上架中" },
             { "CONTRACT_ISSUED", "已發出合約" },
             { "PENDING_RENEWAL", "待續約" },
-            { "LEASE_EXPIRED_RENEWING", "續約(房客申請中)" },
+            { "LEASE_RENEWING", "續約(房客申請中)" },
             { "IDLE", "閒置中" },
             { "ALREADY_RENTED", "出租中" },
-            { "INVALID", "房源已下架" },
-            
-            // 向後相容性支援（標記為過時）
-            { "DRAFT", "草稿" }
+            { "INVALID", "房源已下架" }
         };
 
         /// <summary>
@@ -42,13 +39,10 @@ namespace zuHause.Helpers
             { "LISTED", "success" },
             { "CONTRACT_ISSUED", "primary" },
             { "PENDING_RENEWAL", "warning" },
-            { "LEASE_EXPIRED_RENEWING", "info" },
+            { "LEASE_RENEWING", "info" },
             { "IDLE", "secondary" },
             { "ALREADY_RENTED", "dark" },
-            { "INVALID", "secondary" },
-            
-            // 向後相容性支援
-            { "DRAFT", "light" }
+            { "INVALID", "secondary" }
         };
 
         /// <summary>
@@ -56,7 +50,7 @@ namespace zuHause.Helpers
         /// </summary>
         private static readonly HashSet<string> EditableStatuses = new()
         {
-            "IDLE", "LISTED", "DRAFT" // 保留 DRAFT 向後相容
+            "IDLE", "LISTED"
         };
 
         /// <summary>
@@ -88,7 +82,7 @@ namespace zuHause.Helpers
         /// </summary>
         private static readonly HashSet<string> PendingStatuses = new()
         {
-            "PENDING", "PENDING_PAYMENT", "REJECT_REVISE", "IDLE", "DRAFT"
+            "PENDING", "PENDING_PAYMENT", "REJECT_REVISE", "IDLE"
         };
 
         /// <summary>
@@ -96,7 +90,7 @@ namespace zuHause.Helpers
         /// </summary>
         private static readonly HashSet<string> UnavailableStatuses = new()
         {
-            "ALREADY_RENTED", "INVALID", "REJECTED", "BANNED"
+            "ALREADY_RENTED", "INVALID", "REJECTED", "BANNED", "PENDING_RENEWAL", "LEASE_RENEWING"
         };
 
         /// <summary>
@@ -276,34 +270,13 @@ namespace zuHause.Helpers
 
         /// <summary>
         /// 取得所有可用的房源狀態清單（用於下拉選單等）
-        /// 排除過時的 DRAFT 狀態
         /// </summary>
         /// <returns>狀態代碼與顯示名稱的字典</returns>
         public static Dictionary<string, string> GetAllStatuses()
         {
-            return StatusDisplayNames
-                .Where(kvp => kvp.Key != "DRAFT") // 排除過時狀態
-                .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
-        }
-
-        /// <summary>
-        /// 取得所有房源狀態清單（包含過時狀態，用於向後相容）
-        /// </summary>
-        /// <returns>完整的狀態代碼與顯示名稱字典</returns>
-        public static Dictionary<string, string> GetAllStatusesIncludingLegacy()
-        {
             return new Dictionary<string, string>(StatusDisplayNames);
         }
 
-        /// <summary>
-        /// 檢查狀態是否為過時狀態
-        /// </summary>
-        /// <param name="statusCode">房源狀態代碼</param>
-        /// <returns>是否為過時狀態</returns>
-        public static bool IsLegacyStatus(string statusCode)
-        {
-            return string.Equals(statusCode, "DRAFT", StringComparison.OrdinalIgnoreCase);
-        }
     }
 
     /// <summary>
@@ -317,7 +290,7 @@ namespace zuHause.Helpers
         Available,
 
         /// <summary>
-        /// 等待刊登的房源：PENDING, PENDING_PAYMENT, REJECT_REVISE, IDLE, DRAFT
+        /// 等待刊登的房源：PENDING, PENDING_PAYMENT, REJECT_REVISE, IDLE
         /// </summary>
         Pending,
 

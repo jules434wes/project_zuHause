@@ -26,45 +26,6 @@
         </div>
     </div>
 
-    <!-- 統計概覽卡片 -->
-    <div class="row mb-4">
-        <div class="col-md-3 col-sm-6 mb-3">
-            <div class="card stats-card">
-                <div class="card-body text-center">
-                    <i class="fas fa-chart-line fs-2 text-primary mb-2"></i>
-                    <h5 class="mb-1">@Model.Stats.ListedProperties</h5>
-                    <small class="text-muted">上架中</small>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3 col-sm-6 mb-3">
-            <div class="card stats-card">
-                <div class="card-body text-center">
-                    <i class="fas fa-handshake fs-2 text-success mb-2"></i>
-                    <h5 class="mb-1">@Model.Stats.RentedProperties</h5>
-                    <small class="text-muted">出租中</small>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3 col-sm-6 mb-3">
-            <div class="card stats-card">
-                <div class="card-body text-center">
-                    <i class="fas fa-exclamation-triangle fs-2 text-warning mb-2"></i>
-                    <h5 class="mb-1">@Model.Stats.PendingActionProperties</h5>
-                    <small class="text-muted">需要行動</small>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3 col-sm-6 mb-3">
-            <div class="card stats-card">
-                <div class="card-body text-center">
-                    <i class="fas fa-ban fs-2 text-danger mb-2"></i>
-                    <h5 class="mb-1">@Model.Stats.BannedProperties</h5>
-                    <small class="text-muted">已封鎖</small>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <!-- Status Messages -->
     @if (TempData["SuccessMessage"] != null)
