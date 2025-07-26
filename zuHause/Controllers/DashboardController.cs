@@ -2100,6 +2100,8 @@ namespace zuHause.Controllers
         public async Task<IActionResult> GetStatistics()
         {
             var today = DateTime.Today;
+
+            // 近五日每日 DAU
             var last5Days = Enumerable.Range(0, 5)
                 .Select(i => today.AddDays(-4 + i)) // 從五天前開始
                 .ToList();
@@ -2110,7 +2112,6 @@ namespace zuHause.Controllers
                 .Select(g => new { Date = g.Key, Count = g.Count() })
                 .ToListAsync();
 
-            // 確保每一天都有資料
             var dau = last5Days
                 .Select(d => new
                 {
@@ -2119,25 +2120,57 @@ namespace zuHause.Controllers
                 })
                 .ToList();
 
-            // 熱門搜尋關鍵字
-            var hotKeywords = await _context.SearchHistories
-                .Where(h => h.SearchedAt >= today.AddDays(-30))
-                .GroupBy(h => h.Keyword)
+            // 本月每日 DAU
+            var startOfMonth = new DateTime(today.Year, today.Month, 1);
+            var daysInMonth = Enumerable.Range(0, (today - startOfMonth).Days + 1)
+                .Select(i => startOfMonth.AddDays(i))
+                .ToList();
+
+            var monthRaw = await _context.Members
+                .Where(m => m.LastLoginAt != null && m.LastLoginAt >= startOfMonth)
+                .GroupBy(m => m.LastLoginAt!.Value.Date)
+                .Select(g => new { Date = g.Key, Count = g.Count() })
+                .ToListAsync();
+
+            var month = daysInMonth
+                .Select(d => new
+                {
+                    Date = d,
+                    Count = monthRaw.FirstOrDefault(x => x.Date == d)?.Count ?? 0
+                })
+                .ToList();
+
+            // 今年每月 DAU
+            var startOfYear = new DateTime(today.Year, 1, 1);
+            var months = Enumerable.Range(1, 12).Select(m => new DateTime(today.Year, m, 1)).ToList();
+
+            var yearRaw = await _context.Members
+                .Where(m => m.LastLoginAt != null && m.LastLoginAt >= startOfYear)
+                .GroupBy(m => new { m.LastLoginAt!.Value.Year, m.LastLoginAt!.Value.Month })
                 .Select(g => new
                 {
-                    Keyword = g.Key,
+                    Year = g.Key.Year,
+                    Month = g.Key.Month,
                     Count = g.Count()
                 })
-                .OrderByDescending(g => g.Count)
-                .Take(10)
                 .ToListAsync();
+
+            var year = months
+                .Select(d => new
+                {
+                    Month = d.ToString("yyyy-MM"),
+                    Count = yearRaw.FirstOrDefault(x => x.Month == d.Month && x.Year == d.Year)?.Count ?? 0
+                })
+                .ToList();
 
             return Json(new
             {
                 dau = dau,
-                keywords = hotKeywords
+                month = month,
+                year = year
             });
         }
+
         [HttpGet("listing-fee-stats")]
         public IActionResult GetListingFeeStats()
         {

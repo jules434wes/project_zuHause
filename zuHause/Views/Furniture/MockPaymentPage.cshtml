@@ -1,6 +1,9 @@
-﻿@{
+﻿@* /Furniture/mockpaymentpage *@
+
+@{
     ViewData["Title"] = "付款頁面 - 家具租借";
-    var cartId = ViewBag.CartId as string ?? ""; // 假設你從 Controller 傳入 ViewBag.CartId
+    Layout = "~/Views/Shared/_NavigationBar.cshtml";
+    var FurnitureCartId = ViewBag.FurnitureCartId as string ?? "";
 }
 
 <div class="container mt-5">
@@ -11,16 +14,55 @@
 
         <div class="d-flex justify-content-center gap-3">
             <!-- 確定付款按鈕 -->
-            <form asp-action="ConfirmPayment" asp-controller="Furniture" method="post">
-                <input type="hidden" name="cartId" value="@cartId" />
+            <form method="post" action="/Furniture/ConfirmPayment">
+                <input type="hidden" name="selectedPropertyId" value="@ViewBag.SelectedPropertyId" />
                 <button type="submit" class="btn btn-success">✅ 確定付款</button>
             </form>
 
             <!-- 取消付款按鈕 -->
-            <form asp-action="CancelPayment" asp-controller="Furniture" method="get">
-                <input type="hidden" name="cartId" value="@cartId" />
+            <form method="post" action="/Furniture/CancelPayment">
+                <input type="hidden" name="selectedPropertyId" value="@ViewBag.SelectedPropertyId" />
                 <button type="submit" class="btn btn-outline-danger">❌ 取消付款</button>
             </form>
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        document.getElementById("payNowBtn").addEventListener("click", async function () {
+            const btn = this;
+            btn.disabled = true;
+            btn.innerText = "處理中...";
+
+            const cartId = "@FurnitureCartId";
+
+            const response = await fetch("/Furniture/ConfirmPayment?cartId=" + cartId, {
+                method: "POST"
+            });
+
+            if (response.redirected) {
+                // 顯示提示與倒數後轉導
+                const container = document.querySelector(".card");
+                container.innerHTML = `
+                    <h3 class="text-center text-success">✅ 簽署成功，付款完成</h3>
+                    <p class="text-center">即將為您跳轉至付款完成頁面...</p>
+                    <p class="text-center text-muted" id="countdown">3 秒後跳轉</p>
+                `;
+                let countdown = 3;
+                const interval = setInterval(() => {
+                    countdown--;
+                    document.getElementById("countdown").innerText = countdown + " 秒後跳轉";
+                    if (countdown === 0) {
+                        clearInterval(interval);
+                        window.location.href = response.url;
+                    }
+                }, 1000);
+            } else {
+                alert("付款失敗，請稍後再試");
+                btn.disabled = false;
+                btn.innerText = "✅ 確定付款";
+            }
+        });
+    </script>
+}

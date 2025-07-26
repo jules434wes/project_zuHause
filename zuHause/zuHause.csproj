@@ -38,13 +38,6 @@
     <PackageReference Include="System.Formats.Asn1" Version="9.0.7" />
   </ItemGroup>
 
- <ItemGroup>
-    <Content Remove="wwwroot\css\site.css" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Content Include="wwwroot\css\site.css" CopyToOutputDirectory="PreserveNewest" />
-  </ItemGroup>
 
   <ItemGroup>
     <None Update="DinkToPdf\libwkhtmltox.dll">

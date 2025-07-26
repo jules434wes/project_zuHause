@@ -117,7 +117,7 @@
 
                             <!-- ✅ 按鈕區 -->
                             <div class="mt-3 d-flex gap-2">
-                                <a href="@Url.Action("ContactUsForm", "Furniture", new { orderId = order.OrderId })" class="btn btn-outline-danger btn-sm mt-2">聯繫我們</a>
+                                <a href="/Furniture/ContactUsForm?orderId=@order.OrderId" class="btn btn-danger">聯繫我們</a>
                                 <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#orderDetail-@order.FurnitureOrderItemId">
                                     訂單詳細資訊
                                 </button>
@@ -156,7 +156,7 @@
                             <p>商品名稱：@order.ProductNameSnapshot × @order.Quantity</p>
                             <p>租期：@order.RentalStart ~ @order.RentalEnd</p>
                             <span class="badge bg-success">已歸還</span>
-                            <a href="@Url.Action("ContactUsForm", "Furniture", new { orderId = order.OrderId })" class="btn btn-outline-danger btn-sm mt-2">聯繫我們</a>
+                            <a href="/Furniture/ContactUsForm?orderId=@order.OrderId" class="btn btn-danger">聯繫我們</a>
                             <button class="btn btn-outline-secondary btn-sm mt-2" type="button" data-bs-toggle="collapse" data-bs-target="#completedDetail-@order.FurnitureOrderHistoryId">
                                 訂單詳細資訊
                             </button>
