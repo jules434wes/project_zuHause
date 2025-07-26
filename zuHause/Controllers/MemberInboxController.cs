@@ -1,16 +1,35 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using zuHause.Models;
 
 namespace zuHause.Controllers
 {
     public class MemberInboxController : Controller
     {
-        public IActionResult Index()
+        public readonly ZuHauseContext _context;
+        public MemberInboxController (ZuHauseContext context)
         {
-            return View();
+            _context = context;
         }
-        public IActionResult PrivateMessage()
+        public async Task<IActionResult> Index()
         {
-            return View();
+            //所有人都有會員訊息，有房東身分的就會收到房東訊息
+            var userId = int.Parse(User.FindFirst("UserId")!.Value);
+            var member = await _context.Members.FindAsync(userId);
+
+            bool isLandlord = member!.IsLandlord;
+
+            var AllMsgs = await _context.SystemMessages
+                .Where(x => 
+                x.AudienceTypeCode == "ALL_MEMBERS" || 
+                x.AudienceTypeCode == "INDIVIDUAL" && x.ReceiverId == userId || 
+                x.AudienceTypeCode == "ALL_LANDLORDS" && member.IsLandlord
+                ).ToListAsync();
+
+
+
+
+            return View(AllMsgs);
         }
     }
 }
