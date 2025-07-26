@@ -261,7 +261,13 @@ namespace zuHause.Controllers
 
                 // 狀態篩選
                 if (!string.IsNullOrEmpty(filter.Status))
-                    query = query.Where(t => t.StatusCode == filter.Status);
+                {
+                    var statuses = filter.Status.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                    if (statuses.Length > 0)
+                    {
+                        query = query.Where(t => statuses.Contains(t.StatusCode));
+                    }
+                }
                 
                 // 類別篩選
                 if (!string.IsNullOrEmpty(filter.Category))

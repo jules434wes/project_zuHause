@@ -107,7 +107,7 @@ const CustomerServiceManager = {
             
             // 根據當前頁籤調整篩選條件
             if (currentTab === 'unresolved') {
-                searchParams.status = searchParams.status || 'PENDING,PROGRESS';
+                searchParams.status = 'PENDING,PROGRESS';
             }
 
             const formData = new FormData();
@@ -238,19 +238,25 @@ const CustomerServiceManager = {
 
     // 更新統計數據
     updateCounts(result) {
-        // 更新總數
-        const totalCountElement = document.getElementById('totalCount');
-        if (totalCountElement) {
-            totalCountElement.textContent = result.totalCount;
-        }
-
-        // 更新頁籤計數
-        const tabCountElement = currentTab === 'all' 
-            ? document.getElementById('allTicketsCount')
-            : document.getElementById('unresolvedCount');
-        
-        if (tabCountElement) {
-            tabCountElement.textContent = result.totalCount;
+        // 更新對應頁籤的總數顯示
+        if (currentTab === 'all') {
+            const totalCountElement = document.getElementById('totalCount');
+            if (totalCountElement) {
+                totalCountElement.textContent = result.totalCount;
+            }
+            const allTabCountElement = document.getElementById('allTicketsCount');
+            if (allTabCountElement) {
+                allTabCountElement.textContent = result.totalCount;
+            }
+        } else if (currentTab === 'unresolved') {
+            const unresolvedTotalCountElement = document.getElementById('unresolvedTotalCount');
+            if (unresolvedTotalCountElement) {
+                unresolvedTotalCountElement.textContent = result.totalCount;
+            }
+            const unresolvedTabCountElement = document.getElementById('unresolvedCount');
+            if (unresolvedTabCountElement) {
+                unresolvedTabCountElement.textContent = result.totalCount;
+            }
         }
     },
 
