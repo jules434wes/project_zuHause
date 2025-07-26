@@ -262,8 +262,51 @@ const CustomerServiceManager = {
 
     // 載入統計資料
     async loadStatistics() {
-        // 這裡可以載入狀態統計數據
-        // 暫時使用靜態數據
+        try {
+            const response = await fetch('/Admin/GetCustomerServiceStatistics', {
+                method: 'GET'
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                this.updateStatisticsBadges(result.data);
+            } else {
+                console.error('載入統計數據失敗:', result.message);
+            }
+        } catch (error) {
+            console.error('載入統計數據時發生錯誤:', error);
+        }
+    },
+
+    // 更新統計數據徽章
+    updateStatisticsBadges(statistics) {
+        // 更新狀態統計徽章
+        const pendingElement = document.getElementById('pendingCount');
+        if (pendingElement) {
+            pendingElement.textContent = statistics.pendingCount;
+        }
+
+        const progressElement = document.getElementById('progressCount');
+        if (progressElement) {
+            progressElement.textContent = statistics.progressCount;
+        }
+
+        const resolvedElement = document.getElementById('resolvedCount');
+        if (resolvedElement) {
+            resolvedElement.textContent = statistics.resolvedCount;
+        }
+
+        // 更新頁籤徽章
+        const allTicketsCountElement = document.getElementById('allTicketsCount');
+        if (allTicketsCountElement) {
+            allTicketsCountElement.textContent = statistics.totalCount;
+        }
+
+        const unresolvedCountElement = document.getElementById('unresolvedCount');
+        if (unresolvedCountElement) {
+            unresolvedCountElement.textContent = statistics.unresolvedCount;
+        }
     },
 
     // 重設篩選條件

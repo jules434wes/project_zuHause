@@ -442,6 +442,48 @@ namespace zuHause.Controllers
         }
 
         /// <summary>
+        /// 取得客服案件狀態統計 API
+        /// </summary>
+        [HttpGet]
+        [RequireAdminPermission(AdminPermissions.CustomerServiceList)]
+        public async Task<IActionResult> GetCustomerServiceStatistics()
+        {
+            try
+            {
+                var pendingCount = await _context.CustomerServiceTickets
+                    .CountAsync(t => t.StatusCode == "PENDING");
+                
+                var progressCount = await _context.CustomerServiceTickets
+                    .CountAsync(t => t.StatusCode == "PROGRESS");
+                    
+                var resolvedCount = await _context.CustomerServiceTickets
+                    .CountAsync(t => t.StatusCode == "RESOLVED");
+
+                return Json(new
+                {
+                    success = true,
+                    data = new
+                    {
+                        pendingCount,
+                        progressCount,
+                        resolvedCount,
+                        totalCount = pendingCount + progressCount + resolvedCount,
+                        unresolvedCount = pendingCount + progressCount
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new
+                {
+                    success = false,
+                    message = "載入統計數據時發生錯誤",
+                    error = ex.Message
+                });
+            }
+        }
+
+        /// <summary>
         /// 取得客服案件詳情 API
         /// </summary>
         [HttpGet]
@@ -511,6 +553,8 @@ namespace zuHause.Controllers
             }
         }
 
+        
+
         /// <summary>
         /// 取得類別顯示名稱
         /// </summary>
@@ -548,6 +592,32 @@ namespace zuHause.Controllers
             
             var admin = _context.Admins.FirstOrDefault(a => a.AdminId == handledBy.Value);
             return admin?.Name ?? "未知管理員";
+        }
+
+        [HttpGet]
+        [RequireAdminPermission(AdminPermissions.CustomerServiceList)]
+        public async Task<IActionResult> GetCustomerServiceStats()
+        {
+            try
+            {
+                var stats = await _context.CustomerServiceTickets
+                    .GroupBy(t => t.StatusCode)
+                    .Select(g => new { StatusCode = g.Key, Count = g.Count() })
+                    .ToListAsync();
+
+                var result = new
+                {
+                    pendingCount = stats.FirstOrDefault(s => s.StatusCode == "PENDING")?.Count ?? 0,
+                    progressCount = stats.FirstOrDefault(s => s.StatusCode == "PROGRESS")?.Count ?? 0,
+                    resolvedCount = stats.FirstOrDefault(s => s.StatusCode == "RESOLVED")?.Count ?? 0
+                };
+
+                return Json(new { success = true, data = result });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "載入統計數據時發生錯誤", error = ex.Message });
+            }
         }
 
         /// <summary>
