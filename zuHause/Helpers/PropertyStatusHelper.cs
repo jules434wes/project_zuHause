@@ -1,3 +1,5 @@
+using zuHause.Constants;
+
 namespace zuHause.Helpers
 {
     /// <summary>
@@ -12,18 +14,18 @@ namespace zuHause.Helpers
         /// </summary>
         private static readonly Dictionary<string, string> StatusDisplayNames = new()
         {
-            { "PENDING", "審核中" },
-            { "PENDING_PAYMENT", "待付款" },
-            { "REJECT_REVISE", "審核未通過(待補件)" },
-            { "REJECTED", "審核未通過" },
-            { "BANNED", "已封鎖" },
-            { "LISTED", "上架中" },
-            { "CONTRACT_ISSUED", "已發出合約" },
-            { "PENDING_RENEWAL", "待續約" },
-            { "LEASE_RENEWING", "續約(房客申請中)" },
-            { "IDLE", "閒置中" },
-            { "ALREADY_RENTED", "出租中" },
-            { "INVALID", "房源已下架" }
+            { PropertyStatusConstants.PENDING, "審核中" },
+            { PropertyStatusConstants.PENDING_PAYMENT, "待付款" },
+            { PropertyStatusConstants.REJECT_REVISE, "審核未通過(待補件)" },
+            { PropertyStatusConstants.REJECTED, "審核未通過" },
+            { PropertyStatusConstants.BANNED, "已封鎖" },
+            { PropertyStatusConstants.LISTED, "上架中" },
+            { PropertyStatusConstants.CONTRACT_ISSUED, "已發出合約" },
+            { PropertyStatusConstants.PENDING_RENEWAL, "待續約" },
+            { PropertyStatusConstants.LEASE_RENEWING, "續約(房客申請中)" },
+            { PropertyStatusConstants.IDLE, "閒置中" },
+            { PropertyStatusConstants.ALREADY_RENTED, "出租中" },
+            { PropertyStatusConstants.INVALID, "房源已下架" }
         };
 
         /// <summary>
@@ -31,18 +33,18 @@ namespace zuHause.Helpers
         /// </summary>
         private static readonly Dictionary<string, string> StatusStyles = new()
         {
-            { "PENDING", "warning" },
-            { "PENDING_PAYMENT", "info" },
-            { "REJECT_REVISE", "danger" },
-            { "REJECTED", "danger" },
-            { "BANNED", "dark" },
-            { "LISTED", "success" },
-            { "CONTRACT_ISSUED", "primary" },
-            { "PENDING_RENEWAL", "warning" },
-            { "LEASE_RENEWING", "info" },
-            { "IDLE", "secondary" },
-            { "ALREADY_RENTED", "dark" },
-            { "INVALID", "secondary" }
+            { PropertyStatusConstants.PENDING, "warning" },
+            { PropertyStatusConstants.PENDING_PAYMENT, "info" },
+            { PropertyStatusConstants.REJECT_REVISE, "danger" },
+            { PropertyStatusConstants.REJECTED, "danger" },
+            { PropertyStatusConstants.BANNED, "dark" },
+            { PropertyStatusConstants.LISTED, "success" },
+            { PropertyStatusConstants.CONTRACT_ISSUED, "primary" },
+            { PropertyStatusConstants.PENDING_RENEWAL, "warning" },
+            { PropertyStatusConstants.LEASE_RENEWING, "info" },
+            { PropertyStatusConstants.IDLE, "secondary" },
+            { PropertyStatusConstants.ALREADY_RENTED, "dark" },
+            { PropertyStatusConstants.INVALID, "secondary" }
         };
 
         /// <summary>
@@ -50,7 +52,7 @@ namespace zuHause.Helpers
         /// </summary>
         private static readonly HashSet<string> EditableStatuses = new()
         {
-            "IDLE", "LISTED"
+            PropertyStatusConstants.IDLE, PropertyStatusConstants.LISTED
         };
 
         /// <summary>
@@ -58,7 +60,7 @@ namespace zuHause.Helpers
         /// </summary>
         private static readonly HashSet<string> ActionRequiredStatuses = new()
         {
-            "REJECT_REVISE", "PENDING_PAYMENT", "BANNED"
+            PropertyStatusConstants.REJECT_REVISE, PropertyStatusConstants.PENDING_PAYMENT, PropertyStatusConstants.BANNED
         };
 
         /// <summary>
@@ -66,7 +68,7 @@ namespace zuHause.Helpers
         /// </summary>
         private static readonly HashSet<string> TakeDownableStatuses = new()
         {
-            "LISTED"
+            PropertyStatusConstants.LISTED
         };
 
         /// <summary>
@@ -74,7 +76,7 @@ namespace zuHause.Helpers
         /// </summary>
         private static readonly HashSet<string> AvailableStatuses = new()
         {
-            "CONTRACT_ISSUED", "LISTED"
+            PropertyStatusConstants.CONTRACT_ISSUED, PropertyStatusConstants.LISTED
         };
 
         /// <summary>
@@ -82,7 +84,7 @@ namespace zuHause.Helpers
         /// </summary>
         private static readonly HashSet<string> PendingStatuses = new()
         {
-            "PENDING", "PENDING_PAYMENT", "REJECT_REVISE", "IDLE"
+            PropertyStatusConstants.PENDING, PropertyStatusConstants.PENDING_PAYMENT, PropertyStatusConstants.REJECT_REVISE, PropertyStatusConstants.IDLE
         };
 
         /// <summary>
@@ -90,7 +92,7 @@ namespace zuHause.Helpers
         /// </summary>
         private static readonly HashSet<string> UnavailableStatuses = new()
         {
-            "ALREADY_RENTED", "INVALID", "REJECTED", "BANNED", "PENDING_RENEWAL", "LEASE_RENEWING"
+            PropertyStatusConstants.ALREADY_RENTED, PropertyStatusConstants.INVALID, PropertyStatusConstants.REJECTED, PropertyStatusConstants.BANNED, PropertyStatusConstants.PENDING_RENEWAL, PropertyStatusConstants.LEASE_RENEWING
         };
 
         /// <summary>
