@@ -1,96 +1,301 @@
 // 客服案件詳情頁面 JavaScript
-// 全域函數 - 選擇回覆模板
-function selectTemplate(templateId) {
-    const templates = {
-        template1: '親愛的用戶，感謝您的詢問。關於您提到的租金問題，我們網站上所標示的價格均為最新且最準確的資訊。租金已包含管理費，但不包含網路費用，網路需由承租方自行申請。希望這個回覆能幫助到您！',
-        template2: '親愛的用戶，我們已收到您的預約看房申請，專員將會在 24 小時內透過電話與您聯繫，確認詳細時間與細節，請您留意來電。',
-        template3: '親愛的用戶，關於您的帳號問題，為了更好地協助您，請您提供註冊時使用的 Email 或手機號碼，以便我們為您查詢。',
-        template4: '親愛的用戶，感謝您的來信。關於您提到的租約問題，我們將協助您處理相關事宜。為了提供更精準的服務，請您提供租約編號，我們會儘快為您查詢並回覆。',
-        template5: '親愛的用戶，關於您的傢俱訂單查詢，我們為您確認訂單狀態。請您提供訂單編號，以便我們為您查詢詳細的配送時間和處理進度。',
-        template6: '親愛的用戶，感謝您的來信，我們已收到您的意見與建議。您的回饋對我們非常重要，我們會持續改善服務品質。如有其他問題歡迎隨時與我們聯繫。'
-    };
-    
-    document.getElementById('replyContent').value = templates[templateId];
-    
-    // 關閉模板選擇 Modal
-    var templateModal = bootstrap.Modal.getInstance(document.getElementById('templateModal'));
-    templateModal.hide();
-}
+let currentTicketId = null;
 
-// 全域函數 - 篩選模板
-function filterTemplates() {
-    const category = document.getElementById('templateCategory').value;
-    const templateItems = document.querySelectorAll('.template-item');
-    
-    templateItems.forEach(function(item) {
-        const itemCategory = item.getAttribute('data-category');
-        
-        if (category === '' || itemCategory === category) {
-            item.style.display = 'block';
-        } else {
-            item.style.display = 'none';
+// 客服詳情管理物件
+const CustomerServiceDetailsManager = {
+    // 初始化
+    init() {
+        console.log('客服案件詳情頁面初始化');
+        this.getCurrentTicketId();
+        this.initEventHandlers();
+        this.initTemplateSystem();
+        this.loadTicketData();
+    },
+
+    // 取得當前案件ID
+    getCurrentTicketId() {
+        const urlParams = new URLSearchParams(window.location.search);
+        currentTicketId = urlParams.get('ticketId');
+        console.log('當前案件ID:', currentTicketId);
+    },
+
+    // 初始化事件處理器
+    initEventHandlers() {
+        // 儲存回覆按鈕
+        const saveReplyBtn = document.getElementById('saveReplyBtn');
+        if (saveReplyBtn) {
+            saveReplyBtn.addEventListener('click', () => this.saveReply());
         }
-    });
-}
 
-document.addEventListener('DOMContentLoaded', function() {
-    // 狀態變更事件
-    document.getElementById('statusChange').addEventListener('change', function() {
-        if (this.value) {
-            // 更新確認 Modal 文字
-            var statusText = this.options[this.selectedIndex].text;
-            document.getElementById('newStatusText').textContent = statusText;
+        // 送出回覆按鈕
+        const sendReplyBtn = document.getElementById('sendReplyBtn');
+        if (sendReplyBtn) {
+            sendReplyBtn.addEventListener('click', () => this.showConfirmModal());
+        }
+
+        // 確認送出回覆
+        const confirmSendReply = document.getElementById('confirmSendReply');
+        if (confirmSendReply) {
+            confirmSendReply.addEventListener('click', () => this.sendReply());
+        }
+    },
+
+    // 初始化模板系統
+    initTemplateSystem() {
+        const categorySelect = document.getElementById('templateCategory');
+        const templateSelect = document.getElementById('messageTemplate');
+        const insertBtn = document.getElementById('insertTemplateBtn');
+
+        if (!categorySelect || !templateSelect || !insertBtn) return;
+
+        // 類別選擇事件
+        categorySelect.addEventListener('change', async (e) => {
+            const categoryCode = e.target.value;
+            if (categoryCode) {
+                await this.loadTemplates(categoryCode);
+                templateSelect.disabled = false;
+                this.updateInsertButtonState();
+            } else {
+                this.resetTemplateSelects();
+            }
+        });
+
+        // 模板選擇事件
+        templateSelect.addEventListener('change', () => {
+            this.updateInsertButtonState();
+        });
+
+        // 插入模板按鈕
+        insertBtn.addEventListener('click', () => {
+            this.insertTemplate();
+        });
+    },
+
+    // 載入案件資料
+    async loadTicketData() {
+        if (!currentTicketId) return;
+
+        try {
+            const response = await fetch(`/Admin/GetCustomerServiceDetails?ticketId=${currentTicketId}`);
+            const result = await response.json();
+
+            if (result.success) {
+                this.populateTicketData(result.data);
+            } else {
+                this.showError('載入案件資料失敗');
+            }
+        } catch (error) {
+            console.error('載入案件資料時發生錯誤:', error);
+            this.showError('載入案件資料時發生錯誤');
+        }
+    },
+
+    // 填入案件資料
+    populateTicketData(data) {
+        // 填入現有回覆內容
+        const replyContent = document.getElementById('replyContent');
+        if (replyContent && data.replyContent) {
+            replyContent.value = data.replyContent;
+        }
+
+        // 設定當前狀態
+        const statusUpdate = document.getElementById('statusUpdate');
+        if (statusUpdate && data.statusCode) {
+            statusUpdate.value = data.statusCode;
+        }
+    },
+
+    // 載入模板
+    async loadTemplates(categoryCode) {
+        try {
+            const response = await fetch(`/Admin/GetMessageTemplates?categoryCode=${categoryCode}`);
+            const result = await response.json();
+
+            const templateSelect = document.getElementById('messageTemplate');
+            templateSelect.innerHTML = '<option value="">請選擇模板</option>';
+
+            if (result.success && result.data.length > 0) {
+                result.data.forEach(template => {
+                    const option = document.createElement('option');
+                    option.value = template.templateId;
+                    option.textContent = template.title;
+                    option.dataset.content = template.content;
+                    templateSelect.appendChild(option);
+                });
+            } else {
+                templateSelect.innerHTML = '<option value="">此類別暫無可用模板</option>';
+            }
+        } catch (error) {
+            console.error('載入模板失敗:', error);
+            this.showError('載入模板時發生錯誤');
+        }
+    },
+
+    // 插入模板
+    insertTemplate() {
+        const templateSelect = document.getElementById('messageTemplate');
+        const selectedOption = templateSelect.options[templateSelect.selectedIndex];
+        const replyContent = document.getElementById('replyContent');
+
+        if (selectedOption && selectedOption.dataset.content) {
+            const currentContent = replyContent.value;
+            const templateContent = selectedOption.dataset.content;
             
-            // 顯示確認 Modal
-            var confirmModal = new bootstrap.Modal(document.getElementById('confirmStatusChangeModal'), {
-                backdrop: 'static',
-                keyboard: false
+            // 如果有現有內容，在末尾添加模板
+            if (currentContent.trim()) {
+                replyContent.value = currentContent + '\n\n' + templateContent;
+            } else {
+                replyContent.value = templateContent;
+            }
+
+            // 重設模板選擇
+            this.resetTemplateSelects();
+            
+            // 聚焦到回覆內容區域
+            replyContent.focus();
+            
+            console.log('模板已插入');
+        }
+    },
+
+    // 重設模板選擇器
+    resetTemplateSelects() {
+        const categorySelect = document.getElementById('templateCategory');
+        const templateSelect = document.getElementById('messageTemplate');
+        const insertBtn = document.getElementById('insertTemplateBtn');
+
+        categorySelect.value = '';
+        templateSelect.innerHTML = '<option value="">請先選擇服務類別</option>';
+        templateSelect.disabled = true;
+        insertBtn.disabled = true;
+    },
+
+    // 更新插入按鈕狀態
+    updateInsertButtonState() {
+        const templateSelect = document.getElementById('messageTemplate');
+        const insertBtn = document.getElementById('insertTemplateBtn');
+        
+        insertBtn.disabled = !templateSelect.value;
+    },
+
+    // 儲存回覆
+    async saveReply() {
+        const replyData = this.getReplyData();
+        if (!this.validateReplyData(replyData)) return;
+
+        try {
+            const response = await fetch('/Admin/UpdateCustomerServiceReply', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams(replyData)
             });
-            confirmModal.show();
+
+            const result = await response.json();
+
+            if (result.success) {
+                this.showSuccess('回覆已儲存');
+                console.log('回覆儲存成功');
+            } else {
+                this.showError(result.message || '儲存回覆失敗');
+            }
+        } catch (error) {
+            console.error('儲存回覆時發生錯誤:', error);
+            this.showError('儲存回覆時發生錯誤');
         }
-    });
+    },
 
-    // 確認變更狀態按鈕事件
-    document.getElementById('confirmStatusChangeBtn').addEventListener('click', function() {
-        var newStatus = document.getElementById('statusChange').value;
-        console.log('變更案件狀態為:', newStatus);
-        
-        // 這裡應該發送請求到後端更新狀態
-        // 目前只是示範，實際需要實作後端API
-        
-        // 關閉 Modal
-        var confirmModal = bootstrap.Modal.getInstance(document.getElementById('confirmStatusChangeModal'));
-        confirmModal.hide();
-        
-        // 顯示成功訊息
-        alert('狀態已成功變更');
-    });
+    // 顯示確認Modal
+    showConfirmModal() {
+        const replyData = this.getReplyData();
+        if (!this.validateReplyData(replyData)) return;
 
-    // 確認送出回覆按鈕事件
-    document.getElementById('confirmReplyBtn').addEventListener('click', function() {
-        var replyContent = document.getElementById('replyContent').value;
-        
-        if (!replyContent.trim()) {
-            alert('請輸入回覆內容');
-            return;
+        // 顯示Modal
+        const modal = new bootstrap.Modal(document.getElementById('confirmReplyModal'));
+        modal.show();
+    },
+
+    // 送出回覆
+    async sendReply() {
+        const replyData = this.getReplyData();
+        if (!this.validateReplyData(replyData)) return;
+
+        try {
+            const response = await fetch('/Admin/UpdateCustomerServiceReply', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams(replyData)
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                // 關閉Modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('confirmReplyModal'));
+                modal.hide();
+
+                this.showSuccess('回覆已送出');
+                
+                // 刷新頁面
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            } else {
+                this.showError(result.message || '送出回覆失敗');
+            }
+        } catch (error) {
+            console.error('送出回覆時發生錯誤:', error);
+            this.showError('送出回覆時發生錯誤');
         }
-        
-        console.log('送出回覆:', replyContent);
-        
-        // 這裡應該發送請求到後端儲存回覆
-        // 目前只是示範，實際需要實作後端API
-        
-        // 關閉 Modal
-        var confirmModal = bootstrap.Modal.getInstance(document.getElementById('confirmReplyModal'));
-        confirmModal.hide();
-        
-        // 顯示成功訊息並清空輸入框
-        alert('回覆已成功送出');
-        document.getElementById('replyContent').value = '';
-    });
+    },
 
-    // 取消狀態變更時重置選擇
-    document.getElementById('confirmStatusChangeModal').addEventListener('hidden.bs.modal', function () {
-        document.getElementById('statusChange').value = '';
-    });
+    // 取得回覆資料
+    getReplyData() {
+        return {
+            ticketId: currentTicketId,
+            replyContent: document.getElementById('replyContent')?.value || '',
+            statusCode: document.getElementById('statusUpdate')?.value || 'PROGRESS'
+        };
+    },
+
+    // 驗證回覆資料
+    validateReplyData(data) {
+        if (!data.ticketId) {
+            this.showError('案件ID錯誤');
+            return false;
+        }
+
+        if (!data.replyContent.trim()) {
+            this.showError('請輸入回覆內容');
+            document.getElementById('replyContent').focus();
+            return false;
+        }
+
+        if (data.replyContent.length > 2000) {
+            this.showError('回覆內容不能超過2000字');
+            return false;
+        }
+
+        return true;
+    },
+
+    // 顯示成功訊息
+    showSuccess(message) {
+        console.log('成功:', message);
+        alert(message);
+    },
+
+    // 顯示錯誤訊息
+    showError(message) {
+        console.error('錯誤:', message);
+        alert(message);
+    }
+};
+
+// 頁面載入完成後初始化
+document.addEventListener('DOMContentLoaded', function() {
+    CustomerServiceDetailsManager.init();
 });
