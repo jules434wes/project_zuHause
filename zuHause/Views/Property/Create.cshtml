@@ -1,8 +1,12 @@
 @using zuHause.ViewModels
+@using zuHause.Enums
 @model PropertyCreateViewModel
 @{
-    ViewData["Title"] = "刊登房源";
+    ViewData["Title"] = ViewBag.PageTitle ?? "房源管理";
     Layout = null; // 使用自定義佈局
+    var isEditMode = Model.IsEditMode;
+    var formAction = ViewBag.FormAction ?? "Create";
+    var propertyId = Model.PropertyId;
 }
 
 <!DOCTYPE html>
@@ -558,8 +562,19 @@
                 <div class="main-content-row">
                     <!-- 左側表單內容 -->
                     <div class="form-content">
-                        <form id="propertyCreateForm" asp-action="Create" asp-controller="Property" method="post" enctype="multipart/form-data" novalidate>
+                        <form id="propertyCreateForm" asp-action="@formAction" asp-controller="Property" method="post" enctype="multipart/form-data" novalidate>
                     @Html.AntiForgeryToken()
+                    
+                    @if (isEditMode && propertyId.HasValue)
+                    {
+                        <!-- 編輯模式：包含房源ID -->
+                        <input type="hidden" name="id" value="@propertyId" />
+                        <input type="hidden" asp-for="PropertyData.PropertyId" />
+                    }
+                    
+                    <!-- 表單模式標識 -->
+                    <input type="hidden" asp-for="FormMode" />
+                    <input type="hidden" asp-for="IsEditMode" />
                     
                     <!-- 基本資訊區塊 -->
                     <div class="form-section" id="basicInfo">
@@ -1140,7 +1155,7 @@
                             <i class="fas fa-times me-2"></i>取消發佈
                         </button>
                         <button type="submit" id="submitButton" class="btn btn-publish btn-lg">
-                            <i class="fas fa-paper-plane me-2"></i>立即發佈
+                            <i class="fas fa-paper-plane me-2"></i>@(ViewBag.SubmitText ?? "立即發佈")
                         </button>
                     </div>
                 </form>

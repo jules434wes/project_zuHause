@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using zuHause.DTOs;
+using zuHause.Interfaces;
+using zuHause.Enums;
 
 namespace zuHause.Components
 {
@@ -9,6 +11,12 @@ namespace zuHause.Components
     /// </summary>
     public class PropertyManagementCardViewComponent : ViewComponent
     {
+        private readonly IImageQueryService _imageQueryService;
+        
+        public PropertyManagementCardViewComponent(IImageQueryService imageQueryService)
+        {
+            _imageQueryService = imageQueryService;
+        }
         /// <summary>
         /// 房源管理卡片組件主要方法
         /// </summary>
@@ -17,7 +25,7 @@ namespace zuHause.Components
         /// <param name="showActions">是否顯示操作按鈕</param>
         /// <param name="showStats">是否顯示統計資訊</param>
         /// <returns>卡片視圖</returns>
-        public IViewComponentResult Invoke(
+        public async Task<IViewComponentResult> InvokeAsync(
             PropertyManagementDto property, 
             PropertyCardDisplayMode displayMode = PropertyCardDisplayMode.Management,
             bool showActions = true,
@@ -26,6 +34,46 @@ namespace zuHause.Components
             if (property == null)
             {
                 throw new ArgumentNullException(nameof(property));
+            }
+
+            // 動態更新圖片資料（如果未設定或需要重新整理）
+            if (string.IsNullOrEmpty(property.ThumbnailUrl) || 
+                property.ThumbnailUrl == "/images/property-placeholder.jpg")
+            {
+                try
+                {
+                    var mainImage = await _imageQueryService.GetMainImageAsync(EntityType.Property, property.PropertyId);
+                    if (mainImage != null)
+                    {
+                        property.ThumbnailUrl = _imageQueryService.GenerateImageUrl(mainImage.StoredFileName, ImageSize.Medium);
+                    }
+                    else
+                    {
+                        property.ThumbnailUrl = "/images/property-placeholder.jpg";
+                    }
+                }
+                catch (Exception)
+                {
+                    // 圖片服務失效時使用預設圖片
+                    property.ThumbnailUrl = "/images/property-placeholder.jpg";
+                }
+            }
+
+            // 確保 ImageUrls 有資料
+            if (!property.ImageUrls.Any())
+            {
+                try
+                {
+                    var images = await _imageQueryService.GetImagesByEntityAsync(EntityType.Property, property.PropertyId);
+                    property.ImageUrls = images
+                        .Select(img => _imageQueryService.GenerateImageUrl(img.StoredFileName, ImageSize.Medium))
+                        .ToList();
+                }
+                catch (Exception)
+                {
+                    // 圖片服務失效時保持空清單
+                    property.ImageUrls = new List<string>();
+                }
             }
 
             var model = new PropertyCardDisplayDto

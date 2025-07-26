@@ -12,6 +12,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Xunit;
 using zuHause.Tests.Integration;
+using zuHause.Interfaces;
 
 namespace zuHause.Tests.Integration;
 
@@ -36,11 +37,13 @@ public class PropertyManagementIntegrationTests : IClassFixture<TestWebApplicati
         // 使用測試專用的資料庫連線，確保不影響真實資料庫
         _context = _factory.CreateDbContext();
         
-        // 建立 Logger  
+        // 建立 Logger (使用 factory 的服務)
+        using var scope = _factory.Services.CreateScope();
         _logger = scope.ServiceProvider.GetRequiredService<ILogger<LandlordController>>();
+        var imageQueryService = scope.ServiceProvider.GetRequiredService<IImageQueryService>();
         
         // 建立 Controller
-        _controller = new LandlordController(_logger, _context);
+        _controller = new LandlordController(_logger, _context, imageQueryService);
     }
 
     /// <summary>
@@ -497,7 +500,9 @@ public class PropertyManagementIntegrationTests : IClassFixture<TestWebApplicati
             Console.WriteLine($"Controller測試：成功建立 {testProperties.Length} 筆測試房源");
 
             // 建立獨立的 Controller 實例
-            var testController = new LandlordController(testLogger, testContext);
+            using var testScope = _factory.Services.CreateScope();
+            var testImageQueryService = testScope.ServiceProvider.GetRequiredService<IImageQueryService>();
+            var testController = new LandlordController(testLogger, testContext, testImageQueryService);
             SetupControllerUserContext(testController, landlordId);
 
             // Act
