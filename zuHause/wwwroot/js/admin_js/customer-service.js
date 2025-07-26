@@ -186,7 +186,7 @@ const CustomerServiceManager = {
                 <td>
                     <button type="button" class="btn btn-sm btn-outline-primary" 
                             onclick="viewTicketDetails(${ticket.ticketId})" title="檢視詳情">
-                        <i class="bi bi-eye"></i>
+                        <i class="bi bi-eye"></i> 前往處理
                     </button>
                 </td>
             </tr>
