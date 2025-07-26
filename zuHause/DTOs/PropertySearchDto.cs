@@ -203,10 +203,10 @@ namespace zuHause.DTOs
         public int PropertyId { get; set; }
 
         /// <summary>
-        /// 房源狀態 (預設為 DRAFT)
+        /// 房源狀態 (預設為 PENDING)
         /// </summary>
         [JsonPropertyName("status")]
-        public string Status { get; set; } = "DRAFT";
+        public string Status { get; set; } = "PENDING";
 
         /// <summary>
         /// 建立時間
@@ -582,7 +582,7 @@ namespace zuHause.DTOs
         /// 房源狀態
         /// </summary>
         [JsonPropertyName("status")]
-        public string Status { get; set; } = "DRAFT";
+        public string Status { get; set; } = "PENDING";
 
         /// <summary>
         /// 創建時間

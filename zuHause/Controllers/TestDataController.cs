@@ -240,7 +240,7 @@ namespace zuHause.Controllers
                     ListingDays = listingPlan.MinListingDays,
                     ListingFeeAmount = listingFee,
                     ListingPlanId = testDto.ListingPlanId,
-                    StatusCode = "DRAFT",
+                    StatusCode = "PENDING",
                     IsPaid = false,
                     ExpireAt = expireDate,
                     CreatedAt = now,

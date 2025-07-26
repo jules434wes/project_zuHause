@@ -885,7 +885,7 @@ namespace zuHause.Controllers
                 ListingFeeAmount = listingFee.Value,
                 ListingPlanId = dto.ListingPlanId,
                 PropertyProofUrl = dto.PropertyProofUrl,
-                StatusCode = "DRAFT", // 預設為草稿狀態
+                StatusCode = "PENDING", // 預設為審核中狀態
                 IsPaid = false, // 預設未付款
                 ExpireAt = expireDate.Value,
                 CreatedAt = now,
@@ -1077,7 +1077,7 @@ namespace zuHause.Controllers
             // 允許編輯的狀態：草稿、已上架、審核不通過需修正
             return statusCode switch
             {
-                "DRAFT" => true,       // 草稿
+                "PENDING" => true,       // 審核中
                 "IDLE" => true,        // 閒置（已建立但未上架）
                 "LISTED" => true,      // 已上架
                 "REJECT_REVISE" => true, // 審核不通過，需修正

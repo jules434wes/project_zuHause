@@ -882,7 +882,7 @@ namespace zuHause.Controllers
                 ListingFeeAmount = listingFee,
                 ListingPlanId = dto.ListingPlanId,
                 PropertyProofUrl = dto.PropertyProofUrl,
-                StatusCode = "DRAFT", // 預設為草稿狀態
+                StatusCode = "PENDING", // 預設為審核中狀態
                 IsPaid = false, // 預設未付款
                 ExpireAt = expireDate,
                 CreatedAt = now,
