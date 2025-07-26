@@ -118,24 +118,14 @@ namespace zuHause.Controllers
         public async Task<IActionResult> CreateApplyHouse(ApplicationViewModel model)
         {
 
-
-            System.Diagnostics.Debug.WriteLine($"===={model.ScheduleDate}===");
-            System.Diagnostics.Debug.WriteLine($"===={model.ScheduleHouse}");
-            System.Diagnostics.Debug.WriteLine($"===={model.ScheduleMinute}");
-            System.Diagnostics.Debug.WriteLine($"===={model.ScheduleTime}");
-            System.Diagnostics.Debug.WriteLine($"===={Convert.ToInt32(model.PropertyId)}");
-            System.Diagnostics.Debug.WriteLine($"===={"11111111111"}===");
             if (!ModelState.IsValid)
             {
-                System.Diagnostics.Debug.WriteLine($"===={"2222222"}===");
-
                 //確認房源會拿到的網址後跳轉
                 return Redirect(model.ReturnUrl ?? "/MemberApplications/Index");
             }
 
             var userId = int.Parse(User.FindFirst("UserId")!.Value);
 
-            System.Diagnostics.Debug.WriteLine($"===={"3333333"}===");
 
 
             var scheduledDateTime = model.ScheduleDate;
