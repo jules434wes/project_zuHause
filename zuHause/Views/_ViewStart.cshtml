@@ -12,6 +12,10 @@
     {
         Layout = "_LayoutTenant";
     }
+    else if (ViewContext.RouteData.Values["Controller"]?.ToString() == "Landlord")
+    {
+        Layout = "_LayoutTenant";
+    }
     else if(ViewContext.RouteData.Values["Controller"]?.ToString() == "Furniture")
     {
         Layout = "~/Views/Shared/_NavigationBar";
