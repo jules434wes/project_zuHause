@@ -18,9 +18,14 @@ namespace zuHause.AdminViewModels
         public string TicketIdDisplay { get; set; } = null!;
 
         /// <summary>
+        /// 會員ID
+        /// </summary>
+        public int MemberId { get; set; }
+
+        /// <summary>
         /// 會員姓名
         /// </summary>
-        public string MemberName { get; set; } = null!;
+        public string MemberName { get; set; }
 
         /// <summary>
         /// 案件主旨
@@ -86,6 +91,21 @@ namespace zuHause.AdminViewModels
         /// 是否已結案
         /// </summary>
         public bool IsResolved { get; set; }
+
+        /// <summary>
+        /// 房源ID (僅當類別為房源時有值)
+        /// </summary>
+        public int? PropertyId { get; set; }
+
+        /// <summary>
+        /// 租約ID (僅當類別為租約時有值)
+        /// </summary>
+        public int? ContractId { get; set; }
+
+        /// <summary>
+        /// 傢俱訂單ID (僅當類別為傢俱時有值)
+        /// </summary>
+        public string? FurnitureOrderId { get; set; }
 
         /// <summary>
         /// 頁面標題

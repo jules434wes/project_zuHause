@@ -131,9 +131,9 @@ namespace zuHause.Controllers
         [RequireAdminPermission(AdminPermissions.MemberDetails)]
         public IActionResult admin_userDetails(int? id)
         {
-            if (id == null)
+            if (!id.HasValue || id.Value <= 0)
             {
-                return NotFound();
+                return NotFound("無效的會員ID");
             }
 
             var viewModel = new AdminUserDetailsViewModel(_context, id.Value);
@@ -199,6 +199,7 @@ namespace zuHause.Controllers
                     TicketId = ticket.TicketId,
                     TicketIdDisplay = $"CS-{ticket.TicketId:D4}",
                     MemberName = ticket.Member.MemberName,
+                    MemberId = ticket.MemberId,
                     Subject = ticket.Subject,
                     CategoryCode = ticket.CategoryCode,
                     CategoryDisplay = GetCategoryDisplay(ticket.CategoryCode),
