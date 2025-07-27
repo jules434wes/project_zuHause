@@ -124,13 +124,15 @@ namespace zuHause.ViewComponents
                 })
                 .ToListAsync();
 
+            int count = systemMsgs.Where(x=>x.IsRead == false).Count();
+
             // 合併後排序取前 3 筆
             var merged = systemMsgs
                 .Concat(userNotis)
                 .OrderByDescending(x => x.SentAt)
                 .Take(5)
                 .ToList();
-
+            viewModel.NeverReadCount = count;
             // 放入 ViewModel
             viewModel.LatestNotifications = merged;
 

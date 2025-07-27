@@ -31,4 +31,21 @@
 
 @section Scripts {
     <script src="~/js/InboxFetchRead.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const highlightId = '@ViewBag.HighlightId';
+            if (highlightId) {
+                const target = document.querySelector(`[data-info="${highlightId}"]`);
+                if (target) {
+                    const collapseBtn = target.querySelector(".accordion-button");
+                    const collapseArea = target.querySelector(".accordion-collapse");
+                    const collapseInstance = bootstrap.Collapse.getOrCreateInstance(collapseArea);
+                    collapseInstance.show();
+
+                    target.scrollIntoView({ behavior: "smooth", block: "start" });
+                }
+            }
+        });
+    </script>
+
 }

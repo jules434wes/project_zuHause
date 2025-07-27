@@ -40,6 +40,8 @@ namespace zuHause.ViewModels
         /// </summary>
         public bool IsAuthenticated { get; set; }
 
+        public int NeverReadCount { get; set; }
+
         public List<SystemMessageViewModel> LatestNotifications { get; set; } = new();
 
 

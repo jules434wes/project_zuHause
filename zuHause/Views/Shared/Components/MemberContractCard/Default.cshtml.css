@@ -1,4 +1,7 @@
-﻿.property-img {
+﻿ul,li{
+    list-style-type:none;
+}
+.property-img {
     height: 100%;
 }
 
@@ -28,3 +31,4 @@
 .step-area-active .step-area-line {
     background-color: #40b0ae;
 }
+

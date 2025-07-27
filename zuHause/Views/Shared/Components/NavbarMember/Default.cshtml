@@ -1,6 +1,5 @@
 @using zuHause.ViewModels.MemberViewModel;
 @model zuHause.ViewModels.NavbarMemberViewModel
-
 <header class="position-sticky w-100 top-0 z-3">
     <nav class="navbar navbar-expand-lg position-relative py-0" data-bs-theme="aqua">
         <div class="container-fluid">
@@ -42,7 +41,7 @@
                                 </a>
                             </li>
                             break;
-                            
+
                         case "tenant":
                             <!-- 房客或未驗證房東：顯示成為房東 -->
                             <li class="nav-item mx-3">
@@ -51,7 +50,7 @@
                                 </a>
                             </li>
                             break;
-                            
+
                         case "guest":
                         default:
                             <!-- 未登入用戶：顯示成為房東 -->
@@ -66,7 +65,7 @@
                                     data-bs-toggle="dropdown" aria-expanded="false">
                                 通知總覽
                                 <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                                    99+
+                                    @(Model.NeverReadCount > 99 ? "99+" : Model.NeverReadCount.ToString())
                                     <span class="visually-hidden">通知總覽</span>
                                 </span>
                             </button>
@@ -81,10 +80,10 @@
                                     <ul class="dropdown-sub-list p-0">
 
 
-                                            @foreach (SystemMessageViewModel item in Model.LatestNotifications)
+                                        @foreach (SystemMessageViewModel item in Model.LatestNotifications)
                                         {
-                                            <li class="border-bottom">
-                                                <a class="dropdown-item" asp-action="Index" asp-controller="MemberInbox">
+                                            <li class="border-bottom @((item.IsRead == false && item.ModuleCode != "System") ? "border-primary bg-primary-subtle" : "")">
+                                                <a class="dropdown-item" asp-action="Index" asp-controller="MemberInbox" asp-route-notificationId="@item.NotificationId">
                                                     <div class="d-flex w-100 justify-content-between">
                                                         <p class="mb-1">
                                                             @(item.AudienceTypeCode == "User" ? "系統通知" : "系統公告")
