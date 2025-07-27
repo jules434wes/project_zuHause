@@ -54,8 +54,10 @@
                                 <td>@message.AdminName</td>
                                 <td>@message.SentAt</td>
                                 <td>
-                                    <button class="btn btn-sm btn-outline-primary" type="button"
-                                            onclick="viewMessage('@message.MessageID', '@Html.Raw(Html.Encode(message.MessageTitle))', '@Html.Raw(Html.Encode(message.MessageContent))'); return false;">
+                                    <button class="btn btn-sm btn-outline-primary view-message-btn" type="button"
+                                            data-message-id="@message.MessageID"
+                                            data-message-title="@message.MessageTitle"
+                                            data-message-content="@message.MessageContent">
                                         <i class="bi bi-eye"></i> 檢視
                                     </button>
                                 </td>
