@@ -1,5 +1,8 @@
-﻿@{
+﻿@using zuHause.ViewModels.MemberViewModel
+@model List<SystemMessageViewModel>
+@{
     ViewData["activePage"] = "MemberInbox";
+    int count = 0;
 }
 <div class="row w-100 gx-5 justify-content-center position-relative h-100">
     @await Html.PartialAsync("_PartialMemberSideBar")
@@ -9,7 +12,16 @@
             <h1 class="fs-3 text-white px-0 mb-3">通知管理</h1>
             <hr />
             <div class="col px-0">
-                
+                @foreach (SystemMessageViewModel item in Model)
+                {
+                    count++;
+                    ViewDataDictionary partialViewCount = new ViewDataDictionary(ViewData)
+                    {
+                        {"count",count}
+                    };
+                    @await Html.PartialAsync("_PartialInboxCard", item, partialViewCount)
+                    
+                }
             </div>
         </div>
 
@@ -18,5 +30,5 @@
 </div>
 
 @section Scripts {
-    <script src="~/js/memberInboxJs/changeContentName.js"></script>
+    <script src="~/js/InboxFetchRead.js"></script>
 }
