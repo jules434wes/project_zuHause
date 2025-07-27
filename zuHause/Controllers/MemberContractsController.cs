@@ -281,7 +281,7 @@ namespace zuHause.Controllers
             {
                 RentalApplicationId = model.RentalApplicationId!.Value,
                 LandlordHouseholdAddress = fullAddress,
-                Status = "DRAFT",
+                Status = "PENDING",
                 CourtJurisdiction = model.CourtJurisdiction,
                 IsSublettable = model.IsSublettable,
                 UsagePurpose = model.UsagePurpose,

@@ -16,12 +16,16 @@ using zuHause.Interfaces;
 var builder = WebApplication.CreateBuilder(args);
 
 
-var context = new CustomAssemblyLoadContext();
+// 只在非測試環境載入 PDF 庫
+if (Environment.GetEnvironmentVariable("SKIP_PDF_LIBRARY") != "true")
+{
+    var context = new CustomAssemblyLoadContext();
 
-var path = Path.Combine(Directory.GetCurrentDirectory(), "DinkToPdfLib", "libwkhtmltox.dll");
-context.LoadUnmanagedLibrary(path);
+    var path = Path.Combine(Directory.GetCurrentDirectory(), "DinkToPdfLib", "libwkhtmltox.dll");
+    context.LoadUnmanagedLibrary(path);
 
-builder.Services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
+    builder.Services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
+}
 
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
@@ -201,3 +205,6 @@ pattern: "{controller=MemberInbox}/{action=Index}/{id?}");
 
 
 app.Run();
+
+// 讓測試專案可以存取 Program 類別
+public partial class Program { }

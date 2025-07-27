@@ -86,7 +86,7 @@
                         data-bs-target="#contactService@(@Model.ContractId)">
                     聯絡客服
                 </button>
-                @if (Model.Status == "DRAFT" || Model.Status == "BESIGNED")
+                @if (Model.Status == "PENDING" || Model.Status == "BESIGNED")
                 {
                     <button type="button" class="btn btn-outline-danger py-0 w-100">
                         取消合約

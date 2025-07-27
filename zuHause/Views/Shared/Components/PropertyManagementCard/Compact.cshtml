@@ -1,0 +1,61 @@
+@model zuHause.DTOs.PropertyCardDisplayDto
+@{
+    var property = Model.Property;
+}
+
+<!-- 緊湊房源卡片（縮略模式） -->
+<div class="col-12 mb-2">
+    <div class="card property-card-compact @Model.CustomCssClass">
+        <div class="card-body p-3">
+            <div class="row align-items-center">
+                <!-- 縮略圖 -->
+                <div class="col-auto">
+                    <img src="@property.ThumbnailUrl" 
+                         class="rounded" 
+                         alt="@property.Title" 
+                         style="width: 60px; height: 60px; object-fit: cover;"
+                         onerror="this.src='/images/property-placeholder.jpg'">
+                </div>
+                
+                <!-- 房源資訊 -->
+                <div class="col">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="mb-1" title="@property.Title">
+                                @(property.Title.Length > 25 ? property.Title.Substring(0, 25) + "..." : property.Title)
+                            </h6>
+                            <small class="text-muted d-block">@property.LayoutDisplay • @property.PriceDisplay</small>
+                        </div>
+                        
+                        <div class="text-end">
+                            @if (Model.ShowStatusBadge)
+                            {
+                                <span class="badge bg-@property.StatusStyle small">
+                                    @property.StatusDisplayName
+                                </span>
+                            }
+                            
+                            @if (property.RequiresAction)
+                            {
+                                <div class="mt-1">
+                                    <i class="fas fa-exclamation-circle text-warning small"></i>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 操作按鈕 -->
+                @if (Model.ShowActions)
+                {
+                    <div class="col-auto">
+                        <a href="/Property/Detail/@property.PropertyId" 
+                           class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

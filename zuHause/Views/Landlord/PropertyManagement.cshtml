@@ -1,0 +1,159 @@
+@model zuHause.DTOs.PropertyManagementListResponseDto
+@using zuHause.DTOs
+@{
+    ViewData["Title"] = "房源管理";
+    ViewData["activePage"] = "PropertyManagement";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/property-management.css" asp-append-version="true" />
+}
+
+<!-- 房源管理頁面 -->
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1">
+                <i class="fas fa-home me-2 text-primary"></i>房源管理
+            </h2>
+            <p class="text-muted mb-0">管理您的所有房源 • 總計 @Model.TotalCount 個房源</p>
+        </div>
+        <div>
+            <a href="/property/new" class="btn btn-primary btn-lg">
+                <i class="fas fa-plus me-2"></i>刊登新房源
+            </a>
+        </div>
+    </div>
+
+
+    <!-- Status Messages -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>@TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (Model.Properties.Any())
+    {
+        <!-- 可用房源區塊 -->
+        @if (Model.AvailableProperties.Any())
+        {
+            <section class="property-section mb-5">
+                <div class="section-header mb-4">
+                    <h3 class="section-title">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        可用房源 
+                        <span class="badge bg-success ms-2">@Model.AvailableCount</span>
+                    </h3>
+                    <p class="section-description text-muted mb-0">
+                        正在上架或已發出合約的房源
+                    </p>
+                </div>
+                <div class="row">
+                    @foreach (var property in Model.AvailableProperties)
+                    {
+                        @await Component.InvokeAsync("PropertyManagementCard", new { property = property, displayMode = PropertyCardDisplayMode.Management })
+                    }
+                </div>
+            </section>
+        }
+
+        <!-- 等待刊登的房源區塊 -->
+        @if (Model.PendingProperties.Any())
+        {
+            <section class="property-section mb-5">
+                <div class="section-header mb-4">
+                    <h3 class="section-title">
+                        <i class="fas fa-clock text-warning me-2"></i>
+                        等待刊登的房源 
+                        <span class="badge bg-warning text-dark ms-2">@Model.PendingCount</span>
+                    </h3>
+                    <p class="section-description text-muted mb-0">
+                        審核中、待付款或需要補充資料的房源
+                    </p>
+                </div>
+                <div class="row">
+                    @foreach (var property in Model.PendingProperties)
+                    {
+                        @await Component.InvokeAsync("PropertyManagementCard", new { property = property, displayMode = PropertyCardDisplayMode.Management })
+                    }
+                </div>
+            </section>
+        }
+
+        <!-- 目前不可用的房源區塊 -->
+        @if (Model.UnavailableProperties.Any())
+        {
+            <section class="property-section mb-5">
+                <div class="section-header mb-4">
+                    <h3 class="section-title">
+                        <i class="fas fa-ban text-secondary me-2"></i>
+                        目前不可用的房源 
+                        <span class="badge bg-secondary ms-2">@Model.UnavailableCount</span>
+                    </h3>
+                    <p class="section-description text-muted mb-0">
+                        出租中、已下架或已封鎖的房源
+                    </p>
+                </div>
+                <div class="row">
+                    @foreach (var property in Model.UnavailableProperties)
+                    {
+                        @await Component.InvokeAsync("PropertyManagementCard", new { property = property, displayMode = PropertyCardDisplayMode.Management })
+                    }
+                </div>
+            </section>
+        }
+    }
+    else
+    {
+        <!-- 空狀態 -->
+        <div class="empty-state text-center py-5">
+            <div class="mx-auto rounded-circle d-flex align-items-center justify-content-center mb-4"
+                 style="width:120px;height:120px;background:#f8f9fa">
+                <i class="fas fa-home text-muted" style="font-size: 3rem;"></i>
+            </div>
+            <h4 class="text-muted mb-3">尚未建立任何房源</h4>
+            <p class="text-muted mb-4">
+                開始刊登您的第一個房源，讓租客找到您的物件<br>
+                <small>完整的房源資訊將提高租客的信任度和詢問率</small>
+            </p>
+            <a href="/property/new" class="btn btn-primary btn-lg">
+                <i class="fas fa-plus me-2"></i>立即刊登房源
+            </a>
+        </div>
+    }
+</div>
+
+<!-- 確認對話框 Modal -->
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">確認操作</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmMessage">您確定要執行此操作嗎？</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-danger" id="confirmButton">確認</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/property-management.js" asp-append-version="true"></script>
+}

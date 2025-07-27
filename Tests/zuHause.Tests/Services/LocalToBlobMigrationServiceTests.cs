@@ -9,15 +9,19 @@ using zuHause.Enums;
 using zuHause.Interfaces;
 using zuHause.Models;
 using zuHause.Services;
+using zuHause.Tests.Fixtures;
+using System.Transactions;
 
 namespace zuHause.Tests.Services
 {
     /// <summary>
     /// LocalToBlobMigrationService 單元測試
     /// 遵循 anti-mocking 原則：只 mock 外部依賴，不 mock 業務邏輯
+    /// 使用真實 SQL Server 資料庫和事務隔離確保測試可靠性
     /// </summary>
-    public class LocalToBlobMigrationServiceTests : IDisposable
+    public class LocalToBlobMigrationServiceTests : IClassFixture<TestDatabaseFixture>, IDisposable
     {
+        private readonly TestDatabaseFixture _databaseFixture;
         private readonly ZuHauseContext _context;
         private readonly Mock<IBlobStorageService> _mockBlobStorageService;
         private readonly Mock<IBlobUrlGenerator> _mockUrlGenerator;
@@ -26,15 +30,21 @@ namespace zuHause.Tests.Services
         private readonly Mock<ILogger<LocalToBlobMigrationService>> _mockLogger;
         private readonly Mock<IConfiguration> _mockConfiguration;
         private readonly LocalToBlobMigrationService _service;
+        private readonly TransactionScope _transactionScope;
+        private readonly List<Guid> _testImageGuids;
 
-        public LocalToBlobMigrationServiceTests()
+        public LocalToBlobMigrationServiceTests(TestDatabaseFixture databaseFixture)
         {
-            // 使用 InMemory 資料庫進行真實的資料庫操作測試
-            var options = new DbContextOptionsBuilder<ZuHauseContext>()
-                .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
-                .EnableSensitiveDataLogging() // 用於調試
-                .Options;
-            _context = new ZuHauseContext(options);
+            _databaseFixture = databaseFixture;
+            
+            // 使用事務範圍確保測試隔離
+            _transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+            
+            // 使用共享的測試資料庫
+            _context = _databaseFixture.CreateDbContext();
+            
+            // 初始化測試資料 GUID 列表
+            _testImageGuids = new List<Guid>();
 
             // Mock 外部依賴
             _mockBlobStorageService = new Mock<IBlobStorageService>();
@@ -64,12 +74,18 @@ namespace zuHause.Tests.Services
 
         private void SeedTestData()
         {
+            // 使用唯一的 GUID 作為測試資料識別符
+            var testImageGuid1 = Guid.NewGuid();
+            var testImageGuid2 = Guid.NewGuid();
+            _testImageGuids.Add(testImageGuid1);
+            _testImageGuids.Add(testImageGuid2);
+            
             var testImages = new List<Image>
             {
                 new Image
                 {
-                    ImageId = 1,
-                    ImageGuid = Guid.NewGuid(),
+                    // 移除 ImageId，讓資料庫自動產生 IDENTITY 值
+                    ImageGuid = testImageGuid1,
                     EntityType = EntityType.Property,
                     EntityId = 100,
                     Category = ImageCategory.Gallery,
@@ -79,8 +95,8 @@ namespace zuHause.Tests.Services
                 },
                 new Image
                 {
-                    ImageId = 2,
-                    ImageGuid = Guid.NewGuid(),
+                    // 移除 ImageId，讓資料庫自動產生 IDENTITY 值
+                    ImageGuid = testImageGuid2,
                     EntityType = EntityType.Property,
                     EntityId = 101,
                     Category = ImageCategory.Gallery,
@@ -108,7 +124,11 @@ namespace zuHause.Tests.Services
 
             // Assert
             Assert.NotNull(result);
-            Assert.Equal(2, result.TotalImages);
+            
+            // 只驗證測試創建的資料，不假設資料庫為空
+            var testImageCount = _context.Images.Count(i => _testImageGuids.Contains(i.ImageGuid));
+            Assert.True(result.TotalImages >= testImageCount, $"期望至少找到 {testImageCount} 筆測試資料，實際找到 {result.TotalImages} 筆");
+            
             Assert.True(result.ScanTime <= DateTime.UtcNow);
             Assert.NotNull(result.ReadyToMigrate);
             Assert.NotNull(result.ProblematicImages);
@@ -129,7 +149,12 @@ namespace zuHause.Tests.Services
 
             // Assert
             Assert.NotNull(result);
-            Assert.Equal(1, result.TotalImages); // 只有 1 張圖片符合條件
+            
+            // 驗證測試資料中符合時間範圍的數量
+            var expectedTestImages = _context.Images
+                .Where(i => _testImageGuids.Contains(i.ImageGuid) && i.UploadedAt >= scanOptions.ModifiedAfter)
+                .Count();
+            Assert.True(result.TotalImages >= expectedTestImages, $"期望至少找到 {expectedTestImages} 筆符合時間範圍的測試資料");
         }
 
         [Fact]
@@ -397,8 +422,22 @@ namespace zuHause.Tests.Services
 
         public void Dispose()
         {
-            _context.Dispose();
-            _memoryCache.Dispose();
+            try
+            {
+                // 使用事務回滾代替資料庫刪除，確保測試隔離
+                _transactionScope?.Dispose();
+                
+                Console.WriteLine("✓ 測試事務已回滾，測試資料已清理");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"✗ 測試清理時發生錯誤：{ex.Message}");
+            }
+            finally
+            {
+                _context?.Dispose();
+                _memoryCache?.Dispose();
+            }
         }
     }
 }

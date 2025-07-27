@@ -8,6 +8,7 @@ using zuHause.Enums;
 using zuHause.DTOs;
 using zuHause.Services.Interfaces;
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics;
 
 namespace zuHause.Controllers
 {
@@ -200,38 +201,108 @@ namespace zuHause.Controllers
         }
 
         /// <summary>
-        /// 顯示房源創建表單
+        /// 房源創建頁面 (刊登新房源)
         /// </summary>
-        /// <returns>房源創建視圖</returns>
-        [HttpGet]
-        [Route("property/create")]
+        [HttpGet("property/new")]
+        [HttpGet("property/create")] // 向後相容性保留
         public async Task<IActionResult> Create()
         {
+            // 強制禁用快取
+            Response.Headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
+            Response.Headers["Pragma"] = "no-cache";
+            Response.Headers["Expires"] = "0";
+            
+            _logger.LogInformation("用戶訪問房源創建頁面 - IP: {IpAddress}", 
+                HttpContext.Connection.RemoteIpAddress);
+            
+            return await BuildPropertyForm(PropertyFormMode.Create);
+        }
+
+        /// <summary>
+        /// 房源編輯頁面
+        /// </summary>
+        [HttpGet("property/{id:int}/edit")]
+        public async Task<IActionResult> Edit(int id)
+        {
+            // 強制禁用快取
+            Response.Headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
+            Response.Headers["Pragma"] = "no-cache";
+            Response.Headers["Expires"] = "0";
+            
+            var currentUserId = GetCurrentUserId();
+            if (!currentUserId.HasValue)
+            {
+                _logger.LogWarning("未登入用戶嘗試編輯房源 - PropertyId: {PropertyId}, IP: {IpAddress}", 
+                    id, HttpContext.Connection.RemoteIpAddress);
+                return RedirectToAction("Login", "Member");
+            }
+            
+            _logger.LogInformation("用戶訪問房源編輯頁面 - PropertyId: {PropertyId}, UserId: {UserId}", 
+                id, currentUserId);
+            
+            return await BuildPropertyForm(PropertyFormMode.Edit, id, currentUserId.Value);
+        }
+
+        /// <summary>
+        /// 共享的表單建構邏輯
+        /// </summary>
+        private async Task<IActionResult> BuildPropertyForm(PropertyFormMode mode, int? propertyId = null, int? userId = null)
+        {
+            var stopwatch = Stopwatch.StartNew();
+            
             try
             {
-                // TODO: 添加身份驗證 - 檢查使用者是否為房東
-                // if (!User.IsInRole("Landlord")) return Forbid();
-
-                // 準備下拉選單資料 - 使用新的服務
+                // 載入基礎資料
                 var cities = await GetActiveCitiesAsync();
                 var listingPlans = await _listingPlanValidationService.GetActiveListingPlansAsync();
                 var equipmentCategoriesHierarchy = await _equipmentCategoryQueryService.GetCategoriesHierarchyAsync();
-
+                
+                PropertyCreateDto propertyData = new PropertyCreateDto();
+                
+                // 編輯模式：載入現有房源資料
+                if (mode == PropertyFormMode.Edit && propertyId.HasValue && userId.HasValue)
+                {
+                    var existingProperty = await LoadExistingPropertyForEdit(propertyId.Value, userId.Value);
+                    if (existingProperty == null)
+                    {
+                        _logger.LogWarning("房源編輯權限驗證失敗 - PropertyId: {PropertyId}, UserId: {UserId}", 
+                            propertyId, userId);
+                        TempData["ErrorMessage"] = "找不到指定的房源或您無權編輯該房源";
+                        return RedirectToAction("PropertyManagement", "Landlord");
+                    }
+                    propertyData = existingProperty;
+                }
+                
+                // 建構ViewModel
                 var viewModel = new PropertyCreateViewModel
                 {
+                    PropertyData = propertyData,
                     Cities = cities,
                     ListingPlans = listingPlans,
                     EquipmentCategoriesHierarchy = equipmentCategoriesHierarchy,
-                    AvailableChineseCategories = PropertyImageCategoryHelper.GetAllPropertyChineseCategories()
+                    AvailableChineseCategories = PropertyImageCategoryHelper.GetAllPropertyChineseCategories(),
+                    FormMode = mode,
+                    IsEditMode = mode == PropertyFormMode.Edit
                 };
-
-                return View(viewModel);
+                
+                // 設定頁面元資料
+                ViewBag.PageTitle = mode == PropertyFormMode.Create ? "刊登新房源" : "編輯房源";
+                ViewBag.SubmitText = mode == PropertyFormMode.Create ? "提交審核" : "更新房源";
+                ViewBag.FormAction = mode == PropertyFormMode.Create ? "Create" : "Update";
+                
+                stopwatch.Stop();
+                _logger.LogInformation("房源表單建構完成 - Mode: {Mode}, PropertyId: {PropertyId}, Duration: {Duration}ms", 
+                    mode, propertyId, stopwatch.ElapsedMilliseconds);
+                
+                return View("Create", viewModel);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "載入房源創建頁面時發生錯誤");
+                stopwatch.Stop();
+                _logger.LogError(ex, "建構房源表單時發生錯誤 - Mode: {Mode}, PropertyId: {PropertyId}, Duration: {Duration}ms", 
+                    mode, propertyId, stopwatch.ElapsedMilliseconds);
                 TempData["ErrorMessage"] = "載入頁面時發生錯誤，請稍後再試";
-                return RedirectToAction("Index");
+                return RedirectToAction("PropertyManagement", "Landlord");
             }
         }
 
@@ -330,6 +401,100 @@ namespace zuHause.Controllers
                 _logger.LogError(ex, "創建房源時發生錯誤，房東ID: {LandlordId}", 1);
                 TempData["ErrorMessage"] = "創建房源時發生錯誤，請稍後再試";
                 return RedirectToAction("Create");
+            }
+        }
+
+        /// <summary>
+        /// 處理房源更新 (編輯模式專用)
+        /// </summary>
+        [HttpPost]
+        [Route("property/{id:int}/edit")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Update(int id, PropertyCreateDto dto)
+        {
+            var stopwatch = Stopwatch.StartNew();
+            
+            try
+            {
+                // 身份驗證
+                var currentUserId = GetCurrentUserId();
+                if (!currentUserId.HasValue)
+                {
+                    _logger.LogWarning("未登入用戶嘗試更新房源 - PropertyId: {PropertyId}", id);
+                    return RedirectToAction("Login", "Member");
+                }
+                
+                // 驗證房源所有權
+                if (!await ValidatePropertyOwnership(id, currentUserId.Value))
+                {
+                    _logger.LogWarning("房源所有權驗證失敗 - PropertyId: {PropertyId}, UserId: {UserId}", 
+                        id, currentUserId);
+                    TempData["ErrorMessage"] = "您無權修改此房源";
+                    return RedirectToAction("PropertyManagement", "Landlord");
+                }
+                
+                // 驗證房源狀態
+                var property = await _context.Properties.FindAsync(id);
+                if (property == null || !CanEditPropertyStatus(property.StatusCode))
+                {
+                    _logger.LogWarning("房源狀態不允許編輯 - PropertyId: {PropertyId}, Status: {Status}", 
+                        id, property?.StatusCode);
+                    TempData["ErrorMessage"] = "此房源當前狀態不允許編輯";
+                    return RedirectToAction("PropertyManagement", "Landlord");
+                }
+                
+                // 後端驗證
+                var validationResult = await ValidatePropertyCreateDto(dto);
+                if (!validationResult.IsValid)
+                {
+                    foreach (var error in validationResult.Errors)
+                    {
+                        ModelState.AddModelError(error.PropertyName ?? string.Empty, error.ErrorMessage);
+                    }
+                }
+                
+                if (!ModelState.IsValid)
+                {
+                    // 驗證失敗，重新顯示編輯表單
+                    return await Edit(id);
+                }
+                
+                // 開始資料庫事務
+                using var transaction = await _context.Database.BeginTransactionAsync();
+                
+                try
+                {
+                    // 更新房源資料
+                    await UpdatePropertyFromDto(id, dto);
+                    
+                    // 更新設備關聯
+                    if (dto.SelectedEquipmentIds?.Any() == true)
+                    {
+                        await UpdatePropertyEquipmentRelations(id, dto);
+                    }
+                    
+                    await transaction.CommitAsync();
+                    
+                    stopwatch.Stop();
+                    _logger.LogInformation("房源更新成功 - PropertyId: {PropertyId}, UserId: {UserId}, Duration: {Duration}ms", 
+                        id, currentUserId, stopwatch.ElapsedMilliseconds);
+                    
+                    TempData["SuccessMessage"] = "房源更新成功";
+                    return RedirectToAction("PropertyManagement", "Landlord");
+                }
+                catch (Exception)
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
+            }
+            catch (Exception ex)
+            {
+                stopwatch.Stop();
+                _logger.LogError(ex, "更新房源時發生錯誤 - PropertyId: {PropertyId}, Duration: {Duration}ms", 
+                    id, stopwatch.ElapsedMilliseconds);
+                TempData["ErrorMessage"] = "更新房源時發生錯誤，請稍後再試";
+                return await Edit(id);
             }
         }
 
@@ -720,7 +885,7 @@ namespace zuHause.Controllers
                 ListingFeeAmount = listingFee.Value,
                 ListingPlanId = dto.ListingPlanId,
                 PropertyProofUrl = dto.PropertyProofUrl,
-                StatusCode = "DRAFT", // 預設為草稿狀態
+                StatusCode = "PENDING", // 預設為審核中狀態
                 IsPaid = false, // 預設未付款
                 ExpireAt = expireDate.Value,
                 CreatedAt = now,
@@ -838,6 +1003,230 @@ namespace zuHause.Controllers
         }
 
         /// <summary>
+        /// 取得當前使用者ID (編輯功能用)
+        /// </summary>
+        /// <returns>使用者ID，如果未登入則返回 null</returns>
+        private int? GetCurrentUserId()
+        {
+            var userIdClaim = User.FindFirst("UserId")?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            {
+                _logger.LogError("安全錯誤 - 無法取得有效的用戶ID, IP: {IpAddress}", 
+                    HttpContext.Connection.RemoteIpAddress);
+                return null;
+            }
+            
+            return userId;
+        }
+
+        /// <summary>
+        /// 載入現有房源資料供編輯使用
+        /// </summary>
+        /// <param name="propertyId">房源ID</param>
+        /// <param name="userId">用戶ID</param>
+        /// <returns>房源編輯DTO，如果不存在或無權限則返回null</returns>
+        private async Task<PropertyCreateDto?> LoadExistingPropertyForEdit(int propertyId, int userId)
+        {
+            try
+            {
+                // 驗證房東身份和房源所有權，包含必要的關聯資料
+                var property = await _context.Properties
+                    .Include(p => p.PropertyEquipmentRelations)
+                    .FirstOrDefaultAsync(p => p.PropertyId == propertyId 
+                                           && p.LandlordMemberId == userId
+                                           && p.DeletedAt == null);
+
+                if (property == null)
+                {
+                    _logger.LogWarning("房源編輯權限驗證失敗 - PropertyId: {PropertyId}, UserId: {UserId}, IP: {IpAddress}",
+                        propertyId, userId, HttpContext.Connection.RemoteIpAddress);
+                    return null;
+                }
+
+                // 只允許編輯特定狀態的房源
+                if (!CanEditPropertyStatus(property.StatusCode))
+                {
+                    _logger.LogWarning("房源狀態不允許編輯 - PropertyId: {PropertyId}, Status: {Status}, UserId: {UserId}",
+                        propertyId, property.StatusCode, userId);
+                    return null;
+                }
+
+                // 轉換為編輯DTO
+                var editDto = MapPropertyToCreateDto(property);
+                
+                _logger.LogInformation("成功載入房源編輯資料 - PropertyId: {PropertyId}, UserId: {UserId}",
+                    propertyId, userId);
+                
+                return editDto;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "載入房源編輯資料時發生錯誤 - PropertyId: {PropertyId}, UserId: {UserId}",
+                    propertyId, userId);
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// 檢查房源狀態是否允許編輯
+        /// </summary>
+        /// <param name="statusCode">房源狀態碼</param>
+        /// <returns>是否允許編輯</returns>
+        private static bool CanEditPropertyStatus(string statusCode)
+        {
+            // 允許編輯的狀態：草稿、已上架、審核不通過需修正
+            return statusCode switch
+            {
+                "PENDING" => true,       // 審核中
+                "IDLE" => true,        // 閒置（已建立但未上架）
+                "LISTED" => true,      // 已上架
+                "REJECT_REVISE" => true, // 審核不通過，需修正
+                _ => false              // 其他狀態不允許編輯
+            };
+        }
+
+        /// <summary>
+        /// 將 Property 實體轉換為 PropertyCreateDto
+        /// </summary>
+        /// <param name="property">房源實體</param>
+        /// <returns>房源建立DTO</returns>
+        private PropertyCreateDto MapPropertyToCreateDto(Property property)
+        {
+            return new PropertyCreateDto
+            {
+                // 編輯模式：設定房源ID
+                PropertyId = property.PropertyId,
+                
+                // 基本資訊
+                Title = property.Title,
+                Description = property.Description ?? string.Empty,
+                
+                // 地址資訊
+                CityId = property.CityId,
+                DistrictId = property.DistrictId,
+                AddressLine = property.AddressLine ?? string.Empty,
+                
+                // 價格資訊
+                MonthlyRent = property.MonthlyRent,
+                DepositAmount = property.DepositAmount,
+                DepositMonths = property.DepositMonths,
+                
+                // 房屋規格
+                RoomCount = property.RoomCount,
+                LivingRoomCount = property.LivingRoomCount,
+                BathroomCount = property.BathroomCount,
+                CurrentFloor = property.CurrentFloor,
+                TotalFloors = property.TotalFloors,
+                Area = property.Area,
+                
+                // 租賃條件
+                MinimumRentalMonths = property.MinimumRentalMonths,
+                SpecialRules = property.SpecialRules ?? string.Empty,
+                
+                // 費用設定
+                WaterFeeType = property.WaterFeeType ?? "台水",
+                CustomWaterFee = property.CustomWaterFee,
+                ElectricityFeeType = property.ElectricityFeeType ?? "台電",
+                CustomElectricityFee = property.CustomElectricityFee,
+                ManagementFeeIncluded = property.ManagementFeeIncluded,
+                ManagementFeeAmount = property.ManagementFeeAmount,
+                
+                // 停車與清潔
+                ParkingAvailable = property.ParkingAvailable,
+                ParkingFeeRequired = property.ParkingFeeRequired,
+                ParkingFeeAmount = property.ParkingFeeAmount,
+                CleaningFeeRequired = property.CleaningFeeRequired,
+                CleaningFeeAmount = property.CleaningFeeAmount,
+                
+                // 刊登資訊
+                ListingPlanId = property.ListingPlanId ?? 1, // 使用預設方案ID
+                PropertyProofUrl = property.PropertyProofUrl ?? string.Empty,
+                
+                // 設備資訊
+                SelectedEquipmentIds = property.PropertyEquipmentRelations
+                    .Select(r => r.CategoryId)
+                    .ToList(),
+                EquipmentQuantities = property.PropertyEquipmentRelations
+                    .ToDictionary(r => r.CategoryId, r => r.Quantity)
+            };
+        }
+
+        /// <summary>
+        /// 更新房源基本資料
+        /// </summary>
+        private async Task UpdatePropertyFromDto(int propertyId, PropertyCreateDto dto)
+        {
+            var property = await _context.Properties.FindAsync(propertyId);
+            if (property == null)
+            {
+                throw new InvalidOperationException($"房源不存在: {propertyId}");
+            }
+            
+            // 更新房源資料
+            property.Title = dto.Title;
+            property.Description = dto.Description;
+            property.CityId = dto.CityId;
+            property.DistrictId = dto.DistrictId;
+            property.AddressLine = dto.AddressLine;
+            property.MonthlyRent = dto.MonthlyRent;
+            property.DepositAmount = dto.DepositAmount;
+            property.DepositMonths = dto.DepositMonths;
+            property.RoomCount = dto.RoomCount;
+            property.LivingRoomCount = dto.LivingRoomCount;
+            property.BathroomCount = dto.BathroomCount;
+            property.CurrentFloor = dto.CurrentFloor;
+            property.TotalFloors = dto.TotalFloors;
+            property.Area = dto.Area;
+            property.MinimumRentalMonths = dto.MinimumRentalMonths;
+            property.SpecialRules = dto.SpecialRules;
+            property.WaterFeeType = dto.WaterFeeType;
+            property.CustomWaterFee = dto.CustomWaterFee;
+            property.ElectricityFeeType = dto.ElectricityFeeType;
+            property.CustomElectricityFee = dto.CustomElectricityFee;
+            property.ManagementFeeIncluded = dto.ManagementFeeIncluded;
+            property.ManagementFeeAmount = dto.ManagementFeeAmount;
+            property.ParkingAvailable = dto.ParkingAvailable;
+            property.ParkingFeeRequired = dto.ParkingFeeRequired;
+            property.ParkingFeeAmount = dto.ParkingFeeAmount;
+            property.CleaningFeeRequired = dto.CleaningFeeRequired;
+            property.CleaningFeeAmount = dto.CleaningFeeAmount;
+            property.PropertyProofUrl = dto.PropertyProofUrl;
+            property.UpdatedAt = DateTime.Now;
+            
+            await _context.SaveChangesAsync();
+        }
+
+        /// <summary>
+        /// 更新房源設備關聯
+        /// </summary>
+        private async Task UpdatePropertyEquipmentRelations(int propertyId, PropertyCreateDto dto)
+        {
+            // 移除現有關聯
+            var existingRelations = await _context.PropertyEquipmentRelations
+                .Where(r => r.PropertyId == propertyId)
+                .ToListAsync();
+            
+            _context.PropertyEquipmentRelations.RemoveRange(existingRelations);
+            
+            // 建立新關聯
+            var newRelations = new List<PropertyEquipmentRelation>();
+            foreach (var equipmentId in dto.SelectedEquipmentIds)
+            {
+                var quantity = dto.EquipmentQuantities?.TryGetValue(equipmentId, out var qty) == true ? qty : 1;
+                
+                newRelations.Add(new PropertyEquipmentRelation
+                {
+                    PropertyId = propertyId,
+                    CategoryId = equipmentId,
+                    Quantity = quantity
+                });
+            }
+            
+            _context.PropertyEquipmentRelations.AddRange(newRelations);
+            await _context.SaveChangesAsync();
+        }
+
+        /// <summary>
         /// 從 PropertyCreateDto 建立預覽用的 PropertyDetailViewModel
         /// </summary>
         private async Task<PropertyDetailViewModel> CreatePreviewViewModelFromDto(PropertyCreateDto dto)
@@ -951,6 +1340,22 @@ namespace zuHause.Controllers
             };
 
             return viewModel;
+        }
+
+        /// <summary>
+        /// 驗證房源所有權
+        /// </summary>
+        /// <param name="propertyId">房源ID</param>
+        /// <param name="userId">用戶ID</param>
+        /// <returns>是否為房源擁有者</returns>
+        private async Task<bool> ValidatePropertyOwnership(int propertyId, int userId)
+        {
+            var property = await _context.Properties
+                .FirstOrDefaultAsync(p => p.PropertyId == propertyId 
+                                        && p.LandlordMemberId == userId
+                                        && p.DeletedAt == null);
+            
+            return property != null;
         }
 
     }
