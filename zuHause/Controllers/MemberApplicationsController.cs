@@ -16,10 +16,12 @@ namespace zuHause.Controllers
     {
         public readonly ZuHauseContext _context;
         public readonly ApplicationService _applicationService;
-        public MemberApplicationsController(ZuHauseContext context, ApplicationService applicationService)
+        public readonly NotificationService _notificationService;
+        public MemberApplicationsController(ZuHauseContext context, ApplicationService applicationService, NotificationService notificationService)
         {
             _context = context;
             _applicationService = applicationService;
+            _notificationService = notificationService;
         }
 
 
@@ -118,24 +120,14 @@ namespace zuHause.Controllers
         public async Task<IActionResult> CreateApplyHouse(ApplicationViewModel model)
         {
 
-
-            System.Diagnostics.Debug.WriteLine($"===={model.ScheduleDate}===");
-            System.Diagnostics.Debug.WriteLine($"===={model.ScheduleHouse}");
-            System.Diagnostics.Debug.WriteLine($"===={model.ScheduleMinute}");
-            System.Diagnostics.Debug.WriteLine($"===={model.ScheduleTime}");
-            System.Diagnostics.Debug.WriteLine($"===={Convert.ToInt32(model.PropertyId)}");
-            System.Diagnostics.Debug.WriteLine($"===={"11111111111"}===");
             if (!ModelState.IsValid)
             {
-                System.Diagnostics.Debug.WriteLine($"===={"2222222"}===");
-
                 //確認房源會拿到的網址後跳轉
                 return Redirect(model.ReturnUrl ?? "/MemberApplications/Index");
             }
 
             var userId = int.Parse(User.FindFirst("UserId")!.Value);
 
-            System.Diagnostics.Debug.WriteLine($"===={"3333333"}===");
 
 
             var scheduledDateTime = model.ScheduleDate;
@@ -168,6 +160,22 @@ namespace zuHause.Controllers
             _context.ApplicationStatusLogs.Add(newLog);
             await _context.SaveChangesAsync();
 
+            int propertyId = model.PropertyId;
+
+            var property = await _context.Properties.FindAsync(propertyId);
+            var member = await _context.Members.FindAsync(userId);
+
+
+            var (success, message) = await _notificationService.CreateUserNotificationAsync
+                (
+                receiverId: property!.LandlordMemberId,
+                typeCode: "APPLY_VIEW",
+                title: $"【{property!.Title}】收到新的看房申請！申請人：【{member!.MemberName}】",
+                content:
+                    $"親愛的房東您好，\n會員【{member!.MemberName}】想預約看房您的【{property!.Title}】物件\n預約日期：【{application.ScheduleTime!.Value.ToString("yyyy-MM-dd HH:mm")}】\n申請留言：{application.Message}",
+                ModuleCode: "ApplyHouse",
+                sourceEntityId: application.ApplicationId // 申請編號
+                );
 
 
             return RedirectToAction("Index");
@@ -277,6 +285,25 @@ namespace zuHause.Controllers
             }
 
             await _context.SaveChangesAsync();
+
+            int propertyId = model.PropertyId;
+
+            var property = await _context.Properties.FindAsync(propertyId);
+            var member = await _context.Members.FindAsync(userId);
+
+            var (success, message) = await _notificationService.CreateUserNotificationAsync
+            (
+            receiverId: property!.LandlordMemberId,
+            typeCode: "APPLY_VIEW",
+            title: $"【{property!.Title}】收到新的租賃申請！申請人：【{member!.MemberName}】",
+            content:
+                $"親愛的房東您好，\n會員【{member!.MemberName}】想申請租賃您的【{property!.Title}】物件\n租賃期間：【{rentalApp.RentalStartDate} 至 {rentalApp.RentalEndDate}】\n申請留言：{rentalApp.Message}",
+            ModuleCode: "ApplyRental",
+            sourceEntityId: rentalApp.ApplicationId // 申請編號
+            );
+
+
+
 
             return RedirectToAction("Index", "MemberApplications");
         }
