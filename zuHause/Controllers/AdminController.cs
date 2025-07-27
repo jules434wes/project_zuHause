@@ -685,6 +685,157 @@ namespace zuHause.Controllers
         }
 
         /// <summary>
+        /// 測試資料庫寫入
+        /// </summary>
+        [HttpPost]
+        [RequireAdminPermission(AdminPermissions.SystemMessageNew)]
+        public async Task<IActionResult> TestDatabaseWrite()
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("TestDatabaseWrite called");
+                
+                // 檢查管理員
+                var adminIdStr = GetCurrentAdminId();
+                if (!int.TryParse(adminIdStr, out int adminId))
+                {
+                    return Json(new { success = false, message = "管理員ID無效" });
+                }
+                
+                var admin = await _context.Admins.FirstOrDefaultAsync(a => a.AdminId == adminId);
+                if (admin == null)
+                {
+                    return Json(new { success = false, message = "找不到管理員" });
+                }
+                
+                // 檢查會員
+                var member = await _context.Members.Where(m => m.IsActive).FirstOrDefaultAsync();
+                if (member == null)
+                {
+                    return Json(new { success = false, message = "找不到活躍會員" });
+                }
+                
+                // 建立簡單測試訊息
+                var testMessage = new SystemMessage
+                {
+                    Title = "測試訊息",
+                    MessageContent = "這是一個測試訊息",
+                    CategoryCode = "ANNOUNCEMENT",
+                    AudienceTypeCode = "INDIVIDUAL",
+                    ReceiverId = member.MemberId,
+                    AdminId = admin.AdminId,
+                    SentAt = DateTime.Now,
+                    IsActive = true,
+                    CreatedAt = DateTime.Now,
+                    UpdatedAt = DateTime.Now
+                };
+                
+                System.Diagnostics.Debug.WriteLine($"Creating test message: AdminId={admin.AdminId}, ReceiverId={member.MemberId}");
+                
+                var beforeCount = await _context.SystemMessages.CountAsync();
+                _context.SystemMessages.Add(testMessage);
+                
+                var changeCount = await _context.SaveChangesAsync();
+                var afterCount = await _context.SystemMessages.CountAsync();
+                
+                System.Diagnostics.Debug.WriteLine($"Before: {beforeCount}, Changes: {changeCount}, After: {afterCount}");
+                
+                return Json(new 
+                { 
+                    success = true, 
+                    message = "資料庫寫入測試成功",
+                    data = new 
+                    {
+                        adminId = admin.AdminId,
+                        adminName = admin.Name,
+                        receiverId = member.MemberId,
+                        receiverName = member.MemberName,
+                        beforeCount = beforeCount,
+                        changeCount = changeCount,
+                        afterCount = afterCount,
+                        messageId = testMessage.MessageId
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Database write test error: {ex.Message}");
+                return Json(new { success = false, message = "資料庫寫入測試失敗", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// 測試 API - 檢查基本功能
+        /// </summary>
+        [HttpPost]
+        [RequireAdminPermission(AdminPermissions.SystemMessageNew)]
+        public async Task<IActionResult> TestSystemMessage([FromForm] SendSystemMessageRequest request)
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("TestSystemMessage called");
+                
+                // 基本驗證
+                if (request == null)
+                {
+                    return Json(new { success = false, message = "請求資料為空" });
+                }
+                
+                // 檢查管理員身分
+                var adminIdStr = GetCurrentAdminId();
+                System.Diagnostics.Debug.WriteLine($"Admin ID string: {adminIdStr}");
+                
+                if (!int.TryParse(adminIdStr, out int adminId))
+                {
+                    return Json(new { success = false, message = "管理員ID格式錯誤" });
+                }
+                
+                // 檢查 Admin 是否存在
+                var adminExists = await _context.Admins.AnyAsync(a => a.AdminId == adminId);
+                System.Diagnostics.Debug.WriteLine($"Admin exists: {adminExists}");
+                
+                if (!adminExists)
+                {
+                    return Json(new { success = false, message = $"找不到管理員ID: {adminId}" });
+                }
+                
+                // 檢查資料庫連接
+                var memberCount = await _context.Members.CountAsync();
+                System.Diagnostics.Debug.WriteLine($"Members count: {memberCount}");
+                
+                // 檢查第一個活躍會員
+                var firstMember = await _context.Members.Where(m => m.IsActive).FirstOrDefaultAsync();
+                var firstMemberExists = firstMember != null;
+                System.Diagnostics.Debug.WriteLine($"First active member exists: {firstMemberExists}, ID: {firstMember?.MemberId}");
+                
+                // 檢查系統訊息表
+                var messageCount = await _context.SystemMessages.CountAsync();
+                System.Diagnostics.Debug.WriteLine($"SystemMessages count: {messageCount}");
+                
+                return Json(new 
+                { 
+                    success = true, 
+                    message = "測試成功",
+                    data = new 
+                    {
+                        adminId = adminId,
+                        adminExists = adminExists,
+                        memberCount = memberCount,
+                        firstMemberExists = firstMemberExists,
+                        firstMemberId = firstMember?.MemberId,
+                        messageCount = messageCount,
+                        receivedData = request
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Test error: {ex.Message}");
+                return Json(new { success = false, message = "測試失敗", error = ex.Message });
+            }
+        }
+
+        /// <summary>
         /// 發送系統訊息 API
         /// 需要 system_message_new 權限才能存取
         /// </summary>
@@ -694,11 +845,43 @@ namespace zuHause.Controllers
         {
             try
             {
+                // 偵錯：記錄收到的請求
+                System.Diagnostics.Debug.WriteLine($"SendSystemMessage called with: Title={request.MessageTitle}, Content={request.MessageContent}, AudienceType={request.AudienceType}, Category={request.MessageCategory}");
+                
+                // 驗證請求資料
+                if (string.IsNullOrWhiteSpace(request.MessageTitle))
+                {
+                    return Json(new { success = false, message = "訊息標題不能為空" });
+                }
+                if (string.IsNullOrWhiteSpace(request.MessageContent))
+                {
+                    return Json(new { success = false, message = "訊息內容不能為空" });
+                }
+                if (string.IsNullOrWhiteSpace(request.MessageCategory))
+                {
+                    return Json(new { success = false, message = "訊息分類不能為空" });
+                }
+                if (string.IsNullOrWhiteSpace(request.AudienceType))
+                {
+                    return Json(new { success = false, message = "發送對象類型不能為空" });
+                }
+
                 // 取得當前管理員ID
-                var currentAdminId = int.Parse(GetCurrentAdminId() ?? "0");
-                if (currentAdminId == 0)
+                var currentAdminIdStr = GetCurrentAdminId();
+                System.Diagnostics.Debug.WriteLine($"Current Admin ID string: {currentAdminIdStr}");
+                
+                if (string.IsNullOrEmpty(currentAdminIdStr) || !int.TryParse(currentAdminIdStr, out int currentAdminId) || currentAdminId == 0)
                 {
                     return Json(new { success = false, message = "未取得有效的管理員身分" });
+                }
+                
+                // 驗證管理員是否存在
+                var adminExists = await _context.Admins.AnyAsync(a => a.AdminId == currentAdminId);
+                System.Diagnostics.Debug.WriteLine($"Current Admin ID: {currentAdminId}, Exists: {adminExists}");
+                
+                if (!adminExists)
+                {
+                    return Json(new { success = false, message = $"管理員不存在於資料庫中 (ID: {currentAdminId})" });
                 }
 
                 // 根據發送對象類型決定接收者
@@ -753,52 +936,74 @@ namespace zuHause.Controllers
                     return Json(new { success = false, message = "未找到符合條件的接收者" });
                 }
 
-                // 建立系統訊息記錄
-                var systemMessages = new List<SystemMessage>();
+                System.Diagnostics.Debug.WriteLine($"Found {receiverIds.Count} receivers for audience type: {request.AudienceType}");
                 
+                // 只有個別用戶時才需要驗證接收者ID
                 if (request.AudienceType == "INDIVIDUAL")
                 {
-                    // 個別用戶：建立一筆記錄
-                    var systemMessage = new SystemMessage
+                    // 驗證指定的接收者是否存在於資料庫中
+                    var validReceiverIds = await _context.Members
+                        .Where(m => receiverIds.Contains(m.MemberId))
+                        .Select(m => m.MemberId)
+                        .ToListAsync();
+                    
+                    System.Diagnostics.Debug.WriteLine($"Valid receiver IDs count: {validReceiverIds.Count}");
+                    
+                    if (validReceiverIds.Count != receiverIds.Count)
                     {
-                        Title = request.MessageTitle,
-                        MessageContent = request.MessageContent,
-                        CategoryCode = request.MessageCategory,
-                        AudienceTypeCode = request.AudienceType,
-                        ReceiverId = receiverIds.First(),
-                        AttachmentUrl = string.IsNullOrWhiteSpace(request.AttachmentUrl) ? null : request.AttachmentUrl,
-                        AdminId = currentAdminId,
-                        SentAt = DateTime.Now,
-                        CreatedAt = DateTime.Now,
-                        UpdatedAt = DateTime.Now
-                    };
-                    systemMessages.Add(systemMessage);
-                }
-                else
-                {
-                    // 群發：每個接收者建立一筆記錄
-                    foreach (var receiverId in receiverIds)
-                    {
-                        var systemMessage = new SystemMessage
-                        {
-                            Title = request.MessageTitle,
-                            MessageContent = request.MessageContent,
-                            CategoryCode = request.MessageCategory,
-                            AudienceTypeCode = request.AudienceType,
-                            ReceiverId = receiverId,
-                            AttachmentUrl = string.IsNullOrWhiteSpace(request.AttachmentUrl) ? null : request.AttachmentUrl,
-                            AdminId = currentAdminId,
-                            SentAt = DateTime.Now,
-                            CreatedAt = DateTime.Now,
-                            UpdatedAt = DateTime.Now
-                        };
-                        systemMessages.Add(systemMessage);
+                        var invalidIds = receiverIds.Except(validReceiverIds).ToList();
+                        System.Diagnostics.Debug.WriteLine($"Invalid receiver IDs: {string.Join(", ", invalidIds)}");
+                        return Json(new { success = false, message = $"指定的接收者不存在於資料庫中: {string.Join(", ", invalidIds)}" });
                     }
+                    
+                    // 更新 receiverIds 為已驗證的IDs
+                    receiverIds = validReceiverIds;
                 }
+                // 群發訊息不需要驗證個別ID，只需要確認有符合條件的用戶存在
 
-                // 批次新增到資料庫
-                _context.SystemMessages.AddRange(systemMessages);
-                await _context.SaveChangesAsync();
+                // 建立系統訊息記錄 - 統一為單筆記錄
+                var systemMessage = new SystemMessage
+                {
+                    Title = request.MessageTitle,
+                    MessageContent = request.MessageContent,
+                    CategoryCode = request.MessageCategory,
+                    AudienceTypeCode = request.AudienceType,
+                    ReceiverId = request.AudienceType == "INDIVIDUAL" ? receiverIds.First() : null, // 群發時為 NULL
+                    AttachmentUrl = string.IsNullOrWhiteSpace(request.AttachmentUrl) ? null : request.AttachmentUrl,
+                    AdminId = currentAdminId,
+                    SentAt = DateTime.Now,
+                    IsActive = true,
+                    CreatedAt = DateTime.Now,
+                    UpdatedAt = DateTime.Now
+                };
+
+                System.Diagnostics.Debug.WriteLine($"Creating system message: AudienceType={request.AudienceType}, ReceiverId={systemMessage.ReceiverId}");
+
+                // 新增單筆記錄到資料庫
+                System.Diagnostics.Debug.WriteLine("Adding 1 system message to database");
+                
+                // 先檢查資料庫狀態
+                var beforeCount = await _context.SystemMessages.CountAsync();
+                System.Diagnostics.Debug.WriteLine($"SystemMessages count before insert: {beforeCount}");
+                
+                _context.SystemMessages.Add(systemMessage);
+                
+                // 檢查是否有變更待處理
+                var hasChanges = _context.ChangeTracker.HasChanges();
+                System.Diagnostics.Debug.WriteLine($"ChangeTracker.HasChanges: {hasChanges}");
+                
+                // 檢查追蹤的實體
+                var addedEntities = _context.ChangeTracker.Entries()
+                    .Where(e => e.State == Microsoft.EntityFrameworkCore.EntityState.Added)
+                    .ToList();
+                System.Diagnostics.Debug.WriteLine($"Added entities count: {addedEntities.Count}");
+                
+                var changeCount = await _context.SaveChangesAsync();
+                System.Diagnostics.Debug.WriteLine($"SaveChangesAsync returned: {changeCount}");
+                
+                // 檢查儲存後的狀態
+                var afterCount = await _context.SystemMessages.CountAsync();
+                System.Diagnostics.Debug.WriteLine($"SystemMessages count after insert: {afterCount}");
 
                 var responseMessage = request.AudienceType == "INDIVIDUAL" 
                     ? $"系統訊息已成功發送給 {receiverName}"
@@ -810,20 +1015,26 @@ namespace zuHause.Controllers
                     message = responseMessage,
                     data = new
                     {
-                        MessageCount = systemMessages.Count,
-                        ReceiverCount = receiverIds.Count,
+                        MessageId = systemMessage.MessageId,
+                        MessageCount = 1, // 總是只有1筆記錄
+                        ReceiverCount = receiverIds.Count, // 實際影響的用戶數
                         AudienceType = request.AudienceType,
-                        ReceiverName = receiverName
+                        ReceiverName = receiverName,
+                        ReceiverId = systemMessage.ReceiverId
                     }
                 });
             }
             catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine($"Error in SendSystemMessage: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
+                
                 return Json(new
                 {
                     success = false,
                     message = "發送系統訊息時發生錯誤",
-                    error = ex.Message
+                    error = ex.Message,
+                    stackTrace = ex.StackTrace
                 });
             }
         }

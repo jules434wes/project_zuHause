@@ -861,7 +861,10 @@ namespace zuHause.AdminViewModels
                     CategoryDisplay = GetCategoryDisplay(sm.CategoryCode),
                     AudienceType = sm.AudienceTypeCode,
                     AudienceDisplay = GetAudienceDisplay(sm.AudienceTypeCode),
-                    ReceiverName = sm.Receiver != null ? sm.Receiver.MemberName : "-",
+                    // 根據發送對象類型顯示不同的接收者資訊
+                    ReceiverName = sm.AudienceTypeCode == "INDIVIDUAL" && sm.Receiver != null 
+                        ? sm.Receiver.MemberName 
+                        : GetAudienceDisplay(sm.AudienceTypeCode),
                     ReceiverId = sm.ReceiverId.HasValue ? sm.ReceiverId.Value.ToString() : "",
                     AdminName = sm.Admin.Name,
                     SentAt = sm.SentAt.ToString("yyyy-MM-dd HH:mm:ss"),

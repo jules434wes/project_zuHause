@@ -408,6 +408,64 @@ function getAudienceText(audienceType) {
 }
 
 /**
+ * 測試資料庫寫入
+ */
+function testDatabaseWrite() {
+    console.log('Testing database write...');
+    
+    $.ajax({
+        url: '/Admin/TestDatabaseWrite',
+        method: 'POST',
+        success: function(response) {
+            console.log('Database write test response:', response);
+            if (response.success) {
+                showSuccess(`資料庫寫入測試成功！\n訊息ID: ${response.data.messageId}\n寫入前: ${response.data.beforeCount}, 變更: ${response.data.changeCount}, 寫入後: ${response.data.afterCount}`);
+            } else {
+                showError('資料庫寫入測試失敗：' + response.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Database write test error:', { xhr, status, error });
+            showError('資料庫寫入測試發生錯誤：' + error);
+        }
+    });
+}
+
+/**
+ * 測試 API 連接
+ */
+function testApiConnection() {
+    const formData = {
+        messageTitle: $('#messageTitle').val(),
+        messageContent: $('#messageContent').val(),
+        messageCategory: $('#messageCategory').val(),
+        audienceType: $('input[name="audienceType"]:checked').val(),
+        selectedUserId: $('#selectedUserId').val() || null,
+        attachmentUrl: $('#attachmentUrl').val() || null
+    };
+    
+    console.log('Testing API connection with data:', formData);
+    
+    $.ajax({
+        url: '/Admin/TestSystemMessage',
+        method: 'POST',
+        data: formData,
+        success: function(response) {
+            console.log('Test API response:', response);
+            if (response.success) {
+                showSuccess('API 測試成功！管理員ID: ' + response.data.adminId + ', 會員數: ' + response.data.memberCount + ', 訊息數: ' + response.data.messageCount);
+            } else {
+                showError('API 測試失敗：' + response.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Test API error:', { xhr, status, error });
+            showError('API 測試發生錯誤：' + error);
+        }
+    });
+}
+
+/**
  * 發送訊息
  */
 function sendMessage() {
@@ -424,12 +482,18 @@ function sendMessage() {
         attachmentUrl: $('#attachmentUrl').val() || null
     };
     
+    // 偵錯：記錄發送的資料
+    console.log('Sending form data:', formData);
+    
     $.ajax({
         url: '/Admin/SendSystemMessage',
         method: 'POST',
         data: formData,
         success: function(response) {
             hideSendingState();
+            
+            // 偵錯：記錄伺服器回應
+            console.log('Server response:', response);
             
             if (response.success) {
                 // 關閉確認 Modal
@@ -443,13 +507,31 @@ function sendMessage() {
                     window.location.href = '/Admin/admin_systemMessageList';
                 }, 2000);
             } else {
-                showError('發送失敗：' + response.message);
+                console.error('Server returned error:', response);
+                showError('發送失敗：' + response.message + (response.error ? '\n錯誤詳情：' + response.error : ''));
             }
         },
         error: function(xhr, status, error) {
             hideSendingState();
-            console.error('發送訊息錯誤：', error);
-            showError('發送訊息時發生錯誤');
+            console.error('AJAX error:', { xhr, status, error });
+            console.error('Response text:', xhr.responseText);
+            
+            let errorMessage = '發送訊息時發生錯誤';
+            if (xhr.responseText) {
+                try {
+                    const errorResponse = JSON.parse(xhr.responseText);
+                    if (errorResponse.message) {
+                        errorMessage += '：' + errorResponse.message;
+                    }
+                    if (errorResponse.error) {
+                        errorMessage += '\n詳情：' + errorResponse.error;
+                    }
+                } catch (e) {
+                    errorMessage += '：' + xhr.responseText;
+                }
+            }
+            
+            showError(errorMessage);
         }
     });
 }
@@ -654,3 +736,5 @@ window.openTemplateModal = openTemplateModal;
 window.selectTemplate = selectTemplate;
 window.showConfirmSendModal = showConfirmSendModal;
 window.sendMessage = sendMessage;
+window.testApiConnection = testApiConnection;
+window.testDatabaseWrite = testDatabaseWrite;
