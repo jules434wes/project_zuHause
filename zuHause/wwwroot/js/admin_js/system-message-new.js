@@ -407,63 +407,6 @@ function getAudienceText(audienceType) {
     }
 }
 
-/**
- * 測試資料庫寫入
- */
-function testDatabaseWrite() {
-    console.log('Testing database write...');
-    
-    $.ajax({
-        url: '/Admin/TestDatabaseWrite',
-        method: 'POST',
-        success: function(response) {
-            console.log('Database write test response:', response);
-            if (response.success) {
-                showSuccess(`資料庫寫入測試成功！\n訊息ID: ${response.data.messageId}\n寫入前: ${response.data.beforeCount}, 變更: ${response.data.changeCount}, 寫入後: ${response.data.afterCount}`);
-            } else {
-                showError('資料庫寫入測試失敗：' + response.message);
-            }
-        },
-        error: function(xhr, status, error) {
-            console.error('Database write test error:', { xhr, status, error });
-            showError('資料庫寫入測試發生錯誤：' + error);
-        }
-    });
-}
-
-/**
- * 測試 API 連接
- */
-function testApiConnection() {
-    const formData = {
-        messageTitle: $('#messageTitle').val(),
-        messageContent: $('#messageContent').val(),
-        messageCategory: $('#messageCategory').val(),
-        audienceType: $('input[name="audienceType"]:checked').val(),
-        selectedUserId: $('#selectedUserId').val() || null,
-        attachmentUrl: $('#attachmentUrl').val() || null
-    };
-    
-    console.log('Testing API connection with data:', formData);
-    
-    $.ajax({
-        url: '/Admin/TestSystemMessage',
-        method: 'POST',
-        data: formData,
-        success: function(response) {
-            console.log('Test API response:', response);
-            if (response.success) {
-                showSuccess('API 測試成功！管理員ID: ' + response.data.adminId + ', 會員數: ' + response.data.memberCount + ', 訊息數: ' + response.data.messageCount);
-            } else {
-                showError('API 測試失敗：' + response.message);
-            }
-        },
-        error: function(xhr, status, error) {
-            console.error('Test API error:', { xhr, status, error });
-            showError('API 測試發生錯誤：' + error);
-        }
-    });
-}
 
 /**
  * 發送訊息
@@ -736,5 +679,3 @@ window.openTemplateModal = openTemplateModal;
 window.selectTemplate = selectTemplate;
 window.showConfirmSendModal = showConfirmSendModal;
 window.sendMessage = sendMessage;
-window.testApiConnection = testApiConnection;
-window.testDatabaseWrite = testDatabaseWrite;
