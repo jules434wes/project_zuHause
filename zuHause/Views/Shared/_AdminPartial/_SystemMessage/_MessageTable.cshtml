@@ -32,12 +32,6 @@
                                 <td>@message.MessageID</td>
                                 <td>
                                     <div class="fw-semibold">@message.MessageTitle</div>
-                                    @if (message.HasAttachment)
-                                    {
-                                        <small class="text-muted">
-                                            <i class="bi bi-paperclip"></i> 含附件
-                                        </small>
-                                    }
                                 </td>
                                 <td>
                                     <span class="badge badge-subtle-info">@message.CategoryDisplay</span>
@@ -60,29 +54,10 @@
                                 <td>@message.AdminName</td>
                                 <td>@message.SentAt</td>
                                 <td>
-                                    <div class="dropdown">
-                                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" 
-                                                data-bs-toggle="dropdown" aria-expanded="false">
-                                            <i class="bi bi-three-dots-vertical"></i>
-                                        </button>
-                                        <ul class="dropdown-menu">
-                                            <li><h6 class="dropdown-header">檢視操作</h6></li>
-                                            <li>
-                                                <a class="dropdown-item safe-action" href="#" 
-                                                   onclick="viewMessage('@message.MessageID', '@Html.Raw(Html.Encode(message.MessageTitle))', '@Html.Raw(Html.Encode(message.MessageContent))'); return false;">
-                                                    <i class="bi bi-eye"></i> 檢視詳情
-                                                </a>
-                                            </li>
-                                            @if (message.HasAttachment)
-                                            {
-                                                <li>
-                                                    <a class="dropdown-item safe-action" href="@message.AttachmentUrl" target="_blank">
-                                                        <i class="bi bi-download"></i> 下載附件
-                                                    </a>
-                                                </li>
-                                            }
-                                        </ul>
-                                    </div>
+                                    <button class="btn btn-sm btn-outline-primary" type="button"
+                                            onclick="viewMessage('@message.MessageID', '@Html.Raw(Html.Encode(message.MessageTitle))', '@Html.Raw(Html.Encode(message.MessageContent))'); return false;">
+                                        <i class="bi bi-eye"></i> 檢視
+                                    </button>
                                 </td>
                             </tr>
                         }

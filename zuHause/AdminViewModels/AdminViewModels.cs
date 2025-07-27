@@ -869,7 +869,6 @@ namespace zuHause.AdminViewModels
                     AdminName = sm.Admin.Name,
                     SentAt = sm.SentAt.ToString("yyyy-MM-dd HH:mm:ss"),
                     CreatedAt = sm.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss"),
-                    AttachmentUrl = sm.AttachmentUrl
                 })
                 .ToList();
         }
@@ -1081,11 +1080,8 @@ namespace zuHause.AdminViewModels
         public string AdminName { get; set; } = string.Empty;
         public string SentAt { get; set; } = string.Empty;
         public string CreatedAt { get; set; } = string.Empty;
-        public string? AttachmentUrl { get; set; }
-
         // 格式化屬性
         public string ContentPreview => MessageContent.Length > 50 ? MessageContent.Substring(0, 50) + "..." : MessageContent;
-        public bool HasAttachment => !string.IsNullOrEmpty(AttachmentUrl);
     }
 
     public class SystemMessageTemplateData

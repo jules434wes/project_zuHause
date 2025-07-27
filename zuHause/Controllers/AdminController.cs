@@ -820,7 +820,6 @@ namespace zuHause.Controllers
                     CategoryCode = request.MessageCategory,
                     AudienceTypeCode = request.AudienceType,
                     ReceiverId = request.AudienceType == "INDIVIDUAL" ? receiverIds.First() : null, // 群發時為 NULL
-                    AttachmentUrl = string.IsNullOrWhiteSpace(request.AttachmentUrl) ? null : request.AttachmentUrl,
                     AdminId = currentAdminId,
                     SentAt = DateTime.Now,
                     IsActive = true,
@@ -856,9 +855,7 @@ namespace zuHause.Controllers
                 var afterCount = await _context.SystemMessages.CountAsync();
                 System.Diagnostics.Debug.WriteLine($"SystemMessages count after insert: {afterCount}");
 
-                var responseMessage = request.AudienceType == "INDIVIDUAL" 
-                    ? $"系統訊息已成功發送給 {receiverName}"
-                    : $"系統訊息已成功發送給 {receiverName}（共 {receiverIds.Count} 位用戶）";
+                var responseMessage = $"系統訊息已成功發送給 {receiverName}";
 
                 return Json(new
                 {
@@ -1609,6 +1606,5 @@ namespace zuHause.Controllers
         public string MessageCategory { get; set; } = string.Empty;
         public string AudienceType { get; set; } = string.Empty;
         public int? SelectedUserId { get; set; }
-        public string? AttachmentUrl { get; set; }
     }
 }

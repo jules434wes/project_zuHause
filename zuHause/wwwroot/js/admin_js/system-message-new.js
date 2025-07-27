@@ -421,8 +421,7 @@ function sendMessage() {
         messageContent: $('#messageContent').val(),
         messageCategory: $('#messageCategory').val(),
         audienceType: $('input[name="audienceType"]:checked').val(),
-        selectedUserId: $('#selectedUserId').val() || null,
-        attachmentUrl: $('#attachmentUrl').val() || null
+        selectedUserId: $('#selectedUserId').val() || null
     };
     
     // 偵錯：記錄發送的資料
@@ -542,12 +541,6 @@ function validateForm() {
         }
     }
     
-    // 檢查附件URL格式
-    const attachmentUrl = $('#attachmentUrl').val().trim();
-    if (attachmentUrl && !isValidUrl(attachmentUrl)) {
-        errors.push('附件URL格式不正確');
-        isValid = false;
-    }
     
     // 顯示錯誤訊息
     if (!isValid) {
@@ -585,16 +578,6 @@ function initializeFormValidation() {
         }
     });
     
-    // 驗證附件URL
-    $('#attachmentUrl').on('blur', function() {
-        const url = $(this).val().trim();
-        
-        if (url && !isValidUrl(url)) {
-            $(this).addClass('is-invalid');
-        } else {
-            $(this).removeClass('is-invalid');
-        }
-    });
 }
 
 /**
