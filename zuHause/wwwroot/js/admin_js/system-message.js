@@ -40,6 +40,14 @@ function bindEventListeners() {
     
     // 進階搜尋切換
     $('#advancedSearchBtn').on('click', toggleAdvancedSearch);
+    
+    // 檢視訊息按鈕 (使用事件委派)
+    $(document).on('click', '.view-message-btn', function() {
+        const messageId = $(this).data('message-id');
+        const title = $(this).data('message-title');
+        const content = $(this).data('message-content');
+        viewMessage(messageId, title, content);
+    });
 }
 
 /**
@@ -362,52 +370,27 @@ function handleReset() {
  * 檢視訊息詳情
  */
 function viewMessage(messageId, title, content) {
-    // 建立檢視Modal（如果不存在）
-    let $modal = $('#viewMessageModal');
-    if ($modal.length === 0) {
-        $modal = createViewMessageModal();
-        $('body').append($modal);
+    // 獲取現有的Modal
+    const modalElement = document.getElementById('viewMessageModal');
+    if (!modalElement) {
+        console.error('viewMessageModal not found');
+        return;
     }
     
     // 設定Modal內容
-    $modal.find('.modal-title').text(`訊息詳情 - ID: ${messageId}`);
-    $modal.find('#messageModalTitle').text(title);
-    $modal.find('#messageModalContent').text(content);
+    const modalTitle = modalElement.querySelector('.modal-title');
+    const titleElement = modalElement.querySelector('#messageModalTitle');
+    const contentElement = modalElement.querySelector('#messageModalContent');
     
-    // 顯示Modal
-    $modal.modal('show');
+    if (modalTitle) modalTitle.textContent = `訊息詳情 - ID: ${messageId}`;
+    if (titleElement) titleElement.textContent = title;
+    if (contentElement) contentElement.textContent = content;
+    
+    // 使用 Bootstrap 5 Modal API
+    const modal = new bootstrap.Modal(modalElement);
+    modal.show();
 }
 
-/**
- * 建立檢視訊息Modal
- */
-function createViewMessageModal() {
-    return $(`
-        <div class="modal fade" id="viewMessageModal" tabindex="-1" aria-labelledby="viewMessageModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="viewMessageModalLabel">訊息詳情</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">訊息標題</label>
-                            <div id="messageModalTitle" class="p-2 bg-light rounded"></div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">訊息內容</label>
-                            <div id="messageModalContent" class="p-3 bg-light rounded" style="white-space: pre-wrap; min-height: 150px;"></div>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">關閉</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `);
-}
 
 /**
  * 工具函數 - 顯示成功訊息
