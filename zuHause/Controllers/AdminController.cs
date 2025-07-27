@@ -627,7 +627,7 @@ namespace zuHause.Controllers
         [RequireAdminPermission(AdminPermissions.SystemMessageList)]
         public IActionResult admin_systemMessageList()
         {
-            var viewModel = new AdminSystemMessageListViewModel();
+            var viewModel = new AdminSystemMessageListViewModel(_context);
             return View(viewModel);
         }
 
@@ -640,6 +640,269 @@ namespace zuHause.Controllers
         {
             var viewModel = new AdminSystemMessageNewViewModel(_context);
             return View(viewModel);
+        }
+
+        /// <summary>
+        /// 取得系統訊息模板 API
+        /// 需要 system_message_new 權限才能存取
+        /// </summary>
+        [HttpGet]
+        [RequireAdminPermission(AdminPermissions.SystemMessageNew)]
+        public async Task<IActionResult> GetSystemMessageTemplates()
+        {
+            try
+            {
+                var templates = await _context.AdminMessageTemplates
+                    .Where(t => t.CategoryCode == "SYSTEM_MESSAGE" && t.IsActive)
+                    .OrderBy(t => t.Title)
+                    .Select(t => new
+                    {
+                        TemplateID = t.TemplateId,
+                        Title = t.Title,
+                        TemplateContent = t.TemplateContent,
+                        ContentPreview = t.TemplateContent.Length > 50 
+                            ? t.TemplateContent.Substring(0, 50) + "..." 
+                            : t.TemplateContent,
+                        CreatedAt = t.CreatedAt.ToString("yyyy-MM-dd")
+                    })
+                    .ToListAsync();
+
+                return Json(new
+                {
+                    success = true,
+                    data = templates
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new
+                {
+                    success = false,
+                    message = "載入系統訊息模板時發生錯誤",
+                    error = ex.Message
+                });
+            }
+        }
+
+        /// <summary>
+        /// 發送系統訊息 API
+        /// 需要 system_message_new 權限才能存取
+        /// </summary>
+        [HttpPost]
+        [RequireAdminPermission(AdminPermissions.SystemMessageNew)]
+        public async Task<IActionResult> SendSystemMessage([FromForm] SendSystemMessageRequest request)
+        {
+            try
+            {
+                // 取得當前管理員ID
+                var currentAdminId = int.Parse(GetCurrentAdminId() ?? "0");
+                if (currentAdminId == 0)
+                {
+                    return Json(new { success = false, message = "未取得有效的管理員身分" });
+                }
+
+                // 根據發送對象類型決定接收者
+                List<int> receiverIds = new List<int>();
+                string receiverName = "";
+
+                switch (request.AudienceType)
+                {
+                    case "ALL_MEMBERS":
+                        receiverIds = await _context.Members
+                            .Where(m => m.IsActive && !m.IsLandlord)
+                            .Select(m => m.MemberId)
+                            .ToListAsync();
+                        receiverName = "全體會員";
+                        break;
+                        
+                    case "ALL_LANDLORDS":
+                        receiverIds = await _context.Members
+                            .Where(m => m.IsActive && m.IsLandlord)
+                            .Select(m => m.MemberId)
+                            .ToListAsync();
+                        receiverName = "全體房東";
+                        break;
+                        
+                    case "INDIVIDUAL":
+                        if (request.SelectedUserId.HasValue)
+                        {
+                            var selectedMember = await _context.Members
+                                .FirstOrDefaultAsync(m => m.MemberId == request.SelectedUserId.Value);
+                            if (selectedMember != null)
+                            {
+                                receiverIds.Add(selectedMember.MemberId);
+                                receiverName = selectedMember.MemberName;
+                            }
+                            else
+                            {
+                                return Json(new { success = false, message = "找不到指定的用戶" });
+                            }
+                        }
+                        else
+                        {
+                            return Json(new { success = false, message = "未選擇個別用戶" });
+                        }
+                        break;
+                        
+                    default:
+                        return Json(new { success = false, message = "無效的發送對象類型" });
+                }
+
+                if (!receiverIds.Any())
+                {
+                    return Json(new { success = false, message = "未找到符合條件的接收者" });
+                }
+
+                // 建立系統訊息記錄
+                var systemMessages = new List<SystemMessage>();
+                
+                if (request.AudienceType == "INDIVIDUAL")
+                {
+                    // 個別用戶：建立一筆記錄
+                    var systemMessage = new SystemMessage
+                    {
+                        Title = request.MessageTitle,
+                        MessageContent = request.MessageContent,
+                        CategoryCode = request.MessageCategory,
+                        AudienceTypeCode = request.AudienceType,
+                        ReceiverId = receiverIds.First(),
+                        AttachmentUrl = string.IsNullOrWhiteSpace(request.AttachmentUrl) ? null : request.AttachmentUrl,
+                        AdminId = currentAdminId,
+                        SentAt = DateTime.Now,
+                        CreatedAt = DateTime.Now,
+                        UpdatedAt = DateTime.Now
+                    };
+                    systemMessages.Add(systemMessage);
+                }
+                else
+                {
+                    // 群發：每個接收者建立一筆記錄
+                    foreach (var receiverId in receiverIds)
+                    {
+                        var systemMessage = new SystemMessage
+                        {
+                            Title = request.MessageTitle,
+                            MessageContent = request.MessageContent,
+                            CategoryCode = request.MessageCategory,
+                            AudienceTypeCode = request.AudienceType,
+                            ReceiverId = receiverId,
+                            AttachmentUrl = string.IsNullOrWhiteSpace(request.AttachmentUrl) ? null : request.AttachmentUrl,
+                            AdminId = currentAdminId,
+                            SentAt = DateTime.Now,
+                            CreatedAt = DateTime.Now,
+                            UpdatedAt = DateTime.Now
+                        };
+                        systemMessages.Add(systemMessage);
+                    }
+                }
+
+                // 批次新增到資料庫
+                _context.SystemMessages.AddRange(systemMessages);
+                await _context.SaveChangesAsync();
+
+                var responseMessage = request.AudienceType == "INDIVIDUAL" 
+                    ? $"系統訊息已成功發送給 {receiverName}"
+                    : $"系統訊息已成功發送給 {receiverName}（共 {receiverIds.Count} 位用戶）";
+
+                return Json(new
+                {
+                    success = true,
+                    message = responseMessage,
+                    data = new
+                    {
+                        MessageCount = systemMessages.Count,
+                        ReceiverCount = receiverIds.Count,
+                        AudienceType = request.AudienceType,
+                        ReceiverName = receiverName
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new
+                {
+                    success = false,
+                    message = "發送系統訊息時發生錯誤",
+                    error = ex.Message
+                });
+            }
+        }
+
+        /// <summary>
+        /// 用戶搜尋 API (供個別用戶選擇器使用)
+        /// 需要 system_message_new 權限才能存取
+        /// </summary>
+        [HttpPost]
+        [RequireAdminPermission(AdminPermissions.SystemMessageNew)]
+        public async Task<IActionResult> SearchMembersForMessage([FromForm] string keyword, [FromForm] string searchField)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(keyword))
+                {
+                    return Json(new { success = true, data = new List<object>() });
+                }
+
+                var query = _context.Members.Where(m => m.IsActive).AsQueryable();
+
+                switch (searchField?.ToLower())
+                {
+                    case "membername":
+                        query = query.Where(m => m.MemberName.Contains(keyword));
+                        break;
+                    case "memberid":
+                        if (int.TryParse(keyword, out int memberId))
+                        {
+                            query = query.Where(m => m.MemberId == memberId);
+                        }
+                        else
+                        {
+                            return Json(new { success = true, data = new List<object>() });
+                        }
+                        break;
+                    case "email":
+                        query = query.Where(m => m.Email.Contains(keyword));
+                        break;
+                    case "nationalno":
+                        query = query.Where(m => m.NationalIdNo != null && m.NationalIdNo.Contains(keyword));
+                        break;
+                    default:
+                        // 全欄位搜尋
+                        query = query.Where(m => 
+                            m.MemberName.Contains(keyword) ||
+                            m.Email.Contains(keyword) ||
+                            (m.NationalIdNo != null && m.NationalIdNo.Contains(keyword)));
+                        break;
+                }
+
+                var members = await query
+                    .Take(10) // 限制回傳數量
+                    .Select(m => new
+                    {
+                        MemberId = m.MemberId,
+                        MemberName = m.MemberName,
+                        Email = m.Email,
+                        PhoneNumber = m.PhoneNumber,
+                        IsLandlord = m.IsLandlord,
+                        AccountType = m.IsLandlord ? "房東" : "租客"
+                    })
+                    .ToListAsync();
+
+                return Json(new
+                {
+                    success = true,
+                    data = members
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new
+                {
+                    success = false,
+                    message = "搜尋用戶時發生錯誤",
+                    error = ex.Message
+                });
+            }
         }
 
         /// <summary>
@@ -1272,5 +1535,18 @@ namespace zuHause.Controllers
                 _ => "未知狀態"
             };
         }
+    }
+
+    /// <summary>
+    /// 發送系統訊息請求模型
+    /// </summary>
+    public class SendSystemMessageRequest
+    {
+        public string MessageTitle { get; set; } = string.Empty;
+        public string MessageContent { get; set; } = string.Empty;
+        public string MessageCategory { get; set; } = string.Empty;
+        public string AudienceType { get; set; } = string.Empty;
+        public int? SelectedUserId { get; set; }
+        public string? AttachmentUrl { get; set; }
     }
 }

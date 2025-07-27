@@ -1,301 +1,656 @@
-// 新增系統訊息頁面 JavaScript
-// 全域變數
-let selectedUser = null;
-let availableUsers = [];
+/**
+ * 系統訊息新增頁面 JavaScript
+ * 支援模板插入、用戶搜尋、表單驗證和訊息發送功能
+ */
 
 // 頁面載入後初始化
-document.addEventListener('DOMContentLoaded', function() {
-    // 嘗試從 ViewData 獲取使用者資料
-    try {
-        if (typeof window.availableUsersData !== 'undefined') {
-            availableUsers = window.availableUsersData;
-        }
-    } catch (e) {
-        console.warn('無法載入使用者資料');
-        availableUsers = [];
-    }
-    
-    initializeAudienceSelector();
-    initializeUserSearch();
-    initializeConfirmCheckbox();
-    initializeTemplateModal();
+$(document).ready(function() {
+    initializeSystemMessageNew();
 });
 
-// 發送對象選擇器邏輯
-function initializeAudienceSelector() {
-    const audienceRadios = document.querySelectorAll('input[name="audienceType"]');
-    const individualUserSelector = document.getElementById('individualUserSelector');
-    const userSearchInput = document.getElementById('userSearch');
+/**
+ * 初始化系統訊息新增頁面
+ */
+function initializeSystemMessageNew() {
+    // 初始化事件監聽器
+    bindEventListeners();
+    
+    // 初始化字數統計
+    updateCharacterCount();
+    
+    // 初始化表單驗證
+    initializeFormValidation();
+    
+    // 設定初始狀態
+    toggleUserSelector();
+}
 
-    audienceRadios.forEach(radio => {
-        radio.addEventListener('change', function() {
-            if (this.value === 'individual') {
-                individualUserSelector.style.display = 'block';
-                userSearchInput.required = true;
-            } else {
-                individualUserSelector.style.display = 'none';
-                userSearchInput.required = false;
-                userSearchInput.value = '';
-                selectedUser = null;
-                hideUserSearchResults();
-            }
-        });
+/**
+ * 綁定事件監聽器
+ */
+function bindEventListeners() {
+    // 發送對象切換
+    $('input[name="audienceType"]').on('change', toggleUserSelector);
+    
+    // 內容字數統計
+    $('#messageContent').on('input', updateCharacterCount);
+    
+    // 用戶搜尋
+    $('#userSearch').on('input', debounce(handleUserSearch, 300));
+    
+    // 確認發送複選框
+    $('#confirmCheckbox').on('change', function() {
+        $('#finalSendBtn').prop('disabled', !$(this).is(':checked'));
+    });
+    
+    // 模板搜尋
+    $('#templateSearch').on('input', debounce(handleTemplateSearch, 200));
+    
+    // 點擊外部關閉搜尋結果
+    $(document).on('click', function(e) {
+        if (!$(e.target).closest('#userSearch, #userSearchResults, #userSearchField').length) {
+            hideUserSearchResults();
+        }
     });
 }
 
-// 用戶搜尋功能
-function initializeUserSearch() {
-    const userSearchInput = document.getElementById('userSearch');
-    const userSearchField = document.getElementById('userSearchField');
-    const userSearchResults = document.getElementById('userSearchResults');
+/**
+ * 切換用戶選擇器顯示/隱藏
+ */
+function toggleUserSelector() {
+    const isIndividual = $('#audienceIndividual').is(':checked');
+    const userSelector = $('#individualUserSelector');
+    
+    if (isIndividual) {
+        userSelector.show();
+        $('#userSearch').prop('required', true);
+    } else {
+        userSelector.hide();
+        $('#userSearch').prop('required', false);
+        clearUserSelection();
+    }
+}
 
-    if (!userSearchInput || !userSearchField || !userSearchResults) {
+/**
+ * 清除用戶選擇
+ */
+function clearUserSelection() {
+    $('#userSearch').val('');
+    $('#selectedUserId').val('');
+    $('#userSearchResults').removeClass('show').empty();
+}
+
+/**
+ * 更新字數統計
+ */
+function updateCharacterCount() {
+    const content = $('#messageContent').val();
+    const count = content.length;
+    const maxLength = 2000;
+    
+    $('#contentCharCount').text(`${count}/${maxLength}`);
+    
+    // 字數接近上限時改變顏色
+    if (count > maxLength * 0.9) {
+        $('#contentCharCount').addClass('text-warning');
+    } else if (count >= maxLength) {
+        $('#contentCharCount').addClass('text-danger');
+    } else {
+        $('#contentCharCount').removeClass('text-warning text-danger');
+    }
+}
+
+/**
+ * 處理用戶搜尋
+ */
+function handleUserSearch() {
+    const keyword = $('#userSearch').val().trim();
+    const searchField = $('#userSearchField').val();
+    
+    if (keyword.length < 2) {
+        hideUserSearchResults();
         return;
     }
-
-    userSearchInput.addEventListener('input', function() {
-        const query = this.value.toLowerCase().trim();
-        const searchField = userSearchField.value;
-        
-        if (query.length < 2) {
-            hideUserSearchResults();
-            return;
-        }
-
-        const filteredUsers = availableUsers.filter(user => {
-            switch(searchField) {
-                case 'memberName':
-                    return user.memberName && user.memberName.toLowerCase().includes(query);
-                case 'memberID':
-                    return user.memberId && user.memberId.toLowerCase().includes(query);
-                case 'email':
-                    return user.email && user.email.toLowerCase().includes(query);
-                case 'nationalNo':
-                    return user.nationalNo && user.nationalNo.toLowerCase().includes(query);
-                default:
-                    return false;
+    
+    // 顯示載入狀態
+    showUserSearchLoading();
+    
+    $.ajax({
+        url: '/Admin/SearchMembersForMessage',
+        method: 'POST',
+        data: {
+            keyword: keyword,
+            searchField: searchField
+        },
+        success: function(response) {
+            if (response.success) {
+                displayUserSearchResults(response.data);
+            } else {
+                showError('搜尋用戶失敗：' + response.message);
+                hideUserSearchResults();
             }
-        });
-
-        showUserSearchResults(filteredUsers);
-    });
-
-    // 搜尋欄位變更時重新搜尋
-    userSearchField.addEventListener('change', function() {
-        const query = userSearchInput.value.toLowerCase().trim();
-        if (query.length >= 2) {
-            userSearchInput.dispatchEvent(new Event('input'));
-        }
-    });
-
-    // 點擊外部關閉搜尋結果
-    document.addEventListener('click', function(e) {
-        if (!userSearchInput.contains(e.target) && !userSearchResults.contains(e.target) && !userSearchField.contains(e.target)) {
+        },
+        error: function(xhr, status, error) {
+            console.error('用戶搜尋錯誤：', error);
+            showError('搜尋用戶時發生錯誤');
             hideUserSearchResults();
         }
     });
 }
 
-// 顯示用戶搜尋結果
-function showUserSearchResults(users) {
-    const userSearchResults = document.getElementById('userSearchResults');
+/**
+ * 顯示用戶搜尋載入狀態
+ */
+function showUserSearchLoading() {
+    const resultsDiv = $('#userSearchResults');
+    resultsDiv.html(`
+        <div class="dropdown-item text-center">
+            <i class="bi bi-hourglass-split me-2"></i>搜尋中...
+        </div>
+    `).addClass('show');
+}
+
+/**
+ * 顯示用戶搜尋結果
+ */
+function displayUserSearchResults(users) {
+    const resultsDiv = $('#userSearchResults');
     
-    if (!userSearchResults) return;
-    
-    if (users.length === 0) {
-        userSearchResults.innerHTML = '<div class="dropdown-item text-muted">找不到符合條件的用戶</div>';
-    } else {
-        userSearchResults.innerHTML = users.map(user => `
-            <div class="dropdown-item user-result-item" onclick="selectUser('${user.memberId || ''}', '${user.memberName || ''}', '${user.email || ''}', '${user.nationalNo || ''}')">
-                <div><strong>${user.memberName || ''}</strong> (${user.memberId || ''})</div>
-                <div class="small text-muted">${user.email || ''}</div>
-                ${user.nationalNo ? `<div class="small text-muted">身分證：${user.nationalNo}</div>` : ''}
+    if (!users || users.length === 0) {
+        resultsDiv.html(`
+            <div class="dropdown-item text-muted text-center">
+                <i class="bi bi-search me-2"></i>找不到符合條件的用戶
             </div>
-        `).join('');
+        `).addClass('show');
+        return;
     }
     
-    userSearchResults.style.display = 'block';
+    let html = '';
+    users.forEach(user => {
+        html += `
+            <a href="#" class="dropdown-item user-search-item" 
+               data-user-id="${user.memberId}" 
+               data-user-name="${escapeHtml(user.memberName)}"
+               data-user-email="${escapeHtml(user.email)}">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="fw-semibold">${escapeHtml(user.memberName)}</div>
+                        <small class="text-muted">${escapeHtml(user.email)}</small>
+                    </div>
+                    <div class="text-end">
+                        <small class="badge ${user.isLandlord ? 'bg-info' : 'bg-primary'}">${user.accountType}</small>
+                        <br><small class="text-muted">ID: ${user.memberId}</small>
+                    </div>
+                </div>
+            </a>
+        `;
+    });
+    
+    resultsDiv.html(html).addClass('show');
+    
+    // 綁定點擊事件
+    $('.user-search-item').on('click', function(e) {
+        e.preventDefault();
+        selectUser($(this));
+    });
 }
 
-// 隱藏用戶搜尋結果
+/**
+ * 隱藏用戶搜尋結果
+ */
 function hideUserSearchResults() {
-    const userSearchResults = document.getElementById('userSearchResults');
-    if (userSearchResults) {
-        userSearchResults.style.display = 'none';
-    }
+    $('#userSearchResults').removeClass('show').empty();
 }
 
-// 選擇用戶
-function selectUser(memberId, memberName, email, nationalNo = '') {
-    selectedUser = { memberId, memberName, email, nationalNo };
-    const userSearchInput = document.getElementById('userSearch');
-    const selectedUserIdInput = document.getElementById('selectedUserId');
+/**
+ * 選擇用戶
+ */
+function selectUser($item) {
+    const userId = $item.data('user-id');
+    const userName = $item.data('user-name');
+    const userEmail = $item.data('user-email');
     
-    if (userSearchInput) {
-        userSearchInput.value = `${memberName} (${memberId})`;
-    }
-    if (selectedUserIdInput) {
-        selectedUserIdInput.value = memberId;
-    }
+    $('#userSearch').val(`${userName} (${userEmail})`);
+    $('#selectedUserId').val(userId);
     hideUserSearchResults();
 }
 
-// 確認checkbox邏輯
-function initializeConfirmCheckbox() {
-    const confirmCheckbox = document.getElementById('confirmCheckbox');
-    const finalSendBtn = document.getElementById('finalSendBtn');
-
-    if (confirmCheckbox && finalSendBtn) {
-        confirmCheckbox.addEventListener('change', function() {
-            finalSendBtn.disabled = !this.checked;
-        });
-    }
-}
-
-// 顯示確認發送Modal
-function showConfirmSendModal() {
-    // 表單驗證
-    if (!validateForm()) {
-        return;
-    }
-
-    const selectedAudienceRadio = document.querySelector('input[name="audienceType"]:checked');
-    const audienceLabel = document.querySelector(`label[for="${selectedAudienceRadio.id}"]`);
-    const confirmAudienceText = document.getElementById('confirmAudienceText');
-    const confirmUserDetails = document.getElementById('confirmUserDetails');
-    
-    if (confirmAudienceText && audienceLabel) {
-        confirmAudienceText.textContent = audienceLabel.textContent;
-    }
-
-    // 如果是個別用戶，顯示用戶詳細資訊
-    if (selectedAudienceRadio && selectedAudienceRadio.value === 'individual' && selectedUser) {
-        const confirmUserName = document.getElementById('confirmUserName');
-        const confirmUserId = document.getElementById('confirmUserId');
-        
-        if (confirmUserName) confirmUserName.textContent = selectedUser.memberName;
-        if (confirmUserId) confirmUserId.textContent = selectedUser.memberId;
-        if (confirmUserDetails) confirmUserDetails.style.display = 'block';
-    } else {
-        if (confirmUserDetails) confirmUserDetails.style.display = 'none';
-    }
-
-    // 重置確認checkbox
-    const confirmCheckbox = document.getElementById('confirmCheckbox');
-    const finalSendBtn = document.getElementById('finalSendBtn');
-    
-    if (confirmCheckbox) confirmCheckbox.checked = false;
-    if (finalSendBtn) finalSendBtn.disabled = true;
-
-    const modal = new bootstrap.Modal(document.getElementById('confirmSendModal'));
-    modal.show();
-}
-
-// 表單驗證
-function validateForm() {
-    const messageTitle = document.getElementById('messageTitle');
-    const messageContent = document.getElementById('messageContent');
-    const messageCategory = document.getElementById('messageCategory');
-    const selectedAudience = document.querySelector('input[name="audienceType"]:checked');
-
-    if (!messageTitle || !messageTitle.value.trim()) {
-        alert('請輸入訊息標題');
-        return false;
-    }
-
-    if (!messageContent || !messageContent.value.trim()) {
-        alert('請輸入訊息內容');
-        return false;
-    }
-
-    if (!messageCategory || !messageCategory.value) {
-        alert('請選擇訊息分類');
-        return false;
-    }
-
-    if (selectedAudience && selectedAudience.value === 'individual' && !selectedUser) {
-        alert('請選擇個別用戶');
-        return false;
-    }
-
-    return true;
-}
-
-// 發送訊息
-function sendMessage() {
-    // 收集表單資料
-    const selectedAudience = document.querySelector('input[name="audienceType"]:checked');
-    const messageCategory = document.getElementById('messageCategory');
-    const messageTitle = document.getElementById('messageTitle');
-    const messageContent = document.getElementById('messageContent');
-    
-    const formData = {
-        audienceType: selectedAudience ? selectedAudience.value : '',
-        receiverId: selectedUser ? selectedUser.memberId : null,
-        messageCategory: messageCategory ? messageCategory.value : '',
-        messageTitle: messageTitle ? messageTitle.value : '',
-        messageContent: messageContent ? messageContent.value : ''
-    };
-
-    // 這裡將來會調用後端API
-    console.log('發送訊息資料:', formData);
-    
-    // 模擬發送成功
-    alert('訊息發送成功！');
-    
-    // 關閉Modal並導向列表頁
-    const modal = bootstrap.Modal.getInstance(document.getElementById('confirmSendModal'));
-    if (modal) modal.hide();
-    window.location.href = '/Admin/admin_systemMessageList';
-}
-
-// 模板Modal相關功能
-function initializeTemplateModal() {
-    const templateCategoryFilter = document.getElementById('templateCategoryFilter');
-    
-    if (templateCategoryFilter) {
-        templateCategoryFilter.addEventListener('change', function() {
-            filterTemplates(this.value);
-        });
-    }
-}
-
-// 開啟模板Modal
+/**
+ * 開啟模板選擇 Modal
+ */
 function openTemplateModal() {
-    const modal = new bootstrap.Modal(document.getElementById('templateModal'));
-    modal.show();
+    loadSystemMessageTemplates();
+    $('#templateModal').modal('show');
 }
 
-// 篩選模板
-function filterTemplates(category) {
-    const templateItems = document.querySelectorAll('.template-item');
+/**
+ * 載入系統訊息模板
+ */
+function loadSystemMessageTemplates() {
+    const templateList = $('#templateList');
     
-    templateItems.forEach(item => {
-        const itemCategory = item.getAttribute('data-template-category');
-        
-        if (category === 'all' || itemCategory === category) {
-            item.style.display = 'block';
-        } else {
-            item.style.display = 'none';
+    // 顯示載入狀態
+    templateList.html(`
+        <div class="text-center text-muted py-4">
+            <i class="bi bi-hourglass-split fs-1 mb-2 d-block"></i>
+            <div class="fw-semibold">載入模板中...</div>
+        </div>
+    `);
+    
+    $.ajax({
+        url: '/Admin/GetSystemMessageTemplates',
+        method: 'GET',
+        success: function(response) {
+            if (response.success) {
+                displayTemplates(response.data);
+            } else {
+                showTemplateError('載入模板失敗：' + response.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('載入模板錯誤：', error);
+            showTemplateError('載入模板時發生錯誤');
         }
     });
 }
 
-// 選擇模板
-function selectTemplate(templateElement) {
-    const content = templateElement.getAttribute('data-template-content');
-    const messageContent = document.getElementById('messageContent');
+/**
+ * 顯示模板列表
+ */
+function displayTemplates(templates) {
+    const templateList = $('#templateList');
     
-    if (messageContent) {
-        messageContent.value = content;
+    if (!templates || templates.length === 0) {
+        templateList.html(`
+            <div class="text-center text-muted py-4">
+                <i class="bi bi-inbox fs-1 mb-2 d-block"></i>
+                <div class="fw-semibold">尚無可用模板</div>
+                <div class="small">目前沒有系統訊息模板</div>
+            </div>
+        `);
+        return;
     }
     
-    // 關閉Modal
-    const modal = bootstrap.Modal.getInstance(document.getElementById('templateModal'));
-    if (modal) modal.hide();
+    let html = '';
+    templates.forEach(template => {
+        html += `
+            <a href="#" class="list-group-item list-group-item-action template-item" 
+               data-template-id="${template.templateID}"
+               data-template-title="${escapeHtml(template.title)}" 
+               data-template-content="${escapeHtml(template.templateContent)}"
+               onclick="selectTemplate(this); return false;">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                        <h6 class="mb-1">
+                            <i class="bi bi-file-text text-primary me-1"></i>
+                            ${escapeHtml(template.title)}
+                        </h6>
+                        <p class="mb-1 small text-muted">${escapeHtml(template.contentPreview)}</p>
+                        <small class="text-info">建立日期：${template.createdAt}</small>
+                    </div>
+                    <i class="bi bi-chevron-right text-muted"></i>
+                </div>
+            </a>
+        `;
+    });
+    
+    templateList.html(html);
 }
 
-// 設定可用使用者資料的函數（供從外部呼叫）
-function setAvailableUsers(users) {
-    availableUsers = users;
+/**
+ * 顯示模板載入錯誤
+ */
+function showTemplateError(message) {
+    $('#templateList').html(`
+        <div class="text-center text-danger py-4">
+            <i class="bi bi-exclamation-triangle fs-1 mb-2 d-block"></i>
+            <div class="fw-semibold">載入失敗</div>
+            <div class="small">${escapeHtml(message)}</div>
+        </div>
+    `);
 }
+
+/**
+ * 選擇模板
+ */
+function selectTemplate(element) {
+    const $element = $(element);
+    const templateTitle = $element.data('template-title');
+    const templateContent = $element.data('template-content');
+    
+    // 插入模板內容到表單
+    $('#messageTitle').val(templateTitle);
+    $('#messageContent').val(templateContent);
+    
+    // 更新字數統計
+    updateCharacterCount();
+    
+    // 關閉 Modal
+    $('#templateModal').modal('hide');
+    
+    // 顯示成功提示
+    showSuccess(`已插入模板：${templateTitle}`);
+}
+
+/**
+ * 處理模板搜尋
+ */
+function handleTemplateSearch() {
+    const keyword = $('#templateSearch').val().toLowerCase().trim();
+    const templateItems = $('.template-item');
+    
+    if (!keyword) {
+        templateItems.show();
+        return;
+    }
+    
+    templateItems.each(function() {
+        const $item = $(this);
+        const title = $item.data('template-title').toLowerCase();
+        const content = $item.data('template-content').toLowerCase();
+        
+        if (title.includes(keyword) || content.includes(keyword)) {
+            $item.show();
+        } else {
+            $item.hide();
+        }
+    });
+}
+
+/**
+ * 顯示確認發送 Modal
+ */
+function showConfirmSendModal() {
+    // 驗證表單
+    if (!validateForm()) {
+        return;
+    }
+    
+    // 設定確認訊息
+    const audienceType = $('input[name="audienceType"]:checked').val();
+    const audienceText = getAudienceText(audienceType);
+    
+    $('#confirmAudienceText').text(audienceText);
+    
+    // 如果是個別用戶，顯示用戶詳細資訊
+    if (audienceType === 'INDIVIDUAL') {
+        const userName = $('#userSearch').val();
+        const userId = $('#selectedUserId').val();
+        $('#confirmUserName').text(userName);
+        $('#confirmUserId').text(`ID: ${userId}`);
+        $('#confirmUserDetails').show();
+    } else {
+        $('#confirmUserDetails').hide();
+    }
+    
+    // 重置確認複選框
+    $('#confirmCheckbox').prop('checked', false);
+    $('#finalSendBtn').prop('disabled', true);
+    
+    // 顯示 Modal
+    $('#confirmSendModal').modal('show');
+}
+
+/**
+ * 取得發送對象文字
+ */
+function getAudienceText(audienceType) {
+    switch (audienceType) {
+        case 'ALL_MEMBERS':
+            return '全體會員';
+        case 'ALL_LANDLORDS':
+            return '全體房東';
+        case 'INDIVIDUAL':
+            return '指定用戶';
+        default:
+            return '未知對象';
+    }
+}
+
+/**
+ * 發送訊息
+ */
+function sendMessage() {
+    // 顯示載入狀態
+    showSendingState();
+    
+    // 準備表單資料
+    const formData = {
+        messageTitle: $('#messageTitle').val(),
+        messageContent: $('#messageContent').val(),
+        messageCategory: $('#messageCategory').val(),
+        audienceType: $('input[name="audienceType"]:checked').val(),
+        selectedUserId: $('#selectedUserId').val() || null,
+        attachmentUrl: $('#attachmentUrl').val() || null
+    };
+    
+    $.ajax({
+        url: '/Admin/SendSystemMessage',
+        method: 'POST',
+        data: formData,
+        success: function(response) {
+            hideSendingState();
+            
+            if (response.success) {
+                // 關閉確認 Modal
+                $('#confirmSendModal').modal('hide');
+                
+                // 顯示成功訊息
+                showSuccess(response.message);
+                
+                // 延遲後跳轉到列表頁面
+                setTimeout(function() {
+                    window.location.href = '/Admin/admin_systemMessageList';
+                }, 2000);
+            } else {
+                showError('發送失敗：' + response.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            hideSendingState();
+            console.error('發送訊息錯誤：', error);
+            showError('發送訊息時發生錯誤');
+        }
+    });
+}
+
+/**
+ * 顯示發送中狀態
+ */
+function showSendingState() {
+    $('#finalSendBtn').prop('disabled', true).html(`
+        <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+        發送中...
+    `);
+}
+
+/**
+ * 隱藏發送中狀態
+ */
+function hideSendingState() {
+    $('#finalSendBtn').prop('disabled', false).html(`
+        <i class="bi bi-send-fill"></i> 確認發送
+    `);
+}
+
+/**
+ * 表單驗證
+ */
+function validateForm() {
+    let isValid = true;
+    const errors = [];
+    
+    // 檢查標題
+    const title = $('#messageTitle').val().trim();
+    if (!title) {
+        errors.push('請輸入訊息標題');
+        isValid = false;
+    } else if (title.length > 100) {
+        errors.push('標題長度不能超過100個字元');
+        isValid = false;
+    }
+    
+    // 檢查內容
+    const content = $('#messageContent').val().trim();
+    if (!content) {
+        errors.push('請輸入訊息內容');
+        isValid = false;
+    } else if (content.length > 2000) {
+        errors.push('內容長度不能超過2000個字元');
+        isValid = false;
+    }
+    
+    // 檢查分類
+    const category = $('#messageCategory').val();
+    if (!category) {
+        errors.push('請選擇訊息分類');
+        isValid = false;
+    }
+    
+    // 檢查個別用戶選擇
+    const audienceType = $('input[name="audienceType"]:checked').val();
+    if (audienceType === 'INDIVIDUAL') {
+        const selectedUserId = $('#selectedUserId').val();
+        if (!selectedUserId) {
+            errors.push('請選擇個別用戶');
+            isValid = false;
+        }
+    }
+    
+    // 檢查附件URL格式
+    const attachmentUrl = $('#attachmentUrl').val().trim();
+    if (attachmentUrl && !isValidUrl(attachmentUrl)) {
+        errors.push('附件URL格式不正確');
+        isValid = false;
+    }
+    
+    // 顯示錯誤訊息
+    if (!isValid) {
+        showError('表單驗證失敗：\n' + errors.join('\n'));
+    }
+    
+    return isValid;
+}
+
+/**
+ * 初始化表單驗證
+ */
+function initializeFormValidation() {
+    // 即時驗證標題長度
+    $('#messageTitle').on('input', function() {
+        const length = $(this).val().length;
+        const maxLength = 100;
+        
+        if (length > maxLength) {
+            $(this).addClass('is-invalid');
+        } else {
+            $(this).removeClass('is-invalid');
+        }
+    });
+    
+    // 即時驗證內容長度
+    $('#messageContent').on('input', function() {
+        const length = $(this).val().length;
+        const maxLength = 2000;
+        
+        if (length > maxLength) {
+            $(this).addClass('is-invalid');
+        } else {
+            $(this).removeClass('is-invalid');
+        }
+    });
+    
+    // 驗證附件URL
+    $('#attachmentUrl').on('blur', function() {
+        const url = $(this).val().trim();
+        
+        if (url && !isValidUrl(url)) {
+            $(this).addClass('is-invalid');
+        } else {
+            $(this).removeClass('is-invalid');
+        }
+    });
+}
+
+/**
+ * 工具函數 - 防抖
+ */
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+/**
+ * 工具函數 - HTML轉義
+ */
+function escapeHtml(text) {
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+}
+
+/**
+ * 工具函數 - URL驗證
+ */
+function isValidUrl(string) {
+    try {
+        new URL(string);
+        return true;
+    } catch (_) {
+        return false;
+    }
+}
+
+/**
+ * 工具函數 - 顯示成功訊息
+ */
+function showSuccess(message) {
+    // 可以使用 Bootstrap Toast 或其他通知元件
+    // 這裡使用簡單的 alert，實際使用時可替換為更美觀的通知
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            icon: 'success',
+            title: '成功',
+            text: message,
+            timer: 3000,
+            showConfirmButton: false
+        });
+    } else {
+        alert('成功：' + message);
+    }
+}
+
+/**
+ * 工具函數 - 顯示錯誤訊息
+ */
+function showError(message) {
+    // 可以使用 Bootstrap Toast 或其他通知元件
+    // 這裡使用簡單的 alert，實際使用時可替換為更美觀的通知
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            icon: 'error',
+            title: '錯誤',
+            text: message
+        });
+    } else {
+        alert('錯誤：' + message);
+    }
+}
+
+// 全域函數定義（供HTML onclick使用）
+window.openTemplateModal = openTemplateModal;
+window.selectTemplate = selectTemplate;
+window.showConfirmSendModal = showConfirmSendModal;
+window.sendMessage = sendMessage;
