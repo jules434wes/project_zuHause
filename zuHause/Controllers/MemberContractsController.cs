@@ -19,12 +19,13 @@ namespace zuHause.Controllers
         public readonly ZuHauseContext _context;
         private readonly IConverter _converter;
         public readonly ApplicationService _applicationService;
-        public MemberContractsController(ZuHauseContext context, IConverter converter, ApplicationService applicationService)
+        public readonly ImageResolverService _imageResolverService;
+        public MemberContractsController(ZuHauseContext context, IConverter converter, ApplicationService applicationService, ImageResolverService imageResolverService)
         {
             _context = context;
             _converter = converter;
             _applicationService = applicationService;
-
+            _imageResolverService = imageResolverService;
         }
         public async Task<IActionResult> Index()
         {
@@ -529,9 +530,13 @@ namespace zuHause.Controllers
             var userId = int.Parse(User.FindFirst("UserId")!.Value);
             string userRole = User.FindFirst(ClaimTypes.Role)?.Value ?? "";
 
-            string? actionType = null;
+            string? actionType = "PIKA";
 
 
+            System.Diagnostics.Debug.WriteLine($"➡️ User身分: {userRole}");
+            System.Diagnostics.Debug.WriteLine($"➡️ UserId: {userId}");
+            System.Diagnostics.Debug.WriteLine($"➡️ 合約申請者ID: {contract.RentalApplication!.MemberId}");
+            System.Diagnostics.Debug.WriteLine($"➡️ 合約申請狀態: {contract.RentalApplication.CurrentStatus}");
             //擬定合約
             if (userRole == "2" && contract.RentalApplication!.Property.LandlordMemberId == userId &&
                 contract.RentalApplication.CurrentStatus == "WAITING_CONTRACT")
@@ -875,6 +880,14 @@ namespace zuHause.Controllers
             }
 
         }
+
+        public async Task<string> GetPropertyImageUrl(int contractId)
+        {
+           string ImgUrl =  await _imageResolverService.GetImageUrl(contractId, "Property", "Gallery", "medium");
+
+            return ImgUrl;
+        }
+
     }
     public class ContractNameDto
     {

@@ -100,6 +100,8 @@ builder.Services.AddScoped<RealDataSeeder>();
 
 //註冊發送通知服務
 builder.Services.AddScoped<NotificationService>();
+//註冊圖片轉址服務
+builder.Services.AddScoped<ImageResolverService>();
 
 // 註冊圖片處理服務
 builder.Services.AddScoped<zuHause.Interfaces.IImageProcessor, zuHause.Services.ImageSharpProcessor>();
