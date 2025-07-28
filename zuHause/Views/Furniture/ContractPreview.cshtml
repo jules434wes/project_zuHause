@@ -163,6 +163,31 @@
             confirmBtn.disabled = !(checkbox.checked && hasSigned);
         }
 
+        // 顯示簽名預覽
+        function showSignaturePreview() {
+            if (signatureImg) {
+                signatureImg.remove();
+            }
+            const dataURL = canvas.toDataURL("image/png");
+            signatureImg = document.createElement("img");
+            signatureImg.src = dataURL;
+            signatureImg.style.width = "250px";
+            signatureImg.style.height = "100px";
+            signatureImg.style.border = "1px solid #ccc";
+            signatureImg.style.marginTop = "10px";
+            previewContainer.innerHTML = "<p><strong>簽名預覽：</strong></p>";
+            previewContainer.appendChild(signatureImg);
+        }
+
+        // 清除簽名預覽
+        function clearPreview() {
+            previewContainer.innerHTML = "";
+            if (signatureImg) {
+                signatureImg.remove();
+                signatureImg = null;
+            }
+        }
+
         // 畫布簽名邏輯
         canvas.addEventListener("mousedown", () => drawing = true);
         canvas.addEventListener("mouseup", () => {

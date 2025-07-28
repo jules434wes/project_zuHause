@@ -2,10 +2,32 @@
     ViewData["Title"] = "付款成功";
     Layout = "~/Views/Shared/_NavigationBar.cshtml";
 }
-<h2>@ViewBag.Message</h2>
-<div class="text-center mt-5">
-    <h2>@ViewBag.Message</h2>
-    <p>您的訂單已成立！</p>
-    <p>訂單編號：@ViewBag.OrderId</p>
-    <p><a href="/Furniture/OrderHistory">查看訂單記錄</a></p>
-</div>
+
+@if (ViewBag.IsAuthExpired == true)
+{
+    <div class="text-center mt-5">
+        <h2 class="text-warning">⚠️ @ViewBag.Message</h2>
+        <div class="alert alert-warning mt-3">
+            <p>您的登入狀態已過期，但支付已成功完成。</p>
+            <p>請重新登入以查看訂單詳細資訊。</p>
+        </div>
+        <div class="mt-4">
+            <a href="@ViewBag.LoginUrl" class="btn btn-primary me-2">重新登入</a>
+            <a href="@ViewBag.CartUrl" class="btn btn-secondary">返回購物車</a>
+        </div>
+    </div>
+}
+else
+{
+    <div class="text-center mt-5">
+        <h2 class="text-success">✅ @ViewBag.Message</h2>
+        <div class="alert alert-success mt-3">
+            <p>您的訂單已成立！</p>
+            <p><strong>訂單編號：@ViewBag.OrderId</strong></p>
+        </div>
+        <div class="mt-4">
+            <a href="/Furniture/OrderHistory" class="btn btn-primary me-2">查看訂單記錄</a>
+            <a href="/Furniture/RentalCart" class="btn btn-secondary">返回購物車</a>
+        </div>
+    </div>
+}

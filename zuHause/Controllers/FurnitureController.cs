@@ -663,48 +663,70 @@ namespace zuHause.Controllers
             Console.WriteLine("✅ 成功進入 Success 方法");
             SetCurrentMemberInfo();
             
-            // 彈性認證檢查：優先使用 Cookie 認證，回退到 Session
-            var memberIdString = User.FindFirst("UserId")?.Value;
-            int memberId;
+            // 統一認證機制：優先使用 Cookie，回退到 Session，並處理 Stripe 返回場景
+            int memberId = 0;
+            bool authenticationValid = false;
             
-            if (string.IsNullOrEmpty(memberIdString) || !int.TryParse(memberIdString, out memberId))
+            // 1. 嘗試從 Cookie 認證獲取會員 ID
+            var memberIdString = User.FindFirst("UserId")?.Value;
+            if (!string.IsNullOrEmpty(memberIdString) && int.TryParse(memberIdString, out memberId))
             {
-                // Cookie 認證失效，嘗試使用 Session
+                authenticationValid = true;
+                Console.WriteLine($"✅ Cookie 認證成功，會員 ID: {memberId}");
+            }
+            else
+            {
+                // 2. Cookie 認證失效，嘗試 Session
                 var sessionMemberId = HttpContext.Session.GetInt32("MemberId");
-                if (sessionMemberId == null)
+                if (sessionMemberId.HasValue)
                 {
-                    // 設置友善提示訊息給前端
-                    ViewBag.IsAuthExpired = true;
-                    ViewBag.LoginUrl = Url.Action("Login", "Member");
-                    ViewBag.CartUrl = Url.Action("RentalCart", "Furniture");
-                    return View();
-                }
-                memberId = sessionMemberId.Value;
-                
-                // 重新設置 Cookie 認證
-                var member = _context.Members.FirstOrDefault(m => m.MemberId == memberId);
-                if (member != null)
-                {
-                    var claims = new List<Claim>
+                    memberId = sessionMemberId.Value;
+                    authenticationValid = true;
+                    Console.WriteLine($"✅ Session 認證成功，會員 ID: {memberId}");
+                    
+                    // 重新建立 Cookie 認證以保持一致性
+                    var member = _context.Members.FirstOrDefault(m => m.MemberId == memberId);
+                    if (member != null)
                     {
-                        new Claim("UserId", member.MemberId.ToString()),
-                        new Claim(ClaimTypes.Name, member.MemberName ?? ""),
-                        new Claim("PaymentCompleted", DateTime.Now.ToString())
-                    };
-                    var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-                    var principal = new ClaimsPrincipal(identity);
-                    await HttpContext.SignInAsync("MemberCookieAuth", principal);
-                    SetCurrentMemberInfo();
+                        var claims = new List<Claim>
+                        {
+                            new Claim("UserId", member.MemberId.ToString()),
+                            new Claim(ClaimTypes.Name, member.MemberName ?? ""),
+                            new Claim("PaymentCompleted", DateTime.Now.ToString())
+                        };
+                        var identity = new ClaimsIdentity(claims, "MemberCookieAuth");
+                        var principal = new ClaimsPrincipal(identity);
+                        await HttpContext.SignInAsync("MemberCookieAuth", principal);
+                        
+                        // 同時確保 Session 也有設置
+                        HttpContext.Session.SetInt32("MemberId", memberId);
+                        SetCurrentMemberInfo();
+                    }
                 }
+            }
+            
+            // 3. 認證失效處理 - 顯示友善頁面而非強制登入
+            if (!authenticationValid)
+            {
+                Console.WriteLine("⚠️ 認證失效，顯示友善提示頁面");
+                ViewBag.IsAuthExpired = true;
+                ViewBag.LoginUrl = Url.Action("Login", "Member");
+                ViewBag.CartUrl = Url.Action("RentalCart", "Furniture");
+                ViewBag.Message = "支付已完成，但登入狀態過期。請重新登入查看訂單。";
+                return View();
             }
             
             ViewBag.IsAuthExpired = false;
             ViewBag.CurrentMemberId = memberId;
             
-            // 使用 Session 取代 TempData
+            // 使用 Session 獲取選擇的房源 ID
             var selectedPropertyId = HttpContext.Session.GetInt32("SelectedPropertyId");
             if (selectedPropertyId == null)
+            {
+                Console.WriteLine("⚠️ 找不到選擇的房源 ID，返回購物車");
+                ViewBag.Message = "支付成功，但找不到對應的房源資訊。請檢查您的訂單。";
                 return RedirectToAction("RentalCart");
+            }
 
             var cart = _context.FurnitureCarts
                 .Include(c => c.FurnitureCartItems)
@@ -719,13 +741,23 @@ namespace zuHause.Controllers
 
             string orderId = Guid.NewGuid().ToString();
 
+            // 計算總金額
+            decimal totalAmount = 0;
+            foreach (var item in cart.FurnitureCartItems)
+            {
+                totalAmount += item.Quantity * item.Product.DailyRental * item.RentalDays;
+            }
+
             var order = new FurnitureOrder
             {
                 FurnitureOrderId = orderId,
-                MemberId = memberId.Value,
+                MemberId = memberId,
                 PropertyId = selectedPropertyId.Value,
                 CreatedAt = DateTime.Now,
-                Status = "CONFIRMED"
+                Status = "CONFIRMED",
+                PaymentStatus = "PAID",     // 付款狀態：已付款
+                TotalAmount = totalAmount,  // 總金額
+                UpdatedAt = DateTime.Now    // 更新時間
             };
             _context.FurnitureOrders.Add(order);
 
@@ -748,6 +780,7 @@ namespace zuHause.Controllers
                 {
                     FurnitureOrderHistoryId = Guid.NewGuid().ToString(),
                     OrderId = orderId,
+                    ProductId = item.ProductId,  // 新增：商品 ID
                     ProductNameSnapshot = item.Product.ProductName,
                     Quantity = item.Quantity,
                     DailyRentalSnapshot = item.Product.DailyRental,
@@ -785,6 +818,7 @@ namespace zuHause.Controllers
             _context.SaveChanges();
 
             ViewBag.Message = "付款成功！";
+            ViewBag.OrderId = orderId;
             return View("Success");
         }
 

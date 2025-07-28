@@ -161,6 +161,8 @@ namespace zuHause.Controllers
             await HttpContext.SignInAsync("MemberCookieAuth",
                 new ClaimsPrincipal(claimsIdentity), authProperties);
 
+            // 同時設置 Session 以支援 Stripe 返回認證
+            HttpContext.Session.SetInt32("MemberId", member.MemberId);
 
             TempData["SuccessMessageTitle"] = "通知";
             TempData["SuccessMessageContent"] = "登入成功";
@@ -292,6 +294,8 @@ namespace zuHause.Controllers
             await HttpContext.SignInAsync("MemberCookieAuth",
             new ClaimsPrincipal(claimsIdentity), authProperties);
 
+            // 同時設置 Session 以支援 Stripe 返回認證
+            HttpContext.Session.SetInt32("MemberId", member.MemberId);
 
             TempData["SuccessMessageTitle"] = "切換成功";
             TempData["SuccessMessageContent"] = $"您目前的身分為：{nowRole}";
@@ -550,6 +554,8 @@ namespace zuHause.Controllers
             await HttpContext.SignInAsync("MemberCookieAuth",
                 new ClaimsPrincipal(claimsIdentity), authProperties);
 
+            // 同時設置 Session 以支援 Stripe 返回認證
+            HttpContext.Session.SetInt32("MemberId", member.MemberId);
 
             TempData["SuccessMessageTitle"] = "註冊成功";
             TempData["SuccessMessageContent"] = "您可以開始體驗會員功能";
