@@ -41,7 +41,6 @@
 
     // 處理城市下拉選單點擊事件
     $dropdownItems.on('click', function (event) {
-        event.preventDefault();
         $dropdownItems.removeClass('active');
         $(this).addClass('active');
         selectedCity = $(this).data('city');
