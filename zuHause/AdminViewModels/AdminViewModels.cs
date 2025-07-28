@@ -331,13 +331,21 @@ namespace zuHause.AdminViewModels
 
         private string GetPreferredRentalAreas(ZuHauseContext context, int memberId)
         {
-            var areas = context.RenterPosts
-                .Where(rp => rp.MemberId == memberId)
-                .Join(context.Districts, rp => rp.DistrictId, d => d.DistrictId, (rp, d) => d.DistrictName)
-                .Distinct()
-                .ToList();
+            var member = context.Members
+                .Include(m => m.PrimaryRentalCity)
+                .Include(m => m.PrimaryRentalDistrict)
+                .FirstOrDefault(m => m.MemberId == memberId);
             
-            return string.Join("、", areas);
+            if (member?.PrimaryRentalCity != null && member?.PrimaryRentalDistrict != null)
+            {
+                return $"{member.PrimaryRentalCity.CityName} {member.PrimaryRentalDistrict.DistrictName}";
+            }
+            else if (member?.PrimaryRentalCity != null)
+            {
+                return member.PrimaryRentalCity.CityName;
+            }
+            
+            return string.Empty;
         }
 
         private List<RentalContractData> LoadRentalContracts(ZuHauseContext context, int memberId)
