@@ -1,38 +1,4 @@
-@{
-    // 模擬訊息模板資料
-    var messageTemplates = new[] {
-        new {
-            Category = "maintenance",
-            CategoryText = "維護通知",
-            Title = "模板：系統維護通知",
-            Preview = "親愛的會員您好，為提供更優質的服務...",
-            Content = "親愛的會員您好，為提供更優質的服務，本平台將於 [日期] [時間] 進行系統維護與升級作業，屆時將暫停所有服務。造成您的不便，敬請見諒。"
-        },
-        new {
-            Category = "promotion",
-            CategoryText = "優惠活動",
-            Title = "模板：通用優惠活動",
-            Preview = "親愛的會員，感謝您對本平台的支持！...",
-            Content = "親愛的會員，感謝您對本平台的支持！即日起至 [日期]，[活動內容]！"
-        },
-        new {
-            Category = "announcement",
-            CategoryText = "系統公告",
-            Title = "模板：重要系統公告",
-            Preview = "親愛的用戶，我們有重要事項需要通知您...",
-            Content = "親愛的用戶，我們有重要事項需要通知您：[公告內容]。如有任何疑問，請聯繫客服中心。"
-        },
-        new {
-            Category = "warning",
-            CategoryText = "警告通知",
-            Title = "模板：帳號異常警告",
-            Preview = "親愛的會員 [用戶姓名]，經系統偵測...",
-            Content = "親愛的會員 [用戶姓名]，經系統偵測，您的帳號 [操作] 操作異常，為保護您的帳號安全，我們已暫時限制您的部分功能。如有疑問請聯繫客服。"
-        }
-    };
-    
-    ViewData["MessageTemplates"] = messageTemplates;
-}
+@model AdminSystemMessageNewViewModel
 
 <!-- 確認發送 Modal -->
 <div class="modal fade" id="confirmSendModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="confirmSendModalLabel" aria-hidden="true">
@@ -74,26 +40,41 @@
             </div>
             <div class="modal-body">
                 <div class="mb-3">
-                    <label for="templateCategoryFilter" class="form-label">篩選模板類別</label>
-                    <select id="templateCategoryFilter" class="form-select">
-                        <option value="all" selected>所有類別</option>
-                        <option value="maintenance">維護通知</option>
-                        <option value="promotion">優惠活動</option>
-                        <option value="announcement">系統公告</option>
-                        <option value="warning">警告通知</option>
-                    </select>
+                    <label for="templateSearch" class="form-label">搜尋模板</label>
+                    <input type="text" class="form-control" id="templateSearch" placeholder="輸入關鍵字搜尋模板...">
                 </div>
+                
                 <div id="templateList" class="list-group">
-                    @foreach (var template in messageTemplates)
+                    @if (Model.AvailableTemplates != null && Model.AvailableTemplates.Any())
                     {
-                        <a href="#" class="list-group-item list-group-item-action template-item" 
-                           data-template-category="@template.Category" 
-                           data-template-content="@template.Content"
-                           onclick="selectTemplate(this)">
-                            <h6 class="mb-1">@template.Title</h6>
-                            <p class="mb-1 small text-muted">@template.Preview</p>
-                            <small class="text-info">類別：@template.CategoryText</small>
-                        </a>
+                        @foreach (var template in Model.AvailableTemplates)
+                        {
+                            <a href="#" class="list-group-item list-group-item-action template-item" 
+                               data-template-id="@template.TemplateID"
+                               data-template-title="@Html.Raw(Html.Encode(template.Title))" 
+                               data-template-content="@Html.Raw(Html.Encode(template.TemplateContent))"
+                               onclick="selectTemplate(this); return false;">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1">
+                                            <i class="bi bi-file-text text-primary me-1"></i>
+                                            @template.Title
+                                        </h6>
+                                        <p class="mb-1 small text-muted">@template.ContentPreview</p>
+                                        <small class="text-info">建立日期：@template.CreatedAt</small>
+                                    </div>
+                                    <i class="bi bi-chevron-right text-muted"></i>
+                                </div>
+                            </a>
+                        }
+                    }
+                    else
+                    {
+                        <div class="text-center text-muted py-4">
+                            <i class="bi bi-inbox fs-1 mb-2 d-block"></i>
+                            <div class="fw-semibold">尚無可用模板</div>
+                            <div class="small">目前沒有系統訊息模板</div>
+                        </div>
                     }
                 </div>
             </div>

@@ -1,3 +1,5 @@
+using zuHause.Enums;
+
 namespace zuHause.Models
 {
     /// <summary>
@@ -35,6 +37,11 @@ namespace zuHause.Models
         /// MIME 類型
         /// </summary>
         public string MimeType { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 圖片分類 (Gallery/Document)
+        /// </summary>
+        public ImageCategory Category { get; set; } = ImageCategory.Gallery;
 
         /// <summary>
         /// 是否已過期 (超過6小時)

@@ -32,7 +32,7 @@ namespace zuHause.Services
             try
             {
                 var blobPath = GetBlobPath(category, entityId, imageGuid, size);
-                var url = $"{_options.BaseUrl.TrimEnd('/')}/{blobPath}";
+                var url = $"{_options.BaseUrl.TrimEnd('/')}/{_options.ContainerName.Trim('/')}/{blobPath}";
                 
                 _logger.LogDebug("生成正式區域 URL: {URL}", url);
                 return url;
@@ -64,7 +64,7 @@ namespace zuHause.Services
                 }
 
                 var blobPath = GetTempBlobPath(tempSessionId, imageGuid, size);
-                var url = $"{_options.BaseUrl.TrimEnd('/')}/{blobPath}";
+                var url = $"{_options.BaseUrl.TrimEnd('/')}/{_options.ContainerName.Trim('/')}/{blobPath}";
                 
                 _logger.LogDebug("生成臨時區域 URL: {URL}", url);
                 return url;
@@ -97,7 +97,9 @@ namespace zuHause.Services
 
                 var categoryName = GetCategoryName(category);
                 var sizeName = GetSizeName(size);
-                var fileName = $"{imageGuid:N}.webp";
+                // 決定副檔名：一般圖片使用 .webp，但 Document 分類需保留 .pdf
+                var extension = category == ImageCategory.Document ? ".pdf" : ".webp";
+                var fileName = $"{imageGuid:N}{extension}";
 
                 return $"{categoryName}/{entityId}/{sizeName}/{fileName}";
             }
@@ -174,7 +176,9 @@ namespace zuHause.Services
                 }
 
                 // 檢查檔案副檔名
-                if (!url.EndsWith(".webp", StringComparison.OrdinalIgnoreCase))
+                // Document 類型允許 .pdf
+                if (!url.EndsWith(".webp", StringComparison.OrdinalIgnoreCase) &&
+                    !url.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
                 {
                     return false;
                 }
@@ -186,7 +190,7 @@ namespace zuHause.Services
                     return pathSegments.Length == 5 && 
                            pathSegments[2].Length == 32 &&  // TempSessionId
                            IsValidSizeName(pathSegments[3]) &&  // Size
-                           IsValidGuidFileName(pathSegments[4]);  // ImageGuid.webp
+                           IsValidGuidFileName(pathSegments[4]);  // ImageGuid.webp / .pdf
                 }
                 else
                 {
@@ -195,7 +199,7 @@ namespace zuHause.Services
                            IsValidCategoryName(pathSegments[1]) &&  // Category
                            int.TryParse(pathSegments[2], out var entityId) && entityId > 0 &&  // EntityId
                            IsValidSizeName(pathSegments[3]) &&  // Size
-                           IsValidGuidFileName(pathSegments[4]);  // ImageGuid.webp
+                           IsValidGuidFileName(pathSegments[4]);  // ImageGuid.webp / .pdf
                 }
             }
             catch
@@ -218,6 +222,7 @@ namespace zuHause.Services
                 ImageCategory.Avatar => "Avatar",
                 ImageCategory.Gallery => "Gallery",
                 ImageCategory.Product => "Product",
+                ImageCategory.Document => "Document",
                 _ => throw new ArgumentException($"不支援的圖片分類: {category}")
             };
         }
@@ -267,12 +272,16 @@ namespace zuHause.Services
         /// </summary>
         private static bool IsValidGuidFileName(string fileName)
         {
-            if (!fileName.EndsWith(".webp", StringComparison.OrdinalIgnoreCase))
+            // 允許 .webp 與 .pdf 兩種
+            var isWebp = fileName.EndsWith(".webp", StringComparison.OrdinalIgnoreCase);
+            var isPdf = fileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase);
+            if (!isWebp && !isPdf)
             {
                 return false;
             }
 
-            var guidPart = fileName.Substring(0, fileName.Length - 5); // 移除 .webp
+            var trimLength = isWebp ? 5 : 4; // .webp 與 .pdf 的副檔名長度不同
+            var guidPart = fileName.Substring(0, fileName.Length - trimLength);
             return guidPart.Length == 32 && Guid.TryParse(guidPart.Insert(8, "-").Insert(13, "-").Insert(18, "-").Insert(23, "-"), out _);
         }
     }
