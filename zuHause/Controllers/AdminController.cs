@@ -1871,6 +1871,455 @@ namespace zuHause.Controllers
             }
         }
 
+        #region 房源審核相關 API
+
+        /// <summary>
+        /// 審核通過房源
+        /// 根據規格文件：更新 approvals.statusCode = 'APPROVED'，觸發器會自動同步 properties.statusCode = 'PENDING_PAYMENT'
+        /// </summary>
+        [HttpPost]
+        [RequireAdminPermission(AdminPermissions.PropertyDetails)]
+        public async Task<IActionResult> ApproveProperty([FromForm] int propertyId)
+        {
+            try
+            {
+                var currentAdminIdStr = GetCurrentAdminId();
+                if (string.IsNullOrEmpty(currentAdminIdStr) || !int.TryParse(currentAdminIdStr, out int currentAdminId))
+                {
+                    return Json(new { success = false, message = "未取得有效的管理員身分" });
+                }
+
+                // 查找房源和對應的審核記錄
+                var property = await _context.Properties.FirstOrDefaultAsync(p => p.PropertyId == propertyId);
+                if (property == null)
+                {
+                    return Json(new { success = false, message = "找不到指定的房源" });
+                }
+
+                var approval = await _context.Approvals
+                    .FirstOrDefaultAsync(a => a.ModuleCode == "PROPERTY" && a.SourcePropertyId == propertyId);
+                
+                // 如果找不到審核記錄，自動創建一個
+                if (approval == null)
+                {
+                    approval = await CreateMissingApprovalRecord(property);
+                    if (approval == null)
+                    {
+                        return Json(new { success = false, message = "房源沒有關聯的房東資訊，無法創建審核記錄" });
+                    }
+                }
+
+                // 檢查當前狀態是否可以審核通過
+                if (approval.StatusCode != "PENDING")
+                {
+                    return Json(new { success = false, message = "房源狀態不允許審核通過" });
+                }
+
+                // 更新審核狀態
+                approval.StatusCode = "APPROVED";
+                approval.CurrentApproverId = currentAdminId;
+                approval.UpdatedAt = DateTime.Now;
+
+                // 新增審核操作記錄
+                var approvalItem = new ApprovalItem
+                {
+                    ApprovalId = approval.ApprovalId,
+                    ActionBy = currentAdminId,
+                    ActionType = "APPROVED",
+                    ActionNote = "管理員審核通過",
+                    SnapshotJson = System.Text.Json.JsonSerializer.Serialize(new
+                    {
+                        propertyId = property.PropertyId,
+                        title = property.Title,
+                        approvedTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+                        approvedBy = currentAdminId,
+                        // TODO: 補充產權證明 URL
+                        // propertyProofUrl = property.PropertyProofUrl
+                    }),
+                    CreatedAt = DateTime.Now
+                };
+
+                _context.ApprovalItems.Add(approvalItem);
+                await _context.SaveChangesAsync();
+
+                return Json(new
+                {
+                    success = true,
+                    message = "房源審核通過，已通知房東進行付款",
+                    data = new
+                    {
+                        PropertyId = propertyId,
+                        Title = property.Title,
+                        ApprovalStatus = "APPROVED",
+                        PropertyStatus = "PENDING_PAYMENT", // 觸發器會自動設定
+                        ApprovedBy = currentAdminId,
+                        ApprovedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new
+                {
+                    success = false,
+                    message = "審核通過時發生錯誤",
+                    error = ex.Message
+                });
+            }
+        }
+
+        /// <summary>
+        /// 駁回房源申請
+        /// 根據規格文件：更新 approvals.statusCode = 'REJECT_FINAL'，觸發器會自動同步 properties.statusCode = 'REJECTED'
+        /// </summary>
+        [HttpPost]
+        [RequireAdminPermission(AdminPermissions.PropertyDetails)]
+        public async Task<IActionResult> RejectProperty([FromForm] int propertyId, [FromForm] string rejectionReason)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(rejectionReason))
+                {
+                    return Json(new { success = false, message = "請填寫駁回原因" });
+                }
+
+                var currentAdminIdStr = GetCurrentAdminId();
+                if (string.IsNullOrEmpty(currentAdminIdStr) || !int.TryParse(currentAdminIdStr, out int currentAdminId))
+                {
+                    return Json(new { success = false, message = "未取得有效的管理員身分" });
+                }
+
+                // 查找房源和對應的審核記錄
+                var property = await _context.Properties.FirstOrDefaultAsync(p => p.PropertyId == propertyId);
+                if (property == null)
+                {
+                    return Json(new { success = false, message = "找不到指定的房源" });
+                }
+
+                var approval = await _context.Approvals
+                    .FirstOrDefaultAsync(a => a.ModuleCode == "PROPERTY" && a.SourcePropertyId == propertyId);
+                
+                // 如果找不到審核記錄，自動創建一個
+                if (approval == null)
+                {
+                    approval = await CreateMissingApprovalRecord(property);
+                    if (approval == null)
+                    {
+                        return Json(new { success = false, message = "房源沒有關聯的房東資訊，無法創建審核記錄" });
+                    }
+                }
+
+                // 檢查當前狀態是否可以駁回
+                if (approval.StatusCode != "PENDING")
+                {
+                    return Json(new { success = false, message = "房源狀態不允許駁回" });
+                }
+
+                // 更新審核狀態
+                approval.StatusCode = "REJECT_FINAL";
+                approval.CurrentApproverId = currentAdminId;
+                approval.UpdatedAt = DateTime.Now;
+
+                // 新增審核操作記錄
+                var approvalItem = new ApprovalItem
+                {
+                    ApprovalId = approval.ApprovalId,
+                    ActionBy = currentAdminId,
+                    ActionType = "REJECT_FINAL",
+                    ActionNote = rejectionReason,
+                    SnapshotJson = System.Text.Json.JsonSerializer.Serialize(new
+                    {
+                        propertyId = property.PropertyId,
+                        title = property.Title,
+                        rejectedTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+                        rejectedBy = currentAdminId,
+                        rejectionReason = rejectionReason,
+                        // TODO: 補充產權證明 URL
+                        // propertyProofUrl = property.PropertyProofUrl
+                    }),
+                    CreatedAt = DateTime.Now
+                };
+
+                _context.ApprovalItems.Add(approvalItem);
+                await _context.SaveChangesAsync();
+
+                return Json(new
+                {
+                    success = true,
+                    message = "房源審核已駁回，已通知房東駁回原因",
+                    data = new
+                    {
+                        PropertyId = propertyId,
+                        Title = property.Title,
+                        ApprovalStatus = "REJECT_FINAL",
+                        PropertyStatus = "REJECTED", // 觸發器會自動設定
+                        RejectionReason = rejectionReason,
+                        RejectedBy = currentAdminId,
+                        RejectedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new
+                {
+                    success = false,
+                    message = "駁回房源時發生錯誤",
+                    error = ex.Message
+                });
+            }
+        }
+
+        /// <summary>
+        /// 手動標記房源為已付款
+        /// 根據規格文件：這不是審核模組的職責，但提供管理員手動標記功能
+        /// </summary>
+        [HttpPost]
+        [RequireAdminPermission(AdminPermissions.PropertyDetails)]
+        public async Task<IActionResult> MarkPropertyAsPaid([FromForm] int propertyId, [FromForm] string? paymentNote)
+        {
+            try
+            {
+                var currentAdminIdStr = GetCurrentAdminId();
+                if (string.IsNullOrEmpty(currentAdminIdStr) || !int.TryParse(currentAdminIdStr, out int currentAdminId))
+                {
+                    return Json(new { success = false, message = "未取得有效的管理員身分" });
+                }
+
+                // 查找房源
+                var property = await _context.Properties.FirstOrDefaultAsync(p => p.PropertyId == propertyId);
+                if (property == null)
+                {
+                    return Json(new { success = false, message = "找不到指定的房源" });
+                }
+
+                // 檢查房源是否已審核通過
+                if (property.StatusCode != "PENDING_PAYMENT")
+                {
+                    return Json(new { success = false, message = "房源必須是已審核通過且待付款狀態才能標記為已付款" });
+                }
+
+                // 更新房源付款狀態
+                var currentTime = DateTime.Now;
+                property.PaidAt = currentTime;
+                property.IsPaid = true;
+                property.StatusCode = "LISTED"; // 設為已上架
+                property.PublishedAt = currentTime; // 設定發布時間
+                
+                // TODO: 根據付費方案計算到期時間
+                // property.ExpireAt = currentTime.AddDays(30); // 暫時設為 30 天後到期
+                
+                property.UpdatedAt = currentTime;
+
+                // 查找對應的審核記錄來記錄操作
+                var approval = await _context.Approvals
+                    .FirstOrDefaultAsync(a => a.ModuleCode == "PROPERTY" && a.SourcePropertyId == propertyId);
+
+                if (approval != null)
+                {
+                    // 新增手動標記付款的操作記錄
+                    var approvalItem = new ApprovalItem
+                    {
+                        ApprovalId = approval.ApprovalId,
+                        ActionBy = currentAdminId,
+                        ActionType = "MARK_AS_PAID",
+                        ActionNote = $"管理員手動標記已付款{(string.IsNullOrWhiteSpace(paymentNote) ? "" : $"：{paymentNote}")}",
+                        SnapshotJson = System.Text.Json.JsonSerializer.Serialize(new
+                        {
+                            propertyId = property.PropertyId,
+                            title = property.Title,
+                            markedTime = currentTime.ToString("yyyy-MM-dd HH:mm:ss"),
+                            markedBy = currentAdminId,
+                            paymentNote = paymentNote ?? "",
+                            publishedAt = currentTime.ToString("yyyy-MM-dd HH:mm:ss")
+                        }),
+                        CreatedAt = currentTime
+                    };
+
+                    _context.ApprovalItems.Add(approvalItem);
+                }
+
+                await _context.SaveChangesAsync();
+
+                return Json(new
+                {
+                    success = true,
+                    message = "房源已標記為已付款並上架",
+                    data = new
+                    {
+                        PropertyId = propertyId,
+                        Title = property.Title,
+                        StatusCode = "LISTED",
+                        IsPaid = true,
+                        PaidAt = currentTime.ToString("yyyy-MM-dd HH:mm:ss"),
+                        PublishedAt = currentTime.ToString("yyyy-MM-dd HH:mm:ss"),
+                        PaymentNote = paymentNote ?? "",
+                        MarkedBy = currentAdminId
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new
+                {
+                    success = false,
+                    message = "標記付款時發生錯誤",
+                    error = ex.Message
+                });
+            }
+        }
+
+        /// <summary>
+        /// 強制下架房源
+        /// 根據規格文件：直接設置 properties.statusCode = 'BANNED'，並記錄操作歷程
+        /// </summary>
+        [HttpPost]
+        [RequireAdminPermission(AdminPermissions.PropertyDetails)]
+        public async Task<IActionResult> ForceRemoveProperty([FromForm] int propertyId, [FromForm] string removeReason)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(removeReason))
+                {
+                    return Json(new { success = false, message = "請填寫強制下架原因" });
+                }
+
+                var currentAdminIdStr = GetCurrentAdminId();
+                if (string.IsNullOrEmpty(currentAdminIdStr) || !int.TryParse(currentAdminIdStr, out int currentAdminId))
+                {
+                    return Json(new { success = false, message = "未取得有效的管理員身分" });
+                }
+
+                // 查找房源
+                var property = await _context.Properties.FirstOrDefaultAsync(p => p.PropertyId == propertyId);
+                if (property == null)
+                {
+                    return Json(new { success = false, message = "找不到指定的房源" });
+                }
+
+                // 檢查房源是否可以強制下架
+                if (property.StatusCode == "BANNED")
+                {
+                    return Json(new { success = false, message = "房源已經是強制下架狀態" });
+                }
+
+                // 記錄原始狀態
+                var originalStatus = property.StatusCode;
+
+                // 直接設置房源為違規下架
+                property.StatusCode = "BANNED";
+                property.UpdatedAt = DateTime.Now;
+
+                // 查找對應的審核記錄來記錄操作
+                var approval = await _context.Approvals
+                    .FirstOrDefaultAsync(a => a.ModuleCode == "PROPERTY" && a.SourcePropertyId == propertyId);
+
+                if (approval != null)
+                {
+                    // 新增強制下架的操作記錄
+                    var approvalItem = new ApprovalItem
+                    {
+                        ApprovalId = approval.ApprovalId,
+                        ActionBy = currentAdminId,
+                        ActionType = "FORCE_BANNED",
+                        ActionNote = removeReason,
+                        SnapshotJson = System.Text.Json.JsonSerializer.Serialize(new
+                        {
+                            propertyId = property.PropertyId,
+                            title = property.Title,
+                            originalStatus = originalStatus,
+                            bannedTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+                            bannedBy = currentAdminId,
+                            banReason = removeReason,
+                            // TODO: 補充產權證明 URL
+                            // propertyProofUrl = property.PropertyProofUrl
+                        }),
+                        CreatedAt = DateTime.Now
+                    };
+
+                    _context.ApprovalItems.Add(approvalItem);
+                }
+
+                await _context.SaveChangesAsync();
+
+                return Json(new
+                {
+                    success = true,
+                    message = "房源已強制下架，已通知房東違規原因",
+                    data = new
+                    {
+                        PropertyId = propertyId,
+                        Title = property.Title,
+                        OriginalStatus = originalStatus,
+                        StatusCode = "BANNED",
+                        RemoveReason = removeReason,
+                        BannedBy = currentAdminId,
+                        BannedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new
+                {
+                    success = false,
+                    message = "強制下架時發生錯誤",
+                    error = ex.Message
+                });
+            }
+        }
+
+        #endregion
+
+        /// <summary>
+        /// 為缺少審核記錄的房源創建審核記錄
+        /// </summary>
+        private async Task<Approval?> CreateMissingApprovalRecord(Property property)
+        {
+            // 取得房東ID
+            var landlordId = property.LandlordMemberId;
+            if (landlordId == 0)
+            {
+                return null;
+            }
+
+            // 創建審核記錄
+            var approval = new Approval
+            {
+                ModuleCode = "PROPERTY",
+                SourcePropertyId = property.PropertyId,
+                ApplicantMemberId = landlordId,
+                StatusCode = "PENDING",
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now
+            };
+
+            _context.Approvals.Add(approval);
+            await _context.SaveChangesAsync(); // 保存以獲得 ApprovalId
+
+            // 創建初始提交記錄
+            var submitItem = new ApprovalItem
+            {
+                ApprovalId = approval.ApprovalId,
+                ActionBy = null, // 房東提交，非管理員操作
+                ActionType = "SUBMIT",
+                ActionNote = "房東提交房源申請（補建審核記錄）",
+                SnapshotJson = System.Text.Json.JsonSerializer.Serialize(new
+                {
+                    propertyId = property.PropertyId,
+                    title = property.Title,
+                    submitTime = property.CreatedAt?.ToString("yyyy-MM-dd HH:mm:ss"),
+                    landlordId = landlordId
+                }),
+                CreatedAt = property.CreatedAt ?? DateTime.Now
+            };
+
+            _context.ApprovalItems.Add(submitItem);
+            await _context.SaveChangesAsync();
+
+            return approval;
+        }
+
         /// <summary>
         /// 格式化檔案大小
         /// </summary>

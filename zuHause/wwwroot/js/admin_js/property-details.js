@@ -234,41 +234,50 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // 最終確認按鈕事件
-    document.getElementById('finalConfirmBtn').addEventListener('click', function() {
-        // 這裡執行實際的操作 - 後續開發
-        switch(currentAction) {
-            case 'approve_property':
-                console.log('執行審核通過操作 - PropertyID: ' + currentPropertyId);
-                break;
-            case 'reject_property':
-                console.log('執行駁回申請操作 - PropertyID: ' + currentPropertyId);
-                break;
-            case 'mark_as_paid':
-                console.log('執行標記已付款操作 - PropertyID: ' + currentPropertyId);
-                break;
-            case 'force_remove':
-                console.log('執行強制下架操作 - PropertyID: ' + currentPropertyId);
-                break;
+    document.getElementById('finalConfirmBtn').addEventListener('click', async function() {
+        // 顯示載入狀態
+        showFinalConfirmLoading();
+        
+        try {
+            let response;
+            
+            switch(currentAction) {
+                case 'approve_property':
+                    response = await executeApproveProperty();
+                    break;
+                case 'reject_property':
+                    response = await executeRejectProperty();
+                    break;
+                case 'mark_as_paid':
+                    response = await executeMarkAsPaid();
+                    break;
+                case 'force_remove':
+                    response = await executeForceRemove();
+                    break;
+                default:
+                    throw new Error('未知的操作類型');
+            }
+            
+            if (response.success) {
+                // 關閉所有Modal
+                closeAllPropertyModals();
+                
+                // 顯示成功訊息
+                showSuccessMessage(response.message);
+                
+                // 重新載入頁面以更新狀態
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            } else {
+                throw new Error(response.message || '操作失敗');
+            }
+        } catch (error) {
+            console.error('執行操作時發生錯誤:', error);
+            showErrorMessage('操作失敗：' + error.message);
+        } finally {
+            hideFinalConfirmLoading();
         }
-        
-        // 關閉所有Modal
-        var doubleCheckModal = bootstrap.Modal.getInstance(document.getElementById('doubleCheckModal'));
-        var approveModal = bootstrap.Modal.getInstance(document.getElementById('approveModal'));
-        var rejectModal = bootstrap.Modal.getInstance(document.getElementById('rejectModal'));
-        var markAsPaidModal = bootstrap.Modal.getInstance(document.getElementById('markAsPaidModal'));
-        var forceRemoveModal = bootstrap.Modal.getInstance(document.getElementById('forceRemoveModal'));
-        
-        doubleCheckModal.hide();
-        if (approveModal) approveModal.hide();
-        if (rejectModal) rejectModal.hide();
-        if (markAsPaidModal) markAsPaidModal.hide();
-        if (forceRemoveModal) forceRemoveModal.hide();
-        
-        // 重置狀態
-        currentAction = null;
-        
-        // 顯示操作成功訊息 - 後續可改為實際的成功回饋
-        alert('操作已執行完成');
     });
 
     // Double Check 確認框的checkbox控制
@@ -366,4 +375,190 @@ function getSortValue(row, sortField) {
 // 設定當前房源ID的函數（供從外部呼叫）
 function setCurrentPropertyId(propertyId) {
     currentPropertyId = propertyId;
+}
+
+// ========== 房源審核 API 調用函數 ==========
+
+// 執行審核通過
+async function executeApproveProperty() {
+    const formData = new FormData();
+    formData.append('propertyId', currentPropertyId);
+    
+    const response = await fetch('/Admin/ApproveProperty', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    });
+    
+    return await response.json();
+}
+
+// 執行駁回申請
+async function executeRejectProperty() {
+    const rejectionReason = document.getElementById('rejectionReason').value.trim();
+    
+    const formData = new FormData();
+    formData.append('propertyId', currentPropertyId);
+    formData.append('rejectionReason', rejectionReason);
+    
+    const response = await fetch('/Admin/RejectProperty', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    });
+    
+    return await response.json();
+}
+
+// 執行標記已付款
+async function executeMarkAsPaid() {
+    const paymentNote = document.getElementById('paymentNote').value.trim();
+    
+    const formData = new FormData();
+    formData.append('propertyId', currentPropertyId);
+    formData.append('paymentNote', paymentNote);
+    
+    const response = await fetch('/Admin/MarkPropertyAsPaid', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    });
+    
+    return await response.json();
+}
+
+// 執行強制下架
+async function executeForceRemove() {
+    const removeReason = document.getElementById('forceRemoveReason').value.trim();
+    
+    const formData = new FormData();
+    formData.append('propertyId', currentPropertyId);
+    formData.append('removeReason', removeReason);
+    
+    const response = await fetch('/Admin/ForceRemoveProperty', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    });
+    
+    return await response.json();
+}
+
+// 關閉所有房源相關Modal
+function closeAllPropertyModals() {
+    const modalIds = ['doubleCheckModal', 'approveModal', 'rejectModal', 'markAsPaidModal', 'forceRemoveModal'];
+    
+    modalIds.forEach(modalId => {
+        const modalElement = document.getElementById(modalId);
+        if (modalElement) {
+            const modalInstance = bootstrap.Modal.getInstance(modalElement);
+            if (modalInstance) {
+                modalInstance.hide();
+            }
+        }
+    });
+    
+    // 重置狀態
+    currentAction = null;
+}
+
+// 顯示最終確認載入狀態
+function showFinalConfirmLoading() {
+    const btn = document.getElementById('finalConfirmBtn');
+    btn.disabled = true;
+    btn.innerHTML = `
+        <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+        處理中...
+    `;
+}
+
+// 隱藏最終確認載入狀態
+function hideFinalConfirmLoading() {
+    const btn = document.getElementById('finalConfirmBtn');
+    btn.disabled = false;
+    btn.innerHTML = `
+        <i class="bi bi-check me-1"></i>確定執行
+    `;
+}
+
+// 顯示成功訊息
+function showSuccessMessage(message) {
+    showToast(message, 'success');
+}
+
+// 顯示錯誤訊息
+function showErrorMessage(message) {
+    showToast(message, 'error');
+}
+
+// Toast 訊息顯示功能
+function showToast(message, type = 'info') {
+    // 創建或取得toast容器
+    let toastContainer = document.getElementById('toastContainer');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'toastContainer';
+        toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+        toastContainer.style.zIndex = '9999';
+        document.body.appendChild(toastContainer);
+    }
+    
+    // 設定顏色和圖示
+    let bgClass, iconClass;
+    switch (type) {
+        case 'success':
+            bgClass = 'bg-success';
+            iconClass = 'bi-check-circle-fill';
+            break;
+        case 'error':
+            bgClass = 'bg-danger';
+            iconClass = 'bi-exclamation-circle-fill';
+            break;
+        case 'warning':
+            bgClass = 'bg-warning';
+            iconClass = 'bi-exclamation-triangle-fill';
+            break;
+        default:
+            bgClass = 'bg-info';
+            iconClass = 'bi-info-circle-fill';
+    }
+    
+    // 創建toast HTML
+    const toastId = 'toast-' + Date.now();
+    const toastHtml = `
+        <div id="${toastId}" class="toast ${bgClass} text-white" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header ${bgClass} text-white border-0">
+                <i class="bi ${iconClass} me-2"></i>
+                <strong class="me-auto">系統訊息</strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                ${escapeHtml(message)}
+            </div>
+        </div>
+    `;
+    
+    toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+    
+    // 顯示toast
+    const toastElement = document.getElementById(toastId);
+    const toast = new bootstrap.Toast(toastElement, {
+        autohide: true,
+        delay: type === 'error' ? 5000 : 3000
+    });
+    
+    toast.show();
+    
+    // 清理：toast隱藏後移除元素
+    toastElement.addEventListener('hidden.bs.toast', function() {
+        toastElement.remove();
+    });
 }
