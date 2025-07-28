@@ -206,20 +206,39 @@ function displayIdentityDocuments(documents) {
                         </h6>
                     </div>
                     <div class="card-body text-center">
-                        <div class="mb-3 p-3">
-                            <div class="d-grid gap-2">
-                                <a href="${fileUrl}" target="_blank" class="btn btn-primary">
-                                    <i class="bi bi-box-arrow-up-right me-2"></i>${doc.typeDisplay || doc.TypeDisplay || '查看檔案'}
+                        <!-- 內嵌圖片顯示區域 -->
+                        <div class="mb-3 p-2 bg-light border rounded" style="min-height: 300px; display: flex; align-items: center; justify-content: center;">
+                            <img src="${fileUrl}" 
+                                 alt="${doc.typeDisplay || doc.TypeDisplay || '身分證檔案'}" 
+                                 class="img-fluid" 
+                                 style="max-height: 280px; max-width: 100%; object-fit: contain; cursor: pointer;"
+                                 onclick="openImageModal('${fileUrl}', '${doc.typeDisplay || doc.TypeDisplay || '身分證檔案'}')"
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"
+                                 loading="lazy">
+                            <!-- 圖片載入失敗時的備用內容 -->
+                            <div style="display: none; color: #6c757d;" class="text-center p-4">
+                                <i class="bi bi-image-alt fs-1 mb-2"></i>
+                                <p>圖片載入失敗</p>
+                                <a href="${fileUrl}" target="_blank" class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-box-arrow-up-right me-1"></i>在新分頁開啟
                                 </a>
                             </div>
                         </div>
+                        <!-- 檔案資訊 -->
                         <div class="document-info mb-3">
                             <p class="mb-1"><small class="text-muted">檔案名稱：${escapeHtml(doc.fileName || doc.FileName || '')}</small></p>
                             <p class="mb-1"><small class="text-muted">上傳時間：${doc.uploadedAt || doc.UploadedAt || ''}</small></p>
                             <p class="mb-0"><small class="text-muted">檔案大小：${doc.fileSize || doc.FileSize || ''}</small></p>
                         </div>
+                        <!-- 操作按鈕 -->
                         <div class="d-flex justify-content-center gap-2">
-                            <a href="${fileUrl}" download="${escapeHtml(doc.fileName || doc.FileName || '')}" class="btn btn-outline-secondary btn-sm">
+                            <button class="btn btn-outline-primary btn-sm" onclick="openImageModal('${fileUrl}', '${doc.typeDisplay || doc.TypeDisplay || '身分證檔案'}')">
+                                <i class="bi bi-zoom-in me-1"></i>放大檢視
+                            </button>
+                            <a href="${fileUrl}" target="_blank" class="btn btn-outline-secondary btn-sm">
+                                <i class="bi bi-box-arrow-up-right me-1"></i>新分頁開啟
+                            </a>
+                            <a href="${fileUrl}" download="${escapeHtml(doc.fileName || doc.FileName || '')}" class="btn btn-outline-success btn-sm">
                                 <i class="bi bi-download me-1"></i>下載
                             </a>
                         </div>
@@ -247,7 +266,59 @@ function showDocumentError(message) {
     `;
 }
 
-// 原 openImageModal 函數已移除，改為使用外部連結方式
+// 圖片放大檢視 Modal
+window.openImageModal = function(imageUrl, title) {
+    console.log('開啟圖片放大 Modal:', imageUrl, title);
+    
+    // 檢查是否已經存在 Modal
+    let imageModal = document.getElementById('imageZoomModal');
+    
+    if (!imageModal) {
+        // 創建 Modal HTML
+        const modalHtml = `
+            <div class="modal fade" id="imageZoomModal" tabindex="-1" aria-labelledby="imageZoomModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-xl modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="imageZoomModalLabel">
+                                <i class="bi bi-zoom-in me-2"></i>圖片放大檢視
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body text-center p-2">
+                            <img id="zoomImage" src="" alt="" class="img-fluid" style="max-height: 80vh; max-width: 100%;">
+                        </div>
+                        <div class="modal-footer">
+                            <a id="downloadLink" href="" download="" class="btn btn-success">
+                                <i class="bi bi-download me-1"></i>下載原始檔案
+                            </a>
+                            <a id="openNewTabLink" href="" target="_blank" class="btn btn-primary">
+                                <i class="bi bi-box-arrow-up-right me-1"></i>在新分頁開啟
+                            </a>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                <i class="bi bi-x me-1"></i>關閉
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        imageModal = document.getElementById('imageZoomModal');
+    }
+    
+    // 更新 Modal 內容
+    document.getElementById('imageZoomModalLabel').innerHTML = `<i class="bi bi-zoom-in me-2"></i>${escapeHtml(title)}`;
+    document.getElementById('zoomImage').src = imageUrl;
+    document.getElementById('zoomImage').alt = escapeHtml(title);
+    document.getElementById('downloadLink').href = imageUrl;
+    document.getElementById('openNewTabLink').href = imageUrl;
+    
+    // 顯示 Modal
+    const modal = new bootstrap.Modal(imageModal);
+    modal.show();
+};
 
 // 全域函數 - 開啟停用帳號Modal
 function openDeactivateModal() {
