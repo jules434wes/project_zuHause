@@ -433,6 +433,23 @@ namespace zuHause.Controllers
 
             TempData["activePage"] = "FillInfomation";
 
+            // 驗證手機驗證碼
+            if (!ModelState.IsValid)
+            {
+                return View("RegisterSendCode", model);
+            }
+
+            // 這裡應該要驗證手機驗證碼，目前使用固定值 555666
+            if (model.Verify != 555666)
+            {
+                ModelState.AddModelError("Verify", "驗證碼錯誤");
+                return View("RegisterSendCode", model);
+            }
+
+            // 驗證成功，將手機號碼和驗證狀態存到 TempData
+            TempData["phoneNumber"] = model.PhoneNumber;
+            TempData["phoneVerified"] = true; // 標記手機已驗證
+
             var cities = await _context.Cities.Select(c => new SelectListItem
             {
                 Value = c.CityId.ToString(),
@@ -490,6 +507,10 @@ namespace zuHause.Controllers
 
             DateOnly BirthDate = DateOnly.Parse(model.Birthday!);
 
+            // 檢查手機是否已通過驗證
+            bool phoneVerified = TempData["phoneVerified"] as bool? ?? false;
+            DateTime? phoneVerifiedTime = phoneVerified ? DateTime.Now : null;
+
             Member member = new Member
             {
                 MemberName = model.UserName!,
@@ -502,6 +523,7 @@ namespace zuHause.Controllers
                 ResidenceCityId = model.ResidenceCity,
                 ResidenceDistrictId = model.ResidenceDistrictID,
                 AddressLine = model.AddressLine,
+                PhoneVerifiedAt = phoneVerifiedTime, // 設置手機驗證時間
                 IsActive = true,
                 IsLandlord = false,
                 MemberTypeId = 1,

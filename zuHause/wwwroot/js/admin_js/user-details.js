@@ -6,6 +6,35 @@ var currentMemberId = null;
 var currentIdNumber = null;
 var currentAction = null;
 
+// 通用函數：開啟確認 Modal 並處理 z-index
+function showDoubleCheckModal(needHigherZIndex = false) {
+    var doubleCheckModalElement = document.getElementById('doubleCheckModal');
+    var doubleCheckModal = new bootstrap.Modal(doubleCheckModalElement, {
+        backdrop: 'static',
+        keyboard: false
+    });
+    
+    if (needHigherZIndex) {
+        // 監聽 Modal 顯示事件，設置更高的 z-index (用於疊加在其他 Modal 上)
+        doubleCheckModalElement.addEventListener('shown.bs.modal', function() {
+            // 設置第二個 Modal 的 z-index 比第一個更高
+            const firstModal = document.getElementById('verifyIdModal');
+            const firstModalZIndex = window.getComputedStyle(firstModal).zIndex;
+            const newZIndex = parseInt(firstModalZIndex) + 10;
+            
+            doubleCheckModalElement.style.zIndex = newZIndex;
+            
+            // 同時設置 backdrop 的 z-index
+            const backdrop = document.querySelector('.modal-backdrop:last-child');
+            if (backdrop) {
+                backdrop.style.zIndex = newZIndex - 1;
+            }
+        }, { once: true }); // 只執行一次
+    }
+    
+    doubleCheckModal.show();
+}
+
 // 測試函數已移除
 
 // 測試函數是否可用
@@ -534,22 +563,15 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('idNumberConfirmArea').style.display = 'block';
         document.getElementById('confirmIdNumber').textContent = idNumber;
         
-        var doubleCheckModal = new bootstrap.Modal(document.getElementById('doubleCheckModal'), {
-            backdrop: 'static',
-            keyboard: false
-        });
-        doubleCheckModal.show();
+        // 直接開啟第二個 Modal (疊加在第一個 Modal 上面)
+        showDoubleCheckModal(true);
     });
 
     // 停用帳號確認按鈕事件
     document.getElementById('confirmDeactivateBtn').addEventListener('click', function() {
         currentAction = 'deactivate_account';
         document.getElementById('doubleCheckMessage').textContent = '確定要停用此會員帳號嗎？停用後該會員將無法登入系統。';
-        var doubleCheckModal = new bootstrap.Modal(document.getElementById('doubleCheckModal'), {
-            backdrop: 'static',
-            keyboard: false
-        });
-        doubleCheckModal.show();
+        showDoubleCheckModal(false); // 不需要更高的 z-index
     });
 
     // 最終確認按鈕事件
@@ -575,8 +597,16 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('confirmCheckbox').checked = false;
         document.getElementById('finalConfirmBtn').disabled = true;
         document.getElementById('idNumberConfirmArea').style.display = 'none';
-        currentAction = null;
-        currentIdNumber = null;
+        
+        // 重置 z-index
+        const doubleCheckModal = document.getElementById('doubleCheckModal');
+        doubleCheckModal.style.zIndex = '';
+        
+        // 如果操作未完成，重置狀態但保持第一個 Modal 開啟
+        if (currentAction !== null) {
+            // 只有在操作成功完成時才重置狀態，取消操作時保持狀態
+            // currentAction 和 currentIdNumber 保持不變，讓使用者可以重新嘗試
+        }
     });
 
     // 排序功能初始化

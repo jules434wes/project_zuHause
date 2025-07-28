@@ -38,6 +38,130 @@ function openForceRemoveModal() {
     forceRemoveModal.show();
 }
 
+// 全域函數 - 開啟產權證明檢視Modal
+window.openPropertyProofModal = function() {
+    if (!currentPropertyId) {
+        alert('無法獲取房源ID');
+        return;
+    }
+    
+    // 檢查 modal 元素是否存在
+    const modalElement = document.getElementById('propertyProofModal');
+    if (!modalElement) {
+        console.error('找不到 propertyProofModal 元素');
+        alert('Modal 元素不存在');
+        return;
+    }
+    
+    // 顯示 Modal
+    const proofModal = new bootstrap.Modal(modalElement, {
+        backdrop: 'static',
+        keyboard: false
+    });
+    proofModal.show();
+    
+    // Modal 開啟後載入 PDF
+    setTimeout(() => {
+        loadPropertyProofPDF();
+    }, 300);
+};
+
+// 載入產權證明 PDF
+function loadPropertyProofPDF() {
+    if (!currentPropertyId) {
+        showProofError('無法取得房源ID');
+        return;
+    }
+
+    const proofViewArea = document.getElementById('propertyProofViewArea');
+    
+    // 顯示載入狀態
+    proofViewArea.innerHTML = `
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">載入中...</span>
+        </div>
+        <p class="mt-2 text-muted">載入產權證明文件中...</p>
+    `;
+
+    // 獲取PDF URL (這裡假設從頁面的某個地方取得，或者通過 API)
+    // 實際實作時需要根據具體情況調整
+    const pdfUrl = getPDFUrl();
+    
+    if (!pdfUrl) {
+        showProofError('無法取得產權證明文件路徑');
+        return;
+    }
+
+    // 顯示 PDF
+    displayPDF(pdfUrl);
+}
+
+// 獲取 PDF URL
+function getPDFUrl() {
+    // 從頁面中尋找 PDF URL，可能從 data attribute 或其他方式取得
+    const proofLink = document.querySelector('a[href*=".pdf"]');
+    if (proofLink) {
+        return proofLink.href;
+    }
+    
+    // 或者從全域變數取得（需要在頁面載入時設定）
+    if (window.currentPropertyProofUrl) {
+        return window.currentPropertyProofUrl;
+    }
+    
+    return null;
+}
+
+// 顯示 PDF
+function displayPDF(pdfUrl) {
+    const proofViewArea = document.getElementById('propertyProofViewArea');
+    
+    // 使用 iframe 顯示 PDF
+    proofViewArea.innerHTML = `
+        <div class="border rounded" style="height: 600px;">
+            <iframe src="${pdfUrl}" 
+                    width="100%" 
+                    height="100%" 
+                    style="border: none;"
+                    title="產權證明文件">
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    您的瀏覽器不支援 PDF 預覽，請
+                    <a href="${pdfUrl}" target="_blank" class="alert-link">點擊此處下載查看</a>
+                </div>
+            </iframe>
+        </div>
+        <div class="mt-3 text-center">
+            <a href="${pdfUrl}" class="btn btn-outline-primary" target="_blank">
+                <i class="bi bi-box-arrow-up-right me-1"></i>在新分頁開啟
+            </a>
+        </div>
+    `;
+}
+
+// 顯示產權證明載入錯誤
+function showProofError(message) {
+    const proofViewArea = document.getElementById('propertyProofViewArea');
+    proofViewArea.innerHTML = `
+        <div class="alert alert-danger">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            ${escapeHtml(message)}
+        </div>
+    `;
+}
+
+// HTML 轉義函數
+function escapeHtml(text) {
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // 初始化頁籤功能
     var triggerTabList = [].slice.call(document.querySelectorAll('#propertyDetailsTabs button'))

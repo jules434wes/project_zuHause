@@ -18,8 +18,13 @@
 
 <script src="~/js/admin_js/property-details.js"></script>
 <script>
-	// 設定當前房源ID
+	// 設定當前房源ID和PDF URL
 	var currentPropertyId = '@(Model.Data?.PropertyId ?? "")';
+	var currentPropertyProofUrl = '@(Model.Data?.PropertyProofUrl ?? "")';
+	
+	// 將PDF URL設為全域變數供JavaScript使用
+	window.currentPropertyProofUrl = currentPropertyProofUrl;
+	
 	// 頁面載入完成後設定
 	document.addEventListener('DOMContentLoaded', function() {
 		if (currentPropertyId) {

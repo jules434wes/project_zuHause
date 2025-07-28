@@ -109,6 +109,75 @@
 
 @section Scripts {
     <script src="~/js/admin_js/user-management.js"></script>
+    <script src="~/js/admin_js/user-details.js"></script>
+    <script>
+        // 用於從列表頁面設定會員ID並開啟對應Modal的輔助函數
+        function setCurrentMemberIdAndOpenModal(memberId, modalType) {
+            // 設定當前會員ID
+            if (typeof setCurrentMemberId === 'function') {
+                setCurrentMemberId(memberId);
+            } else if (typeof window.setCurrentMemberId === 'function') {
+                window.setCurrentMemberId(memberId);
+            }
+            
+            // 從表格中獲取會員資訊並更新Modal內容
+            updateModalMemberInfo(memberId);
+            
+            // 根據類型開啟對應的Modal
+            if (modalType === 'view') {
+                // 開啟身分證檢視Modal
+                if (typeof openIdDocumentModal === 'function') {
+                    openIdDocumentModal();
+                } else if (typeof window.openIdDocumentModal === 'function') {
+                    window.openIdDocumentModal();
+                }
+            } else if (modalType === 'verify') {
+                // 開啟身分驗證Modal
+                if (typeof openVerifyIdModal === 'function') {
+                    openVerifyIdModal();
+                } else if (typeof window.openVerifyIdModal === 'function') {
+                    window.openVerifyIdModal();
+                }
+            }
+        }
+        
+        // 更新Modal中的會員資訊
+        function updateModalMemberInfo(memberId) {
+            // 尋找表格中對應的會員資訊
+            const memberRow = document.querySelector(`input[value="${memberId}"]`)?.closest('tr');
+            if (!memberRow) return;
+            
+            // 從表格中提取會員姓名
+            const memberNameLink = memberRow.querySelector('td:nth-child(3) a');
+            const memberName = memberNameLink ? memberNameLink.textContent.trim() : '未知會員';
+            
+            // 更新所有Modal中的會員資訊
+            const memberIdSpanIds = ['verifyIdModalLabel', 'idDocumentViewModalLabel'];
+            const memberInfoElements = document.querySelectorAll('[id*="Modal"] strong');
+            
+            memberInfoElements.forEach(element => {
+                if (element.textContent.includes('(ID:')) {
+                    element.innerHTML = `${memberName} (ID: ${memberId})`;
+                }
+            });
+            
+            // 更新身分驗證Modal中的readonly輸入框
+            const memberNameInput = document.querySelector('#verifyIdModal input[readonly]');
+            if (memberNameInput) {
+                memberNameInput.value = memberName;
+            }
+        }
+    </script>
 }
 
 @await Html.PartialAsync("_AdminPartial/_UserManagement/_UserModals")
+
+<!-- 引入用戶詳情的身分證相關Modal (建立一個臨時的 Model 結構用於 Modal) -->
+@{
+    var tempModel = new zuHause.AdminViewModels.MemberData
+    {
+        MemberID = "0", // 將透過 JavaScript 動態設定
+        MemberName = "", // 將透過 JavaScript 動態設定
+    };
+}
+@await Html.PartialAsync("_AdminPartial/_UserDetails/_UserDetailsModals", tempModel)
