@@ -27,3 +27,38 @@
     z-index: 10;
 }
 
+
+
+/* 頁尾社群圖示配色 */
+.text-mint {
+    color: #007f6b !important;
+}
+
+    .text-mint:hover {
+        color: #005f52 !important;
+    }
+
+/* ✅ 小螢幕下讓導覽列下拉展開（避免重疊） */
+@media screen and (max-width: 992px) {
+    .navbar-collapse {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        width: 100%;
+        background-color: #c5eee5;
+        z-index: 1000;
+        padding: 1rem 1.5rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+
+        .navbar-collapse .nav-link {
+            display: block;
+            margin-bottom: 0.75rem;
+            font-size: 1.1rem;
+        }
+
+    .navbar .container-fluid {
+        position: relative;
+    }
+}
+

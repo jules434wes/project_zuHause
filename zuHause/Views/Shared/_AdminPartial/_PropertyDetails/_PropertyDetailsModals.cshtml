@@ -132,6 +132,50 @@
     </div>
 </div>
 
+<!-- 產權證明檢視 Modal -->
+<div class="modal fade" id="propertyProofModal" tabindex="-1" aria-labelledby="propertyProofModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="propertyProofModalLabel">
+                    <i class="bi bi-file-earmark-pdf me-2"></i>產權證明檢視
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    檢視屋源 <strong>@(Model.Data?.Title ?? "-") (ID: @(Model.Data?.PropertyId ?? "-"))</strong> 的產權證明文件。
+                </div>
+                
+                <!-- PDF 檢視區域 -->
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <h6 class="mb-3">
+                            <i class="bi bi-file-earmark-pdf me-2"></i>產權證明文件 (PDF)
+                        </h6>
+                        <div id="propertyProofViewArea" class="text-center">
+                            <!-- PDF 將通過 JavaScript 載入 -->
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">載入中...</span>
+                            </div>
+                            <p class="mt-2 text-muted">載入產權證明文件中...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <a href="@(Model.Data?.PropertyProofUrl ?? "#")" class="btn btn-success" target="_blank">
+                    <i class="bi bi-download me-1"></i>下載原始檔案
+                </a>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x me-1"></i>關閉
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Double Check 確認Modal -->
 <div class="modal fade" id="doubleCheckModal" tabindex="-1" aria-labelledby="doubleCheckModalLabel" aria-hidden="true">
     <div class="modal-dialog">
