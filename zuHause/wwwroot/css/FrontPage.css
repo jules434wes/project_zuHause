@@ -361,3 +361,18 @@
     object-fit: cover; /* 確保圖片能填滿空間，同時保持比例，超出部分會被裁剪 */
     /* object-fit: contain; */ /* 如果你不想裁剪圖片，想讓圖片完整顯示，但可能會留白 */
 }
+
+.your-text-element {
+    display: block; /* <-- 關鍵改變 */
+    width: 15vw; /* 現在 width 會生效 */
+    white-space: nowrap; /* 1. 確保文字不換行 */
+    overflow: hidden; /* 2. 隱藏超出容器的內容 */
+    text-overflow: ellipsis; /* 3. 在文字溢出時顯示省略號 */
+}
+
+@media (max-width: 770px) 
+{
+    .your-text-element {
+        width: 80vw; /* 現在 width 會生效 */
+    }
+}

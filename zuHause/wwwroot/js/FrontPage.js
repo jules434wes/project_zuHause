@@ -173,7 +173,7 @@
     if (totalImages === 0) {
         console.error("錯誤：沒有圖片可供輪播。");
         // 可以添加一個佔位符圖片
-        carouselImagesContainer.innerHTML = `<img src="/images/placeholder_no_image.png" alt="No Image" style="width: 100%; display: block;">`;
+        carouselImagesContainer.innerHTML = `<img src="/img/PropertyImages/3020.jpg" alt="No Image" style="width: 100%; display: block;">`;
         if (prevBtn) prevBtn.style.display = 'none';
         if (nextBtn) nextBtn.style.display = 'none';
         if (indicatorsContainer) indicatorsContainer.style.display = 'none';
@@ -373,23 +373,27 @@
     // 輔助函數：判斷使用者是否登入
     function isLoggedIn() {
         // **[變更標註]** 修正 clientIsAuthenticated 的類型檢查，因為它可能是字串 "true" 或 "false"
+        localStorage.clear();
         return window.clientIsAuthenticated === true || window.clientIsAuthenticated === "true";
     }
 
     // 輔助函數：如果租客已登入，從後端獲取其 PrimaryRentalDistrictID 對應的 CityCode
     async function getTenantPreferredCityCode() {
         if (!isLoggedIn()) {
+            
             console.log("用戶未登入，不獲取租客偏好城市代碼。");
             return null;
         }
         try {
+            //var memberIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            //console.log("token", memberIdString);
             const token = localStorage.getItem('authToken'); // 假設 token 儲存在 localStorage
             if (!token) {
                 console.warn("用戶已登入但無 authToken，無法獲取偏好城市代碼。");
                 return null;
             }
 
-            const response = await fetch('/api/Member/GetPreferredCityCode', { // 請確保這個 API 返回的是 CityCode
+            const response = await fetch('/api/Member/UserCityCode', { // 請確保這個 API 返回的是 CityCode
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -467,7 +471,7 @@
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <h5 class="card-title mb-0">
-                                    <a href="${propertyUrl}" class="text-truncate" title="${title}">${title}</a>
+                                    <a href="${propertyUrl}" class="your-text-element" title="${title}">${title}</a>
                                 </h5>
                                 <button type="button" class="btn btn-link p-0 love-button" data-favorited="${isFavorited}" data-property-id="${propertyId}">
                                     <i class="bi ${isFavorited ? 'bi-heart-fill' : 'bi-heart'} love-icon"></i>
@@ -499,7 +503,7 @@
             const propertyId = $button.data('property-id');
 
             // 這裡可以發送 AJAX 請求到後端更新收藏狀態
-            console.log(`嘗試更新收藏狀態：Property ID ${propertyId}, 當前收藏狀態: ${isFavorited}`);
+            //console.log(`嘗試更新收藏狀態：Property ID ${propertyId}, 當前收藏狀態: ${isFavorited}`);
 
             if (isFavorited) {
                 $icon.removeClass('bi-heart-fill').addClass('bi-heart');
@@ -518,7 +522,7 @@
         let initialSearchParams = {};
         let targetCityCode = 'TPE'; // 預設城市代碼
 
-        // 1. 優先從 localStorage 獲取上次搜尋的城市代碼
+         //1. 優先從 localStorage 獲取上次搜尋的城市代碼
         const storedParams = localStorage.getItem('lastSearchCriteria');
         if (storedParams) {
             try {

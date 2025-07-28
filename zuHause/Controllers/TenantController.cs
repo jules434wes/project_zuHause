@@ -32,7 +32,7 @@ namespace zuHause.Controllers
         }
 
         [HttpGet]
-        [Route("api/Tenant/UserCityCode")]
+        [Route("/api/Member/UserCityCode")]
         [Produces("application/json")]
         public IActionResult GetUserCityCodeApi()
         {
