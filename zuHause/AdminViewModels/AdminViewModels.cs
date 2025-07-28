@@ -1035,6 +1035,7 @@ namespace zuHause.AdminViewModels
         // 額外屬性用於UI顯示
         public bool IsActive => AccountStatus == "active";
         public bool IsIdentityVerified => VerificationStatus == "verified";
+        public bool HasPendingIdentityApplication => VerificationStatus == "pending";
     }
 
     public class PropertyData

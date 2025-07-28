@@ -4,11 +4,152 @@ var currentMemberId = null;
 
 // 全域函數 - 開啟身分驗證Modal
 function openVerifyIdModal() {
+    // 載入身分證檔案
+    loadIdentityDocuments();
+    
     var verifyModal = new bootstrap.Modal(document.getElementById('verifyIdModal'), {
         backdrop: 'static',
         keyboard: false
     });
     verifyModal.show();
+}
+
+// 載入身分證檔案
+function loadIdentityDocuments() {
+    if (!currentMemberId) {
+        console.error('無法取得會員ID');
+        return;
+    }
+
+    const documentsArea = document.getElementById('identityDocumentsArea');
+    
+    // 顯示載入狀態
+    documentsArea.innerHTML = `
+        <div class="col-12 text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">載入中...</span>
+            </div>
+            <p class="mt-2 text-muted">載入身分證檔案中...</p>
+        </div>
+    `;
+
+    // 調用API載入檔案
+    fetch(`/Admin/GetMemberIdentityDocuments?memberId=${currentMemberId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.data.Documents) {
+                displayIdentityDocuments(data.data.Documents);
+            } else {
+                showDocumentError(data.message || '載入檔案失敗');
+            }
+        })
+        .catch(error => {
+            console.error('載入檔案錯誤：', error);
+            showDocumentError('載入檔案時發生錯誤');
+        });
+}
+
+// 顯示身分證檔案
+function displayIdentityDocuments(documents) {
+    const documentsArea = document.getElementById('identityDocumentsArea');
+    
+    if (!documents || documents.length === 0) {
+        documentsArea.innerHTML = `
+            <div class="col-12 text-center">
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    尚未找到身分證上傳檔案
+                </div>
+            </div>
+        `;
+        return;
+    }
+
+    let html = '';
+    documents.forEach(doc => {
+        html += `
+            <div class="col-md-6">
+                <div class="card border-info">
+                    <div class="card-header bg-info bg-opacity-10">
+                        <h6 class="card-title mb-0">
+                            <i class="bi bi-file-image me-2"></i>${doc.TypeDisplay}
+                        </h6>
+                    </div>
+                    <div class="card-body text-center">
+                        <div class="image-preview mb-3" style="height: 200px; overflow: hidden; border: 1px solid #ddd; border-radius: 8px;">
+                            <img src="${doc.FileUrl}" 
+                                 alt="${doc.TypeDisplay}" 
+                                 class="img-fluid h-100 w-100" 
+                                 style="object-fit: contain; cursor: pointer;"
+                                 onclick="openImageModal('${doc.FileUrl}', '${doc.TypeDisplay}')">
+                        </div>
+                        <div class="document-info">
+                            <p class="mb-1"><small class="text-muted">檔案名稱：${doc.FileName}</small></p>
+                            <p class="mb-1"><small class="text-muted">上傳時間：${doc.UploadedAt}</small></p>
+                            <p class="mb-0"><small class="text-muted">檔案大小：${doc.FileSize}</small></p>
+                        </div>
+                        <button type="button" class="btn btn-outline-primary btn-sm mt-2" 
+                                onclick="openImageModal('${doc.FileUrl}', '${doc.TypeDisplay}')">
+                            <i class="bi bi-zoom-in me-1"></i>放大檢視
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    documentsArea.innerHTML = html;
+}
+
+// 顯示檔案載入錯誤
+function showDocumentError(message) {
+    const documentsArea = document.getElementById('identityDocumentsArea');
+    documentsArea.innerHTML = `
+        <div class="col-12 text-center">
+            <div class="alert alert-danger">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                ${escapeHtml(message)}
+            </div>
+        </div>
+    `;
+}
+
+// 開啟圖片放大Modal
+function openImageModal(imageUrl, title) {
+    // 創建或更新圖片放大Modal
+    let imageModal = document.getElementById('imageZoomModal');
+    if (!imageModal) {
+        // 創建Modal HTML
+        const modalHtml = `
+            <div class="modal fade" id="imageZoomModal" tabindex="-1" aria-labelledby="imageZoomModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="imageZoomModalLabel">${escapeHtml(title)}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body text-center">
+                            <img src="${imageUrl}" alt="${escapeHtml(title)}" class="img-fluid" style="max-height: 70vh;">
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">關閉</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        imageModal = document.getElementById('imageZoomModal');
+    } else {
+        // 更新現有Modal內容
+        imageModal.querySelector('.modal-title').textContent = title;
+        imageModal.querySelector('.modal-body img').src = imageUrl;
+        imageModal.querySelector('.modal-body img').alt = title;
+    }
+    
+    // 顯示Modal
+    const modal = new bootstrap.Modal(imageModal);
+    modal.show();
 }
 
 // 全域函數 - 開啟停用帳號Modal
@@ -49,17 +190,41 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Double Check 確認機制
     let currentAction = null;
+    let currentIdNumber = null;
 
     // 身分驗證確認按鈕事件
     document.getElementById('confirmVerifyBtn').addEventListener('click', function() {
-        var idNumber = document.getElementById('idNumberInput').value;
+        var idNumber = document.getElementById('idNumberInput').value.trim();
+        
+        // 驗證身分證字號格式
         if (!idNumber) {
-            alert('請輸入身分證字號！');
+            showToast('請輸入身分證字號！', 'warning');
             return;
         }
         
+        if (idNumber.length !== 10) {
+            showToast('身分證字號格式不正確，應為10碼！', 'warning');
+            return;
+        }
+        
+        // 簡單的身分證字號格式驗證
+        var idPattern = /^[A-Z][12][0-9]{8}$/;
+        if (!idPattern.test(idNumber)) {
+            showToast('身分證字號格式不正確！', 'warning');
+            return;
+        }
+        
+        // 儲存當前輸入的身分證字號
+        currentIdNumber = idNumber;
         currentAction = 'verify_identity';
-        document.getElementById('doubleCheckMessage').textContent = '確定要為此會員進行身分驗證嗎？此操作將授予房東資格且不可逆。';
+        
+        // 更新確認訊息
+        document.getElementById('doubleCheckMessage').textContent = '確定要為此會員進行身分驗證嗎？此操作不可逆。';
+        
+        // 顯示身分證號確認區域
+        document.getElementById('idNumberConfirmArea').style.display = 'block';
+        document.getElementById('confirmIdNumber').textContent = idNumber;
+        
         var doubleCheckModal = new bootstrap.Modal(document.getElementById('doubleCheckModal'), {
             backdrop: 'static',
             keyboard: false
@@ -80,30 +245,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 最終確認按鈕事件
     document.getElementById('finalConfirmBtn').addEventListener('click', function() {
-        // 這裡執行實際的操作 - 後續開發
         switch(currentAction) {
             case 'verify_identity':
-                console.log('執行身分驗證操作 - MemberID: ' + currentMemberId);
+                executeIdentityVerification();
                 break;
             case 'deactivate_account':
                 console.log('執行帳號停用操作 - MemberID: ' + currentMemberId);
+                // 後續實作帳號停用邏輯
                 break;
         }
-        
-        // 關閉所有Modal
-        var doubleCheckModal = bootstrap.Modal.getInstance(document.getElementById('doubleCheckModal'));
-        var verifyModal = bootstrap.Modal.getInstance(document.getElementById('verifyIdModal'));
-        var deactivateModal = bootstrap.Modal.getInstance(document.getElementById('deactivateModal'));
-        
-        doubleCheckModal.hide();
-        if (verifyModal) verifyModal.hide();
-        if (deactivateModal) deactivateModal.hide();
-        
-        // 重置狀態
-        currentAction = null;
-        
-        // 顯示操作成功訊息 - 後續可改為實際的成功回饋
-        alert('操作已執行完成');
     });
 
     // Double Check 確認框的checkbox控制
@@ -111,10 +261,13 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('finalConfirmBtn').disabled = !this.checked;
     });
     
-    // 當 doubleCheckModal 關閉時重置 checkbox
+    // 當 doubleCheckModal 關閉時重置 checkbox 和隱藏身分證號確認區域
     document.getElementById('doubleCheckModal').addEventListener('hidden.bs.modal', function() {
         document.getElementById('confirmCheckbox').checked = false;
         document.getElementById('finalConfirmBtn').disabled = true;
+        document.getElementById('idNumberConfirmArea').style.display = 'none';
+        currentAction = null;
+        currentIdNumber = null;
     });
 
     // 排序功能初始化
@@ -561,4 +714,149 @@ function debounce(func, wait) {
         clearTimeout(timeout);
         timeout = setTimeout(later, wait);
     };
+}
+
+// ============ 身分驗證功能 ============
+
+// 執行身分驗證
+function executeIdentityVerification() {
+    if (!currentMemberId || !currentIdNumber) {
+        showToast('無法取得會員ID或身分證字號', 'error');
+        return;
+    }
+    
+    // 顯示載入狀態
+    showFinalConfirmLoading();
+    
+    // 準備表單資料
+    const formData = new FormData();
+    formData.append('memberId', currentMemberId);
+    formData.append('nationalIdNo', currentIdNumber);
+    
+    // 發送請求
+    fetch('/Admin/ApproveIdentityVerification', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        hideFinalConfirmLoading();
+        
+        if (data.success) {
+            // 關閉所有Modal
+            closeAllVerificationModals();
+            
+            // 顯示成功訊息
+            showToast('身分驗證審核通過！', 'success');
+            
+            // 重新整理頁面以更新會員狀態
+            setTimeout(() => {
+                location.reload();
+            }, 1500);
+        } else {
+            console.error('伺服器返回錯誤：', data);
+            showToast('審核失敗：' + data.message, 'error');
+        }
+    })
+    .catch(error => {
+        hideFinalConfirmLoading();
+        console.error('AJAX 錯誤：', error);
+        showToast('執行身分驗證時發生錯誤：' + error.message, 'error');
+    });
+}
+
+// 顯示最終確認載入狀態
+function showFinalConfirmLoading() {
+    const btn = document.getElementById('finalConfirmBtn');
+    btn.disabled = true;
+    btn.innerHTML = `
+        <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+        處理中...
+    `;
+}
+
+// 隱藏最終確認載入狀態
+function hideFinalConfirmLoading() {
+    const btn = document.getElementById('finalConfirmBtn');
+    btn.disabled = false;
+    btn.innerHTML = `
+        <i class="fas fa-check me-1"></i>確定執行
+    `;
+}
+
+// 關閉所有驗證相關Modal
+function closeAllVerificationModals() {
+    const doubleCheckModal = bootstrap.Modal.getInstance(document.getElementById('doubleCheckModal'));
+    const verifyModal = bootstrap.Modal.getInstance(document.getElementById('verifyIdModal'));
+    
+    if (doubleCheckModal) doubleCheckModal.hide();
+    if (verifyModal) verifyModal.hide();
+    
+    // 重置狀態
+    currentAction = null;
+    currentIdNumber = null;
+}
+
+// Toast 訊息顯示功能
+function showToast(message, type = 'info') {
+    // 創建或取得toast容器
+    let toastContainer = document.getElementById('toastContainer');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'toastContainer';
+        toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+        toastContainer.style.zIndex = '9999';
+        document.body.appendChild(toastContainer);
+    }
+    
+    // 設定顏色和圖示
+    let bgClass, iconClass;
+    switch (type) {
+        case 'success':
+            bgClass = 'bg-success';
+            iconClass = 'bi-check-circle-fill';
+            break;
+        case 'error':
+            bgClass = 'bg-danger';
+            iconClass = 'bi-exclamation-circle-fill';
+            break;
+        case 'warning':
+            bgClass = 'bg-warning';
+            iconClass = 'bi-exclamation-triangle-fill';
+            break;
+        default:
+            bgClass = 'bg-info';
+            iconClass = 'bi-info-circle-fill';
+    }
+    
+    // 創建toast HTML
+    const toastId = 'toast-' + Date.now();
+    const toastHtml = `
+        <div id="${toastId}" class="toast ${bgClass} text-white" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header ${bgClass} text-white border-0">
+                <i class="bi ${iconClass} me-2"></i>
+                <strong class="me-auto">系統訊息</strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                ${escapeHtml(message)}
+            </div>
+        </div>
+    `;
+    
+    toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+    
+    // 顯示toast
+    const toastElement = document.getElementById(toastId);
+    const toast = new bootstrap.Toast(toastElement, {
+        autohide: true,
+        delay: type === 'error' ? 5000 : 3000
+    });
+    
+    toast.show();
+    
+    // 清理：toast隱藏後移除元素
+    toastElement.addEventListener('hidden.bs.toast', function() {
+        toastElement.remove();
+    });
 }

@@ -1594,6 +1594,274 @@ namespace zuHause.Controllers
                 _ => "未知狀態"
             };
         }
+
+        /// <summary>
+        /// 取得會員身分證上傳檔案 API
+        /// 需要 member_details 權限才能存取
+        /// </summary>
+        [HttpGet]
+        [RequireAdminPermission(AdminPermissions.MemberDetails)]
+        public async Task<IActionResult> GetMemberIdentityDocuments(int memberId)
+        {
+            try
+            {
+                // 查找會員的身分證驗證申請
+                var approval = await _context.Approvals
+                    .FirstOrDefaultAsync(a => a.ApplicantMemberId == memberId && 
+                                             a.ModuleCode == "IDENTITY" && 
+                                             a.StatusCode == "PENDING");
+
+                if (approval == null)
+                {
+                    return Json(new { success = false, message = "找不到待審核的身分驗證申請" });
+                }
+
+                // 查找相關的檔案上傳記錄
+                var uploads = await _context.UserUploads
+                    .Where(u => u.MemberId == memberId && 
+                               u.ModuleCode == "MemberInfo" && 
+                               u.IsActive &&
+                               (u.UploadTypeCode == "USER_ID_FRONT" || u.UploadTypeCode == "USER_ID_BACK"))
+                    .Select(u => new
+                    {
+                        UploadId = u.UploadId,
+                        OriginalFileName = u.OriginalFileName,
+                        FilePath = u.FilePath,
+                        UploadTypeCode = u.UploadTypeCode,
+                        TypeDisplay = u.UploadTypeCode == "USER_ID_FRONT" ? "身分證正面" : "身分證反面",
+                        UploadedAt = u.UploadedAt.ToString("yyyy-MM-dd HH:mm:ss"),
+                                                                        FileSize = FormatFileSize(u.FileSize)
+                    })
+                    .ToListAsync();
+
+                return Json(new
+                {
+                    success = true,
+                    data = new
+                    {
+                        ApprovalId = approval.ApprovalId,
+                        Documents = uploads
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new
+                {
+                    success = false,
+                    message = "載入身分證檔案時發生錯誤",
+                    error = ex.Message
+                });
+            }
+        }
+
+        /// <summary>
+        /// 審核通過身分驗證 API
+        /// 需要 member_details 權限才能存取
+        /// </summary>
+        [HttpPost]
+        [RequireAdminPermission(AdminPermissions.MemberDetails)]
+        public async Task<IActionResult> ApproveIdentityVerification([FromForm] int memberId, [FromForm] string nationalIdNo)
+        {
+            try
+            {
+                // 驗證身分證字號格式
+                if (string.IsNullOrWhiteSpace(nationalIdNo) || nationalIdNo.Length != 10)
+                {
+                    return Json(new { success = false, message = "身分證字號格式不正確" });
+                }
+
+                // 檢查身分證字號是否已被使用
+                var existingMember = await _context.Members
+                    .FirstOrDefaultAsync(m => m.NationalIdNo == nationalIdNo && m.MemberId != memberId);
+
+                if (existingMember != null)
+                {
+                    return Json(new { success = false, message = "此身分證字號已被其他會員使用" });
+                }
+
+                // 查找會員記錄
+                var member = await _context.Members.FirstOrDefaultAsync(m => m.MemberId == memberId);
+                if (member == null)
+                {
+                    return Json(new { success = false, message = "找不到指定的會員" });
+                }
+
+                // 查找待審核的身分驗證申請
+                var approval = await _context.Approvals
+                    .FirstOrDefaultAsync(a => a.ApplicantMemberId == memberId && 
+                                             a.ModuleCode == "IDENTITY" && 
+                                             a.StatusCode == "PENDING");
+
+                if (approval == null)
+                {
+                    return Json(new { success = false, message = "找不到待審核的身分驗證申請" });
+                }
+
+                var currentAdminId = int.Parse(GetCurrentAdminId() ?? "0");
+                var currentTime = DateTime.Now;
+
+                // 根據規格文件更新會員資料
+                member.NationalIdNo = nationalIdNo;
+                member.IdentityVerifiedAt = currentTime;
+
+                // 更新審核狀態
+                approval.StatusCode = "APPROVED";
+                approval.UpdatedAt = currentTime;
+
+                // 新增審核歷程記錄
+                var approvalItem = new ApprovalItem
+                {
+                    ApprovalId = approval.ApprovalId,
+                    ActionType = "APPROVED",
+                    ActionBy = currentAdminId,
+                    ActionNote = $"身分驗證審核通過，身分證字號：{nationalIdNo}",
+                    SnapshotJson = System.Text.Json.JsonSerializer.Serialize(new
+                    {
+                        MemberId = member.MemberId,
+                        MemberName = member.MemberName,
+                        NationalIdNo = nationalIdNo,
+                        IdentityVerifiedAt = currentTime,
+                        ApprovedBy = currentAdminId,
+                        ApprovedAt = currentTime
+                    }),
+                    CreatedAt = currentTime
+                };
+
+                _context.ApprovalItems.Add(approvalItem);
+
+                await _context.SaveChangesAsync();
+
+                return Json(new
+                {
+                    success = true,
+                    message = "身分驗證審核通過",
+                    data = new
+                    {
+                        MemberId = memberId,
+                        MemberName = member.MemberName,
+                        NationalIdNo = nationalIdNo,
+                        IdentityVerifiedAt = currentTime.ToString("yyyy-MM-dd HH:mm:ss"),
+                        ApprovedBy = currentAdminId
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new
+                {
+                    success = false,
+                    message = "審核身分驗證時發生錯誤",
+                    error = ex.Message
+                });
+            }
+        }
+
+        /// <summary>
+        /// 拒絕身分驗證 API
+        /// 需要 member_details 權限才能存取
+        /// </summary>
+        [HttpPost]
+        [RequireAdminPermission(AdminPermissions.MemberDetails)]
+        public async Task<IActionResult> RejectIdentityVerification([FromForm] int memberId, [FromForm] string rejectReason)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(rejectReason))
+                {
+                    return Json(new { success = false, message = "請填寫拒絕原因" });
+                }
+
+                // 查找會員記錄
+                var member = await _context.Members.FirstOrDefaultAsync(m => m.MemberId == memberId);
+                if (member == null)
+                {
+                    return Json(new { success = false, message = "找不到指定的會員" });
+                }
+
+                // 查找待審核的身分驗證申請
+                var approval = await _context.Approvals
+                    .FirstOrDefaultAsync(a => a.ApplicantMemberId == memberId && 
+                                             a.ModuleCode == "IDENTITY" && 
+                                             a.StatusCode == "PENDING");
+
+                if (approval == null)
+                {
+                    return Json(new { success = false, message = "找不到待審核的身分驗證申請" });
+                }
+
+                var currentAdminId = int.Parse(GetCurrentAdminId() ?? "0");
+                var currentTime = DateTime.Now;
+
+                // 更新審核狀態
+                approval.StatusCode = "REJECTED";
+                approval.UpdatedAt = currentTime;
+
+                // 新增審核歷程記錄
+                var approvalItem = new ApprovalItem
+                {
+                    ApprovalId = approval.ApprovalId,
+                    ActionType = "REJECT_FINAL",
+                    ActionBy = currentAdminId,
+                    ActionNote = $"身分驗證審核拒絕：{rejectReason}",
+                    SnapshotJson = System.Text.Json.JsonSerializer.Serialize(new
+                    {
+                        MemberId = member.MemberId,
+                        MemberName = member.MemberName,
+                        RejectReason = rejectReason,
+                        RejectedBy = currentAdminId,
+                        RejectedAt = currentTime
+                    }),
+                    CreatedAt = currentTime
+                };
+
+                _context.ApprovalItems.Add(approvalItem);
+
+                // 根據規格文件，拒絕時不更新會員的身分驗證相關欄位
+                // members.identityVerifiedAt 和 nationalIdNo 保持 NULL
+
+                await _context.SaveChangesAsync();
+
+                return Json(new
+                {
+                    success = true,
+                    message = "身分驗證審核已拒絕",
+                    data = new
+                    {
+                        MemberId = memberId,
+                        MemberName = member.MemberName,
+                        RejectReason = rejectReason,
+                        RejectedBy = currentAdminId,
+                        RejectedAt = currentTime.ToString("yyyy-MM-dd HH:mm:ss")
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new
+                {
+                    success = false,
+                    message = "拒絕身分驗證時發生錯誤",
+                    error = ex.Message
+                });
+            }
+        }
+
+        /// <summary>
+        /// 格式化檔案大小
+        /// </summary>
+        private string FormatFileSize(long bytes)
+        {
+            string[] suffixes = { "B", "KB", "MB", "GB" };
+            int counter = 0;
+            decimal number = bytes;
+            while (Math.Round(number / 1024) >= 1)
+            {
+                number = number / 1024;
+                counter++;
+            }
+            return string.Format("{0:n1} {1}", number, suffixes[counter]);
+        }
     }
 
     /// <summary>

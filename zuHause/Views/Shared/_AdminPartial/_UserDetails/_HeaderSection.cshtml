@@ -43,6 +43,13 @@
                     }
                 </div>
                 <div>
+                    @if (!memberData.IsIdentityVerified && memberData.HasPendingIdentityApplication)
+                    {
+                        <button class="btn btn-primary" onclick="openVerifyIdModal()">
+                            <i class="bi bi-check2-circle me-1"></i> 手動驗證身分
+                        </button>
+                    }
+                    
                     @if (memberData.IsActive)
                     {
                         <button class="btn btn-outline-danger" onclick="openDeactivateModal()">
