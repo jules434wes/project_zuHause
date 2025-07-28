@@ -121,6 +121,24 @@ namespace zuHause.Services
         }
 
         /// <summary>
+        /// 生成圖片存取 URL（使用完整的圖片物件資訊）
+        /// </summary>
+        public string GenerateImageUrl(Image image, ImageSize size = ImageSize.Original)
+        {
+            if (image == null)
+                return string.Empty;
+
+            // 檢查是否為計算欄位格式 (純 GUID + 副檔名)
+            if (IsComputedColumnFormat(image.StoredFileName))
+            {
+                // 使用 Image 物件的完整資訊直接生成 BlobUrl
+                return _blobUrlGenerator.GenerateImageUrl(image.Category, image.EntityId, image.ImageGuid, size);
+            }
+            // 否則使用原有的 StoredFileName 邏輯
+            return GenerateImageUrl(image.StoredFileName, size);
+        }
+
+        /// <summary>
         /// 生成圖片存取 URL
         /// </summary>
         public string GenerateImageUrl(string storedFileName, ImageSize size = ImageSize.Original)
@@ -134,12 +152,66 @@ namespace zuHause.Services
                 // 新格式：解析 Blob 路徑並生成 Azure Blob Storage URL
                 return GenerateBlobUrl(storedFileName, size);
             }
+            // 若為計算欄位格式（純 GUID + 副檔名），嘗試從資料庫找到對應 Image 以組成正式 URL
+            if (IsComputedColumnFormat(storedFileName))
+            {
+                var guidPart = Path.GetFileNameWithoutExtension(storedFileName);
+                if (Guid.TryParse(guidPart, out var imageGuid))
+                {
+                    var image = _context.Images
+                        .AsNoTracking()
+                        .FirstOrDefault(img => img.ImageGuid == imageGuid);
+
+                    if (image != null)
+                    {
+                        // 調用已有的物件版方法
+                        return GenerateImageUrl(image, size);
+                    }
+                }
+            }
             else
             {
                 // 舊格式：向下相容，假設為舊的本地檔案格式
                 // 直接使用 Azure Blob Storage 的基礎 URL 加上檔名
                 return GenerateLegacyUrl(storedFileName, size);
             }
+            
+            // 如果所有條件都不符合，返回空字串
+            return string.Empty;
+        }
+
+        /// <summary>
+        /// 檢查是否為計算欄位格式（純 GUID + 副檔名）
+        /// </summary>
+        /// <param name="storedFileName">儲存檔名</param>
+        /// <returns>是否為計算欄位格式</returns>
+        private bool IsComputedColumnFormat(string storedFileName)
+        {
+            if (string.IsNullOrWhiteSpace(storedFileName))
+                return false;
+
+            // 計算欄位格式特徵：
+            // 1. 不包含路徑分隔符 "/"
+            // 2. 長度約為 40 字元 (36字元GUID + 4字元副檔名)
+            // 3. 包含連字號的 GUID 格式
+            // 4. 以 .jpg、.png、.webp 等副檔名結尾
+            if (storedFileName.Contains("/"))
+                return false;
+
+            var parts = storedFileName.Split('.');
+            if (parts.Length != 2)
+                return false;
+
+            var guidPart = parts[0];
+            var extension = parts[1];
+
+            // 檢查是否為有效的 GUID 格式 (8-4-4-4-12)
+            return Guid.TryParse(guidPart, out _) && 
+                   (extension.Equals("jpg", StringComparison.OrdinalIgnoreCase) ||
+                    extension.Equals("png", StringComparison.OrdinalIgnoreCase) ||
+                    extension.Equals("webp", StringComparison.OrdinalIgnoreCase) ||
+                    extension.Equals("pdf", StringComparison.OrdinalIgnoreCase) ||
+                    extension.Equals("bin", StringComparison.OrdinalIgnoreCase));
         }
 
         /// <summary>

@@ -1,0 +1,2223 @@
+@{
+    ViewData["Title"] = ViewBag.Title ?? "純 API 方式演示";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="demo-page">
+    <!-- 頁面標題 -->
+    <div class="demo-header bg-dark text-white">
+        <div class="container">
+            <div class="row">
+                <div class="col-12">
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb bg-transparent">
+                            <li class="breadcrumb-item">
+                                <a href="@Url.Action("Index")" class="text-white">
+                                    <i class="fas fa-home me-1"></i>演示首頁
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active text-white" aria-current="page">
+                                純 API 方式
+                            </li>
+                        </ol>
+                    </nav>
+                    
+                    <h1 class="display-5 mb-3">
+                        <i class="fas fa-code me-3"></i>純 API 方式
+                    </h1>
+                    <p class="lead mb-4">
+                        @(ViewBag.Description ?? "完全使用 JavaScript + REST API，適合現代前端框架")
+                    </p>
+                    
+                    <div class="alert alert-info d-inline-block">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>通用測試模組：</strong>支援自選實體類型和 ID，適用於任何業務場景
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container my-5">
+        <!-- 架構說明 -->
+        <div class="row mb-5">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-dark text-white">
+                        <h3 class="mb-0">
+                            <i class="fas fa-rocket me-2"></i>現代化架構優勢
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5 class="text-dark">🏗️ 技術架構</h5>
+                                <div class="architecture-flow">
+                                    <div class="flow-step">
+                                        <span class="badge bg-primary">前端 JavaScript</span>
+                                        <div class="flow-arrow">⬇️</div>
+                                    </div>
+                                    <div class="flow-step">
+                                        <span class="badge bg-success">HTTP API 呼叫</span>
+                                        <div class="flow-arrow">⬇️</div>
+                                    </div>
+                                    <div class="flow-step">
+                                        <span class="badge bg-info">JSON 資料交換</span>
+                                        <div class="flow-arrow">⬇️</div>
+                                    </div>
+                                    <div class="flow-step">
+                                        <span class="badge bg-warning">動態 UI 更新</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="api-features mt-3">
+                                    <h6 class="text-primary">🚀 現代化特色</h6>
+                                    <ul class="list-unstyled">
+                                        <li><i class="fas fa-bolt text-warning me-2"></i>即時響應</li>
+                                        <li><i class="fas fa-mobile-alt text-info me-2"></i>跨平台支援</li>
+                                        <li><i class="fas fa-cogs text-secondary me-2"></i>完全客製化</li>
+                                        <li><i class="fab fa-js text-success me-2"></i>現代框架整合</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h5 class="text-dark">📝 API 端點</h5>
+                                <div class="api-endpoints">
+                                    <div class="endpoint-item">
+                                        <span class="method method-get">GET</span>
+                                        <code>/api/ImageManagerApi/list</code>
+                                    </div>
+                                    <div class="endpoint-item">
+                                        <span class="method method-post">POST</span>
+                                        <code>/api/ImageManagerApi/upload</code>
+                                    </div>
+                                    <div class="endpoint-item">
+                                        <span class="method method-delete">DELETE</span>
+                                        <code>/api/ImageManagerApi/delete/{id}</code>
+                                    </div>
+                                    <div class="endpoint-item">
+                                        <span class="method method-post">POST</span>
+                                        <code>/api/ImageManagerApi/reorder</code>
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-3">
+                                    <h6 class="text-primary">🔧 支援框架</h6>
+                                    <div class="framework-badges">
+                                        <span class="badge bg-info me-1">React</span>
+                                        <span class="badge bg-success me-1">Vue.js</span>
+                                        <span class="badge bg-danger me-1">Angular</span>
+                                        <span class="badge bg-primary me-1">React Native</span>
+                                        <span class="badge bg-secondary me-1">純 JavaScript</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 實體選擇配置 -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-warning text-dark">
+                        <h3 class="mb-0">
+                            <i class="fas fa-cog me-2"></i>測試配置
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label for="entityTypeSelect" class="form-label">
+                                    <i class="fas fa-cube me-1"></i>實體類型
+                                </label>
+                                <select id="entityTypeSelect" class="form-select" onchange="updateConfig()">
+                                    @foreach (var entityType in ViewBag.EntityTypes)
+                                    {
+                                        if (entityType.Value == ViewBag.DefaultEntityType)
+                                        {
+                                            <option value="@entityType.Value" selected>@entityType.Text</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="@entityType.Value">@entityType.Text</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="entityIdInput" class="form-label">
+                                    <i class="fas fa-hashtag me-1"></i>實體 ID
+                                </label>
+                                <input type="number" id="entityIdInput" class="form-control" 
+                                       value="@ViewBag.DefaultEntityId" min="1" onchange="updateConfig()">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="categorySelect" class="form-label">
+                                    <i class="fas fa-tags me-1"></i>圖片分類
+                                </label>
+                                <select id="categorySelect" class="form-select" onchange="updateConfig()">
+                                    <option value="0">Gallery (展示)</option>
+                                    <option value="1">Profile (個人資料)</option>
+                                    <option value="2">Thumbnail (縮圖)</option>
+                                    <option value="3">Document (文件)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">
+                                    <i class="fas fa-shield-alt me-1"></i>驗證設定
+                                </label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="skipValidationCheck" onchange="updateConfig()">
+                                    <label class="form-check-label" for="skipValidationCheck">
+                                        略過實體驗證
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <div class="alert alert-light mb-0">
+                                <small class="text-muted">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    當前測試目標：<span id="currentTarget"></span>
+                                    <span id="validationStatus" class="badge bg-secondary ms-2"></span>
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- API 測試工具 -->
+        <div class="row mb-5">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h3 class="mb-0">
+                            <i class="fas fa-flask me-2"></i>即時 API 測試工具
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="card border-success">
+                                    <div class="card-header bg-success text-white">
+                                        <h5 class="mb-0">
+                                            <i class="fas fa-list me-2"></i>取得圖片清單
+                                        </h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <button class="btn btn-success w-100" onclick="testGetImages()">
+                                            <i class="fas fa-download me-2"></i>GET /api/ImageManagerApi/List
+                                        </button>
+                                        <small class="text-muted mt-2 d-block">取得指定實體的所有圖片</small>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <div class="card border-info">
+                                    <div class="card-header bg-info text-white">
+                                        <h5 class="mb-0">
+                                            <i class="fas fa-upload me-2"></i>上傳圖片
+                                        </h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <input type="file" id="apiTestFiles" class="form-control mb-2" multiple accept="image/*">
+                                        <button class="btn btn-info w-100" onclick="testUploadImages()">
+                                            <i class="fas fa-cloud-upload-alt me-2"></i>POST /api/ImageManagerApi/Upload
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <div class="card border-warning">
+                                    <div class="card-header bg-warning text-dark">
+                                        <h5 class="mb-0">
+                                            <i class="fas fa-sort me-2"></i>更新排序
+                                        </h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <button class="btn btn-warning w-100" onclick="testReorderImages()">
+                                            <i class="fas fa-random me-2"></i>PUT /api/ImageManagerApi/Reorder
+                                        </button>
+                                        <small class="text-muted mt-2 d-block">隨機重新排序現有圖片</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- API 回應顯示 -->
+                        <div class="mt-4">
+                            <h5>
+                                <i class="fas fa-terminal me-2"></i>API 回應
+                            </h5>
+                            <div id="apiResponse" class="api-response">
+                                <p class="text-muted">點擊上方按鈕測試 API，回應將在這裡顯示...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tag Helper 圖片管理器演示 -->
+        <div class="row mb-5">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-success text-white">
+                        <h3 class="mb-0">
+                            <i class="fas fa-magic me-2"></i>Tag Helper 圖片管理器
+                            <span class="badge bg-light text-dark ms-2">統一組件</span>
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-success" role="alert">
+                            <i class="fas fa-rocket me-2"></i>
+                            <strong>生產級組件：</strong>
+                            使用統一圖片管理組件，支援拖拽排序、主圖設定、即時預覽等完整功能。
+                        </div>
+
+                        <!-- 實體參數選擇 -->
+                        <div class="row mb-4">
+                            <div class="col-md-3">
+                                <label class="form-label">實體類型</label>
+                                <select class="form-select" id="entityTypeSelect">
+                                    <option value="1" selected>Property (房源)</option>
+                                    <option value="2">Member (會員)</option>
+                                    <option value="3">Furniture (家具)</option>
+                                    <option value="4">Announcement (公告)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">實體 ID</label>
+                                <input type="number" class="form-control" id="entityIdInput" value="2006" min="1">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">圖片分類</label>
+                                <select class="form-select" id="categorySelect">
+                                    <option value="1" selected>Gallery (相簿)</option>
+                                    <option value="2">Avatar (頭像)</option>
+                                    <option value="3">Product (產品)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">操作</label>
+                                <button class="btn btn-primary w-100" onclick="updateImageManager()">
+                                    <i class="fas fa-sync me-1"></i>套用設定
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Tag Helper 圖片管理器 -->
+                        <div id="imageManagerContainer">
+                            <zh-image-manager entity-type="Property" entity-id="2006" category="Gallery" max-count="15"></zh-image-manager>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 自建圖片管理器 -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-dark text-white">
+                        <h3 class="mb-0">
+                            <i class="fas fa-desktop me-2"></i>純 API 自建圖片管理器
+                            <span class="badge bg-warning ms-2">純 JavaScript</span>
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info" role="alert">
+                            <i class="fas fa-code me-2"></i>
+                            <strong>原始實作：</strong>
+                            使用純 JavaScript + REST API 的完整自建實作，展示如何不依賴組件庫進行開發。
+                        </div>
+
+                        <!-- 控制面板 -->
+                        <div class="row mb-4">
+                            <div class="col-md-3">
+                                <label class="form-label">實體類型</label>
+                                <select class="form-select" id="customEntityTypeSelect" onchange="updateConfig()">
+                                    <option value="1" selected>Property (房源)</option>
+                                    <option value="2">Member (會員)</option>
+                                    <option value="3">Furniture (家具)</option>
+                                    <option value="4">Announcement (公告)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">實體 ID</label>
+                                <input type="number" class="form-control" id="customEntityIdInput" value="2006" min="1" onchange="updateConfig()">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">圖片分類</label>
+                                <select class="form-select" id="customCategorySelect" onchange="updateConfig()">
+                                    <option value="0" selected>Gallery (展示)</option>
+                                    <option value="1">Profile (個人資料)</option>
+                                    <option value="2">Thumbnail (縮圖)</option>
+                                    <option value="3">Document (文件)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">操作</label>
+                                <button class="btn btn-success w-100" onclick="loadImages()">
+                                    <i class="fas fa-sync me-1"></i>重新載入
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 上傳區域 -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="upload-section">
+                                    <input type="file" id="fileInput" multiple accept="image/*" style="display: none;" onchange="handleFileSelect(event)">
+                                    <button class="btn btn-primary me-2" onclick="document.getElementById('fileInput').click()">
+                                        <i class="fas fa-plus me-1"></i>選擇檔案
+                                    </button>
+                                    <button class="btn btn-warning me-2" onclick="toggleBatchMode()">
+                                        <i class="fas fa-check-square me-1"></i>批量操作
+                                    </button>
+                                    <button class="btn btn-danger" onclick="deleteSelectedImages()" disabled id="deleteSelectedBtn">
+                                        <i class="fas fa-trash me-1"></i>刪除選中
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 拖拽上傳區域 -->
+                        <div id="dropZone" class="drop-zone mb-3" 
+                             ondrop="handleDrop(event)" 
+                             ondragover="handleDragOver(event)" 
+                             ondragleave="handleDragLeave(event)"
+                             ondragenter="handleDragOver(event)">
+                            <div class="drop-zone-content">
+                                <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                                <h5 class="text-muted">拖拽檔案到這裡上傳</h5>
+                                <p class="text-muted">或點擊「選擇檔案」按鈕</p>
+                                <small class="text-info">支援多檔案同時上傳（JPG、PNG、WebP）</small>
+                            </div>
+                        </div>
+
+                        <!-- 圖片網格 -->
+                        <div id="imageGrid" class="image-grid">
+                            <!-- 圖片將動態載入到這裡 -->
+                        </div>
+
+                        <!-- 狀態資訊 -->
+                        <div class="row mt-3">
+                            <div class="col-md-4">
+                                <div class="card text-center">
+                                    <div class="card-body">
+                                        <h5 class="card-title" id="totalImages">0</h5>
+                                        <p class="card-text">總圖片數</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card text-center">
+                                    <div class="card-body">
+                                        <h5 class="card-title" id="selectedCount">0</h5>
+                                        <p class="card-text">已選擇</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card text-center">
+                                    <div class="card-body">
+                                        <h5 class="card-title" id="loadingStatus">就緒</h5>
+                                        <p class="card-text">狀態</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 使用說明 -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-info text-white">
+                        <h3 class="mb-0">
+                            <i class="fas fa-question-circle me-2"></i>使用方式
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5 class="text-primary">
+                                    <i class="fas fa-magic me-2"></i>智能功能
+                                </h5>
+                                <ul class="list-unstyled">
+                                    <li><i class="fas fa-arrows-alt text-info me-2"></i>拖拽調整順序</li>
+                                    <li><i class="fas fa-star text-warning me-2"></i>點擊星號設定主圖</li>
+                                    <li><i class="fas fa-file-upload text-success me-2"></i>拖放檔案上傳</li>
+                                    <li><i class="fas fa-eye text-primary me-2"></i>即時預覽</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h5 class="text-success">
+                                    <i class="fas fa-cogs me-2"></i>狀態說明
+                                </h5>
+                                <ul class="list-unstyled">
+                                    <li><span class="badge bg-success me-2">已上傳</span>已儲存到系統</li>
+                                    <li><span class="badge bg-info me-2">待上傳</span>尚未儲存</li>
+                                    <li><span class="badge bg-warning me-2">★</span>主圖標記</li>
+                                    <li><span class="badge bg-secondary me-2">#1</span>排序編號</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// 動態更新 Tag Helper 的 JavaScript
+function updateImageManager() {
+    const entityType = document.getElementById('entityTypeSelect').value;
+    const entityId = document.getElementById('entityIdInput').value;
+    const category = document.getElementById('categorySelect').value;
+    
+    const container = document.getElementById('imageManagerContainer');
+    container.innerHTML = `<zh-image-manager entity-type="${getEntityTypeName(entityType)}" entity-id="${entityId}" category="${getCategoryName(category)}" max-count="15"></zh-image-manager>`;
+    
+    // 重新初始化 Tag Helper 組件
+    if (window.ZhImageManager) {
+        const newElement = container.querySelector('.zh-image-manager');
+        if (newElement) {
+            new window.ZhImageManager(newElement);
+        }
+    }
+}
+
+function getEntityTypeName(value) {
+    const types = { '1': 'Property', '2': 'Member', '3': 'Furniture', '4': 'Announcement' };
+    return types[value] || 'Property';
+}
+
+function getCategoryName(value) {
+    const categories = { '1': 'Gallery', '2': 'Avatar', '3': 'Product' };
+    return categories[value] || 'Gallery';
+}
+
+// API 測試功能
+const demoConfig = {
+    entityType: 1,
+    entityId: 2006,
+    category: 0,
+    apiBase: '/api/ImageManagerApi'
+};
+
+let currentImages = [];
+let selectedImages = new Set();
+let isLoading = false;
+let isBatchMode = false;
+
+// 配置更新函數
+function updateConfig() {
+    demoConfig.entityType = parseInt(document.getElementById('customEntityTypeSelect').value);
+    demoConfig.entityId = parseInt(document.getElementById('customEntityIdInput').value);
+    demoConfig.category = parseInt(document.getElementById('customCategorySelect').value);
+    updateStatusCards();
+}
+
+// 狀態卡片更新
+function updateStatusCards() {
+    document.getElementById('totalImages').textContent = currentImages.length;
+    document.getElementById('selectedCount').textContent = selectedImages.size;
+    document.getElementById('loadingStatus').textContent = isLoading ? '載入中...' : '就緒';
+}
+
+// 按鈕狀態更新
+function updateButtonStates() {
+    const deleteBtn = document.getElementById('deleteSelectedBtn');
+    if (deleteBtn) {
+        deleteBtn.disabled = selectedImages.size === 0;
+    }
+}
+                            <div class="tab-pane fade show active" id="vanilla-js" role="tabpanel">
+                                <div class="code-example">
+                                    <h5>純 JavaScript 實作</h5>
+                                    <pre><code>class ImageManager {
+    constructor(containerId, options = {}) {
+        this.container = document.getElementById(containerId);
+        this.options = {
+            entityType: options.entityType || 1,
+            entityId: options.entityId || 7777,
+            category: options.category || 3,
+            apiBase: '/api/ImageManagerApi'
+        };
+        this.images = [];
+        this.selectedImages = new Set();
+        
+        this.init();
+    }
+    
+    async init() {
+        await this.loadImages();
+        this.updateUI();
+    }
+    
+    async loadImages() {
+        try {
+            const response = await fetch(
+                `${this.options.apiBase}/List?` +
+                `entityType=${this.options.entityType}&` +
+                `entityId=${this.options.entityId}&` +
+                `category=${this.options.category}`
+            );
+            
+            if (response.ok) {
+                const data = await response.json();
+                this.images = data.data || [];
+            }
+        } catch (error) {
+            console.error('載入圖片失敗:', error);
+        }
+    }
+    
+    async uploadFiles(files) {
+        const formData = new FormData();
+        formData.append('EntityType', this.options.entityType);
+        formData.append('EntityId', this.options.entityId);
+        formData.append('Category', this.options.category);
+        
+        Array.from(files).forEach(file => {
+            formData.append('Files', file);
+        });
+        
+        try {
+            const response = await fetch(`${this.options.apiBase}/Upload`, {
+                method: 'POST',
+                body: formData
+            });
+            
+            if (response.ok) {
+                await this.loadImages();
+                this.updateUI();
+                return true;
+            }
+        } catch (error) {
+            console.error('上傳失敗:', error);
+        }
+        return false;
+    }
+    
+    async deleteImage(imageId) {
+        try {
+            const response = await fetch(`${this.options.apiBase}/Delete/${imageId}`, {
+                method: 'DELETE'
+            });
+            
+            if (response.ok) {
+                await this.loadImages();
+                this.updateUI();
+                return true;
+            }
+        } catch (error) {
+            console.error('刪除失敗:', error);
+        }
+        return false;
+    }
+}</code></pre>
+                                </div>
+                            </div>
+                            
+                            <div class="tab-pane fade" id="react" role="tabpanel">
+                                <div class="code-example">
+                                    <h5>React Hook 範例</h5>
+                                    <pre><code>import React, { useState, useEffect } from 'react';
+
+const useImageManager = (entityType, entityId, category) => {
+    const [images, setImages] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [selectedImages, setSelectedImages] = useState(new Set());
+    
+    const loadImages = async () => {
+        setLoading(true);
+        try {
+            const response = await fetch(
+                `/api/ImageManagerApi/list?entityType=${entityType}&entityId=${entityId}&category=${category}`
+            );
+            const data = await response.json();
+            setImages(data.data || []);
+        } catch (error) {
+            console.error('載入圖片失敗:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+    
+    const uploadFiles = async (files) => {
+        const formData = new FormData();
+        formData.append('EntityType', entityType);
+        formData.append('EntityId', entityId);
+        formData.append('Category', category);
+        
+        Array.from(files).forEach(file => {
+            formData.append('Files', file);
+        });
+        
+        try {
+            setLoading(true);
+            const response = await fetch('/api/ImageManagerApi/upload', {
+                method: 'POST',
+                body: formData
+            });
+            
+            if (response.ok) {
+                await loadImages();
+            }
+        } catch (error) {
+            console.error('上傳失敗:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+    
+    useEffect(() => {
+        loadImages();
+    }, [entityType, entityId, category]);
+    
+    return {
+        images,
+        loading,
+        selectedImages,
+        setSelectedImages,
+        uploadFiles,
+        loadImages
+    };
+};
+
+// 使用範例
+const ImageManagerComponent = () => {
+    const { images, loading, uploadFiles } = useImageManager(1, 7777, 3);
+    
+    const handleFileUpload = (event) => {
+        const files = event.target.files;
+        if (files.length > 0) {
+            uploadFiles(files);
+        }
+    };
+    
+    return (
+        &lt;div&gt;
+            &lt;input type="file" multiple onChange={handleFileUpload} /&gt;
+            {loading && &lt;div&gt;載入中...&lt;/div&gt;}
+            &lt;div className="image-grid"&gt;
+                {images.map(image => (
+                    &lt;img key={image.imageId} src={image.thumbnailUrl} alt="" /&gt;
+                ))}
+            &lt;/div&gt;
+        &lt;/div&gt;
+    );
+};</code></pre>
+                                </div>
+                            </div>
+                            
+                            <div class="tab-pane fade" id="vue" role="tabpanel">
+                                <div class="code-example">
+                                    <h5>Vue 3 Composition API 範例</h5>
+                                    <pre><code>&lt;template&gt;
+  &lt;div class="image-manager"&gt;
+    &lt;div class="toolbar"&gt;
+      &lt;input 
+        type="file" 
+        multiple 
+        @@change="handleFileUpload" 
+        ref="fileInput"
+      /&gt;
+      &lt;button @@click="loadImages" :disabled="loading"&gt;
+        重新載入
+      &lt;/button&gt;
+    &lt;/div&gt;
+    
+    &lt;div v-if="loading" class="loading"&gt;載入中...&lt;/div&gt;
+    
+    &lt;div class="image-grid"&gt;
+      &lt;div 
+        v-for="image in images" 
+        :key="image.imageId"
+        class="image-item"
+        :class="{ selected: selectedImages.has(image.imageId) }"
+        @@click="toggleSelection(image.imageId)"
+      &gt;
+        &lt;img :src="image.thumbnailUrl" :alt="image.originalFileName" /&gt;
+        &lt;button @@click.stop="deleteImage(image.imageId)"&gt;刪除&lt;/button&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/template&gt;
+
+&lt;script setup&gt;
+import { ref, reactive, onMounted } from 'vue';
+
+const props = defineProps({
+  entityType: { type: Number, default: 1 },
+  entityId: { type: Number, required: true },
+  category: { type: Number, default: 3 }
+});
+
+const images = ref([]);
+const loading = ref(false);
+const selectedImages = reactive(new Set());
+const fileInput = ref(null);
+
+const loadImages = async () => {
+  loading.value = true;
+  try {
+    const response = await fetch(
+      `/api/ImageManagerApi/List?entityType=${props.entityType}&entityId=${props.entityId}&category=${props.category}`
+    );
+    const data = await response.json();
+    images.value = data.data || [];
+  } catch (error) {
+    console.error('載入圖片失敗:', error);
+  } finally {
+    loading.value = false;
+  }
+};
+
+const uploadFiles = async (files) => {
+  const formData = new FormData();
+  formData.append('EntityType', props.entityType);
+  formData.append('EntityId', props.entityId);
+  formData.append('Category', props.category);
+  
+  Array.from(files).forEach(file => {
+    formData.append('Files', file);
+  });
+  
+  try {
+    loading.value = true;
+    const response = await fetch('/api/ImageManagerApi/Upload', {
+      method: 'POST',
+      body: formData
+    });
+    
+    if (response.ok) {
+      await loadImages();
+    }
+  } catch (error) {
+    console.error('上傳失敗:', error);
+  } finally {
+    loading.value = false;
+  }
+};
+
+const handleFileUpload = (event) => {
+  const files = event.target.files;
+  if (files.length > 0) {
+    uploadFiles(files);
+  }
+};
+
+onMounted(() => {
+  loadImages();
+});
+&lt;/script&gt;</code></pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 導航按鈕 -->
+        <div class="row mt-5">
+            <div class="col-12 text-center">
+                <div class="btn-group" role="group">
+                    <a href="@Url.Action("Mixed")" class="btn btn-outline-secondary btn-lg">
+                        <i class="fas fa-arrow-left me-2"></i>上一個：混合方式
+                    </a>
+                    <a href="@Url.Action("Index")" class="btn btn-outline-secondary btn-lg">
+                        <i class="fas fa-home me-2"></i>回到首頁
+                    </a>
+                    <a href="@Url.Action("Comparison")" class="btn btn-dark btn-lg">
+                        比較分析
+                        <i class="fas fa-arrow-right ms-2"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap Modal 元件 -->
+<!-- 確認對話框 Modal -->
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmModalLabel">確認操作</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="confirmModalBody">
+                確定要執行此操作嗎？
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="confirmModalAction">確定</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 警告/通知 Modal -->
+<div class="modal fade" id="alertModal" tabindex="-1" aria-labelledby="alertModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="alertModalLabel">通知</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="alertModalBody">
+                這是一個通知訊息。
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">確定</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.demo-page {
+    min-height: 100vh;
+    background: #f8f9fa;
+}
+
+.demo-header {
+    padding: 2rem 0;
+}
+
+.architecture-flow {
+    text-align: center;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 0.5rem;
+    margin: 1rem 0;
+}
+
+.flow-step {
+    margin: 0.5rem 0;
+}
+
+.flow-arrow {
+    font-size: 1.2rem;
+    margin: 0.25rem 0;
+}
+
+.api-endpoints {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 0.5rem;
+}
+
+.endpoint-item {
+    display: flex;
+    align-items: center;
+    margin: 0.5rem 0;
+    padding: 0.5rem;
+    background: white;
+    border-radius: 0.25rem;
+    border-left: 3px solid #007bff;
+}
+
+.method {
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: bold;
+    margin-right: 0.5rem;
+    min-width: 60px;
+    text-align: center;
+}
+
+.method-get { background: #28a745; color: white; }
+.method-post { background: #007bff; color: white; }
+.method-put { background: #ffc107; color: black; }
+.method-delete { background: #dc3545; color: white; }
+
+.framework-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+}
+
+.api-response {
+    background: #212529;
+    color: #f8f9fa;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    min-height: 150px;
+    max-height: 400px;
+    overflow-y: auto;
+    font-family: 'Monaco', 'Consolas', monospace;
+    font-size: 0.875rem;
+    white-space: pre-wrap;
+}
+
+.manager-status .row {
+    gap: 1rem;
+}
+
+.status-card {
+    padding: 1rem;
+    border-radius: 0.5rem;
+    text-align: center;
+    transition: transform 0.2s ease;
+}
+
+.status-card:hover {
+    transform: translateY(-2px);
+}
+
+.status-value {
+    font-size: 2rem;
+    font-weight: bold;
+    line-height: 1;
+}
+
+.status-label {
+    font-size: 0.875rem;
+    opacity: 0.9;
+}
+
+.manager-toolbar {
+    border-bottom: 1px solid #dee2e6;
+    padding-bottom: 1rem;
+}
+
+.drop-zone {
+    border: 2px dashed #dee2e6;
+    border-radius: 0.5rem;
+    padding: 3rem 1rem;
+    text-align: center;
+    transition: all 0.3s ease;
+    background: #fafafa;
+}
+
+.drop-zone:hover,
+.drop-zone.dragover {
+    border-color: #007bff;
+    background: #f0f8ff;
+}
+
+.drop-zone-content {
+    pointer-events: none;
+}
+
+.image-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+    padding: 1rem 0;
+}
+
+.image-item {
+    position: relative;
+    background: white;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.image-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.image-item.selected {
+    border: 3px solid #007bff;
+    box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+}
+
+.image-item img {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+}
+
+.image-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.7);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.image-item:hover .image-overlay {
+    opacity: 1;
+}
+
+.image-order-badge {
+    position: absolute;
+    top: 0.5rem;
+    left: 0.5rem;
+    background: #007bff;
+    color: white;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: bold;
+    z-index: 10;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* SortableJS 拖曳樣式 */
+.sortable-ghost {
+    opacity: 0.5;
+    background: #f8f9fa;
+    border: 2px dashed #007bff;
+}
+
+.sortable-chosen {
+    transform: scale(1.05);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+}
+
+.sortable-drag {
+    transform: rotate(5deg);
+    z-index: 9999;
+}
+
+.image-grid .image-item {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.code-example {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    border-left: 4px solid #343a40;
+}
+
+.code-example pre {
+    background: #343a40;
+    color: #f8f9fa;
+    padding: 1rem;
+    border-radius: 0.375rem;
+    margin: 0.5rem 0;
+    overflow-x: auto;
+    max-height: 400px;
+}
+
+/* 預覽功能樣式 */
+.preview-container {
+    margin-bottom: 1rem;
+    border: 2px solid #28a745;
+    border-radius: 0.5rem;
+    background: #f8fff8;
+    padding: 1rem;
+    display: none;
+}
+
+.preview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #28a745;
+}
+
+.preview-header h5 {
+    margin: 0;
+    color: #28a745;
+}
+
+.preview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 1rem;
+}
+
+.preview-item {
+    position: relative;
+    background: white;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    border: 2px solid transparent;
+}
+
+.preview-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.preview-item.main-image {
+    border-color: #ffc107;
+    box-shadow: 0 0 0 2px rgba(255,193,7,0.25);
+}
+
+.preview-item img {
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+}
+
+.preview-badge {
+    position: absolute;
+    top: 0.5rem;
+    left: 0.5rem;
+    background: #28a745;
+    color: white;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: bold;
+    z-index: 10;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.preview-item.main-image .preview-badge {
+    background: #ffc107;
+    color: #000;
+}
+
+.preview-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.7);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.preview-item:hover .preview-overlay {
+    opacity: 1;
+}
+
+.preview-info {
+    padding: 0.5rem;
+    background: white;
+}
+
+.preview-info small {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+@@media (max-width: 768px) {
+    .demo-header {
+        padding: 1rem 0;
+    }
+    
+    .btn-group {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .btn-group .btn {
+        width: 100%;
+    }
+    
+    .manager-status .row {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .image-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    }
+    
+    .manager-toolbar .btn-group {
+        flex-wrap: wrap;
+        margin-bottom: 0.5rem;
+    }
+}
+</style>
+
+<!-- SortableJS CDN 引入 -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+
+<script>
+// 全域變數
+let currentImages = [];        // 已上傳的圖片（來自API）
+let selectedImages = new Set();
+let isLoading = false;
+
+// 預覽相關變數
+let previewFiles = [];         // 待上傳的檔案
+let previewImages = [];        // 預覽圖片資料
+let mainImageIndex = 0;        // 主圖索引
+
+// 演示設定 - 支援動態配置
+const demoConfig = {
+    entityType: @ViewBag.DefaultEntityType,
+    entityId: @ViewBag.DefaultEntityId,
+    category: @ViewBag.DefaultCategory,
+    skipEntityValidation: false,
+    apiBase: '/api/ImageManagerApi'
+};
+
+// 配置更新函數
+function updateConfig() {
+    const entityTypeSelect = document.getElementById('entityTypeSelect');
+    const entityIdInput = document.getElementById('entityIdInput');
+    const categorySelect = document.getElementById('categorySelect');
+    const skipValidationCheck = document.getElementById('skipValidationCheck');
+    
+    demoConfig.entityType = parseInt(entityTypeSelect.value);
+    demoConfig.entityId = parseInt(entityIdInput.value);
+    demoConfig.category = parseInt(categorySelect.value);
+    demoConfig.skipEntityValidation = skipValidationCheck.checked;
+    
+    // 更新顯示
+    updateCurrentTargetDisplay();
+    
+    // 重新載入圖片
+    loadImages();
+}
+
+function updateCurrentTargetDisplay() {
+    const entityTypeNames = {
+        0: 'Member',
+        1: 'Property', 
+        2: 'Furniture',
+        3: 'Announcement'
+    };
+    
+    const categoryNames = {
+        0: 'Gallery',
+        1: 'Profile',
+        2: 'Thumbnail', 
+        3: 'Document'
+    };
+    
+    const entityTypeName = entityTypeNames[demoConfig.entityType] || 'Unknown';
+    const categoryName = categoryNames[demoConfig.category] || 'Unknown';
+    
+    document.getElementById('currentTarget').textContent = 
+        `${entityTypeName} ID: ${demoConfig.entityId} (${categoryName})`;
+        
+    document.getElementById('validationStatus').textContent = 
+        demoConfig.skipEntityValidation ? '略過驗證' : '驗證開啟';
+    document.getElementById('validationStatus').className = 
+        `badge ${demoConfig.skipEntityValidation ? 'bg-warning' : 'bg-success'} ms-2`;
+}
+
+// 頁面載入完成後初始化
+document.addEventListener('DOMContentLoaded', function() {
+    initPureAPIDemo();
+});
+
+function initPureAPIDemo() {
+    updateCurrentTargetDisplay();
+    loadImages();
+    initSortable();
+    logApiCall('初始化', '純 API 模式已啟動');
+}
+
+// API 測試函數
+async function testGetImages() {
+    const url = `${demoConfig.apiBase}/list?entityType=${demoConfig.entityType}&entityId=${demoConfig.entityId}&category=${demoConfig.category}`;
+    
+    logApiCall('GET', url);
+    
+    try {
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        logApiCall('回應', JSON.stringify(data, null, 2));
+        
+        if (data.Success) {
+            currentImages = data.Data?.Images || [];
+            updateImageGrid();
+            updateStatusCards();
+        }
+    } catch (error) {
+        logApiCall('錯誤', error.message);
+    }
+}
+
+async function testUploadImages() {
+    const fileInput = document.getElementById('apiTestFiles');
+    const files = fileInput.files;
+    
+    if (files.length === 0) {
+        await showAlert('請先選擇檔案', '提示');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('EntityType', demoConfig.entityType);
+    formData.append('EntityId', demoConfig.entityId);
+    formData.append('Category', demoConfig.category);
+    formData.append('SkipEntityValidation', demoConfig.skipEntityValidation);
+    
+    Array.from(files).forEach(file => {
+        formData.append('Files', file);
+    });
+    
+    const url = `${demoConfig.apiBase}/upload`;
+    logApiCall('POST', url);
+    logApiCall('FormData', `檔案數量: ${files.length}`);
+    
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        logApiCall('回應', JSON.stringify(data, null, 2));
+        
+        if (data.Success) {
+            // 重新載入圖片清單
+            await testGetImages();
+            fileInput.value = ''; // 清空選擇
+            await showAlert('上傳成功！', '成功');
+        } else {
+            // 顯示具體的錯誤訊息
+            const errorMessage = data.message || '上傳失敗';
+            const details = data.errors?.length > 0 ? data.errors.join('\n') : '';
+            await showAlert(errorMessage + (details ? '\n\n詳細錯誤：\n' + details : ''), '錯誤');
+        }
+    } catch (error) {
+        logApiCall('錯誤', error.message);
+        await showAlert('網路錯誤或伺服器無回應：' + error.message, '錯誤');
+    }
+}
+
+async function testReorderImages() {
+    if (currentImages.length === 0) {
+        await showAlert('沒有圖片可以排序，請先上傳一些圖片', '提示');
+        return;
+    }
+    
+    // 隨機重新排序
+    const shuffled = [...currentImages].sort(() => Math.random() - 0.5);
+    const reorderData = shuffled.map((img, index) => ({
+        imageId: img.ImageId,
+        displayOrder: index + 1
+    }));
+    
+    const url = `${demoConfig.apiBase}/reorder`;
+    logApiCall('POST', url);
+    logApiCall('請求資料', JSON.stringify(reorderData, null, 2));
+    
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(reorderData)
+        });
+        
+        const data = await response.json();
+        logApiCall('回應', JSON.stringify(data, null, 2));
+        
+        if (data.Success) {
+            await testGetImages(); // 重新載入以查看新順序
+        }
+    } catch (error) {
+        logApiCall('錯誤', error.message);
+    }
+}
+
+function logApiCall(type, content) {
+    const responseDiv = document.getElementById('apiResponse');
+    if (!responseDiv) return;
+    
+    const timestamp = new Date().toLocaleTimeString();
+    const entry = `[${timestamp}] ${type}:\n${content}\n\n`;
+    responseDiv.textContent += entry;
+    responseDiv.scrollTop = responseDiv.scrollHeight;
+    
+    // 保持最近 50 條記錄
+    const lines = responseDiv.textContent.split('\n');
+    if (lines.length > 200) {
+        responseDiv.textContent = lines.slice(-100).join('\n');
+    }
+}
+
+// 自建圖片管理器功能
+async function loadImages() {
+    if (isLoading) return;
+    
+    isLoading = true;
+    updateStatusCards();
+    
+    try {
+        const response = await fetch(
+            `${demoConfig.apiBase}/List?entityType=${demoConfig.entityType}&entityId=${demoConfig.entityId}&category=${demoConfig.category}`
+        );
+        
+        if (response.ok) {
+            const data = await response.json();
+            currentImages = data.Data?.Images || [];
+            
+            // 確保圖片按照 displayOrder 排序
+            currentImages.sort((a, b) => (a.DisplayOrder || 0) - (b.DisplayOrder || 0));
+            
+            updateImageGrid();
+            
+            // 自動修正順序（如果需要）
+            await normalizeDisplayOrder();
+        }
+    } catch (error) {
+        console.error('載入圖片失敗:', error);
+    } finally {
+        isLoading = false;
+        updateStatusCards();
+        updateButtonStates();
+    }
+}
+
+function updateImageGrid() {
+    const grid = document.getElementById('imageGrid');
+    if (!grid) return;
+    
+    if (currentImages.length === 0) {
+        grid.innerHTML = `
+            <div class="col-12 text-center text-muted p-4">
+                <i class="fas fa-images fa-3x mb-3"></i>
+                <h5>尚無圖片</h5>
+                <p>請上傳一些圖片來測試功能</p>
+            </div>
+        `;
+        return;
+    }
+    
+    grid.innerHTML = currentImages.map((image, index) => `
+        <div class="image-item ${selectedImages.has(image.ImageId) ? 'selected' : ''}" 
+             data-image-id="${image.ImageId}"
+             onclick="toggleImageSelection(${image.ImageId})">
+            <div class="image-order-badge">${index + 1}</div>
+            <img src="${image.ThumbnailUrl || image.OriginalUrl}" 
+                 alt="${image.FileName}" 
+                 loading="lazy">
+            <div class="image-overlay">
+                <div class="btn-group">
+                    <button class="btn btn-sm btn-light" onclick="event.stopPropagation(); previewImage('${image.OriginalUrl}')">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="event.stopPropagation(); deleteImage(${image.ImageId})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="image-info">
+                <small class="text-muted">${image.FileName}</small>
+            </div>
+        </div>
+    `).join('');
+    
+    // 重新初始化 SortableJS (因為 DOM 已更新)
+    initSortable();
+}
+
+// SortableJS 初始化和排序功能
+let sortableInstance = null;
+
+function initSortable() {
+    const imageGrid = document.getElementById('imageGrid');
+    if (!imageGrid) return;
+    
+    // 如果已經有 sortable 實例，先銷毀
+    if (sortableInstance) {
+        sortableInstance.destroy();
+    }
+    
+    // 只有當有圖片時才初始化排序
+    if (currentImages.length > 0) {
+        sortableInstance = Sortable.create(imageGrid, {
+            animation: 150,
+            ghostClass: 'sortable-ghost',
+            chosenClass: 'sortable-chosen',
+            dragClass: 'sortable-drag',
+            onEnd: function(evt) {
+                // 更新圖片順序
+                const oldIndex = evt.oldIndex;
+                const newIndex = evt.newIndex;
+                
+                if (oldIndex !== newIndex) {
+                    // 重新排列 currentImages 陣列
+                    const movedImage = currentImages.splice(oldIndex, 1)[0];
+                    currentImages.splice(newIndex, 0, movedImage);
+                    
+                    // 更新顯示的順序號碼
+                    updateImageGrid();
+                    
+                    // 呼叫 API 更新排序
+                    updateImageOrder();
+                }
+            }
+        });
+    }
+}
+
+async function updateImageOrder() {
+    try {
+        const orderData = currentImages.map((image, index) => ({
+            imageId: image.ImageId,
+            displayOrder: index + 1
+        }));
+        
+        const response = await fetch(`${demoConfig.apiBase}/reorder`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(orderData)
+        });
+        
+        if (response.ok) {
+            logApiCall('成功', `圖片排序已更新`);
+        } else {
+            throw new Error(`排序更新失敗: ${response.statusText}`);
+        }
+    } catch (error) {
+        console.error('更新排序失敗:', error);
+        logApiCall('錯誤', `排序更新失敗: ${error.message}`);
+        // 重新載入圖片以還原正確順序
+        await loadImages();
+    }
+}
+
+// 自動修正順序邏輯
+async function normalizeDisplayOrder() {
+    if (currentImages.length === 0) return;
+    
+    // 檢查是否需要重新排序
+    const needsReorder = currentImages.some((image, index) => 
+        (image.DisplayOrder || 0) !== (index + 1)
+    );
+    
+    if (needsReorder) {
+        console.log('偵測到順序需要修正，正在自動修正...');
+        
+        // 更新本地順序
+        currentImages.forEach((image, index) => {
+            image.DisplayOrder = index + 1;
+        });
+        
+        // 同步到後端
+        await updateImageOrder();
+        
+        console.log('順序修正完成');
+    }
+}
+
+function updateStatusCards() {
+    const total = currentImages.length;
+    const uploaded = currentImages.filter(img => img.isUploaded !== false).length;
+    const selected = selectedImages.size;
+    const loading = isLoading ? 1 : 0;
+    
+    document.getElementById('totalCount').textContent = total;
+    document.getElementById('uploadedCount').textContent = uploaded;
+    document.getElementById('selectedCount').textContent = selected;
+    document.getElementById('loadingCount').textContent = loading;
+}
+
+function updateButtonStates() {
+    const uploadBtn = document.getElementById('uploadBtn');
+    const deleteBtn = document.getElementById('deleteBtn');
+    
+    if (uploadBtn) {
+        uploadBtn.disabled = isLoading;
+    }
+    
+    if (deleteBtn) {
+        deleteBtn.disabled = selectedImages.size === 0 || isLoading;
+    }
+}
+
+function selectFiles() {
+    document.getElementById('fileInput').click();
+}
+
+function handleFileSelect(event) {
+    const files = event.target.files;
+    if (files.length > 0) {
+        addFilesToPreview(files);
+    }
+}
+
+// 保留舊的直接上傳函數（用於測試）
+async function uploadFiles(files) {
+    if (isLoading) return;
+    
+    const formData = new FormData();
+    formData.append('EntityType', demoConfig.entityType);
+    formData.append('EntityId', demoConfig.entityId);
+    formData.append('Category', demoConfig.category);
+    formData.append('SkipEntityValidation', demoConfig.skipEntityValidation);
+    
+    Array.from(files).forEach(file => {
+        formData.append('Files', file);
+    });
+    
+    isLoading = true;
+    updateStatusCards();
+    
+    try {
+        const response = await fetch(`${demoConfig.apiBase}/upload`, {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            if (data.Success) {
+                await loadImages();
+                document.getElementById('fileInput').value = '';
+                logApiCall('上傳成功', `成功上傳 ${files.length} 個檔案`);
+                await showAlert('上傳成功！', '成功');
+            } else {
+                const errorMessage = data.Message || '上傳失敗';
+                const details = data.Errors?.length > 0 ? data.Errors.join('\n') : '';
+                logApiCall('上傳失敗', errorMessage + (details ? '\n詳細：' + details : ''));
+                await showAlert(errorMessage + (details ? '\n\n詳細錯誤：\n' + details : ''), '錯誤');
+            }
+        } else {
+            const errorText = await response.text();
+            logApiCall('HTTP 錯誤', `${response.status}: ${errorText}`);
+            await showAlert(`上傳失敗 (${response.status}): ${errorText}`, '錯誤');
+        }
+    } catch (error) {
+        console.error('上傳失敗:', error);
+        await showAlert('上傳失敗: ' + error.message, '錯誤');
+    } finally {
+        isLoading = false;
+        updateStatusCards();
+        updateButtonStates();
+    }
+}
+
+function toggleImageSelection(imageId) {
+    if (selectedImages.has(imageId)) {
+        selectedImages.delete(imageId);
+    } else {
+        selectedImages.add(imageId);
+    }
+    
+    updateImageGrid();
+    updateStatusCards();
+    updateButtonStates();
+}
+
+function selectAll() {
+    selectedImages.clear();
+    currentImages.forEach(img => selectedImages.add(img.ImageId));
+    updateImageGrid();
+    updateStatusCards();
+    updateButtonStates();
+}
+
+function selectNone() {
+    selectedImages.clear();
+    updateImageGrid();
+    updateStatusCards();
+    updateButtonStates();
+}
+
+async function deleteSelected() {
+    if (selectedImages.size === 0) return;
+    
+    const confirmed = await showConfirm(`確定要刪除 ${selectedImages.size} 張圖片嗎？`, '刪除確認');
+    if (!confirmed) {
+        return;
+    }
+    
+    isLoading = true;
+    updateStatusCards();
+    
+    try {
+        const deletePromises = Array.from(selectedImages).map(imageId =>
+            fetch(`${demoConfig.apiBase}/Delete/${imageId}`, { method: 'DELETE' })
+        );
+        
+        await Promise.all(deletePromises);
+        selectedImages.clear();
+        await loadImages();
+    } catch (error) {
+        console.error('刪除失敗:', error);
+        await showAlert('刪除失敗: ' + error.message, '錯誤');
+    } finally {
+        isLoading = false;
+        updateStatusCards();
+        updateButtonStates();
+    }
+}
+
+async function deleteImage(imageId) {
+    const confirmed = await showConfirm('確定要刪除這張圖片嗎？', '刪除確認');
+    if (!confirmed) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${demoConfig.apiBase}/Delete/${imageId}`, {
+            method: 'DELETE'
+        });
+        
+        if (response.ok) {
+            selectedImages.delete(imageId);
+            await loadImages();
+        } else {
+            await showAlert('刪除失敗', '錯誤');
+        }
+    } catch (error) {
+        console.error('刪除失敗:', error);
+        await showAlert('刪除失敗: ' + error.message, '錯誤');
+    }
+}
+
+async function shuffleImages() {
+    if (currentImages.length === 0) {
+        await showAlert('沒有圖片可以排序', '提示');
+        return;
+    }
+    
+    // 隨機重新排序 currentImages 陣列
+    currentImages.sort(() => Math.random() - 0.5);
+    
+    // 更新顯示
+    updateImageGrid();
+    
+    // 呼叫 API 更新排序
+    updateImageOrder();
+}
+
+function refreshImages() {
+    loadImages();
+}
+
+function previewImage(imagePath) {
+    // 簡單的圖片預覽
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.8); z-index: 9999; display: flex;
+        align-items: center; justify-content: center; cursor: pointer;
+    `;
+    
+    const img = document.createElement('img');
+    img.src = imagePath;
+    img.style.cssText = 'max-width: 90%; max-height: 90%; object-fit: contain;';
+    
+    modal.appendChild(img);
+    modal.onclick = () => document.body.removeChild(modal);
+    document.body.appendChild(modal);
+}
+
+// 拖拽功能 - 加強事件處理
+function handleDragOver(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    event.currentTarget.classList.add('dragover');
+}
+
+function handleDragLeave(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    event.currentTarget.classList.remove('dragover');
+}
+
+function handleDrop(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    event.currentTarget.classList.remove('dragover');
+    
+    const files = event.dataTransfer.files;
+    if (files.length > 0) {
+        console.log('拖曳檔案數量:', files.length);
+        addFilesToPreview(files);
+    }
+}
+
+// 改進的拖曳事件處理 - 避免衝突
+document.addEventListener('DOMContentLoaded', function() {
+    // 只阻止 body 層級的拖曳，不影響拖曳區域
+    document.body.addEventListener('dragover', function(e) {
+        if (!e.target.closest('#dropZone')) {
+            e.preventDefault();
+        }
+    });
+    
+    document.body.addEventListener('drop', function(e) {
+        if (!e.target.closest('#dropZone')) {
+            e.preventDefault();
+        }
+    });
+    
+    console.log('純 API 模式拖曳防護已啟用（改進版）');
+});
+
+function uploadSelected() {
+    if (previewImages.length > 0) {
+        confirmUploadPreviews();
+    } else {
+        selectFiles();
+    }
+}
+
+// === 預覽功能 ===
+function addFilesToPreview(files) {
+    previewFiles = Array.from(files);
+    previewImages = [];
+    
+    Array.from(files).forEach((file, index) => {
+        if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImages.push({
+                    file: file,
+                    url: e.target.result,
+                    fileName: file.name,
+                    size: file.size,
+                    isMain: index === mainImageIndex,
+                    isUploaded: false
+                });
+                
+                if (previewImages.length === previewFiles.length) {
+                    renderPreview();
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+}
+
+function renderPreview() {
+    const previewContainer = document.querySelector('.preview-container');
+    const imageGrid = document.getElementById('imageGrid');
+    
+    if (!previewContainer) {
+        // 建立預覽容器
+        const newPreviewContainer = document.createElement('div');
+        newPreviewContainer.className = 'preview-container';
+        newPreviewContainer.innerHTML = `
+            <div class="preview-header">
+                <h5><i class="fas fa-eye me-2"></i>待上傳預覽 (${previewImages.length} 張)</h5>
+                <div class="btn-group">
+                    <button class="btn btn-success btn-sm" onclick="confirmUploadPreviews()">
+                        <i class="fas fa-upload me-1"></i>確認上傳
+                    </button>
+                    <button class="btn btn-secondary btn-sm" onclick="clearPreview()">
+                        <i class="fas fa-times me-1"></i>取消
+                    </button>
+                </div>
+            </div>
+            <div class="preview-grid" id="previewGrid"></div>
+        `;
+        imageGrid.parentNode.insertBefore(newPreviewContainer, imageGrid);
+    }
+    
+    // 顯示預覽
+    const container = document.querySelector('.preview-container');
+    const grid = document.getElementById('previewGrid');
+    
+    if (previewImages.length > 0) {
+        container.style.display = 'block';
+        grid.innerHTML = previewImages.map((image, index) => `
+            <div class="preview-item ${image.isMain ? 'main-image' : ''}" 
+                 onclick="setMainImage(${index})">
+                <div class="preview-badge">${image.isMain ? '★' : index + 1}</div>
+                <img src="${image.url}" alt="${image.fileName}">
+                <div class="preview-overlay">
+                    <div class="btn-group">
+                        <button class="btn btn-sm btn-warning" onclick="event.stopPropagation(); setMainImage(${index})">
+                            <i class="fas fa-star"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="event.stopPropagation(); removePreviewImage(${index})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="preview-info">
+                    <small class="text-muted">${image.fileName}</small>
+                    <small class="text-info d-block">${(image.size / 1024).toFixed(1)} KB</small>
+                </div>
+            </div>
+        `).join('');
+    } else {
+        container.style.display = 'none';
+    }
+    
+    updateStatusCards();
+}
+
+function setMainImage(index) {
+    previewImages.forEach((img, i) => {
+        img.isMain = (i === index);
+    });
+    mainImageIndex = index;
+    renderPreview();
+}
+
+function removePreviewImage(index) {
+    previewImages.splice(index, 1);
+    previewFiles.splice(index, 1);
+    
+    if (mainImageIndex >= index && mainImageIndex > 0) {
+        mainImageIndex--;
+    }
+    
+    if (previewImages.length > 0 && mainImageIndex >= previewImages.length) {
+        mainImageIndex = previewImages.length - 1;
+    }
+    
+    // 更新主圖標記
+    if (previewImages.length > 0) {
+        previewImages.forEach((img, i) => {
+            img.isMain = (i === mainImageIndex);
+        });
+    }
+    
+    renderPreview();
+}
+
+function clearPreview() {
+    previewFiles = [];
+    previewImages = [];
+    mainImageIndex = 0;
+    
+    const container = document.querySelector('.preview-container');
+    if (container) {
+        container.style.display = 'none';
+    }
+    
+    // 清空檔案輸入
+    const fileInput = document.getElementById('fileInput');
+    if (fileInput) {
+        fileInput.value = '';
+    }
+    
+    updateStatusCards();
+}
+
+async function confirmUploadPreviews() {
+    if (previewFiles.length === 0) {
+        await showAlert('沒有檔案可以上傳', '提示');
+        return;
+    }
+    
+    // 使用現有的上傳功能
+    await uploadFiles(previewFiles);
+    
+    // 清空預覽
+    clearPreview();
+}
+
+// 狀態更新函數補完
+function updateStatusCards() {
+    const totalElement = document.getElementById('totalImages');
+    const selectedElement = document.getElementById('selectedCount');
+    const loadingElement = document.getElementById('loadingStatus');
+    
+    if (totalElement) {
+        totalElement.textContent = currentImages.length + (previewImages.length || 0);
+    }
+    
+    if (selectedElement) {
+        selectedElement.textContent = selectedImages.size;
+    }
+    
+    if (loadingElement) {
+        loadingElement.textContent = isLoading ? '載入中...' : '就緒';
+    }
+}
+
+// 批量操作功能
+let isBatchMode = false;
+
+function toggleBatchMode() {
+    isBatchMode = !isBatchMode;
+    const toggleBtn = document.querySelector('button[onclick="toggleBatchMode()"]');
+    const deleteBtn = document.getElementById('deleteSelectedBtn');
+    
+    if (toggleBtn) {
+        toggleBtn.innerHTML = isBatchMode 
+            ? '<i class="fas fa-check-square me-1"></i>退出批量'
+            : '<i class="fas fa-check-square me-1"></i>批量操作';
+        toggleBtn.className = isBatchMode ? 'btn btn-secondary me-2' : 'btn btn-warning me-2';
+    }
+    
+    if (deleteBtn) {
+        deleteBtn.style.display = isBatchMode ? 'inline-block' : 'none';
+    }
+    
+    if (!isBatchMode) {
+        selectedImages.clear();
+        updateImageGrid();
+        updateStatusCards();
+    }
+}
+
+function deleteSelectedImages() {
+    if (selectedImages.size === 0) {
+        showAlert('請先選擇要刪除的圖片', '提示');
+        return;
+    }
+    
+    deleteSelected();
+}
+
+// Modal 對話框功能
+function showAlert(message, title = '提示') {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('alertModal');
+        const titleElement = document.getElementById('alertModalLabel');
+        const bodyElement = document.getElementById('alertModalBody');
+        
+        if (titleElement) titleElement.textContent = title;
+        if (bodyElement) bodyElement.textContent = message;
+        
+        const bootstrapModal = new bootstrap.Modal(modal);
+        bootstrapModal.show();
+        
+        modal.addEventListener('hidden.bs.modal', () => resolve(), { once: true });
+    });
+}
+
+function showConfirm(message, title = '確認') {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('confirmModal');
+        const titleElement = document.getElementById('confirmModalLabel');
+        const bodyElement = document.getElementById('confirmModalBody');
+        const actionBtn = document.getElementById('confirmModalAction');
+        
+        if (titleElement) titleElement.textContent = title;
+        if (bodyElement) bodyElement.textContent = message;
+        
+        const bootstrapModal = new bootstrap.Modal(modal);
+        bootstrapModal.show();
+        
+        let resolved = false;
+        
+        const handleConfirm = () => {
+            if (!resolved) {
+                resolved = true;
+                resolve(true);
+                bootstrapModal.hide();
+            }
+        };
+        
+        const handleCancel = () => {
+            if (!resolved) {
+                resolved = true;
+                resolve(false);
+                bootstrapModal.hide();
+            }
+        };
+        
+        actionBtn.onclick = handleConfirm;
+        modal.addEventListener('hidden.bs.modal', handleCancel, { once: true });
+    });
+}
+
+// 預覽排序功能
+function initPreviewSortable() {
+    const previewGrid = document.getElementById('previewGrid');
+    if (!previewGrid || previewImages.length === 0) return;
+    
+    new Sortable(previewGrid, {
+        animation: 150,
+        ghostClass: 'sortable-ghost',
+        chosenClass: 'sortable-chosen',
+        onEnd: function(evt) {
+            // 重新排列預覽圖片陣列
+            const movedItem = previewImages.splice(evt.oldIndex, 1)[0];
+            previewImages.splice(evt.newIndex, 0, movedItem);
+            
+            const movedFile = previewFiles.splice(evt.oldIndex, 1)[0];
+            previewFiles.splice(evt.newIndex, 0, movedFile);
+            
+            updatePreviewDisplay();
+        }
+    });
+}
+
+function clearPreviews() {
+    previewImages = [];
+    previewFiles = [];
+    
+    const container = document.getElementById('previewContainer');
+    if (container) {
+        container.style.display = 'none';
+    }
+    
+    // 清空檔案輸入
+    document.getElementById('fileInput').value = '';
+    updateStatusCards();
+}
+
+function removeFromPreview(index) {
+    previewImages.splice(index, 1);
+    previewFiles.splice(index, 1);
+    
+    // 如果刪除的是主圖且還有其他圖片，設定第一張為主圖
+    if (previewImages.length > 0 && !previewImages.some(img => img.isMainImage)) {
+        previewImages[0].isMainImage = true;
+    }
+    
+    updatePreviewDisplay();
+    updateStatusCards();
+}
+        }, { once: true });
+        
+        modal.show();
+    });
+}
+
+function showAlert(message, title = '通知') {
+    return new Promise((resolve) => {
+        const modal = new bootstrap.Modal(document.getElementById('alertModal'));
+        document.getElementById('alertModalLabel').textContent = title;
+        document.getElementById('alertModalBody').textContent = message;
+        
+        // 監聽關閉
+        const modalElement = document.getElementById('alertModal');
+        modalElement.addEventListener('hidden.bs.modal', () => {
+            resolve();
+        }, { once: true });
+        
+        modal.show();
+    });
+}
+</script>

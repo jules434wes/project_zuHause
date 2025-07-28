@@ -6,6 +6,7 @@ using zuHause.Interfaces;
 using zuHause.Helpers;
 using zuHause.Enums;
 using System.ComponentModel.DataAnnotations;
+using zuHause.DTOs.GoogleMaps;
 
 namespace zuHause.Controllers
 {
@@ -18,6 +19,8 @@ namespace zuHause.Controllers
         private readonly IBlobMigrationService _blobMigrationService;
         private readonly ITempSessionService _tempSessionService;
         private readonly IPropertyImageService _propertyImageService;
+        private readonly IImageQueryService _imageQueryService;
+        private readonly IGoogleMapsService _googleMapsService;
         private readonly ILogger<PropertyApiController> _logger;
 
         public PropertyApiController(
@@ -26,6 +29,8 @@ namespace zuHause.Controllers
             IBlobMigrationService blobMigrationService,
             ITempSessionService tempSessionService,
             IPropertyImageService propertyImageService,
+            IImageQueryService imageQueryService,
+            IGoogleMapsService googleMapsService,
             ILogger<PropertyApiController> logger)
         {
             _context = context;
@@ -33,6 +38,8 @@ namespace zuHause.Controllers
             _blobMigrationService = blobMigrationService;
             _tempSessionService = tempSessionService;
             _propertyImageService = propertyImageService;
+            _imageQueryService = imageQueryService;
+            _googleMapsService = googleMapsService;
             _logger = logger;
         }
 
@@ -50,7 +57,6 @@ namespace zuHause.Controllers
             try
             {
                 var query = _context.Properties
-                    .Include(p => p.PropertyImages)
                     .Where(p => p.StatusCode == "上架"); // 使用 StatusCode 而非 IsActive
 
                 // Location filter - 需要包含 City 和 District 的 Include
@@ -106,6 +112,19 @@ namespace zuHause.Controllers
                     .Take(pageSize)
                     .ToListAsync();
 
+                // 批量查詢主圖（避免 N+1 問題）
+                var propertyIds = properties.Select(p => p.PropertyId).ToList();
+                var mainImages = new Dictionary<int, Image>();
+
+                foreach (var propertyId in propertyIds)
+                {
+                    var mainImage = await _imageQueryService.GetMainImageAsync(EntityType.Property, propertyId);
+                    if (mainImage != null)
+                    {
+                        mainImages[propertyId] = mainImage;
+                    }
+                }
+
                 var result = new PropertySearchResultDto
                 {
                     Properties = properties.Select(p => new PropertyDto
@@ -116,7 +135,9 @@ namespace zuHause.Controllers
                         Address = p.AddressLine ?? "",
                         Price = p.MonthlyRent,
                         PropertyType = "一般", // 暫時固定值，需要確認 Property model 中的房型欄位
-                        MainImageUrl = p.PropertyImages?.FirstOrDefault()?.ImagePath ?? "/images/placeholder.jpg",
+                        MainImageUrl = mainImages.ContainsKey(p.PropertyId) 
+                            ? _imageQueryService.GenerateImageUrl(mainImages[p.PropertyId].StoredFileName, ImageSize.Medium)
+                            : "/images/placeholder.jpg",
                         Bedrooms = p.RoomCount,
                         Bathrooms = p.BathroomCount,
                         Area = p.Area,
@@ -535,13 +556,15 @@ namespace zuHause.Controllers
             try
             {
                 var property = await _context.Properties
-                    .Include(p => p.PropertyImages)
                     .FirstOrDefaultAsync(p => p.PropertyId == id);
 
                 if (property == null)
                 {
                     return NotFound(new { message = "找不到指定的房源" });
                 }
+
+                // 查詢主圖
+                var mainImage = await _imageQueryService.GetMainImageAsync(EntityType.Property, id);
 
                 var propertyDto = new PropertyDto
                 {
@@ -551,7 +574,9 @@ namespace zuHause.Controllers
                     Address = property.AddressLine ?? "",
                     Price = property.MonthlyRent,
                     PropertyType = "一般", // TODO: 增加房型欄位
-                    MainImageUrl = property.PropertyImages?.FirstOrDefault()?.ImagePath ?? "/images/placeholder.jpg",
+                    MainImageUrl = mainImage != null 
+                        ? _imageQueryService.GenerateImageUrl(mainImage.StoredFileName, ImageSize.Medium)
+                        : "/images/placeholder.jpg",
                     Bedrooms = property.RoomCount,
                     Bathrooms = property.BathroomCount,
                     Area = property.Area,
@@ -652,6 +677,42 @@ namespace zuHause.Controllers
                 _logger.LogError(ex, "上傳房源圖片時發生錯誤 (API)，房源ID: {PropertyId}", propertyId);
                 return StatusCode(500, new { success = false, message = "上傳圖片時發生系統錯誤" });
             }
+        }
+
+        /// <summary>
+        /// 取得房源縮圖 URL（對外簡化 API）
+        /// </summary>
+        [HttpGet("{id:int}/preview-image")]
+        public async Task<ActionResult<PropertyPreviewImageDto>> GetPreviewImage(int id)
+        {
+            // 1. 讀取房源
+            var property = await _context.Properties
+                .AsNoTracking()
+                .FirstOrDefaultAsync(p => p.PropertyId == id && p.DeletedAt == null);
+
+            if (property == null)
+                return NotFound($"Property {id} not found");
+
+            var url = property.PreviewImageUrl;
+
+            // 2. 若資料庫未存，嘗試即時解析第一張 Gallery 主圖
+            if (string.IsNullOrEmpty(url))
+            {
+                var mainImage = await _context.Images
+                    .Where(img => img.EntityId == id && img.EntityType == EntityType.Property && img.Category == ImageCategory.Gallery)
+                    .OrderBy(img => img.DisplayOrder)
+                    .FirstOrDefaultAsync();
+
+                if (mainImage != null)
+                {
+                    url = _imageQueryService.GenerateImageUrl(mainImage, ImageSize.Medium);
+                }
+            }
+
+            if (string.IsNullOrEmpty(url))
+                return NotFound("Preview image not available");
+
+            return Ok(new PropertyPreviewImageDto { PropertyId = id, PreviewImageUrl = url });
         }
 
         // === 私有輔助方法 ===
@@ -827,7 +888,7 @@ namespace zuHause.Controllers
             var listingFee = listingPlan.PricePerDay * listingPlan.MinListingDays;
             var expireDate = now.AddDays(listingPlan.MinListingDays + 1).Date; // 下架日為刊登天數+1天的00:00
 
-            return new Property
+            var property = new Property
             {
                 LandlordMemberId = landlordMemberId,
                 Title = dto.Title,
@@ -861,12 +922,45 @@ namespace zuHause.Controllers
                 ListingFeeAmount = listingFee,
                 ListingPlanId = dto.ListingPlanId,
                 PropertyProofUrl = dto.PropertyProofUrl,
-                StatusCode = "DRAFT", // 預設為草稿狀態
+                StatusCode = "PENDING", // 預設為審核中狀態
                 IsPaid = false, // 預設未付款
                 ExpireAt = expireDate,
                 CreatedAt = now,
                 UpdatedAt = now
             };
+
+            // === 嘗試 Geocoding ===
+            try
+            {
+                var cityName = await _context.Cities
+                    .Where(c => c.CityId == dto.CityId)
+                    .Select(c => c.CityName)
+                    .FirstOrDefaultAsync();
+
+                var districtName = await _context.Districts
+                    .Where(d => d.DistrictId == dto.DistrictId)
+                    .Select(d => d.DistrictName)
+                    .FirstOrDefaultAsync();
+
+                var fullAddress = $"{cityName}{districtName}{dto.AddressLine}";
+
+                var geoResult = await _googleMapsService.GeocodeAsync(new GeocodingRequest
+                {
+                    Address = fullAddress
+                });
+
+                if (geoResult.IsSuccess && geoResult.Latitude.HasValue && geoResult.Longitude.HasValue)
+                {
+                    property.Latitude = geoResult.Latitude.Value;
+                    property.Longitude = geoResult.Longitude.Value;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Geocoding 失敗，將不設定座標");
+            }
+
+            return property;
         }
 
         /// <summary>

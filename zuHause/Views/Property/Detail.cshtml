@@ -234,7 +234,7 @@
                             <!-- 主圖片 -->
                             <div class="main-image-container position-relative mb-3">
                                 <img src="@Model.Images.FirstOrDefault()?.ImagePath" 
-                                     alt="@Model.Images.FirstOrDefault()?.ImageDescription" 
+                                     alt="@Model.Images.FirstOrDefault()?.Category" 
                                      class="main-image w-100 rounded-3 fade-in" 
                                      id="mainImage" 
                                      data-bs-toggle="modal" 
@@ -260,12 +260,12 @@
                                             <div class="col-3 flex-shrink-0">
                                                 <div class="thumbnail-container position-relative">
                                                     <img src="@image.ImagePath" 
-                                                         alt="@image.ImageDescription" 
+                                                         alt="@image.Category" 
                                                          class="thumbnail-image w-100 rounded-2" 
                                                          data-image-src="@image.ImagePath">
                                                     <div class="thumbnail-overlay position-absolute bottom-0 start-0 p-1">
                                                         <span class="thumbnail-label bg-dark bg-opacity-70 text-white px-1 rounded small" style="font-size: 0.7rem;">
-                                                            @(image.Category ?? image.ImageDescription)
+                                                            @(image.Category ?? "房源圖片")
                                                         </span>
                                                     </div>
                                                 </div>
@@ -700,5 +700,16 @@
     <script src="~/js/property-detail.js"></script>
     <!-- Google Maps Integration JS -->
     <script src="~/js/google-maps-integration.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            try {
+                const mapManager = new PropertyMapManager();
+                mapManager.initMap(@Model.PropertyId);
+            } catch (e) {
+                console.warn('地圖初始化腳本錯誤', e);
+            }
+        });
+    </script>
 </body>
 </html>

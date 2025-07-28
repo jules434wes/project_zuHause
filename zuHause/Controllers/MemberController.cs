@@ -94,7 +94,7 @@ namespace zuHause.Controllers
             {
                 isValid = _memberService.verifyPassword(member, model.UserPassword!);
             }
-            catch (FormatException ex)
+            catch (FormatException)
             {
                 ModelState.AddModelError("LoginStatus", "帳號或密碼錯誤");
                 return View(model);
@@ -165,8 +165,18 @@ namespace zuHause.Controllers
             TempData["SuccessMessageTitle"] = "通知";
             TempData["SuccessMessageContent"] = "登入成功";
 
-            // 使用智能重導向邏輯
-            var redirectUrl = GetSmartRedirectUrl(model.ReturnUrl);
+            // 智能重導向邏輯：直接基於 member 物件檢查，避免認證狀態延遲問題
+            string redirectUrl;
+            if (member.IsLandlord && member.MemberTypeId == 2 && member.IdentityVerifiedAt != null)
+            {
+                // 已驗證房東 → 房源管理頁面
+                redirectUrl = Url.Action("PropertyManagement", "Landlord") ?? "/landlord/propertymanagement";
+            }
+            else
+            {
+                // 其他情況使用原有智能重導向邏輯
+                redirectUrl = GetSmartRedirectUrl(model.ReturnUrl);
+            }
             return Redirect(redirectUrl);
 
         }
@@ -791,7 +801,7 @@ namespace zuHause.Controllers
                     await model.UploadFile.CopyToAsync(stream);
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return StatusCode(500, "檔案儲存失敗，請稍後再試");
             }
@@ -908,7 +918,28 @@ namespace zuHause.Controllers
                     return returnUrl;
                 }
 
-                // 第二優先：檢查Session中記錄的最後模組
+                // 第二優先：基於用戶類型的智能重導向
+                if (User.Identity?.IsAuthenticated == true)
+                {
+                    var userIdClaim = User.FindFirst("UserId")?.Value;
+                    if (int.TryParse(userIdClaim, out var userId))
+                    {
+                        // 查詢用戶身份類型
+                        var member = _context.Members.FirstOrDefault(m => m.MemberId == userId);
+                        if (member != null)
+                        {
+                            // 已驗證房東 → 房源管理頁面
+                            if (member.IsLandlord && member.MemberTypeId == 2 && member.IdentityVerifiedAt != null)
+                            {
+                                return Url.Action("PropertyManagement", "Landlord") ?? "/landlord/propertymanagement";
+                            }
+                            // 房客 → 租屋首頁（保持原有邏輯）
+                            // 未驗證房東 → 租屋首頁（保持原有邏輯）
+                        }
+                    }
+                }
+
+                // 第三優先：檢查Session中記錄的最後模組
                 var lastModule = HttpContext.Session.GetString("LastModule");
                 if (!string.IsNullOrEmpty(lastModule))
                 {
@@ -920,7 +951,7 @@ namespace zuHause.Controllers
                     };
                 }
 
-                // 第三優先：回退到Referer判斷 (針對Session過期或新用戶)
+                // 第四優先：回退到Referer判斷 (針對Session過期或新用戶)
                 var referer = Request.Headers["Referer"].ToString();
                 if (!string.IsNullOrEmpty(referer))
                 {

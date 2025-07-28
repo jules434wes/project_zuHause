@@ -1,0 +1,133 @@
+@{
+    ViewData["Title"] = "Tag Helper 圖片管理器演示";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container my-5">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">
+                        <i class="fas fa-images me-2"></i>Tag Helper 圖片管理器演示
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-rocket me-2"></i>
+                        <strong>生產級組件：</strong>
+                        這是使用 Tag Helper 的統一圖片管理組件，支援拖拽排序、主圖設定、即時預覽等完整功能。
+                    </div>
+
+                    <!-- 實體參數選擇 -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <label class="form-label">實體類型</label>
+                            <select class="form-select" id="entityTypeSelect">
+                                <option value="1" selected>Property (房源)</option>
+                                <option value="2">Member (會員)</option>
+                                <option value="3">Furniture (家具)</option>
+                                <option value="4">Announcement (公告)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">實體 ID</label>
+                            <input type="number" class="form-control" id="entityIdInput" value="2006" min="1">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">圖片分類</label>
+                            <select class="form-select" id="categorySelect">
+                                <option value="1" selected>Gallery (相簿)</option>
+                                <option value="2">Avatar (頭像)</option>
+                                <option value="3">Product (產品)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">操作</label>
+                            <button class="btn btn-primary w-100" onclick="updateImageManager()">
+                                <i class="fas fa-sync me-1"></i>套用設定
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Tag Helper 圖片管理器 -->
+                    <div id="imageManagerContainer">
+                        <zh-image-manager entity-type="Property" entity-id="2006" category="Gallery" max-count="15"></zh-image-manager>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 使用說明 -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    <h3 class="mb-0">
+                        <i class="fas fa-question-circle me-2"></i>使用方式
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5 class="text-primary">
+                                <i class="fas fa-magic me-2"></i>智能功能
+                            </h5>
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-arrows-alt text-info me-2"></i>拖拽調整順序</li>
+                                <li><i class="fas fa-star text-warning me-2"></i>點擊星號設定主圖</li>
+                                <li><i class="fas fa-file-upload text-success me-2"></i>拖放檔案上傳</li>
+                                <li><i class="fas fa-eye text-primary me-2"></i>即時預覽</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h5 class="text-success">
+                                <i class="fas fa-cogs me-2"></i>狀態說明
+                            </h5>
+                            <ul class="list-unstyled">
+                                <li><span class="badge bg-success me-2">已上傳</span>已儲存到系統</li>
+                                <li><span class="badge bg-info me-2">待上傳</span>尚未儲存</li>
+                                <li><span class="badge bg-warning me-2">★</span>主圖標記</li>
+                                <li><span class="badge bg-secondary me-2">#1</span>排序編號</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 引入 SortableJS -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+
+<script>
+// 動態更新 Tag Helper 參數
+function updateImageManager() {
+    const entityType = document.getElementById('entityTypeSelect').value;
+    const entityId = document.getElementById('entityIdInput').value;
+    const category = document.getElementById('categorySelect').value;
+    
+    const container = document.getElementById('imageManagerContainer');
+    container.innerHTML = `<zh-image-manager entity-type="${getEntityTypeName(entityType)}" entity-id="${entityId}" category="${getCategoryName(category)}" max-count="15"></zh-image-manager>`;
+    
+    // 重新初始化 Tag Helper 組件
+    setTimeout(() => {
+        const newElement = container.querySelector('.zh-image-manager');
+        if (newElement && window.ZhImageManager) {
+            new window.ZhImageManager(newElement);
+        }
+    }, 100);
+}
+
+function getEntityTypeName(value) {
+    const types = { '1': 'Property', '2': 'Member', '3': 'Furniture', '4': 'Announcement' };
+    return types[value] || 'Property';
+}
+
+function getCategoryName(value) {
+    const categories = { '1': 'Gallery', '2': 'Avatar', '3': 'Product' };
+    return categories[value] || 'Gallery';
+}
+</script>

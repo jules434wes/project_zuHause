@@ -14,11 +14,6 @@ public partial class FurnitureOrderHistory
     public string FurnitureOrderHistoryId { get; set; } = null!;
 
     /// <summary>
-    /// 可讀流水號（例如：FC000000000208）
-    /// </summary>
-    public string? HistoryCode { get; set; }
-
-    /// <summary>
     /// 訂單ID
     /// </summary>
     public string OrderId { get; set; } = null!;

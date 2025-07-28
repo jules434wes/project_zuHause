@@ -1,22 +1,88 @@
 <!-- 客服回覆區卡片 -->
 <div class="card">
     <div class="card-header">
-        客服回覆區
+        <h5 class="mb-0">客服回覆處理</h5>
     </div>
     <div class="card-body">
+        <!-- 回覆模板控制區 -->
+        <div class="template-control-section mb-3">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">服務類別</label>
+                    <select id="templateCategory" class="form-select">
+                        <option value="">請選擇類別</option>
+                        <option value="LEASE_SERVICE">租約</option>
+                        <option value="FURNITURE_SERVICE">傢俱</option>
+                        <option value="PROPERTY_SERVICE">房源</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">回覆模板</label>
+                    <select id="messageTemplate" class="form-select" disabled>
+                        <option value="">請先選擇服務類別</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">&nbsp;</label>
+                    <button type="button" id="insertTemplateBtn" class="btn btn-outline-primary" disabled>
+                        <i class="bi bi-plus-circle"></i> 插入模板
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 回覆內容編輯區 -->
         <div class="mb-3">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-                <label for="replyContent" class="form-label mb-0">回覆內容</label>
-                <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#templateModal">
-                    <i class="bi bi-journal-plus"></i> 插入模板
+            <label for="replyContent" class="form-label">回覆內容</label>
+            <textarea class="form-control" id="replyContent" rows="8" placeholder="請在此輸入回覆內容，或使用上方的模板快速插入..."></textarea>
+        </div>
+        
+        <!-- 狀態更新區 -->
+        <div class="mb-3">
+            <label for="statusUpdate" class="form-label">案件狀態</label>
+            <select id="statusUpdate" class="form-select">
+                <option value="PENDING">待處理</option>
+                <option value="PROGRESS">處理中</option>
+                <option value="RESOLVED">已處理</option>
+            </select>
+        </div>
+        
+        <!-- 操作按鈕區 -->
+        <div class="d-flex justify-content-between">
+            <button type="button" class="btn btn-outline-secondary" onclick="history.back()">
+                <i class="bi bi-arrow-left"></i> 返回列表
+            </button>
+            <div>
+                <button type="button" class="btn btn-outline-primary me-2" id="saveReplyBtn">
+                    <i class="bi bi-floppy"></i> 儲存回覆
+                </button>
+                <button type="button" class="btn btn-primary" id="sendReplyBtn">
+                    <i class="bi bi-send"></i> 送出回覆
                 </button>
             </div>
-            <textarea class="form-control" id="replyContent" rows="8" placeholder="請在此輸入回覆..."></textarea>
         </div>
-        <div class="d-flex justify-content-end">
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#confirmReplyModal">
-                <i class="bi bi-chat-right-text-fill"></i> 送出回覆
-            </button>
+    </div>
+</div>
+
+<!-- 確認送出Modal -->
+<div class="modal fade" id="confirmReplyModal" tabindex="-1" aria-labelledby="confirmReplyModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmReplyModalLabel">確認送出回覆</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>您確定要送出此回覆嗎？送出後將自動更新案件狀態並通知會員。</p>
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i>
+                    <strong>處理人員：</strong><span id="handlerName">@ViewBag.CurrentAdminName</span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="confirmSendReply">確認送出</button>
+            </div>
         </div>
     </div>
 </div>

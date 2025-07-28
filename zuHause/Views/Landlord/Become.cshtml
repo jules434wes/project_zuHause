@@ -60,7 +60,7 @@
             <p class="mb-3">@Model.ErrorMessage</p>
             @if (Model.ErrorMessage != null && Model.ErrorMessage.Contains("完善會員資料"))
             {
-                <a href="/Member/Profile" class="btn btn-warning">前往完善資料</a>
+                <a href="/Member/MemberProfile#identity-section" class="btn btn-warning">前往完善資料</a>
             }
         </div>
     }

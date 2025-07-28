@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.IdentityModel.Tokens;
+using zuHause.Configs;
 using zuHause.Models;
 using zuHause.Services;
 using zuHause.ViewModels.MemberViewModel;
@@ -15,15 +16,18 @@ namespace zuHause.Controllers
     {
         public readonly ZuHauseContext _context;
         public readonly ApplicationService _applicationService;
-        public MemberApplicationsController(ZuHauseContext context, ApplicationService applicationService)
+        public readonly NotificationService _notificationService;
+        public MemberApplicationsController(ZuHauseContext context, ApplicationService applicationService, NotificationService notificationService)
         {
             _context = context;
             _applicationService = applicationService;
+            _notificationService = notificationService;
         }
 
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string type = "ALL", string? statusFilter = null)
         {
+            ViewBag.type = type;
             if (User.Identity?.IsAuthenticated != true)
                 return RedirectToAction("Login", "Member");
 
@@ -32,6 +36,10 @@ namespace zuHause.Controllers
 
             var viewModel = await _context.RentalApplications
                 .Where(app => app.MemberId == memberId && app.IsActive && app.DeletedAt == null)
+                .Where(app => (type == "ALL" || type == "") && (app.ApplicationType == "HOUSE_VIEWING" || app.ApplicationType == "RENTAL") ||
+                                (type == "HOUSE_VIEWING" && app.ApplicationType == "HOUSE_VIEWING") ||
+                                (type == "RENTAL" && app.ApplicationType == "RENTAL"))
+                .Where(app => string.IsNullOrEmpty(statusFilter) || app.CurrentStatus == statusFilter)
                 .Include(app => app.ApplicationStatusLogs)
                 .Include(app => app.Contracts)
                 .Include(app => app.Property)
@@ -67,7 +75,7 @@ namespace zuHause.Controllers
                             StatusCode = log.StatusCode,
                             ChangedAt = log.ChangedAt
                         }).ToList()
-                }).OrderByDescending(x=>x.ApplicationId)
+                }).OrderByDescending(x => x.ApplicationId)
                 .ToListAsync();
 
 
@@ -76,8 +84,27 @@ namespace zuHause.Controllers
             .Where(s => s.CodeCategory == "USER_APPLY_STATUS" && s.IsActive)
             .OrderBy(s => s.DisplayOrder)
             .ToDictionaryAsync(s => s.Code, s => s.CodeName);
+            //變成字典例如："APPLIED","已申請"
 
-            ViewBag.ApplicationStatusOptions = applicationStatusCodes;
+            List<string>? allowedStatusCodes = null;
+            if (type == "HOUSE_VIEWING" || type == "RENTAL" || type == "REJECTED_FLOW")
+            {
+                allowedStatusCodes = ApplicationFlowConfig.ApplicationStepsMap.GetValueOrDefault(type);
+                // 取出對應清單
+            }
+
+            Dictionary<string, string> filteredStatusDict;
+            if (allowedStatusCodes is not null)
+            {
+                filteredStatusDict = applicationStatusCodes
+                    .Where(kv => allowedStatusCodes.Contains(kv.Key))
+                    .ToDictionary(kv => kv.Key, kv => kv.Value);
+            }
+            else
+            {
+                filteredStatusDict = applicationStatusCodes; // 如果有狀態就篩選符合List的列表出來，也存成字典
+            }
+            ViewBag.ApplicationStatusOptions = filteredStatusDict;
 
 
             return View(viewModel);
@@ -93,24 +120,14 @@ namespace zuHause.Controllers
         public async Task<IActionResult> CreateApplyHouse(ApplicationViewModel model)
         {
 
-
-            System.Diagnostics.Debug.WriteLine($"===={model.ScheduleDate}===");
-            System.Diagnostics.Debug.WriteLine($"===={model.ScheduleHouse}");
-            System.Diagnostics.Debug.WriteLine($"===={model.ScheduleMinute}");
-            System.Diagnostics.Debug.WriteLine($"===={model.ScheduleTime}");
-            System.Diagnostics.Debug.WriteLine($"===={Convert.ToInt32(model.PropertyId)}");
-            System.Diagnostics.Debug.WriteLine($"===={"11111111111"}===");
             if (!ModelState.IsValid)
             {
-                System.Diagnostics.Debug.WriteLine($"===={"2222222"}===");
-
                 //確認房源會拿到的網址後跳轉
                 return Redirect(model.ReturnUrl ?? "/MemberApplications/Index");
             }
 
             var userId = int.Parse(User.FindFirst("UserId")!.Value);
 
-            System.Diagnostics.Debug.WriteLine($"===={"3333333"}===");
 
 
             var scheduledDateTime = model.ScheduleDate;
@@ -134,7 +151,7 @@ namespace zuHause.Controllers
 
             var newLog = new ApplicationStatusLog
             {
-                ApplicationId = application.ApplicationId, 
+                ApplicationId = application.ApplicationId,
                 StatusCode = "APPLIED",
                 ChangedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now,
@@ -143,6 +160,22 @@ namespace zuHause.Controllers
             _context.ApplicationStatusLogs.Add(newLog);
             await _context.SaveChangesAsync();
 
+            int propertyId = model.PropertyId;
+
+            var property = await _context.Properties.FindAsync(propertyId);
+            var member = await _context.Members.FindAsync(userId);
+
+
+            var (success, message) = await _notificationService.CreateUserNotificationAsync
+                (
+                receiverId: property!.LandlordMemberId,
+                typeCode: "APPLY_VIEW",
+                title: $"【{property!.Title}】收到新的看房申請！申請人：【{member!.MemberName}】",
+                content:
+                    $"親愛的房東您好，\n會員【{member!.MemberName}】想預約看房您的【{property!.Title}】物件\n預約日期：【{application.ScheduleTime!.Value.ToString("yyyy-MM-dd HH:mm")}】\n申請留言：{application.Message}",
+                ModuleCode: "ApplyHouse",
+                sourceEntityId: application.ApplicationId // 申請編號
+                );
 
 
             return RedirectToAction("Index");
@@ -201,7 +234,7 @@ namespace zuHause.Controllers
 
             var newLog = new ApplicationStatusLog
             {
-                ApplicationId = rentalApp.ApplicationId, 
+                ApplicationId = rentalApp.ApplicationId,
                 StatusCode = "APPLIED",
                 ChangedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now,
@@ -253,6 +286,25 @@ namespace zuHause.Controllers
 
             await _context.SaveChangesAsync();
 
+            int propertyId = model.PropertyId;
+
+            var property = await _context.Properties.FindAsync(propertyId);
+            var member = await _context.Members.FindAsync(userId);
+
+            var (success, message) = await _notificationService.CreateUserNotificationAsync
+            (
+            receiverId: property!.LandlordMemberId,
+            typeCode: "APPLY_VIEW",
+            title: $"【{property!.Title}】收到新的租賃申請！申請人：【{member!.MemberName}】",
+            content:
+                $"親愛的房東您好，\n會員【{member!.MemberName}】想申請租賃您的【{property!.Title}】物件\n租賃期間：【{rentalApp.RentalStartDate} 至 {rentalApp.RentalEndDate}】\n申請留言：{rentalApp.Message}",
+            ModuleCode: "ApplyRental",
+            sourceEntityId: rentalApp.ApplicationId // 申請編號
+            );
+
+
+
+
             return RedirectToAction("Index", "MemberApplications");
         }
 
@@ -267,8 +319,8 @@ namespace zuHause.Controllers
         {
 
             var (success, message) = await _applicationService.UpdateApplicationStatusAsync(
-        Convert.ToInt32(model.ApplicationId), model.Status!
-    );
+            Convert.ToInt32(model.ApplicationId), model.Status!
+            );
 
             if (!success)
                 return BadRequest(new { msg = message });

@@ -18,12 +18,16 @@ using zuHause.ViewModels;
 var builder = WebApplication.CreateBuilder(args);
 
 
-var context = new CustomAssemblyLoadContext();
+// 只在非測試環境載入 PDF 庫
+if (Environment.GetEnvironmentVariable("SKIP_PDF_LIBRARY") != "true")
+{
+    var context = new CustomAssemblyLoadContext();
 
-var path = Path.Combine(Directory.GetCurrentDirectory(), "DinkToPdfLib", "libwkhtmltox.dll");
-context.LoadUnmanagedLibrary(path);
+    var path = Path.Combine(Directory.GetCurrentDirectory(), "DinkToPdfLib", "libwkhtmltox.dll");
+    context.LoadUnmanagedLibrary(path);
 
-builder.Services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
+    builder.Services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
+}
 
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
@@ -95,6 +99,9 @@ builder.Services.AddScoped<ApplicationService>();
 
 // 註冊 RealDataSeeder
 builder.Services.AddScoped<RealDataSeeder>();
+
+//註冊發送通知服務
+builder.Services.AddScoped<NotificationService>();
 
 // 註冊圖片處理服務
 builder.Services.AddScoped<zuHause.Interfaces.IImageProcessor, zuHause.Services.ImageSharpProcessor>();
@@ -201,9 +208,12 @@ app.MapControllerRoute(
 //pattern: "{controller=Dashboard}/{action=Index}/{id?}");
 
 //租屋首頁路由
-pattern: "{controller=Tenant}/{action=FrontPage}/{id?}");
+pattern: "{controller=MemberInbox}/{action=Index}/{id?}");
 
 
 
 
 app.Run();
+
+// 讓測試專案可以存取 Program 類別
+public partial class Program { }
