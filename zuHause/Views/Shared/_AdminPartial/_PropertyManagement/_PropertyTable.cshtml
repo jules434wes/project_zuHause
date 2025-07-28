@@ -14,19 +14,36 @@
 
 <div class="card mt-3">
     <div class="card-body">
+        @* 批量操作功能暫時隱藏
         <div class="mb-3">
             <button type="button" class="btn btn-success me-2" id="@bulkBtnId" disabled>
                 <i class="fas fa-envelope"></i> 批量傳送系統訊息
             </button>
         </div>
+        *@
+        <style>
+            /* 確保只有超連結才有手指游標 */
+            .property-table tbody tr {
+                cursor: default;
+            }
+            .property-table tbody tr a {
+                cursor: pointer;
+            }
+            /* 自定義表格行 hover 效果 */
+            .property-table tbody tr:hover {
+                background-color: rgba(0, 0, 0, 0.075);
+            }
+        </style>
         <div class="table-responsive">
-            <table class="table table-striped table-hover">
+            <table class="table table-striped property-table">
                 <thead class="table-dark">
                     <tr>
+                        @* 勾選框功能暫時隱藏
                         <th style="width: 50px;">
                             <input type="checkbox" class="form-check-input" id="@selectAllId">
                         </th>
-                        <th>房源ID</th>
+                        *@
+                        <th width="8%">房源ID</th>
                         <th>房源基本資訊</th>
                         <th>所屬房東</th>
                         <th>屋源狀態</th>
@@ -44,7 +61,7 @@
                                 上架時間 
                                 <i class="bi bi-sort-down sort-icon active" data-direction="desc"></i>
                             </th>
-                            <th>付費狀態</th>
+                            <th width="8%">付費狀態</th>
                             <th class="sortable" data-sort="expiryDate" data-table="@tableType">
                                 上架期限 
                                 <i class="bi bi-sort-up-alt sort-icon" data-direction="none"></i>
@@ -54,19 +71,20 @@
                             更新時間 
                             <i class="bi bi-sort-up-alt sort-icon" data-direction="none"></i>
                         </th>
-                        <th>操作</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach (var property in propertiesToShow)
                     {
                         <tr>
+                            @* 勾選框功能暫時隱藏
                             <td><input type="checkbox" class="form-check-input @checkboxClass" value="@property.PropertyID"></td>
+                            *@
                             <td>@property.PropertyID</td>
                             <td>
                                 <div><a href="/Admin/admin_propertyDetails/@property.PropertyID" target="_blank" class="text-decoration-none fw-bold">@property.PropertyTitle</a></div>
-                                <div><small class="text-muted">@property.Address</small></div>
-                                <div><small class="text-success fw-bold">NT$ @property.RentPrice.ToString("N0")/月</small></div>
+                                <div><a href="/Admin/admin_propertyDetails/@property.PropertyID" target="_blank" class="text-decoration-none"><small class="text-muted">@property.Address</small></a></div>
+                                <div><a href="/Admin/admin_propertyDetails/@property.PropertyID" target="_blank" class="text-decoration-none"><small class="text-success fw-bold">NT$ @property.RentPrice.ToString("N0")/月</small></a></div>
                             </td>
                             <td><a href="/Admin/admin_userDetails/@property.LandlordId" target="_blank" class="text-decoration-none">@property.LandlordName</a></td>
                             <td>
@@ -77,8 +95,14 @@
                                         case "審核完成":
                                             statusBadgeClass = "bg-success";
                                             break;
-                                        case "未審核":
+                                        case "審核中":
                                             statusBadgeClass = "bg-warning";
+                                            break;
+                                        case "待付款":
+                                            statusBadgeClass = "";
+                                            break;
+                                        case "上架中":
+                                            statusBadgeClass = "bg-success";
                                             break;
                                         case "違規下架":
                                             statusBadgeClass = "bg-danger";
@@ -88,7 +112,14 @@
                                             break;
                                     }
                                 }
-                                <span class="badge @statusBadgeClass">@property.Status</span>
+                                @if (property.Status == "待付款")
+                                {
+                                    <span class="badge" style="background-color: #0d6efd; color: white;">@property.Status</span>
+                                }
+                                else
+                                {
+                                    <span class="badge @statusBadgeClass">@property.Status</span>
+                                }
                             </td>
                             
                             @if (tableType == "pending")
@@ -134,17 +165,6 @@
                             }
                             
                             <td>@property.UpdatedDate</td>
-                            <td>
-                                @if (tableType == "pending")
-                                {
-                                    <button class="btn btn-sm btn-primary" onclick="openReviewModal('@property.PropertyID')">進行審核操作</button>
-                                }
-                                else
-                                {
-                                    <button class="btn btn-sm btn-outline-primary">查看</button>
-                                    <button class="btn btn-sm btn-outline-secondary">編輯</button>
-                                }
-                            </td>
                         </tr>
                     }
                 </tbody>

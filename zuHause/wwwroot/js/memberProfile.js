@@ -139,28 +139,33 @@ submitIdFile.addEventListener("click", async function () {
     }
 
     try {
-        let frontResult = await uploadIdFile(idFrontFormData, "USER_ID_FRONT");
-        let backResult = await uploadIdFile(idFBackFormData, "USER_ID_BACK");
-        submitIdMsg.classList.remove("text-danger");
-        submitIdMsg.classList.add("text-white");
-        submitIdMsg.textContent = "上傳成功";
-
-        // 申請驗證
-        const response =  await fetch("/Member/SubmitIdentityApplication", {
+        // 先提交身份驗證申請
+        submitIdMsg.textContent = "正在提交申請...";
+        const applicationResponse = await fetch("/Member/SubmitIdentityApplication", {
             method: "POST"
         });
 
-        if (!response.ok) {
-            const errorData = await response.text();
+        if (!applicationResponse.ok) {
+            const errorData = await applicationResponse.text();
             throw new Error(errorData);
         }
 
-        const result = await response.json();
-        console.log("申請結果", result.message);
+        const applicationResult = await applicationResponse.json();
+        console.log("申請結果", applicationResult.message);
 
+        // 申請成功後上傳檔案
+        submitIdMsg.textContent = "正在上傳檔案...";
+        let frontResult = await uploadIdFile(idFrontFormData, "USER_ID_FRONT");
+        let backResult = await uploadIdFile(idFBackFormData, "USER_ID_BACK");
+        
         submitIdMsg.classList.remove("text-danger");
         submitIdMsg.classList.add("text-white");
-        submitIdMsg.textContent = result.message;
+        submitIdMsg.textContent = "身份驗證申請已完成送出，等待審核";
+
+        // 更新頁面狀態
+        setTimeout(() => {
+            location.reload();
+        }, 2000);
 
 
     } catch (error) {
