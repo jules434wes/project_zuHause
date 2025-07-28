@@ -1,4 +1,8 @@
 @using zuHause.ViewModels.MemberViewModel;
+@using System.Security.Claims
+@{
+    string? role = User.FindFirst(ClaimTypes.Role)?.Value;
+}
 @model zuHause.ViewModels.NavbarMemberViewModel
 <header class="position-sticky w-100 top-0 z-3">
     <nav class="navbar navbar-expand-lg position-relative py-0" data-bs-theme="aqua">
@@ -64,10 +68,14 @@
                             <button type="button" class="btn dropdown-toggle d-flex align-items-center gap-2 ps-0 position-relative"
                                     data-bs-toggle="dropdown" aria-expanded="false">
                                 通知總覽
-                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                                    @(Model.NeverReadCount > 99 ? "99+" : Model.NeverReadCount.ToString())
-                                    <span class="visually-hidden">通知總覽</span>
-                                </span>
+                                @if (User.Identity?.IsAuthenticated == true && (Model.NeverReadCount>0))
+                                {
+                                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                        
+                                            @(Model.NeverReadCount > 99 ? "99+" : Model.NeverReadCount.ToString())
+                                            <span class="visually-hidden">通知總覽</span>
+                                        </span>
+                                }
                             </button>
                             <ul class="dropdown-menu dropdown-msg left-50 p-0 rounded-0">
                                 <li class="py-1 px-2">
@@ -118,8 +126,14 @@
                                     <li>
                                         <a asp-action="MemberProfile" asp-controller="Member" class="dropdown-item text-center">個人檔案</a>
                                     </li>
+                                    @if (role == "1")
+                                    {
+                                        <li>
+                                            <a asp-action="Index" asp-controller="MemberApplications" class="dropdown-item text-center">申請紀錄</a>
+                                        </li>
+                                    }
                                     <li>
-                                        <a asp-action="Index" asp-controller="MemberApplications" class="dropdown-item text-center">申請紀錄</a>
+                                        <a asp-action="Index" asp-controller="MemberInbox" class="dropdown-item text-center">通知管理</a>
                                     </li>
                                     <li>
                                         <a asp-action="Index" asp-controller="MemberContracts" class="dropdown-item text-center">我的合約</a>

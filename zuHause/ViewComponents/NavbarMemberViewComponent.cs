@@ -124,7 +124,7 @@ namespace zuHause.ViewComponents
                 })
                 .ToListAsync();
 
-            int count = systemMsgs.Where(x=>x.IsRead == false).Count();
+            int count = userNotis.Where(x=>x.IsRead == false && x.AudienceTypeCode != "System").Count();
 
             // 合併後排序取前 3 筆
             var merged = systemMsgs
