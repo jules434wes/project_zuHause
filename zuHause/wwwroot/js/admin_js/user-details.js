@@ -1,27 +1,14 @@
 // 會員詳情頁面 JavaScript
-console.log('user-details.js 檔案已載入');
+// user-details.js 檔案
 
 // 全域變數
 var currentMemberId = null;
 
-// 測試全域函數是否可用
-window.testFunction = function() {
-    console.log('測試函數正常運作');
-    return '檔案載入成功';
-};
-
-// 測試特定會員ID的函數
-window.testWithKnownMember = function(testMemberId) {
-    console.log(`測試載入會員 ${testMemberId} 的身分證檔案`);
-    const originalMemberId = currentMemberId;
-    currentMemberId = testMemberId;
-    loadIdentityDocuments();
-    // 不恢復原始 ID，讓管理員可以看到結果
-};
+// 測試函數已移除
 
 // 測試函數是否可用
 window.openVerifyIdModal = function() {
-    console.log('openVerifyIdModal 被呼叫 - 會員ID:', currentMemberId);
+    // 開啟身分驗證 Modal
     
     // 檢查 modal 元素是否存在
     const modalElement = document.getElementById('verifyIdModal');
@@ -68,8 +55,6 @@ window.openVerifyIdModal = function() {
 
 // 載入身分證檔案
 function loadIdentityDocuments() {
-    console.log('載入身分證檔案 - 會員ID:', currentMemberId, '類型:', typeof currentMemberId);
-    
     if (!currentMemberId) {
         console.error('會員ID 為空');
         showDocumentError('無法取得會員ID');
@@ -83,8 +68,6 @@ function loadIdentityDocuments() {
         showDocumentError('會員ID 格式不正確');
         return;
     }
-    
-    console.log('轉換後的會員ID:', memberIdNum);
 
     const documentsArea = document.getElementById('identityDocumentsArea');
     
@@ -100,12 +83,11 @@ function loadIdentityDocuments() {
 
     // 調用API載入檔案
     const apiUrl = `/Admin/GetMemberIdentityDocuments?memberId=${memberIdNum}`;
-    console.log('調用 API:', apiUrl);
+    // 調用 API 載入身分證檔案
     
     fetch(apiUrl)
         .then(response => {
-            console.log('API 回應狀態:', response.status, response.statusText);
-            console.log('Response headers:', response.headers);
+            // API 回應處理
             
             if (!response.ok) {
                 console.error('網路錯誤:', response.status, response.statusText);
@@ -114,25 +96,9 @@ function loadIdentityDocuments() {
             return response.json();
         })
         .then(data => {
-            console.log('API 返回數據：', data);
-            console.log('API success:', data.success);
-            console.log('data.data:', data.data);
-            
-            if (data.success && data.data) {
-                // 注意：API 返回的是 documents（小寫），不是 Documents（大寫）
-                console.log('documents 存在:', !!data.data.documents);
-                console.log('documents 類型:', typeof data.data.documents);
-                console.log('documents 內容:', data.data.documents);
-                
-                if (data.data.documents && Array.isArray(data.data.documents) && data.data.documents.length > 0) {
-                    console.log('找到檔案數量:', data.data.documents.length);
-                    displayIdentityDocuments(data.data.documents);
-                } else {
-                    console.log('沒有有效的 documents 陣列');
-                    showNoDocumentsMessage(memberIdNum);
-                }
+            if (data.success && data.data && data.data.documents && Array.isArray(data.data.documents) && data.data.documents.length > 0) {
+                displayIdentityDocuments(data.data.documents);
             } else {
-                console.log('API 失敗或無 data:', data.message);
                 showApiErrorMessage(data.message, memberIdNum);
             }
         })
@@ -163,8 +129,6 @@ function loadIdentityDocuments() {
 
 // 顯示身分證檔案 - 使用外部連結方式
 function displayIdentityDocuments(documents) {
-    console.log('displayIdentityDocuments 被呼叫:', documents);
-    console.log('檔案數量:', documents ? documents.length : 0);
     
     const documentsArea = document.getElementById('identityDocumentsArea');
     if (!documentsArea) {
@@ -186,7 +150,7 @@ function displayIdentityDocuments(documents) {
 
     let html = '';
     documents.forEach(doc => {
-        console.log('處理檔案物件:', doc); // 除錯日誌
+        // 處理每個檔案物件
         
         // 確保 fileUrl 是完整的 URL，用於外部連結
         // 數據庫中的路徑格式: /uploads/userPhoto/filename.jpg
@@ -195,7 +159,7 @@ function displayIdentityDocuments(documents) {
             ? doc.fileUrl 
             : `${window.location.origin}${doc.fileUrl || ''}`;
         
-        console.log('處理檔案URL:', doc.fileUrl, '→', fileUrl); // 除錯日誌
+        // 處理檔案 URL
         
         html += `
             <div class="col-md-6">
@@ -248,9 +212,7 @@ function displayIdentityDocuments(documents) {
         `;
     });
     
-    console.log('生成的 HTML:', html);
     documentsArea.innerHTML = html;
-    console.log('身分證檔案顯示完成');
 }
 
 // 顯示檔案載入錯誤
@@ -268,7 +230,7 @@ function showDocumentError(message) {
 
 // 圖片放大檢視 Modal
 window.openImageModal = function(imageUrl, title) {
-    console.log('開啟圖片放大 Modal:', imageUrl, title);
+    // 開啟圖片放大檢視
     
     // 檢查是否已經存在 Modal
     let imageModal = document.getElementById('imageZoomModal');
@@ -332,7 +294,7 @@ function openDeactivateModal() {
 // 全域函數 - 開啟啟用帳號Modal (預留功能)
 function openActivateModal() {
     // 啟用帳號功能 - 後續開發
-    console.log('啟用帳號功能 - MemberID: ' + currentMemberId);
+    // 啟用帳號功能 - 後續開發
 }
 
 // 原 openIdDocumentModal 函數已移除，改為使用外部連結方式
@@ -372,7 +334,6 @@ function showApiErrorMessage(message, memberId) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('頁面載入完成 - user-details.js');
     
     // 初始化頁籤功能
     var triggerTabList = [].slice.call(document.querySelectorAll('#memberDetailsTabs button'))
@@ -447,7 +408,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 executeIdentityVerification();
                 break;
             case 'deactivate_account':
-                console.log('執行帳號停用操作 - MemberID: ' + currentMemberId);
+                // 執行帳號停用操作
                 // 後續實作帳號停用邏輯
                 break;
         }
@@ -505,7 +466,7 @@ function initSortingEvents() {
             // 執行排序
             sortTable(currentTable, sortField, newDirection);
             
-            console.log('排序: ' + sortField + ' (' + newDirection + ')');
+            // 執行表格排序
         });
     });
 }
@@ -557,7 +518,7 @@ function getSortValue(row, sortField) {
 // 設定當前會員ID的函數（供從外部呼叫）
 window.setCurrentMemberId = function(memberId) {
     currentMemberId = memberId;
-    console.log('設定會員ID:', currentMemberId);
+    // 設定當前會員ID
 };
 
 // ============ 發送系統訊息功能 ============
@@ -641,7 +602,6 @@ function loadUserMessageTemplates() {
             }
         })
         .catch(error => {
-            console.error('載入模板錯誤：', error);
             showUserTemplateError('載入模板時發生錯誤');
         });
 }
@@ -715,7 +675,7 @@ function selectUserTemplate(element) {
     userTemplateModal.hide();
     
     // 顯示成功提示
-    console.log(`已插入模板：${templateTitle}`);
+    // 已插入模板內容
 }
 
 // 顯示確認發送Modal
@@ -812,13 +772,11 @@ function sendUserMessage() {
             // 顯示成功訊息
             alert('成功：' + data.message);
         } else {
-            console.error('伺服器返回錯誤：', data);
             alert('發送失敗：' + data.message + (data.error ? '\n錯誤詳情：' + data.error : ''));
         }
     })
     .catch(error => {
         hideUserSendingState();
-        console.error('AJAX 錯誤：', error);
         alert('發送訊息時發生錯誤：' + error.message);
     });
 }
@@ -952,13 +910,11 @@ function executeIdentityVerification() {
                 location.reload();
             }, 1500);
         } else {
-            console.error('伺服器返回錯誤：', data);
             showToast('審核失敗：' + data.message, 'error');
         }
     })
     .catch(error => {
         hideFinalConfirmLoading();
-        console.error('AJAX 錯誤：', error);
         showToast('執行身分驗證時發生錯誤：' + error.message, 'error');
     });
 }
