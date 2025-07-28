@@ -642,6 +642,7 @@ namespace zuHause.AdminViewModels
             Complaints = LoadComplaints(context, propertyId);
             Equipment = LoadEquipment(context, propertyId);
             Images = LoadImages(context, imageQueryService, propertyId);
+            ApprovalHistory = LoadApprovalHistory(context, propertyId);
         }
 
         public PropertyDetailsData? Data { get; set; }
@@ -649,6 +650,7 @@ namespace zuHause.AdminViewModels
         public List<ComplaintDetailsData> Complaints { get; set; } = new();
         public List<EquipmentData> Equipment { get; set; } = new();
         public List<PropertyImageData> Images { get; set; } = new();
+        public List<ApprovalHistoryData> ApprovalHistory { get; set; } = new();
 
         private PropertyDetailsData? LoadPropertyDetailsFromDatabase(ZuHauseContext context, int propertyId)
         {
@@ -792,6 +794,38 @@ namespace zuHause.AdminViewModels
                 DisplayOrder = img.DisplayOrder ?? 0,
                 UploadedAt = img.UploadedAt
             }).ToList();
+        }
+
+        private List<ApprovalHistoryData> LoadApprovalHistory(ZuHauseContext context, int propertyId)
+        {
+            var approvalHistory = new List<ApprovalHistoryData>();
+
+            // 取得房源相關的審核記錄
+            var approvals = context.Approvals
+                .Include(a => a.ApprovalItems)
+                .Where(a => a.SourcePropertyId == propertyId && a.ModuleCode == "PROPERTY")
+                .ToList();
+
+            foreach (var approval in approvals)
+            {
+                foreach (var item in approval.ApprovalItems.OrderBy(ai => ai.CreatedAt))
+                {
+                    var adminName = item.ActionBy.HasValue 
+                        ? context.Admins.FirstOrDefault(admin => admin.AdminId == item.ActionBy.Value)?.Name ?? "系統自動"
+                        : "系統自動";
+
+                    approvalHistory.Add(new ApprovalHistoryData
+                    {
+                        OperationTime = item.CreatedAt,
+                        ActionType = item.ActionType,
+                        ActionNote = item.ActionNote ?? "",
+                        AdminName = adminName,
+                        AdminId = item.ActionBy
+                    });
+                }
+            }
+
+            return approvalHistory.OrderByDescending(ah => ah.OperationTime).ToList();
         }
 
         private static string GetImageCategoryDisplay(zuHause.Enums.ImageCategory category)
@@ -1332,6 +1366,41 @@ namespace zuHause.AdminViewModels
             "EXTERIOR" => "外觀",
             "OTHER" => "其他",
             _ => "未分類"
+        };
+    }
+
+    public class ApprovalHistoryData
+    {
+        public DateTime OperationTime { get; set; }
+        public string ActionType { get; set; } = string.Empty;
+        public string ActionNote { get; set; } = string.Empty;
+        public string AdminName { get; set; } = string.Empty;
+        public int? AdminId { get; set; }
+
+        public string ActionTypeDisplay => ActionType switch
+        {
+            "SUBMIT" => "提交申請",
+            "APPROVE" => "審核通過",
+            "REJECT" => "審核駁回",
+            "REVISE" => "要求修正",
+            "MARK_PAID" => "標記已付款",
+            "PUBLISH" => "發布上架",
+            "SUSPEND" => "暫停",
+            "REACTIVATE" => "重新啟用",
+            _ => ActionType
+        };
+
+        public string BadgeClass => ActionType switch
+        {
+            "SUBMIT" => "bg-info",
+            "APPROVE" => "bg-success", 
+            "REJECT" => "bg-danger",
+            "REVISE" => "bg-warning",
+            "MARK_PAID" => "bg-primary",
+            "PUBLISH" => "bg-success",
+            "SUSPEND" => "bg-secondary",
+            "REACTIVATE" => "bg-info",
+            _ => "bg-secondary"
         };
     }
 

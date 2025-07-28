@@ -412,18 +412,26 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td>2024-07-12 10:00:00</td>
-                                <td><span class="badge bg-info">提交申請</span></td>
-                                <td>房東 (@(Model.Data?.LandlordName ?? "-"))</td>
-                                <td>-</td>
-                            </tr>
-                            <tr>
-                                <td>2024-07-12 10:05:00</td>
-                                <td><span class="badge bg-primary">系統檢查</span></td>
-                                <td>系統自動</td>
-                                <td>資料完整性檢查通過</td>
-                            </tr>
+                            @if (Model.ApprovalHistory.Any())
+                            {
+                                @foreach (var history in Model.ApprovalHistory)
+                                {
+                                    <tr>
+                                        <td>@history.OperationTime.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                                        <td><span class="badge @history.BadgeClass">@history.ActionTypeDisplay</span></td>
+                                        <td>@history.AdminName</td>
+                                        <td>@(string.IsNullOrEmpty(history.ActionNote) ? "-" : history.ActionNote)</td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted py-4">
+                                        <i class="bi bi-clock-history me-2"></i>尚無審核記錄
+                                    </td>
+                                </tr>
+                            }
                         </tbody>
                     </table>
                 </div>
