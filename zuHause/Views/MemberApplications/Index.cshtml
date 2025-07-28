@@ -41,9 +41,9 @@
                     @await Component.InvokeAsync("MemberApplicationCard",new MemberApplicationCardInputViewModel
                     {
                         Record = item,
-                                StatusCodeDict = ViewBag.ApplicationStatusOptions as Dictionary<string, string> ?? new()
-                                })
-                                }
+                        StatusCodeDict = ViewBag.ApplicationStatusOptions as Dictionary<string, string> ?? new()
+                    })
+                }
             </div>
 
         </div>

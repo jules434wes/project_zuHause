@@ -53,7 +53,10 @@ namespace zuHause.ViewModels.MemberViewModel
         [Display(Name = "若提前解約，需另行給付甲方相當於：")]
         public int? PenaltyAmount { get; set; } // 違約金金額
 
-
+        /// <summary>
+        /// 圖片位址
+        /// </summary>
+        public string? imgPath {  get; set; }
 
         [Required(ErrorMessage = "請選擇合約範本")]
         [Display(Name = "合約範本")]

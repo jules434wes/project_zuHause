@@ -4,12 +4,13 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using System.Security.Claims;
 using System.Text.Json;
+using zuHause.DTOs;
 using zuHause.Models;
 using zuHause.Services;
 using zuHause.ViewModels.MemberViewModel;
-using zuHause.DTOs;
 
 namespace zuHause.Controllers
 {
@@ -42,6 +43,10 @@ namespace zuHause.Controllers
             var codeDict = await _context.SystemCodes
                 .Where(s => s.CodeCategory == "CONTRACT_STATUS")
                 .ToDictionaryAsync(s => s.Code, s => s.CodeName);
+
+
+
+
 
 
 
@@ -155,6 +160,12 @@ namespace zuHause.Controllers
                     .ToList();
             }
 
+            foreach(ContractsViewModel item in contractsLog)
+            {
+                string ImgUrl = await _imageResolverService.GetImageUrl(item.PropertyId, "Property", "Gallery", "medium");
+                item.imgPath = ImgUrl;
+            }
+
 
             return View(contractsLog);
         }
@@ -221,6 +232,8 @@ namespace zuHause.Controllers
             if (application == null)
                 return NotFound();
 
+            string ImgUrl = await _imageResolverService.GetImageUrl(application.PropertyId, "Property", "Gallery", "medium");
+
             var vm = new ContractFormViewModel
             {
                 SelectedTemplateId = latestTemplate!.ContractTemplateId,
@@ -236,6 +249,7 @@ namespace zuHause.Controllers
                 RentalStartDate = application.RentalStartDate,
                 RentalEndDate = application.RentalEndDate,
                 CityOptions = cities,
+                imgPath = ImgUrl,
             };
 
             return View(vm);
@@ -504,7 +518,7 @@ namespace zuHause.Controllers
             string contractName = data.ContractName!;
             System.Diagnostics.Debug.WriteLine($"===={contractId}===");
             System.Diagnostics.Debug.WriteLine($"===={contractName}===");
-            Contract? result = await _context.Contracts.Where(c => c.ContractId == contractId).FirstOrDefaultAsync();
+            Contract result = await _context.Contracts.Where(c => c.ContractId == contractId).FirstOrDefaultAsync();
             if (result == null) return BadRequest("請確認合約編號");
             result.CustomName = contractName;
             _context.Update(result);
@@ -881,9 +895,9 @@ namespace zuHause.Controllers
 
         }
 
-        public async Task<string> GetPropertyImageUrl(int contractId)
+        public async Task<string> GetPropertyImageUrl(int propertyId)
         {
-           string ImgUrl =  await _imageResolverService.GetImageUrl(contractId, "Property", "Gallery", "medium");
+           string ImgUrl =  await _imageResolverService.GetImageUrl(propertyId, "Property", "Gallery", "medium");
 
             return ImgUrl;
         }

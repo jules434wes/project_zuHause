@@ -14,7 +14,7 @@ namespace zuHause.Services
             _httpContextAccessor = httpContextAccessor;
         }
 
-        public async Task<string> GetImageUrl(int contractId, string entityType, string category, string size)
+        public async Task<string> GetImageUrl(int propertyId, string entityType, string category, string size)
         {
 
             var request = _httpContextAccessor.HttpContext!.Request;
@@ -29,7 +29,7 @@ namespace zuHause.Services
             {
                 return fallbackImageUrl;
             }
-                var image =  await _context.Images.Where(img=> (img.EntityId == contractId) && (img.EntityType == entityTypeEnum) && img.Category == ImageCategoryEnum && img.DisplayOrder == 1).FirstOrDefaultAsync();
+                var image =  await _context.Images.Where(img=> (img.EntityId == propertyId) && (img.EntityType == entityTypeEnum) && img.Category == ImageCategoryEnum && img.DisplayOrder == 1).FirstOrDefaultAsync();
             string fileName = "";
             if(image != null)
             {
@@ -40,7 +40,7 @@ namespace zuHause.Services
                 return fallbackImageUrl;
             }
 
-                string imageUrl = $"https://zuhauseimg.blob.core.windows.net/zuhaus-images/{category}/{contractId}/{size}/{fileName}";
+                string imageUrl = $"https://zuhauseimg.blob.core.windows.net/zuhaus-images/{category}/{propertyId}/{size}/{fileName}";
 
             return imageUrl;
         }
