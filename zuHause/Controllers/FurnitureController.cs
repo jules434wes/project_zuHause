@@ -622,14 +622,21 @@ namespace zuHause.Controllers
             if (member == null)
                 return RedirectToAction("Login", "Member");
 
+            // 強化認證狀態，確保支付完成後認證持續有效
             var claims = new List<Claim>
                 {
                     new Claim("UserId", member.MemberId.ToString()),
-                    new Claim(ClaimTypes.Name, member.MemberName ?? "")
+                    new Claim(ClaimTypes.Name, member.MemberName ?? ""),
+                    new Claim("PaymentCompleted", DateTime.Now.ToString()) // 添加支付完成時間戳
                 };
             var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
             var principal = new ClaimsPrincipal(identity);
-            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
+            
+            // 使用 "MemberCookieAuth" 方案名稱確保一致性
+            await HttpContext.SignInAsync("MemberCookieAuth", principal);
+            
+            // 強制刷新當前用戶上下文
+            SetCurrentMemberInfo();
 
             var rentalApp = _context.RentalApplications
             .FirstOrDefault(r => r.MemberId == member.MemberId && r.PropertyId == selectedPropertyId);
@@ -744,6 +751,23 @@ namespace zuHause.Controllers
         //支付成功
         public IActionResult Success()
         {
+            SetCurrentMemberInfo();
+            
+            // 彈性認證檢查：即使認證失效也顯示友善頁面
+            var memberIdString = User.FindFirst("UserId")?.Value;
+            if (string.IsNullOrEmpty(memberIdString) || !int.TryParse(memberIdString, out int memberId))
+            {
+                // 設置友善提示訊息給前端
+                ViewBag.IsAuthExpired = true;
+                ViewBag.LoginUrl = Url.Action("Login", "Member");
+                ViewBag.CartUrl = Url.Action("RentalCart", "Furniture");
+            }
+            else
+            {
+                ViewBag.IsAuthExpired = false;
+                ViewBag.CurrentMemberId = memberId;
+            }
+            
             return View();
         }
 
@@ -753,11 +777,19 @@ namespace zuHause.Controllers
         {
             SetCurrentMemberInfo();
             var memberIdString = User.FindFirst("UserId")?.Value;
+            
+            // 彈性認證檢查：認證失效時也允許顯示取消頁面
             if (string.IsNullOrEmpty(memberIdString) || !int.TryParse(memberIdString, out int memberId))
             {
-                return RedirectToAction("Login", "Member");
+                // 設置認證失效標記但不強制登入
+                ViewBag.IsAuthExpired = true;
+                ViewBag.LoginUrl = Url.Action("Login", "Member");
+                ViewBag.CartUrl = Url.Action("RentalCart", "Furniture");
+                ViewBag.SelectedPropertyId = selectedPropertyId;
+                return View("CancelPayment");
             }
 
+            // 認證有效時才執行購物車清理
             var cart = _context.FurnitureCarts
                 .Include(c => c.FurnitureCartItems)
                 .FirstOrDefault(c => c.MemberId == memberId && c.PropertyId == selectedPropertyId);
@@ -767,8 +799,11 @@ namespace zuHause.Controllers
                 _context.FurnitureCartItems.RemoveRange(cart.FurnitureCartItems);
                 _context.FurnitureCarts.Remove(cart);
                 _context.SaveChanges();
+                ViewBag.CartCleared = true;
             }
 
+            ViewBag.IsAuthExpired = false;
+            ViewBag.SelectedPropertyId = selectedPropertyId;
             return View("CancelPayment");
         }
 

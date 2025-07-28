@@ -44,8 +44,8 @@ builder.Services.AddAuthentication(options =>
 {
     options.LoginPath = "/Member/Login";
     options.AccessDeniedPath = "/Member/AccessDenied";
-    options.ExpireTimeSpan = TimeSpan.FromMinutes(15); // Cookie 有效時間 15 分鐘閒置登出
-    options.SlidingExpiration = true; // 滑動期限（有活動就重置15分鐘）
+    options.ExpireTimeSpan = TimeSpan.FromMinutes(60); // Cookie 有效時間 60 分鐘，確保完整支付流程
+    options.SlidingExpiration = true; // 滑動期限（有活動就重置60分鐘）
     options.Cookie.HttpOnly = true; // 增加安全性
     options.Cookie.IsEssential = true; // 設定為必要的 Cookie
 })
