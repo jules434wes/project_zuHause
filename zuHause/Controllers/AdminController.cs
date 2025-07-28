@@ -1875,7 +1875,7 @@ namespace zuHause.Controllers
 
         /// <summary>
         /// 審核通過房源
-        /// 根據規格文件：更新 approvals.statusCode = 'APPROVED'，觸發器會自動同步 properties.statusCode = 'PENDING_PAYMENT'
+        /// 根據規格文件：更新 approvals.statusCode = 'APPROVED'，並設定 properties.statusCode = 'PENDING_PAYMENT'
         /// </summary>
         [HttpPost]
         [RequireAdminPermission(AdminPermissions.PropertyDetails)]
@@ -1920,6 +1920,10 @@ namespace zuHause.Controllers
                 approval.CurrentApproverId = currentAdminId;
                 approval.UpdatedAt = DateTime.Now;
 
+                // 根據規格文件，審核通過後房源狀態應設為 PENDING_PAYMENT
+                property.StatusCode = "PENDING_PAYMENT";
+                property.UpdatedAt = DateTime.Now;
+
                 // 新增審核操作記錄
                 var approvalItem = new ApprovalItem
                 {
@@ -1951,7 +1955,7 @@ namespace zuHause.Controllers
                         PropertyId = propertyId,
                         Title = property.Title,
                         ApprovalStatus = "APPROVED",
-                        PropertyStatus = "PENDING_PAYMENT", // 觸發器會自動設定
+                        PropertyStatus = "PENDING_PAYMENT", // 已直接設定
                         ApprovedBy = currentAdminId,
                         ApprovedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
                     }
@@ -1970,7 +1974,7 @@ namespace zuHause.Controllers
 
         /// <summary>
         /// 駁回房源申請
-        /// 根據規格文件：更新 approvals.statusCode = 'REJECT_FINAL'，觸發器會自動同步 properties.statusCode = 'REJECTED'
+        /// 根據規格文件：更新 approvals.statusCode = 'REJECT_FINAL'，並設定 properties.statusCode = 'REJECTED'
         /// </summary>
         [HttpPost]
         [RequireAdminPermission(AdminPermissions.PropertyDetails)]
@@ -2020,6 +2024,10 @@ namespace zuHause.Controllers
                 approval.CurrentApproverId = currentAdminId;
                 approval.UpdatedAt = DateTime.Now;
 
+                // 根據規格文件，駁回後房源狀態應設為 REJECTED
+                property.StatusCode = "REJECTED";
+                property.UpdatedAt = DateTime.Now;
+
                 // 新增審核操作記錄
                 var approvalItem = new ApprovalItem
                 {
@@ -2052,7 +2060,7 @@ namespace zuHause.Controllers
                         PropertyId = propertyId,
                         Title = property.Title,
                         ApprovalStatus = "REJECT_FINAL",
-                        PropertyStatus = "REJECTED", // 觸發器會自動設定
+                        PropertyStatus = "REJECTED", // 已直接設定
                         RejectionReason = rejectionReason,
                         RejectedBy = currentAdminId,
                         RejectedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
@@ -2308,10 +2316,11 @@ namespace zuHause.Controllers
                 {
                     propertyId = property.PropertyId,
                     title = property.Title,
-                    submitTime = property.CreatedAt?.ToString("yyyy-MM-dd HH:mm:ss"),
+                    submitTime = property.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss"),
                     landlordId = landlordId
                 }),
-                CreatedAt = property.CreatedAt ?? DateTime.Now
+                CreatedAt = property.CreatedAt 
+                //?? DateTime.Now
             };
 
             _context.ApprovalItems.Add(submitItem);
