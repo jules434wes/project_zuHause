@@ -1,5 +1,4 @@
-﻿
-@{
+﻿@{
     ViewBag.Title = "合約簽屬";
     Layout = "~/Views/Shared/_NavigationBar.cshtml";
     var contract = ViewBag.Contract;
@@ -52,7 +51,7 @@
     <p><strong>房屋地址：</strong> @property.AddressLine</p>
     <p><strong>租期起始日：</strong> @contract.StartDate.ToString("yyyy-MM-dd")</p>
     <p><strong>租期結束日：</strong> @contract.EndDate.ToString("yyyy-MM-dd")</p>
-    
+
     <h5 class="mt-4">二、租賃家具資訊</h5>
     <p><strong>家具承租起始日：</strong> @DateTime.Today.ToString("yyyy-MM-dd") </p>
     <p><strong>家具承租結束日：</strong> @contract.EndDate.ToString("yyyy-MM-dd")</p>
@@ -135,9 +134,10 @@
     </div>
 
     <div style="margin-top: 20px;">
-        <form method="post" action="/Furniture/MockPaymentPage">
-            <input type="hidden" name="selectedPropertyId" value="@ViewBag.SelectedPropertyId" />
-            <button id="confirmBtn" type="button" disabled>確認簽署 </button>
+        <form id="stripeForm" method="post" action="/Furniture/CreateCheckoutSession">
+            <input type="hidden" name="furnitureCartId" value="@ViewBag.FurnitureCartId" />
+            <input type="hidden" name="totalAmount" value="@(totalRentalFee + deliveryFee)" />
+            <button id="confirmBtn" type="button" class="btn btn-primary">💳 使用 Stripe 測試付款</button>
         </form>
     </div>
 
@@ -161,6 +161,31 @@
         // 更新按鈕啟用狀態
         function updateButtonState() {
             confirmBtn.disabled = !(checkbox.checked && hasSigned);
+        }
+
+        // 顯示簽名預覽
+        function showSignaturePreview() {
+            if (signatureImg) {
+                signatureImg.remove();
+            }
+            const dataURL = canvas.toDataURL("image/png");
+            signatureImg = document.createElement("img");
+            signatureImg.src = dataURL;
+            signatureImg.style.width = "250px";
+            signatureImg.style.height = "100px";
+            signatureImg.style.border = "1px solid #ccc";
+            signatureImg.style.marginTop = "10px";
+            previewContainer.innerHTML = "<p><strong>簽名預覽：</strong></p>";
+            previewContainer.appendChild(signatureImg);
+        }
+
+        // 清除簽名預覽
+        function clearPreview() {
+            previewContainer.innerHTML = "";
+            if (signatureImg) {
+                signatureImg.remove();
+                signatureImg = null;
+            }
         }
 
         // 畫布簽名邏輯
@@ -206,30 +231,7 @@
         checkbox.addEventListener("change", updateButtonState);
         document.querySelector("button[onclick='clearSignature()']").addEventListener("click", clearSignature);
 
-        // 簽名預覽圖
-        // function showSignaturePreview() {
-        //     const dataURL = canvas.toDataURL("image/png");
-        //     if (!signatureImg) {
-        //         signatureImg = document.createElement("img");
-        //         signatureImg.style.border = "1px solid #ccc";
-        //         signatureImg.style.marginTop = "10px";
-        //         signatureImg.style.maxWidth = "100%";
-        //         previewContainer.appendChild(signatureImg);
-        //     }
-        //     signatureImg.src = dataURL;
-        // }
-
-        // function clearPreview() {
-        //     if (signatureImg) {
-        //         signatureImg.remove();
-        //         signatureImg = null;
-        //     }
-        // }
-
-        // ✅ 送出簽名
-        confirmBtn.addEventListener("click", function () {
-            if (confirmBtn.disabled) return; // 防止重複點擊
-
+               confirmBtn.addEventListener("click", function () {
             if (!checkbox.checked) {
                 alert("請勾選同意合約條款");
                 return;
@@ -240,14 +242,12 @@
                 return;
             }
 
+            // 把簽名圖送去後端儲存
             const dataURL = canvas.toDataURL("image/png");
-            confirmBtn.disabled = true; // 鎖定按鈕防止重複點擊
 
             fetch("/Furniture/SaveSignature", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     signatureDataUrl: dataURL,
                     selectedPropertyId: @ViewBag.SelectedPropertyId
@@ -255,42 +255,27 @@
             })
             .then(res => {
                 if (res.ok) {
-                    // ✅ 簽署成功提示 + 倒數跳轉
-                          // ✅ 顯示彈窗方式倒數提示
-                    const backdrop = document.createElement("div");
-                    backdrop.className = "modal-backdrop-custom";
-
-                    const modal = document.createElement("div");
-                    modal.className = "modal-content-custom";
-
-                    modal.innerHTML = `
-                        <div>簽署成功！<br><br>
-                        將於 <span id="countdown">3</span> 秒後前往第三方支付...</div>
-                    `;
-
-                    backdrop.appendChild(modal);
-                    document.body.appendChild(backdrop);
-
-                    let countdown = 3;
-                    const countdownSpan = modal.querySelector("#countdown");
-
-                    const interval = setInterval(() => {
-                        countdown--;
-                        countdownSpan.innerText = countdown;
-                        if (countdown === 0) {
-                            clearInterval(interval);
-                            window.location.href = "/Furniture/MockPaymentPage?selectedPropertyId=" + @ViewBag.SelectedPropertyId;
+                    // ✅ 簽名儲存成功，開始送 Stripe 表單
+                   fetch("/Furniture/BeforeStripePayment", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ selectedPropertyId: @ViewBag.SelectedPropertyId })
+                    })
+                    .then(res => {
+                        if (res.ok) {
+                            // 成功設置 TempData，送出 Stripe 表單
+                            document.getElementById("stripeForm").submit();
+                        } else {
+                            alert("付款前暫存失敗，請稍後再試");
                         }
-                    }, 1000);
+                    });
 
                 } else {
-                    alert("儲存簽名失敗，請稍後再試");
-                    confirmBtn.disabled = false;
+                    alert("簽名儲存失敗，請稍後再試");
                 }
             })
             .catch(() => {
                 alert("傳送失敗，請檢查網路");
-                confirmBtn.disabled = false;
             });
         });
     </script>

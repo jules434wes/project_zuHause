@@ -1,0 +1,124 @@
+[33m002fa2b[m[33m ([m[1;36mHEAD[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m HEAD@{0}: pull origin main --rebase (start): checkout 002fa2b91775c25e06c2555f845a88162ce6a534
+[33m835d94d[m[33m ([m[1;32mmain[m[33m)[m HEAD@{1}: rebase (abort): returning to refs/heads/main
+[33m002fa2b[m[33m ([m[1;36mHEAD[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m HEAD@{2}: pull origin main --rebase (start): checkout 002fa2b91775c25e06c2555f845a88162ce6a534
+[33m835d94d[m[33m ([m[1;32mmain[m[33m)[m HEAD@{3}: commit: 合併 yayaaaaj 至 main，新增第三分支付(家具網進度90%)
+[33m8263d08[m HEAD@{4}: commit (merge): 合併 yayaaaaj 到 main，刪除 MockPaymentPage.cshtml 並解決所有衝突
+[33m922276d[m HEAD@{5}: checkout: moving from yayaaaaj to main
+[33mec15ca5[m[33m ([m[1;32myayaaaaj[m[33m)[m HEAD@{6}: commit: 完成 家具會員簽約->跳轉第三方金流 Stripe刷卡測試成功轉回付款成功頁面，家具進度90%，準備合併到 main
+[33me0ecead[m[33m ([m[1;31morigin/yayaaaaj[m[33m)[m HEAD@{7}: commit: 解決 stash pop 後的 Program.cs 衝突
+[33mf8b12ce[m HEAD@{8}: checkout: moving from main to yayaaaaj
+[33m922276d[m HEAD@{9}: reset: moving to HEAD
+[33m922276d[m HEAD@{10}: pull origin main --rebase (finish): returning to refs/heads/main
+[33m922276d[m HEAD@{11}: pull origin main --rebase (pick): 修正付款與合約畫面，搬移 main 上的修改到 yayaaaaj
+[33m65bf3cb[m HEAD@{12}: pull origin main --rebase (start): checkout 65bf3cb50d6593e6511f1254416841ae54596733
+[33mf8b12ce[m HEAD@{13}: checkout: moving from yayaaaaj to main
+[33mf8b12ce[m HEAD@{14}: checkout: moving from main to yayaaaaj
+[33mf8b12ce[m HEAD@{15}: merge yayaaaaj: Fast-forward
+[33m1743268[m HEAD@{16}: checkout: moving from main to main
+[33m1743268[m HEAD@{17}: checkout: moving from yayaaaaj to main
+[33mf8b12ce[m HEAD@{18}: commit: 修正付款與合約畫面，搬移 main 上的修改到 yayaaaaj
+[33m1743268[m HEAD@{19}: checkout: moving from main to yayaaaaj
+[33m1743268[m HEAD@{20}: reset: moving to HEAD
+[33m1743268[m HEAD@{21}: merge yayaaaaj: Fast-forward
+[33ma35634c[m[33m ([m[1;31morigin/cai-0719[m[33m)[m HEAD@{22}: pull origin main: Fast-forward
+[33m721b41b[m HEAD@{23}: checkout: moving from yayaaaaj to main
+[33m1743268[m HEAD@{24}: merge origin/main: Merge made by the 'ort' strategy.
+[33m1b0044c[m HEAD@{25}: commit: 修正 和約簽署與串接假第三方金流付款頁面修正
+[33m9806666[m HEAD@{26}: checkout: moving from yayaaaaj to yayaaaaj
+[33m9806666[m HEAD@{27}: branch: Reset to origin/yayaaaaj
+[33m9806666[m HEAD@{28}: commit: 修改與main合併時的錯誤，修正測試用合約邏輯(部分)
+[33mce29cea[m HEAD@{29}: commit: 同步 main 分支內容，並保留本地修改
+[33m75f65fc[m HEAD@{30}: reset: moving to origin/main
+[33m347ae07[m HEAD@{31}: checkout: moving from yayaaaaj to yayaaaaj
+[33m347ae07[m HEAD@{32}: commit (merge): 解決 ContractPreview.cshtml合併的衝突
+[33m42a017a[m HEAD@{33}: checkout: moving from yayaaaaj to yayaaaaj
+[33m42a017a[m HEAD@{34}: commit (merge): 解決 FurnitureController.cs 與 main 分支的合併衝突
+[33m50e8488[m HEAD@{35}: commit: 暫時提交：合併 main 前保存目前修改
+[33m3eeae56[m HEAD@{36}: checkout: moving from yayaaaaj to yayaaaaj
+[33m3eeae56[m HEAD@{37}: merge origin/fix/member-login-logout-issues: Merge made by the 'ort' strategy.
+[33m563c3fc[m HEAD@{38}: commit: 暫時提交：尚未完成的 Program.cs 修改
+[33m721b41b[m HEAD@{39}: checkout: moving from yayaaaaj to yayaaaaj
+[33m721b41b[m HEAD@{40}: merge main: Fast-forward
+[33mbe9df66[m HEAD@{41}: checkout: moving from yayaaaaj to yayaaaaj
+[33mbe9df66[m HEAD@{42}: checkout: moving from main to yayaaaaj
+[33m721b41b[m HEAD@{43}: pull origin main --rebase (finish): returning to refs/heads/main
+[33m721b41b[m HEAD@{44}: pull origin main --rebase (pick): 修正購物車清單異常問題、新增合約簽屬
+[33mbe9df66[m HEAD@{45}: pull origin main --rebase (start): checkout be9df665c3a301bb96d5c03e98550017168a7557
+[33m85c39c0[m HEAD@{46}: commit: 修正購物車清單異常問題、新增合約簽屬
+[33m0853115[m HEAD@{47}: checkout: moving from main to main
+[33m0853115[m HEAD@{48}: checkout: moving from yayaaaaj to main
+[33mbe9df66[m HEAD@{49}: merge origin/main: Fast-forward
+[33m8dfe1ba[m[33m ([m[1;31morigin/admin/announcement-backstage-post[m[33m)[m HEAD@{50}: checkout: moving from yayaaaaj to yayaaaaj
+[33m8dfe1ba[m[33m ([m[1;31morigin/admin/announcement-backstage-post[m[33m)[m HEAD@{51}: reset: moving to origin/main
+[33m0fd2e07[m HEAD@{52}: reset: moving to HEAD
+[33m0fd2e07[m HEAD@{53}: checkout: moving from yayaaaaj to yayaaaaj
+[33m0fd2e07[m HEAD@{54}: checkout: moving from yayaaaaj to yayaaaaj
+[33m0fd2e07[m HEAD@{55}: reset: moving to HEAD
+[33m0fd2e07[m HEAD@{56}: checkout: moving from main to yayaaaaj
+[33m0853115[m HEAD@{57}: reset: moving to HEAD
+[33m0853115[m HEAD@{58}: pull origin main: Merge made by the 'ort' strategy.
+[33m582d306[m HEAD@{59}: commit: main 分支的後續修改
+[33ma6e7c05[m HEAD@{60}: checkout: moving from main to main
+[33ma6e7c05[m HEAD@{61}: checkout: moving from yayaaaaj to main
+[33m0fd2e07[m HEAD@{62}: checkout: moving from zyu_backstage_partial to yayaaaaj
+[33me2e7895[m[33m ([m[1;32mzyu_backstage_partial[m[33m)[m HEAD@{63}: checkout: moving from yayaaaaj to zyu_backstage_partial
+[33m0fd2e07[m HEAD@{64}: checkout: moving from main to yayaaaaj
+[33ma6e7c05[m HEAD@{65}: merge yayaaaaj: Merge made by the 'ort' strategy.
+[33mddf95a9[m HEAD@{66}: pull origin main: Fast-forward
+[33m4fe4885[m HEAD@{67}: checkout: moving from yayaaaaj to main
+[33m0fd2e07[m HEAD@{68}: commit: 修正錯誤
+[33m4fe4885[m HEAD@{69}: checkout: moving from main to yayaaaaj
+[33m4fe4885[m HEAD@{70}: checkout: moving from yayaaaaj to main
+[33m4fe4885[m HEAD@{71}: reset: moving to main
+[33m4a70ef6[m HEAD@{72}: checkout: moving from main to yayaaaaj
+[33m4fe4885[m HEAD@{73}: commit (merge): 合併 yayaaaaj 到 main，已解決衝突
+[33m8e5b8e8[m HEAD@{74}: pull origin main: Fast-forward
+[33m23ad751[m HEAD@{75}: checkout: moving from yayaaaaj to main
+[33m4a70ef6[m HEAD@{76}: commit: 新增商品圖、家具歷史訂單查詢進度條、購物車清單細微修正，準備合併 main
+[33m23ad751[m HEAD@{77}: merge origin/main: Fast-forward
+[33m685327f[m HEAD@{78}: checkout: moving from main to yayaaaaj
+[33m23ad751[m HEAD@{79}: commit: 清除 .vs 快取檔案並更新 .gitignore 規則
+[33ma567bb3[m HEAD@{80}: commit: 完成分支合併：解決衝突後合併至 main
+[33m990d4b0[m HEAD@{81}: commit (merge): 移除 .vs 快取檔並更新 .gitignore
+[33m415fbff[m[33m ([m[1;31morigin/feature/unified-image-management-task1[m[33m)[m HEAD@{82}: pull origin main: Fast-forward
+[33mb6e4e4d[m HEAD@{83}: checkout: moving from yayaaaaj to main
+[33m685327f[m HEAD@{84}: commit: 更新 .gitignore 並提交專案檔案
+[33m94f87a6[m HEAD@{85}: commit: 重新添加所有專案檔案，並啟用 .gitignore忽略暫存檔規則
+[33m3063504[m HEAD@{86}: commit: 新增家具第三方金流付款功能相關控制器、模型與視圖
+[33m2023df5[m HEAD@{87}: commit: 更新家具模組相關頁面與程式碼，並移除不再使用的舊版圖片
+[33m45b7460[m HEAD@{88}: commit (merge): 手動解決 .gitignore 的 merge 衝突
+[33mc42cb86[m HEAD@{89}: commit: 修正 .gitignore，忽略 .vs 資料夾
+[33maad5fc9[m HEAD@{90}: commit: 更新 csproj：移除不使用暫存檔案
+[33m612cb3e[m HEAD@{91}: commit: 新增購物車頁面與相關圖片資源
+[33m3f34d98[m HEAD@{92}: commit: 移除 Create.cshtml 與 CreateCategory.cshtml，不再需要
+[33m5c298a6[m HEAD@{93}: commit: 更新前台頁面內容：租借、聯繫、歷史訂單顯示與導覽列整合_串接房源_會員資料
+[33m770efdb[m HEAD@{94}: commit: 移除不再使用的 FurnitureCategories ViewModel
+[33m7817e3c[m HEAD@{95}: commit: 更新 Models：修正關聯設定與屬性欄位 / 合併 main 衝突等
+[33m15acaf6[m HEAD@{96}: commit: 更新 FurnitureController：整合租借清單與聯繫客服功能及新增2號會員測試
+[33mfa3c5b6[m HEAD@{97}: commit (merge): 合併 main 分支，解決衝突
+[33mee527a2[m HEAD@{98}: commit: 解除追蹤 obj 快取檔案並提交 .gitignore
+[33m95b03aa[m HEAD@{99}: commit: 暫存 .gitignore，準備合併 main
+[33ma58e11e[m HEAD@{100}: reset: moving to HEAD
+[33ma58e11e[m HEAD@{101}: merge origin/main: updating HEAD
+[33ma58e11e[m HEAD@{102}: reset: moving to HEAD
+[33ma58e11e[m HEAD@{103}: commit: 提交所有變更
+[33me7fdde7[m HEAD@{104}: checkout: moving from yayaaaaj to yayaaaaj
+[33me7fdde7[m HEAD@{105}: checkout: moving from merge-backstage-to-yaya to yayaaaaj
+[33me76e27e[m HEAD@{106}: reset: moving to HEAD
+[33me76e27e[m HEAD@{107}: commit: 修改專案檔案（csproj）
+[33ma349e04[m HEAD@{108}: commit: 清理 bin 和 obj 編譯暫存資料夾
+[33m4ba6d78[m HEAD@{109}: commit: 清理不必要的建置檔案
+[33me7fdde7[m HEAD@{110}: checkout: moving from yayaaaaj to merge-backstage-to-yaya
+[33me7fdde7[m HEAD@{111}: checkout: moving from yayaaaaj to yayaaaaj
+[33me7fdde7[m HEAD@{112}: commit: 修改：首頁、分類頁、說明頁內容，刪除不需要的ViewModel
+[33m6509a1a[m HEAD@{113}: commit: 新增：聯繫紀錄、建立分類與歷史訂單頁
+[33mc580fad[m HEAD@{114}: commit: 新增：Create 與 聯繫客服畫面
+[33m907bbea[m HEAD@{115}: commit: 新增：後台管理資料模型
+[33m2001636[m HEAD@{116}: commit: 調整：導覽列新增會員資訊按鈕區塊
+[33mc54c7d7[m HEAD@{117}: commit: 修改：商品頁面加入租期說明與分類清單顯示更正v1.1
+[33m5d137ab[m HEAD@{118}: commit: 新增：FurnitureController 加入訂單查詢_會員功能_客服查詢/表單填寫_修正原先的控制器v1.1
+[33mdb9dd3a[m HEAD@{119}: commit: 家具首頁與商品頁功能v1.0（Controller、View、ViewModel）
+[33mb9074f2[m[33m ([m[1;31morigin/yayaaaaaj[m[33m)[m HEAD@{120}: checkout: moving from yayaaaaaj to yayaaaaj
+[33mb9074f2[m[33m ([m[1;31morigin/yayaaaaaj[m[33m)[m HEAD@{121}: commit: 家具首頁_分類_商品頁切版v.1.0
+[33mb6e4e4d[m HEAD@{122}: checkout: moving from main to yayaaaaaj
+[33mb6e4e4d[m HEAD@{123}: clone: from https://github.com/1F9C2/zuHause
