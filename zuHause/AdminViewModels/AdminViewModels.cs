@@ -571,7 +571,7 @@ namespace zuHause.AdminViewModels
                     LandlordId = p.LandlordId,
                     Address = p.Address,
                     RentPrice = p.RentPrice,
-                    Status = "未審核",
+                    Status = "審核中",
                     PaymentStatus = GetPaymentStatusDisplay(p.IsPaid, p.ExpireAt),
                     SubmissionDate = p.SubmissionDate,
                     UpdatedDate = p.UpdatedDate,

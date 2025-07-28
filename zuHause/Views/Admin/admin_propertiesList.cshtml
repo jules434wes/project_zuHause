@@ -33,7 +33,7 @@
                 </li>
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="pending-review-tab" data-bs-toggle="tab" data-bs-target="#pending-review" type="button" role="tab" aria-controls="pending-review" aria-selected="false">
-                        未審核 <span class="badge badge-subtle-warning ms-2">@Model.PendingProperties.Count</span>
+                        審核中 <span class="badge badge-subtle-warning ms-2">@Model.PendingProperties.Count</span>
                     </button>
                 </li>
             </ul>
@@ -77,7 +77,7 @@
                         ViewData["CheckboxClass"] = "property-checkbox-pending";
                         ViewData["BulkBtnId"] = "bulkMessageBtnPending";
                         ViewData["SelectAllId"] = "selectAllPropertiesPending";
-                        ViewData["PaginationLabel"] = "待審核屋源分頁";
+                        ViewData["PaginationLabel"] = "審核中屋源分頁";
                     }
                     @await Html.PartialAsync("_AdminPartial/_PropertyManagement/_PropertyTable")
                 </div>
