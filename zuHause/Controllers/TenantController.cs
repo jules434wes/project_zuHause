@@ -1,52 +1,82 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using System;
-using Microsoft.EntityFrameworkCore; 
-using zuHause.Models;
+using System.Security.Claims;
+using zuHause.Interfaces.TenantInterfaces;
+using zuHause.ViewModels.TenantViewModel;
 
-namespace zuhause.Controllers
+
+namespace zuHause.Controllers
 {
-    public class TenantController : Controller
+    public class TenantController : Controller // 這是你的 TenantController
     {
-        // 將 DbContext 類型更正為 ZuHauseContext
-        private readonly ZuHauseContext _context; // 依賴注入您的 ZuHauseContext
+
+        private readonly IDataAccessService _dataAccessService;
 
         // Controller 的建構子，用於接收 ZuHauseContext
-        // 確保您的 Startup.cs (或 Program.cs) 已註冊 ZuHauseContext
-        public TenantController(ZuHauseContext context)
+        public TenantController(IDataAccessService dataAccessService)
         {
-            _context = context;
+            _dataAccessService = dataAccessService;
         }
 
-        // --- 現有的 View Action 方法 ---
         public IActionResult FrontPage()
         {
-            return View();
+            var viewModel = new FrontPageViewModel();
+
+            // 僅獲取跑馬燈資料
+            viewModel.Marquee.MarqueeMessages = _dataAccessService.GetMarqueeMessages();
+
+            // 填充輪播圖數據
+            viewModel.Carousel.ImageUrls = _dataAccessService.GetCarouselImageUrls();
+
+
+            return View(viewModel);
         }
 
-        public IActionResult Search()
+        [HttpGet]
+        [Route("api/Tenant/UserCityCode")]
+        [Produces("application/json")]
+        public IActionResult GetUserCityCodeApi()
         {
-            return View();
+            try
+            {
+                if (!User.Identity!.IsAuthenticated)
+                {
+                    return Unauthorized(new { message = "User is not authenticated." });
+                }
+
+                // 從 ClaimTypes.NameIdentifier 獲取字串類型的用戶 ID
+                var memberIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+                if (string.IsNullOrEmpty(memberIdString))
+                {
+                    return BadRequest(new { message = "Member ID claim not found in authentication token." });
+                }
+
+                int memberId;
+                // 嘗試將字串 ID 解析為 int
+                if (!int.TryParse(memberIdString, out memberId))
+                {
+                    // 如果解析失敗，表示 Claim 中的 Member ID 不是預期的 int 類型
+                    return BadRequest(new { message = "Invalid member ID format in authentication token." });
+                }
+
+                // 調用 DataAccessService 中的 GetUserCityCode 方法
+                string? cityCode = _dataAccessService.GetUserCityCode(memberId);
+
+                if (string.IsNullOrEmpty(cityCode))
+                {
+                    // 返回 404 Not Found 如果 CityCode 不存在，表示會員沒有設定主要承租區域或區域代碼不存在
+                    return NotFound(new { message = "CityCode not found for the current member's primary rental district." });
+                }
+
+                return Ok(new { cityCode = cityCode });
+            }
+            catch (Exception ex)
+            {
+                // 記錄錯誤 (例如使用 ILogger)
+                Console.Error.WriteLine($"Error fetching user city code: {ex.Message}");
+                return StatusCode(500, new { message = "Internal server error: Unable to retrieve user city code." });
+            }
         }
 
-        public IActionResult CollectionAndComparison()
-        {
-            return View();
-        }
-
-
-
-
-
-
-
-
-
-
-
-
-       
     }
 }

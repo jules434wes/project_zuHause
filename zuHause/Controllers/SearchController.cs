@@ -1,12 +1,14 @@
 ﻿// Controllers/SearchController.cs
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore; // 用於 DbSet 和各種 LINQ 擴展方法 (如 Where, CountAsync, ToListAsync)
+using System; // 用於 Math.Ceiling (計算總頁數)
 using System.Collections.Generic; // 用於 List<T> 和 HashSet<T>
 using System.Linq; // 用於 LINQ 查詢方法 (如 Select, Contains, Any, OrderBy, GroupBy, Join 等)
+using System.Linq.Expressions;
+using System.Runtime.ConstrainedExecution;
 using System.Threading.Tasks; // 用於非同步操作 (如 async/await)
 using zuHause.Models; // 引入資料庫模型，例如 Property, City, District 等
 using zuHause.ViewModels.TenantViewModel; // 引入用於前端顯示的 ViewModel
-using System; // 用於 Math.Ceiling (計算總頁數)
 
 namespace zuHause.Controllers
 {
@@ -41,26 +43,30 @@ namespace zuHause.Controllers
             // --- 篩選參數 (從前端的 URL 查詢字串中接收) ---
             string? keyword = null, // 關鍵字搜尋 (例如標題、描述、地址等)
             string? cityCode = null, // 城市代碼 (例如 "TXG" 代表臺中市)
-            [FromQuery] List<string>? districtCodes = null, // 行政區代碼列表 (例如 ["BTT", "NTN"])
-                                                           // [FromQuery] 確保 ASP.NET Core 能正確綁定多個同名查詢參數到 List<T>
+            [FromQuery] List<string>? districtCode = null, // 行政區代碼列表 (例如 ["BTT", "NTN"])
+                                                            // [FromQuery] 確保 ASP.NET Core 能正確綁定多個同名查詢參數到 List<T>
+            [FromQuery] List<string>? rentRanges = null, // 新增：租金預設範圍列表 (例如 ["5000-10000", "20000-30000"])
             int? minRent = null, // 最小租金
             int? maxRent = null, // 最大租金
+
             [FromQuery] List<int>? roomCounts = null, // 房間數列表 (例如 [1, 2, 4])
             [FromQuery] List<int>? bathroomCounts = null, // 衛浴數列表 (例如 [1, 2, 4])
-            int? minFloor = null, // 最小樓層
-            int? maxFloor = null, // 最大樓層
+
+             [FromQuery] List<string>? selectedFloorRanges = null,
+
+             [FromQuery] List<string>? areaRanges = null, // 新增：坪數預設範圍列表 (例如 ["5-10", "20-30"])
             int? minArea = null, // 最小坪數
             int? maxArea = null, // 最大坪數
-            [FromQuery] List<int>? featureCategoryIds = null, // 特色類別 ID 列表
-            [FromQuery] List<int>? facilityCategoryIds = null, // 設施類別 ID 列表
-            [FromQuery] List<int>? equipmentCategoryIds = null // 設備類別 ID 列表
+            string? features = null,           // 特色名稱列表 (逗號分隔字串)
+            string? facilities = null,         // 設施名稱列表 (逗號分隔字串)
+            string? equipments = null          // 設備名稱列表 (逗號分隔字串)
         )
         {
             // 1. 初始查詢：
             // 從 Properties 表開始查詢，只選擇 DeletedAt 為 null (未刪除) 和p.IsPaid == true(已付款)。
 
             IQueryable<Property> propertiesQuery = _context.Properties
-                                                            .Where(p => p.DeletedAt == null && p.IsPaid == true);
+                                                            .Where(p => p.DeletedAt == null && p.IsPaid == true && p.PublishedAt!= null);
 
             // --- 2. 應用篩選條件 ---
             // 每個篩選條件都透過 if 判斷式來檢查是否有傳入值。
@@ -119,11 +125,11 @@ namespace zuHause.Controllers
             // ... (其他篩選條件，例如關鍵字篩選)
 
             // 2.3 行政區篩選 (多選)
-            if (districtCodes != null && districtCodes.Any())
+            if (districtCode != null && districtCode.Any())
             {
                 // 在這裡直接使用上面已經確定的 currentCityId
                 var districtIds = await _context.Districts
-                                                .Where(d => districtCodes.Contains(d.DistrictCode) && d.IsActive &&
+                                                .Where(d => districtCode.Contains(d.DistrictCode) && d.IsActive &&
                                                            (currentCityId != 0 ? d.CityId == currentCityId : true)) // <-- 直接使用 currentCityId
                                                 .Select(d => d.DistrictId)
                                                 .ToListAsync();
@@ -145,78 +151,222 @@ namespace zuHause.Controllers
             }
 
             // 2.4 租金範圍篩選
-            if (minRent.HasValue)
+            // --- 2.4 租金範圍篩選 (多選或自定義) ---
+            // 優先處理自定義租金範圍
+            if (minRent.HasValue || maxRent.HasValue)
             {
-                propertiesQuery = propertiesQuery.Where(p => p.MonthlyRent >= minRent.Value);
+                if (minRent.HasValue)
+                {
+                    propertiesQuery = propertiesQuery.Where(p => p.MonthlyRent >= minRent.Value);
+                }
+                if (maxRent.HasValue)
+                {
+                    propertiesQuery = propertiesQuery.Where(p => p.MonthlyRent <= maxRent.Value);
+                }
             }
-            if (maxRent.HasValue)
+            // 如果沒有自定義租金範圍，則處理多選的預設租金範圍
+            else if (rentRanges != null && rentRanges.Any())
             {
-                propertiesQuery = propertiesQuery.Where(p => p.MonthlyRent <= maxRent.Value);
+                var rentConditions = new List<Expression<Func<Property, bool>>>();
+
+                foreach (var range in rentRanges)
+                {
+                    var parts = range.Split('-');
+                    if (parts.Length == 2 && int.TryParse(parts[0], out int min) && int.TryParse(parts[1], out int max))
+                    {
+                        rentConditions.Add(p => p.MonthlyRent >= min && p.MonthlyRent <= max);
+                    }
+                    // TODO: 考慮處理無效或單一數字的範圍字符串
+                }
+
+                if (rentConditions.Any())
+                {
+                    // 使用 OR 邏輯組合所有租金範圍條件
+                    var combinedRentCondition = rentConditions.First();
+                    for (int i = 1; i < rentConditions.Count; i++)
+                    {
+                        combinedRentCondition = Expression.Lambda<Func<Property, bool>>(
+                            Expression.OrElse(combinedRentCondition.Body, Expression.Invoke(rentConditions[i], combinedRentCondition.Parameters)),
+                            combinedRentCondition.Parameters);
+                    }
+                    propertiesQuery = propertiesQuery.Where(combinedRentCondition);
+                }
             }
 
             // 2.5 格局篩選 (房間數，多選)
             if (roomCounts != null && roomCounts.Any())
             {
-                if (roomCounts.Count == 1 && roomCounts.Contains(4))
+                // 建立一個可動態調整的查詢條件
+                var roomConditions = new List<Expression<Func<Property, bool>>>();
+
+                foreach (var roomCount in roomCounts)
                 {
-                    propertiesQuery = propertiesQuery.Where(p => p.RoomCount >= 4);
+                    if (roomCount == 4) // 特殊處理：如果選了4房，表示4房以上
+                    {
+                        roomConditions.Add(p => p.RoomCount >= 4);
+                    }
+                    else // 其他房數 (例如1, 2, 3) 則精確匹配
+                    {
+                        roomConditions.Add(p => p.RoomCount == roomCount);
+                    }
                 }
-                else
+
+                // 將所有條件組合起來 (使用 OR 邏輯)
+                // 例如：(p.RoomCount == 2) || (p.RoomCount == 3) || (p.RoomCount >= 4)
+                if (roomConditions.Any())
                 {
-                    propertiesQuery = propertiesQuery.Where(p => roomCounts.Contains(p.RoomCount));
+                    var combinedRoomCondition = roomConditions.First();
+                    for (int i = 1; i < roomConditions.Count; i++)
+                    {
+                        combinedRoomCondition = Expression.Lambda<Func<Property, bool>>(
+                            Expression.OrElse(combinedRoomCondition.Body, Expression.Invoke(roomConditions[i], combinedRoomCondition.Parameters)),
+                            combinedRoomCondition.Parameters);
+                    }
+                    propertiesQuery = propertiesQuery.Where(combinedRoomCondition);
                 }
             }
 
             // 2.6 衛浴篩選 (衛浴數，多選)
             if (bathroomCounts != null && bathroomCounts.Any())
             {
-                if (bathroomCounts.Count == 1 && bathroomCounts.Contains(4))
+                // 建立一個可動態調整的查詢條件
+                var bathroomConditions = new List<Expression<Func<Property, bool>>>();
+
+                foreach (var bathroomCount in bathroomCounts)
                 {
-                    propertiesQuery = propertiesQuery.Where(p => p.BathroomCount >= 4);
+                    if (bathroomCount == 4) // 特殊處理：如果選了4衛，表示4衛以上
+                    {
+                        bathroomConditions.Add(p => p.BathroomCount >= 4);
+                    }
+                    else // 其他衛浴數 (例如1, 2, 3) 則精確匹配
+                    {
+                        bathroomConditions.Add(p => p.BathroomCount == bathroomCount);
+                    }
                 }
-                else
+
+                // 將所有條件組合起來 (使用 OR 邏輯)
+                if (bathroomConditions.Any())
                 {
-                    propertiesQuery = propertiesQuery.Where(p => bathroomCounts.Contains(p.BathroomCount));
+                    var combinedBathroomCondition = bathroomConditions.First();
+                    for (int i = 1; i < bathroomConditions.Count; i++)
+                    {
+                        combinedBathroomCondition = Expression.Lambda<Func<Property, bool>>(
+                            Expression.OrElse(combinedBathroomCondition.Body, Expression.Invoke(bathroomConditions[i], combinedBathroomCondition.Parameters)),
+                            combinedBathroomCondition.Parameters);
+                    }
+                    propertiesQuery = propertiesQuery.Where(combinedBathroomCondition);
                 }
             }
 
-            // 2.7 樓層範圍篩選
-            if (minFloor.HasValue)
+            // 2.7 樓層範圍篩選 (多選)
+            if (selectedFloorRanges != null && selectedFloorRanges.Any())
             {
-                propertiesQuery = propertiesQuery.Where(p => p.CurrentFloor >= minFloor.Value);
+                var floorConditions = new List<Expression<Func<Property, bool>>>();
+
+                foreach (var range in selectedFloorRanges)
+                {
+                    var parts = range.Split('-');
+                    if (parts.Length == 2 && int.TryParse(parts[0], out int min) && int.TryParse(parts[1], out int max))
+                    {
+                        // 為每個解析出的範圍添加條件
+                        floorConditions.Add(p => p.CurrentFloor >= min && p.CurrentFloor <= max);
+                    }
+                    // TODO: 考慮處理無效或單一數字的範圍字符串，如果前端可能發送這種情況
+                }
+
+                // 將所有樓層條件用 OR (或) 邏輯組合起來
+                if (floorConditions.Any())
+                {
+                    var combinedFloorCondition = floorConditions.First();
+                    for (int i = 1; i < floorConditions.Count; i++)
+                    {
+                        combinedFloorCondition = Expression.Lambda<Func<Property, bool>>(
+                            Expression.OrElse(combinedFloorCondition.Body, Expression.Invoke(floorConditions[i], combinedFloorCondition.Parameters)),
+                            combinedFloorCondition.Parameters);
+                    }
+                    propertiesQuery = propertiesQuery.Where(combinedFloorCondition);
+                }
             }
-            if (maxFloor.HasValue)
-            {
-                propertiesQuery = propertiesQuery.Where(p => p.CurrentFloor <= maxFloor.Value);
-            }
+
 
             // 2.8 坪數範圍篩選
-            if (minArea.HasValue)
+            if (minArea.HasValue || maxArea.HasValue)
             {
-                propertiesQuery = propertiesQuery.Where(p => p.Area >= minArea.Value);
+                if (minArea.HasValue)
+                {
+                    propertiesQuery = propertiesQuery.Where(p => p.Area >= minArea.Value);
+                }
+                if (maxArea.HasValue)
+                {
+                    propertiesQuery = propertiesQuery.Where(p => p.Area <= maxArea.Value);
+                }
             }
-            if (maxArea.HasValue)
+            // 如果沒有自定義坪數範圍，則處理多選的預設坪數範圍
+            else if (areaRanges != null && areaRanges.Any())
             {
-                propertiesQuery = propertiesQuery.Where(p => p.Area <= maxArea.Value);
-            }
+                var areaConditions = new List<Expression<Func<Property, bool>>>();
 
-            // 2.9 特色、設施、設備篩選 (多選，直接接收 CategoryID)
-            //這初始化了一個 HashSet<int> 集合。HashSet 是一個無序的集合，它的主要優勢是查詢（例如 Contains()）的效率非常高
-            //，並且它會自動處理重複的元素（如果多次添加相同的 ID，只會儲存一份）。
-            //這個集合將用來儲存所有從前端傳入的特色、設施和設備的分類 ID。
+                foreach (var range in areaRanges)
+                {
+                    var parts = range.Split('-');
+                    if (parts.Length == 2 && int.TryParse(parts[0], out int min) && int.TryParse(parts[1], out int max))
+                    {
+                        areaConditions.Add(p => p.Area >= min && p.Area <= max);
+                    }
+                    // TODO: 考慮處理無效或單一數字的範圍字符串
+                }
+
+                if (areaConditions.Any())
+                {
+                    // 使用 OR 邏輯組合所有坪數範圍條件
+                    var combinedAreaCondition = areaConditions.First();
+                    for (int i = 1; i < areaConditions.Count; i++)
+                    {
+                        combinedAreaCondition = Expression.Lambda<Func<Property, bool>>(
+                            Expression.OrElse(combinedAreaCondition.Body, Expression.Invoke(areaConditions[i], combinedAreaCondition.Parameters)),
+                            combinedAreaCondition.Parameters);
+                    }
+                    propertiesQuery = propertiesQuery.Where(combinedAreaCondition);
+                }
+            }
             var allSelectedCategoryIds = new HashSet<int>();
-            if (featureCategoryIds != null) allSelectedCategoryIds.UnionWith(featureCategoryIds);
-            if (facilityCategoryIds != null) allSelectedCategoryIds.UnionWith(facilityCategoryIds);
-            if (equipmentCategoryIds != null) allSelectedCategoryIds.UnionWith(equipmentCategoryIds);
 
+            // 輔助函式，用於解析字串並查詢對應的 CategoryId
+            // 由於邏輯重複，將其封裝成一個方法來提高可讀性和維護性
+            async Task AddCategoryIdsFromString(string? categoryNamesString)
+            {
+                if (!string.IsNullOrEmpty(categoryNamesString))
+                {
+                    var names = categoryNamesString.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                                                   .Select(s => s.Trim())
+                                                   .ToList();
+                    if (names.Any())
+                    {
+                        //比對 CategoryName：Where(pec => names.Contains(pec.CategoryName)) 這一部分會將從前端接收到的 names 列表
+                        //與PropertyEquipmentCategories 表中的 CategoryName 欄位進行比對，確保所有的 CategoryId。
+                        var ids = await _context.PropertyEquipmentCategories
+                                                .Where(pec => names.Contains(pec.CategoryName))
+                                                .Select(pec => pec.CategoryId)
+                                                .ToListAsync();
+                        allSelectedCategoryIds.UnionWith(ids);
+                    }
+                }
+            }
+
+            // 調用輔助函式處理 features, facilities, equipments 參數
+            await AddCategoryIdsFromString(features);
+            await AddCategoryIdsFromString(facilities);
+            await AddCategoryIdsFromString(equipments);
+
+            //比對allSelectedCategoryIds 在.PropertyEquipmentRelations表中的CategoryId
             if (allSelectedCategoryIds.Any())
             {
                 propertiesQuery = propertiesQuery.Where(p =>
-                    _context.PropertyEquipmentRelations
-                            .Where(per => per.PropertyId == p.PropertyId && allSelectedCategoryIds.Contains(per.CategoryId))
-                            .Select(per => per.CategoryId)
-                            .Distinct()
-                            .Count() == allSelectedCategoryIds.Count
+                    allSelectedCategoryIds.All(selectedId =>
+                        _context.PropertyEquipmentRelations.Any(per =>
+                            per.PropertyId == p.PropertyId && per.CategoryId == selectedId
+                        )
+                    )
                 );
             }
 
@@ -261,7 +411,11 @@ namespace zuHause.Controllers
                                            TotalFloors = p.TotalFloors,
                                            Area = p.Area,
                                            MonthlyRent = p.MonthlyRent,
-                                           ImagePath = p.PreviewImageUrl, // 使用 PreviewImageUrl
+                                           ImagePath = p.PropertyImages
+                                                        .Where(img => img.PropertyId == p.PropertyId) // 確保關聯性，雖然通常不需要顯式寫這行，EF會處理
+                                                         .OrderBy(img => img.DisplayOrder) // IsPrimary 為 true 的會排在前面
+                                                         .Select(img => img.ImagePath) // 選擇圖片路徑
+                                                         .FirstOrDefault(),            // 取得第一張
                                            PublishedAt = p.PublishedAt,
                                            // Features 需要額外載入或在這邊做子查詢
                                            Features = _context.PropertyEquipmentRelations

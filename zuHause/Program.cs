@@ -7,12 +7,13 @@ using System.Text.Encodings.Web;
 using System.Text.Unicode;
 using zuHause.Data;
 using zuHause.Helpers;
+using zuHause.Interfaces;
+using zuHause.Interfaces.TenantInterfaces;
 using zuHause.Middleware;
 using zuHause.Models;
-using zuHause.Services;
 using zuHause.Options;
-using zuHause.Interfaces;
-
+using zuHause.Services;
+using zuHause.Services.TenantServices;
 var builder = WebApplication.CreateBuilder(args);
 
 
@@ -147,6 +148,8 @@ builder.Services.AddSession(options =>
 });
 // =============================
 
+// 註冊首頁輪播圖與跑馬燈服務
+builder.Services.AddScoped<IDataAccessService, DataAccessService>();
 
 builder.Services.AddScoped<IPasswordHasher<Member>, PasswordHasher<Member>>();
 builder.Services.AddScoped<MemberService>();

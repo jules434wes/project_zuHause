@@ -37,12 +37,9 @@ namespace zuHause.Controllers
             // 篩選條件：只顯示類別為 'ANNOUNCEMENT'、啟用中且未被軟刪除的公告
             query = query.Where(sm => sm.Category == "ANNOUNCEMENT" && sm.IsActive == true && sm.DeletedAt == null);
 
-            // 根據 StartAt 和 EndAt 篩選，確保只顯示當前有效的公告
-            var now = DateTime.Now;
-            query = query.Where(sm => 
-                (sm.StartAt == null || sm.StartAt <= now) && 
-                (sm.EndAt == null || sm.EndAt >= now)
-            );
+            // 您可能需要根據 StartAt 和 EndAt 篩選，確保只顯示當前有效的公告
+            //var now = DateTime.Now;
+            //query = query.Where(sm => sm.StartAt <= now && (sm.EndAt == null || sm.EndAt >= now));
 
 
             // 總筆數用於計算總頁數
@@ -88,8 +85,7 @@ namespace zuHause.Controllers
             {
                 announcements = announcements,
                 currentPage = pageNumber,
-                totalPages = totalPages,
-                totalCount = totalCount
+                totalPages = totalPages
             });
         }
 
@@ -99,16 +95,7 @@ namespace zuHause.Controllers
         // 在 TenantController.cs 中的 GetAnnouncement 方法 (獲取單條公告詳情)
         public async Task<IActionResult> GetAnnouncement(int id)
         {
-            var now = DateTime.Now;
-            var announcement = await _context.SiteMessages.FirstOrDefaultAsync(sm => 
-                sm.SiteMessagesId == id && 
-                sm.Category == "ANNOUNCEMENT" && 
-                sm.IsActive == true && 
-                sm.DeletedAt == null &&
-                (sm.StartAt == null || sm.StartAt <= now) && 
-                (sm.EndAt == null || sm.EndAt >= now)
-            );
-            
+            var announcement = await _context.SiteMessages.FirstOrDefaultAsync(sm => sm.SiteMessagesId == id);
             if (announcement == null)
             {
                 return NotFound();
@@ -120,7 +107,8 @@ namespace zuHause.Controllers
                 title = announcement.Title,
                 attachmentUrl = announcement.AttachmentUrl,
                 content = announcement.SiteMessageContent,
-                updatedAt = announcement.UpdatedAt.ToString("yyyy-MM-dd HH:mm")
+                updatedAt = announcement.UpdatedAt.ToString("yyyy-MM-dd HH:mm"),
+
             });
         }
     }

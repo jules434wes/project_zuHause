@@ -5,6 +5,110 @@ body {
     background-color: #f8f9fa; /* 輕微的背景色 */
 }
 
+
+
+/* **修正：** 移除此處的 display: flex; 以避免覆蓋 Bootstrap 預設的 display: none; */
+.dropdown-menu-grid.row {
+    min-width: 400px; /* 或更大，根據你的內容調整 */
+    padding: 15px;
+    flex-wrap: wrap;
+    gap: var(--bs-gutter-x); /* 使用 Bootstrap 的 gutter 變數，與 g-2 匹配 */
+}
+
+
+
+/* **新增：** 僅當下拉選單被激活 (有 .show class) 時，才應用 display: flex; */
+/* 這確保了下拉選單在不激活時是隱藏的，激活時則以網格佈局顯示。 */
+.dropdown-menu.show.dropdown-menu-grid.row {
+    display: flex; /* 僅當同時有 show 和 dropdown-menu-grid.row 時才顯示為 flex */
+}
+
+/* 確保內部每個城市列表是垂直排列的 */
+.dropdown-menu-grid .custom-city-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem; /* 城市項目之間的間距 */
+}
+
+/* 針對下拉選單中的標題，確保其獨占一行並有下邊距 */
+.dropdown-menu-grid .dropdown-header {
+    width: 100%; /* 確保標題獨占其col的寬度 */
+    margin-bottom: 0.5rem; /* 標題與下方項目之間的間距 */
+    white-space: nowrap; /* 防止標題換行 */
+    font-size: 0.9em; /* 比 dropdown-item 稍微小一點 */
+    color: #6c757d; /* 灰色 */
+    padding-left: 1rem; /* 與 dropdown-item 對齊 */
+    margin-top: 0.5rem; /* 與上方區域的間距 */
+    font-weight: bold;
+}
+
+/* 調整 .col 內的 padding，因為 .g-2 會為 .row 應用 gutter */
+.dropdown-menu-grid .col-6,
+.dropdown-menu-grid .col-md-2 {
+    padding-left: 0.5rem; /* 根據 g-2 的效果來微調 */
+    padding-right: 0.5rem; /* 根據 g-2 的效果來微調 */
+}
+
+/* 下拉選單項目（城市）的通用樣式 */
+.dropdown-menu-grid .dropdown-item {
+    display: block; /* 確保每個 ancher 佔據一行 */
+    padding: .25rem 1rem; /* 調整內邊距，使其更緊湊 */
+    clear: both;
+    font-weight: 400;
+    color: #212529; /* 預設顏色 */
+    text-align: inherit;
+    text-decoration: none;
+    white-space: nowrap;
+    background-color: transparent;
+    border: 0;
+    font-size: 0.9em; /* 可以適當縮小字體 */
+}
+
+    /* 下拉選單項目 hover/focus 效果 */
+    .dropdown-menu-grid .dropdown-item:hover,
+    .dropdown-menu-grid .dropdown-item:focus {
+        color: #1e2125;
+        background-color: #e9ecef; /* hover 背景色 */
+    }
+
+    /* 城市選單 active 樣式設定 */
+    .dropdown-menu-grid .dropdown-item.active {
+        font-weight: bold; /* 預設為粗體 */
+        color: var(--bs-primary); /* 使用 Bootstrap 的主要藍色作為預設選中顏色 */
+        background-color: transparent !important; /* 確保背景色透明，與圖片保持一致 */
+    }
+
+
+        /* 確保 active 狀態下的 hover 效果保持其 active 顏色 */
+        .dropdown-menu-grid .dropdown-item.active:hover,
+        .dropdown-menu-grid .dropdown-item.active:focus {
+            color: inherit; /* 繼承 active 狀態的顏色 (藍色或紅色) */
+            background-color: rgba(0, 0, 0, 0.05); /* 輕微的 hover 背景效果，不覆蓋 active 色 */
+        }
+
+/* 移除 Bootstrap 預設的 hr 樣式，因為我們現在使用 div.row 來分隔 */
+.dropdown-menu .dropdown-divider {
+    display: none;
+}
+
+/* 在placehold中加入圖標 */
+#searchInput {
+    padding-left: 2.5rem; /* 設置足夠的左內邊距，為圖標留出空間 */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%236c757d' class='bi bi-search' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0'%3E%3C/path%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: left 0.75rem center; /* 圖標位置：距離左邊 0.75rem，垂直居中 */
+    background-size: 1rem; /* 圖標大小，調整以符合你的需求 */
+    color: #495057; /* 文本顏色 */
+}
+
+    #searchInput::placeholder {
+        color: #6c757d; /* placeholder 文本顏色 */
+        opacity: 1; /* 確保在某些瀏覽器中不會過於透明 */
+    }
+
+
+
+
 /* 確保整個頁面內容有左右邊距和最大寬度，如果已在 _Layout.cshtml 中設定，則此處可省略 */
 .main-page-wrapper {
     /* max-width: 1200px; */ /* 示例：設置最大寬度 */
@@ -19,7 +123,7 @@ body {
 .filters-container { /* 這個是您篩選器最外層的容器 */
     background-color: #fff;
     border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.15);
     padding: 20px;
     margin-bottom: 40px; /* 給下方內容留出空間 */
 }

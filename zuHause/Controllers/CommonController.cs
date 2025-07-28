@@ -2,15 +2,16 @@
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using System.Threading.Tasks;
-using zuHause.Models; // 確保有這個 using
-using System; // For Exception
+using zuHause.Models;
+using System;
+using System.Collections.Generic; // Add for List<object> if you return empty list
+
 
 namespace zuHause.Controllers
 {
-    // 建議這裡也加上 [ApiController] 屬性
     [ApiController]
-    // 移除 [Route("api/[controller]")]，因為您的方法已經使用了明確的絕對路徑
-    public class CommonController : ControllerBase // 繼承 ControllerBase 而非 Controller
+    // 移除 [Route("api/[controller]")] 是正確的，因為你使用了完整路由
+    public class CommonController : ControllerBase
     {
         private readonly ZuHauseContext _context;
 
@@ -31,14 +32,14 @@ namespace zuHause.Controllers
             try
             {
                 var cities = await _context.Cities
-                                           .Where(c => c.IsActive)
-                                           .OrderBy(c => c.DisplayOrder)
-                                           .Select(c => new
-                                           {
-                                               c.CityCode,
-                                               c.CityName
-                                           })
-                                           .ToListAsync();
+                                               .Where(c => c.IsActive)
+                                               .OrderBy(c => c.DisplayOrder)
+                                               .Select(c => new
+                                               {
+                                                   c.CityCode,
+                                                   c.CityName
+                                               })
+                                               .ToListAsync();
 
                 if (cities == null || !cities.Any())
                 {
@@ -50,19 +51,21 @@ namespace zuHause.Controllers
             catch (Exception ex)
             {
                 Console.WriteLine($"Error getting cities: {ex.Message}");
+                // 通常在生產環境中不直接返回內部錯誤訊息給客戶端
                 return StatusCode(500, "Internal server error: Failed to retrieve city list.");
             }
         }
 
         /// <summary>
         /// 根據城市代碼獲取所有啟用的行政區列表。
-        /// 路徑: /api/Common/District/list/{cityCode}
+        /// 路徑: /api/Common/District/listByCityCode?cityCode={cityCode}
         /// 返回 DistrictCode 和 DistrictName。
         /// </summary>
-        /// <param name="cityCode">城市的 CityCode，例如 "TXG"。</param>
+        /// <param name="cityCode">城市的 CityCode，例如 "TPE"。</param>
         /// <returns>行政區列表，JSON 格式，包含 DistrictCode 和 DistrictName。</returns>
-        [HttpGet("api/Common/District/list/{cityCode}")]
-        public async Task<IActionResult> GetDistrictsByCityCode(string cityCode)
+        [HttpGet("api/Common/District/listByCityCode")] // <--- **修改這裡，移除 {cityCode}**
+                                                        // 現在它只匹配 /api/Common/District/listByCityCode
+        public async Task<IActionResult> GetDistrictsByCityCode([FromQuery] string cityCode) // <--- **建議明確使用 [FromQuery]**
         {
             if (string.IsNullOrWhiteSpace(cityCode))
             {
@@ -72,28 +75,30 @@ namespace zuHause.Controllers
             try
             {
                 var cityId = await _context.Cities
-                                           .Where(c => c.CityCode == cityCode && c.IsActive)
-                                           .Select(c => c.CityId)
-                                           .FirstOrDefaultAsync();
+                                               .Where(c => c.CityCode == cityCode && c.IsActive)
+                                               .Select(c => c.CityId)
+                                               .FirstOrDefaultAsync();
 
-                if (cityId == 0)
+                if (cityId == 0) // 如果找不到城市或城市不活躍，則沒有行政區
                 {
-                    return NoContent(); // 204 No Content
+                    // 返回 200 OK 和空列表，因為找不到匹配的行政區不是伺服器錯誤
+                    return Ok(new List<object>()); // 返回空列表，讓前端知道沒有數據
                 }
 
                 var districts = await _context.Districts
-                                              .Where(d => d.CityId == cityId && d.IsActive)
-                                              .OrderBy(d => d.DisplayOrder)
-                                              .Select(d => new
-                                              {
-                                                  d.DistrictCode,
-                                                  d.DistrictName
-                                              })
-                                              .ToListAsync();
+                                                  .Where(d => d.CityId == cityId && d.IsActive)
+                                                  .OrderBy(d => d.DisplayOrder)
+                                                  .Select(d => new
+                                                  {
+                                                      d.DistrictCode,
+                                                      d.DistrictName
+                                                  })
+                                                  .ToListAsync();
 
+                // 如果行政區列表為空，也返回 200 OK 和空列表
                 if (districts == null || !districts.Any())
                 {
-                    return NoContent(); // 204 No Content
+                    return Ok(new List<object>());
                 }
 
                 return Ok(districts); // 200 OK
@@ -101,6 +106,7 @@ namespace zuHause.Controllers
             catch (Exception ex)
             {
                 Console.WriteLine($"Error getting districts for {cityCode}: {ex.Message}");
+                // 在生產環境中，考慮使用 ILogger 來記錄錯誤
                 return StatusCode(500, $"Internal server error: Failed to retrieve district list for {cityCode}.");
             }
         }
