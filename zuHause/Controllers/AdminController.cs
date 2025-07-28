@@ -128,7 +128,7 @@ namespace zuHause.Controllers
         /// 會員詳細資料頁面
         /// 需要 member_list 權限才能存取（與會員列表使用相同權限）
         /// </summary>
-        [RequireAdminPermission(AdminPermissions.MemberDetails)]
+        [RequireAdminPermission(AdminPermissions.MemberList)]
         public IActionResult admin_userDetails(int? id)
         {
             if (!id.HasValue || id.Value <= 0)
@@ -1600,7 +1600,7 @@ namespace zuHause.Controllers
         /// 需要 member_details 權限才能存取
         /// </summary>
         [HttpGet]
-        [RequireAdminPermission(AdminPermissions.MemberDetails)]
+        [RequireAdminPermission(AdminPermissions.MemberList)]
         public async Task<IActionResult> GetMemberIdentityDocuments(int memberId)
         {
             try
@@ -1616,21 +1616,23 @@ namespace zuHause.Controllers
                     return Json(new { success = false, message = "找不到待審核的身分驗證申請" });
                 }
 
-                // 查找相關的檔案上傳記錄
+                // 查找相關的檔案上傳記錄 - 直接查詢，簡化邏輯
                 var uploads = await _context.UserUploads
                     .Where(u => u.MemberId == memberId && 
                                u.ModuleCode == "MemberInfo" && 
                                u.IsActive &&
                                (u.UploadTypeCode == "USER_ID_FRONT" || u.UploadTypeCode == "USER_ID_BACK"))
+                    .OrderByDescending(u => u.UploadedAt)
                     .Select(u => new
                     {
                         UploadId = u.UploadId,
-                        OriginalFileName = u.OriginalFileName,
-                        FilePath = u.FilePath,
+                        FileName = u.OriginalFileName,
+                        FileUrl = u.FilePath.StartsWith("/") ? u.FilePath : "/" + u.FilePath,
                         UploadTypeCode = u.UploadTypeCode,
                         TypeDisplay = u.UploadTypeCode == "USER_ID_FRONT" ? "身分證正面" : "身分證反面",
                         UploadedAt = u.UploadedAt.ToString("yyyy-MM-dd HH:mm:ss"),
-                                                                        FileSize = FormatFileSize(u.FileSize)
+                        FileSize = FormatFileSize(u.FileSize),
+                        ApprovalIdInfo = u.ApprovalId // 除錯用
                     })
                     .ToListAsync();
 
@@ -1640,7 +1642,15 @@ namespace zuHause.Controllers
                     data = new
                     {
                         ApprovalId = approval.ApprovalId,
-                        Documents = uploads
+                        Documents = uploads,
+                        // 除錯資訊
+                        Debug = new
+                        {
+                            MemberId = memberId,
+                            ApprovalExists = approval != null,
+                            UploadCount = uploads.Count,
+                            AllUploads = uploads.Select(u => new { u.UploadTypeCode, u.ApprovalIdInfo }).ToList()
+                        }
                     }
                 });
             }
@@ -1660,7 +1670,7 @@ namespace zuHause.Controllers
         /// 需要 member_details 權限才能存取
         /// </summary>
         [HttpPost]
-        [RequireAdminPermission(AdminPermissions.MemberDetails)]
+        [RequireAdminPermission(AdminPermissions.MemberList)]
         public async Task<IActionResult> ApproveIdentityVerification([FromForm] int memberId, [FromForm] string nationalIdNo)
         {
             try
@@ -1762,7 +1772,7 @@ namespace zuHause.Controllers
         /// 需要 member_details 權限才能存取
         /// </summary>
         [HttpPost]
-        [RequireAdminPermission(AdminPermissions.MemberDetails)]
+        [RequireAdminPermission(AdminPermissions.MemberList)]
         public async Task<IActionResult> RejectIdentityVerification([FromForm] int memberId, [FromForm] string rejectReason)
         {
             try

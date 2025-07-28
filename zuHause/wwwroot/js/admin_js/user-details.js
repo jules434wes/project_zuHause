@@ -35,17 +35,24 @@ function loadIdentityDocuments() {
 
     // 調用API載入檔案
     fetch(`/Admin/GetMemberIdentityDocuments?memberId=${currentMemberId}`)
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
         .then(data => {
-            if (data.success && data.data.Documents) {
+            console.log('API 返回數據：', data);
+            if (data.success && data.data && data.data.Documents) {
                 displayIdentityDocuments(data.data.Documents);
             } else {
+                console.error('API 錯誤：', data);
                 showDocumentError(data.message || '載入檔案失敗');
             }
         })
         .catch(error => {
             console.error('載入檔案錯誤：', error);
-            showDocumentError('載入檔案時發生錯誤');
+            showDocumentError('載入檔案時發生錯誤：' + error.message);
         });
 }
 
@@ -67,6 +74,9 @@ function displayIdentityDocuments(documents) {
 
     let html = '';
     documents.forEach(doc => {
+        // 確保 FileUrl 是完整的 URL
+        const imageUrl = doc.FileUrl.startsWith('http') ? doc.FileUrl : `${window.location.origin}/${doc.FileUrl.replace(/^\//, '')}`;
+        
         html += `
             <div class="col-md-6">
                 <div class="card border-info">
@@ -77,11 +87,11 @@ function displayIdentityDocuments(documents) {
                     </div>
                     <div class="card-body text-center">
                         <div class="image-preview mb-3" style="height: 200px; overflow: hidden; border: 1px solid #ddd; border-radius: 8px;">
-                            <img src="${doc.FileUrl}" 
+                            <img src="${imageUrl}" 
                                  alt="${doc.TypeDisplay}" 
                                  class="img-fluid h-100 w-100" 
                                  style="object-fit: contain; cursor: pointer;"
-                                 onclick="openImageModal('${doc.FileUrl}', '${doc.TypeDisplay}')">
+                                 onclick="openImageModal('${imageUrl}', '${doc.TypeDisplay}')">
                         </div>
                         <div class="document-info">
                             <p class="mb-1"><small class="text-muted">檔案名稱：${doc.FileName}</small></p>
@@ -89,7 +99,7 @@ function displayIdentityDocuments(documents) {
                             <p class="mb-0"><small class="text-muted">檔案大小：${doc.FileSize}</small></p>
                         </div>
                         <button type="button" class="btn btn-outline-primary btn-sm mt-2" 
-                                onclick="openImageModal('${doc.FileUrl}', '${doc.TypeDisplay}')">
+                                onclick="openImageModal('${imageUrl}', '${doc.TypeDisplay}')">
                             <i class="bi bi-zoom-in me-1"></i>放大檢視
                         </button>
                     </div>

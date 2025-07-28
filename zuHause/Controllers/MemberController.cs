@@ -203,7 +203,17 @@ namespace zuHause.Controllers
             var userId = int.Parse(User.FindFirst("UserId")!.Value);
             var member = await _context.Members.FindAsync(userId);
             if (member == null) return Unauthorized();
+            
+            // 檢查是否已完成身份驗證
+            if (!member.IdentityVerifiedAt.HasValue)
+            {
+                TempData["ErrorMessage"] = "請先完成身份驗證才能成為房東";
+                return RedirectToAction("MemberProfile");
+            }
+            
+            // 根據規格文件：同時更新 isLandlord 和 memberTypeID
             member.IsLandlord = true;
+            member.MemberTypeId = 2; // 房東類型
             member.UpdatedAt = DateTime.Now;
 
             await _context.SaveChangesAsync();
@@ -806,6 +816,42 @@ namespace zuHause.Controllers
                 return StatusCode(500, "檔案儲存失敗，請稍後再試");
             }
 
+            // 計算檔案檢查碼
+            string checksum;
+            using (var sha256 = System.Security.Cryptography.SHA256.Create())
+            {
+                using (var stream = model.UploadFile.OpenReadStream())
+                {
+                    var hash = sha256.ComputeHash(stream);
+                    checksum = Convert.ToHexString(hash);
+                }
+            }
+
+            // 對於身份證上傳，需要關聯到待審核的申請
+            int? approvalId = null;
+            if (model.ModuleCode == "MemberInfo" && 
+                (model.UploadTypeCode == "USER_ID_FRONT" || model.UploadTypeCode == "USER_ID_BACK"))
+            {
+                var memberId = Convert.ToInt32(User.FindFirst("UserId")?.Value);
+                var pendingApproval = await _context.Approvals
+                    .FirstOrDefaultAsync(a => 
+                        a.ModuleCode == "IDENTITY" &&
+                        a.ApplicantMemberId == memberId &&
+                        a.StatusCode == "PENDING");
+                
+                if (pendingApproval != null)
+                {
+                    approvalId = pendingApproval.ApprovalId;
+                    // 日誌：成功找到審核申請
+                    System.Diagnostics.Debug.WriteLine($"身份證上傳：會員 {memberId} 關聯到申請 {approvalId}");
+                }
+                else
+                {
+                    // 日誌：未找到審核申請
+                    System.Diagnostics.Debug.WriteLine($"身份證上傳：會員 {memberId} 未找到待審核申請");
+                }
+            }
+
             var uploadInfo = new UserUpload
             {
                 MemberId = Convert.ToInt32(User.FindFirst("UserId")?.Value),
@@ -818,6 +864,8 @@ namespace zuHause.Controllers
                 MimeType = model.UploadFile.ContentType,
                 FilePath = storePath,
                 FileSize = model.UploadFile.Length,
+                Checksum = checksum,
+                ApprovalId = approvalId,
                 IsActive = true,
                 UploadedAt = DateTime.Now,
                 CreatedAt = DateTime.Now,
@@ -843,23 +891,29 @@ namespace zuHause.Controllers
         [HttpPost]
         public async Task<IActionResult> SubmitIdentityApplication()
         {
-
             int memberId = int.Parse(User.FindFirst("UserId")!.Value);
 
             var member = await _context.Members
                 .FirstOrDefaultAsync(m => m.MemberId == memberId);
 
-
             if (member == null)
                 return NotFound("找不到會員");
 
-            var exists = await _context.Approvals.AnyAsync(a =>
-                a.ModuleCode == "IDENTITY" &&
-                a.ApplicantMemberId == memberId &&
-                a.StatusCode == "PENDING");
+            // 檢查是否已有待審核申請
+            var existingApproval = await _context.Approvals
+                .FirstOrDefaultAsync(a =>
+                    a.ModuleCode == "IDENTITY" &&
+                    a.ApplicantMemberId == memberId &&
+                    a.StatusCode == "PENDING");
 
-            if (exists)
-                return BadRequest("已有待審核的申請，不可重複送出");
+            if (existingApproval != null)
+            {
+                return Json(new { 
+                    success = true, 
+                    message = "身份驗證申請已存在",
+                    approvalId = existingApproval.ApprovalId 
+                });
+            }
 
 
 
