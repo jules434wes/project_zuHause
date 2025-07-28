@@ -1,21 +1,4 @@
-@{
-    // 模擬系統代碼資料 - 訊息分類
-    var messageCategories = new[] {
-        new { Value = "announcement", Text = "系統公告" },
-        new { Value = "promotion", Text = "優惠活動" },
-        new { Value = "maintenance", Text = "維護通知" }
-    };
-    
-    // 模擬用戶搜尋資料 - 個別用戶選擇器會用到
-    var availableUsers = new[] {
-        new { MemberId = "M000001", MemberName = "王大明", Email = "wang.daming@email.com", NationalNo = "A123456789" },
-        new { MemberId = "M000002", MemberName = "李小華", Email = "li.xiaohua@email.com", NationalNo = "B987654321" },
-        new { MemberId = "M000789", MemberName = "林小美", Email = "lin.xiaomei@email.com", NationalNo = "C456789123" }
-    };
-    
-    ViewData["MessageCategories"] = messageCategories;
-    ViewData["AvailableUsers"] = availableUsers;
-}
+@model AdminSystemMessageNewViewModel
 
 <!-- Main Form Section -->
 <div class="card">
@@ -31,15 +14,15 @@
                     <label class="form-label">發送對象 <span class="text-danger">*</span></label>
                     <div>
                         <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="audienceType" id="audienceAllMembers" value="all_members" checked>
+                            <input class="form-check-input" type="radio" name="audienceType" id="audienceAllMembers" value="ALL_MEMBERS" checked>
                             <label class="form-check-label" for="audienceAllMembers">全體會員</label>
                         </div>
                         <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="audienceType" id="audienceAllLandlords" value="all_landlords">
+                            <input class="form-check-input" type="radio" name="audienceType" id="audienceAllLandlords" value="ALL_LANDLORDS">
                             <label class="form-check-label" for="audienceAllLandlords">全體房東</label>
                         </div>
                         <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="audienceType" id="audienceIndividual" value="individual">
+                            <input class="form-check-input" type="radio" name="audienceType" id="audienceIndividual" value="INDIVIDUAL">
                             <label class="form-check-label" for="audienceIndividual">個別用戶</label>
                         </div>
                     </div>
@@ -66,9 +49,12 @@
                     <label for="messageCategory" class="form-label">訊息分類 <span class="text-danger">*</span></label>
                     <select id="messageCategory" class="form-select" name="messageCategory" required>
                         <option value="" disabled selected>請選擇分類...</option>
-                        @foreach (var category in messageCategories)
+                        @if (Model.MessageCategories != null)
                         {
-                            <option value="@category.Value">@category.Text</option>
+                            @foreach (var category in Model.MessageCategories)
+                            {
+                                <option value="@category.Value">@category.Text</option>
+                            }
                         }
                     </select>
                 </div>
@@ -85,19 +71,17 @@
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <label for="messageContent" class="form-label mb-0">訊息內容 <span class="text-danger">*</span></label>
                         <button type="button" class="btn btn-sm btn-outline-info" onclick="openTemplateModal()">
-                            <i class="bi bi-journal-plus"></i> 插入模板
+                            <i class="bi bi-file-text"></i> 插入模板
                         </button>
                     </div>
-                    <textarea class="form-control" id="messageContent" name="messageContent" rows="10" required maxlength="2000"></textarea>
-                    <div class="form-text">最多2000個字元。實際開發時將整合富文本編輯器。</div>
+                    <textarea class="form-control" id="messageContent" name="messageContent" rows="10" required maxlength="2000" 
+                              placeholder="請輸入訊息內容，或點擊上方按鈕選擇模板..."></textarea>
+                    <div class="form-text">
+                        最多2000個字元。支援參數化內容，如：{用戶姓名}、{時間} 等變數標記。
+                        <span id="contentCharCount" class="float-end">0/2000</span>
+                    </div>
                 </div>
 
-                <!-- 附件 -->
-                <div class="col-12">
-                    <label for="attachment" class="form-label">附件 (選填)</label>
-                    <input class="form-control" type="file" id="attachment" name="attachment" accept="image/*,.pdf,.doc,.docx">
-                    <div class="form-text">支援圖片、PDF、Word文件，檔案大小不超過10MB</div>
-                </div>
 
                 <!-- 操作按鈕 -->
                 <div class="col-12 d-flex justify-content-end gap-2 mt-4">

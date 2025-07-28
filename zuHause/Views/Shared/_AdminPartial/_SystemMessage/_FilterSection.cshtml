@@ -2,7 +2,7 @@
     <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="card-title mb-0">系統訊息篩選</h5>
         <button type="button" class="btn btn-outline-info btn-sm" id="advancedSearchBtn">
-            <i class="fas fa-chevron-down"></i> 進階篩選
+            <i class="bi bi-chevron-down"></i> 進階篩選
         </button>
     </div>
     <div class="card-body">
@@ -26,9 +26,9 @@
                     <label for="audienceFilter" class="form-label">發送對象</label>
                     <select class="form-select" id="audienceFilter">
                         <option value="">全部</option>
-                        <option value="all_members">全體會員</option>
-                        <option value="all_landlords">全體房東</option>
-                        <option value="individual">個別用戶</option>
+                        <option value="ALL_MEMBERS">全體會員</option>
+                        <option value="ALL_LANDLORDS">全體房東</option>
+                        <option value="INDIVIDUAL">個別用戶</option>
                     </select>
                 </div>
                 
@@ -36,19 +36,24 @@
                     <label for="categoryFilter" class="form-label">訊息分類</label>
                     <select class="form-select" id="categoryFilter">
                         <option value="">全部</option>
-                        <option value="announcement">系統公告</option>
-                        <option value="promotion">優惠活動</option>
-                        <option value="maintenance">維護通知</option>
+                        <option value="ANNOUNCEMENT">一般公告</option>
+                        <option value="UPDATE">功能更新</option>
+                        <option value="SECURITY">安全提醒</option>
+                        <option value="MAINTENANCE">系統維護</option>
+                        <option value="POLICY">政策更新</option>
+                        <option value="ORDER">訂單通知</option>
+                        <option value="PROPERTY">房源通知</option>
+                        <option value="ACCOUNT">帳戶通知</option>
                     </select>
                 </div>
                 
                 <div class="col-md-2">
                     <label class="form-label d-block">&nbsp;</label>
                     <button type="button" class="btn btn-primary me-2" id="searchBtn">
-                        <i class="fas fa-search"></i> 搜尋
+                        <i class="bi bi-search"></i> 搜尋
                     </button>
                     <button type="button" class="btn btn-outline-secondary" id="resetBtn">
-                        <i class="fas fa-redo"></i> 重置
+                        <i class="bi bi-arrow-clockwise"></i> 重置
                     </button>
                 </div>
             </div>

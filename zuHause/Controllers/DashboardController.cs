@@ -695,21 +695,49 @@ namespace zuHause.Controllers
         public IActionResult GetAllDeliveryPlans()
         {
             var plans = _context.DeliveryFeePlans
-                .OrderByDescending(p => p.StartAt)
-                .ToList();
+                        .OrderBy(p => p.PlanId)
+                        .ToList();
+
 
             return Json(plans);
         }
         // 創建新的配送方案
         [HttpPost("CreateDeliveryPlan")]
-        public IActionResult CreateDeliveryPlan([FromBody] DeliveryFeePlan plan)
+        public IActionResult CreateDeliveryPlan([FromBody] DeliveryFeePlanViewModel vm)
         {
-            if (string.IsNullOrWhiteSpace(plan.PlanName) || plan.BaseFee <= 0)
+            if (string.IsNullOrWhiteSpace(vm.PlanName) || vm.BaseFee <= 0)
                 return BadRequest("❌ 方案名稱與基礎費用為必填");
 
-            plan.CreatedAt = DateTime.Now;
-            plan.UpdatedAt = DateTime.Now;
-            plan.IsActive = true;
+            var plan = new DeliveryFeePlan
+            {
+                PlanName = vm.PlanName,
+                BaseFee = vm.BaseFee,
+                RemoteAreaSurcharge = vm.RemoteAreaSurcharge,
+                CurrencyCode = vm.CurrencyCode,
+                StartAt = vm.StartAt,
+                EndAt = vm.EndAt,
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now,
+                IsActive = false,
+            };
+
+            // 自訂 PlanId 最大值 +1
+            plan.PlanId = (_context.DeliveryFeePlans.Max(p => (int?)p.PlanId) ?? 0) + 1;
+
+            // 重疊區間檢查
+            var newStart = plan.StartAt;
+            var newEnd = plan.EndAt ?? DateTime.MaxValue;
+
+            var overlap = _context.DeliveryFeePlans
+                .Where(p => p.BaseFee == plan.BaseFee)
+                .Where(p =>
+                    (p.EndAt == null || newStart < p.EndAt) &&
+                    (newEnd == DateTime.MaxValue || p.StartAt < newEnd)
+                )
+                .Any();
+
+            if (overlap)
+                return BadRequest("該基礎費用區間已有重疊的方案，請調整時間。");
 
             _context.DeliveryFeePlans.Add(plan);
             _context.SaveChanges();
@@ -760,13 +788,12 @@ namespace zuHause.Controllers
 
         // 取得未來的配送方案，並依 BaseFee 分組
         [HttpGet("GetScheduledDeliveryPlans")]
-
         public IActionResult GetScheduledDeliveryPlans()
         {
             var now = DateTime.Now;
 
             var futurePlans = _context.DeliveryFeePlans
-                .Where(p => p.StartAt > now && p.IsActive)
+                .Where(p => p.StartAt > now && !p.IsActive)
                 .GroupBy(p => p.BaseFee)
                 .Select(g => new
                 {
@@ -778,6 +805,7 @@ namespace zuHause.Controllers
 
             return Json(futurePlans);
         }
+
         #endregion
 
         #region 合約範本相關 API
@@ -2172,44 +2200,46 @@ namespace zuHause.Controllers
         }
 
         [HttpGet("listing-fee-stats")]
-        public IActionResult GetListingFeeStats()
+        public IActionResult GetListingFeeStats(int? year = null, int? month = null)
         {
             var now = DateTime.Now;
-            var recentDates = Enumerable.Range(0, 5)
-                .Select(offset => now.Date.AddDays(-offset))
-                .OrderBy(d => d)
-                .ToList();
-
-            // 篩選資料
+            int y = year ?? now.Year;
+            int m = month ?? now.Month;
+            var startOfMonth = new DateTime(y, m, 1);
+            var endOfMonth = startOfMonth.AddMonths(1);
             var properties = _context.Properties
-                .Where(p => p.ListingFeeAmount != null && p.DeletedAt == null);
-
+                .Where(p => p.ListingFeeAmount != null && p.DeletedAt == null &&
+                            p.PublishedAt.HasValue &&
+                            p.PublishedAt.Value >= startOfMonth &&
+                            p.PublishedAt.Value < endOfMonth);
             // 總統計
             var totalDue = properties.Sum(p => p.ListingFeeAmount ?? 0);
             var totalPaid = properties.Where(p => p.IsPaid).Sum(p => p.ListingFeeAmount ?? 0);
-
+            var totalUnpaid = totalDue - totalPaid;
             // 每日統計
-            var trend = recentDates.Select(date => new
-            {
-                date = date.ToString("MM/dd"),
-                due = properties.Where(p => p.PublishedAt.HasValue && p.PublishedAt.Value.Date == date).Sum(p => p.ListingFeeAmount ?? 0),
-                paid = properties.Where(p => p.PaidAt.HasValue && p.PaidAt.Value.Date == date).Sum(p => p.ListingFeeAmount ?? 0)
+            var trend = Enumerable.Range(0, (endOfMonth - startOfMonth).Days).Select(offset => {
+                var date = startOfMonth.AddDays(offset);
+                return new {
+                    date = date.ToString("MM/dd"),
+                    due = properties.Where(p => p.PublishedAt.HasValue && p.PublishedAt.Value.Date == date.Date).Sum(p => p.ListingFeeAmount ?? 0),
+                    paid = properties.Where(p => p.PaidAt.HasValue && p.PaidAt.Value.Date == date.Date).Sum(p => p.ListingFeeAmount ?? 0)
+                };
             });
-
-            return Json(new
-            {
+            return Json(new {
                 totalDue,
                 totalPaid,
+                totalUnpaid,
                 trend
             });
         }
         [HttpGet("monthly-trend")]
-        public async Task<IActionResult> GetMonthlyListingFeeTrend()
+        public async Task<IActionResult> GetMonthlyListingFeeTrend(int? year = null, int? month = null)
         {
             var today = DateTime.Today;
-            var startOfMonth = new DateTime(today.Year, today.Month, 1);
+            int y = year ?? today.Year;
+            int m = month ?? today.Month;
+            var startOfMonth = new DateTime(y, m, 1);
             var endOfMonth = startOfMonth.AddMonths(1);
-
             // 撈資料
             var rawData = await _context.Properties
                 .Where(p => p.PublishedAt != null &&
@@ -2224,12 +2254,10 @@ namespace zuHause.Controllers
                     TotalPaid = g.Where(p => p.IsPaid).Sum(p => p.ListingFeeAmount ?? 0)
                 })
                 .ToListAsync();
-
             // 建立本月完整日期
             var allDates = Enumerable.Range(0, (endOfMonth - startOfMonth).Days)
                 .Select(offset => startOfMonth.AddDays(offset).Date)
                 .ToList();
-
             // 合併結果
             var listingData = allDates.Select(date =>
             {
@@ -2241,30 +2269,34 @@ namespace zuHause.Controllers
                     totalPaid = match?.TotalPaid ?? 0
                 };
             });
-
             return Json(listingData);
         }
         [HttpGet("order-stats")]
-        public async Task<IActionResult> GetOrderStats()
+        public async Task<IActionResult> GetOrderStats(int? year = null, int? month = null)
         {
-            var today = DateTime.Today;
-
-            // 成交單數：合約已簽署
+            var now = DateTime.Now;
+            int y = year ?? now.Year;
+            int m = month ?? now.Month;
+            var startOfMonth = new DateTime(y, m, 1);
+            var endOfMonth = startOfMonth.AddMonths(1);
+            // 成交單數：合約已簽署，且合約成立於該月
             int completedCount = await _context.Contracts
-                .CountAsync(c => c.Status == "SIGNED");
-
-            // 已驗證未付款：尚未付款
+                .CountAsync(c => c.Status == "SIGNED" && c.CreatedAt >= startOfMonth && c.CreatedAt < endOfMonth);
+            // 已驗證未付款：該月上架且未付款
             int unpaidCount = await _context.Properties
-                .CountAsync(c => c.IsPaid == false);
-
-            // 詐欺交易警示：已被舉報並判定成立的訂單
+                .CountAsync(c =>
+                    c.IsPaid == false &&
+                    c.DeletedAt == null &&
+                    c.PublishedAt.HasValue &&
+                    c.PublishedAt.Value >= startOfMonth &&
+                    c.PublishedAt.Value < endOfMonth
+                );
+            // 詐欺交易警示：該月成立的檢舉且判定成立
             int fraudCount = await _context.PropertyComplaints
-                .CountAsync(c => c.StatusCode == "CONFIRMED");
-
-            // 可疑訂單：有檢舉但未確認成立
+                .CountAsync(c => c.StatusCode == "CONFIRMED" && c.CreatedAt >= startOfMonth && c.CreatedAt < endOfMonth);
+            // 可疑訂單：該月成立的檢舉但未確認成立
             int suspiciousCount = await _context.PropertyComplaints
-                .CountAsync(c => c.StatusCode == "PENDING");
-
+                .CountAsync(c => c.StatusCode == "PENDING" && c.CreatedAt >= startOfMonth && c.CreatedAt < endOfMonth);
             return Json(new[]
             {
         new { type = "✅ 租屋成交單數", count = completedCount, note = "已完成付款並確認租約" },
@@ -2281,6 +2313,9 @@ namespace zuHause.Controllers
         {
             double cpuUsage = 0;
             double ramUsageMB = 0;
+            double diskFreeGB = 0;
+            double netUploadMbps = 0;
+            double netDownloadMbps = 0;
 
             // 取得 CPU 使用率（僅 Windows 有效，Linux 會回傳 -1）
             try
@@ -2308,14 +2343,44 @@ namespace zuHause.Controllers
                 ramUsageMB = -1;
             }
 
-            // API 請求數建議用 Middleware 統計，這裡仍用亂數
-            int apiRequest = new Random().Next(100, 300);
+            // 磁碟剩餘空間
+            try
+            {
+                var drive = System.IO.DriveInfo.GetDrives().FirstOrDefault(d => d.IsReady && d.Name == AppDomain.CurrentDomain.BaseDirectory.Substring(0, 3));
+                if (drive != null)
+                    diskFreeGB = Math.Round(drive.AvailableFreeSpace / 1024.0 / 1024.0 / 1024.0, 2);
+            }
+            catch { diskFreeGB = -1; }
+
+            // 網路流量（全系統）
+            try
+            {
+                var category = "Network Interface";
+                var uploadCounter = new System.Diagnostics.PerformanceCounter(category, "Bytes Sent/sec");
+                var downloadCounter = new System.Diagnostics.PerformanceCounter(category, "Bytes Received/sec");
+                // 取第一個網卡
+                var instanceNames = System.Diagnostics.PerformanceCounterCategory.GetCategories()
+                    .FirstOrDefault(c => c.CategoryName == category)?.GetInstanceNames();
+                if (instanceNames != null && instanceNames.Length > 0)
+                {
+                    uploadCounter.InstanceName = instanceNames[0];
+                    downloadCounter.InstanceName = instanceNames[0];
+                    uploadCounter.NextValue();
+                    downloadCounter.NextValue();
+                    System.Threading.Thread.Sleep(500);
+                    netUploadMbps = Math.Round(uploadCounter.NextValue() * 8 / 1024 / 1024, 2); // 轉 Mbps
+                    netDownloadMbps = Math.Round(downloadCounter.NextValue() * 8 / 1024 / 1024, 2);
+                }
+            }
+            catch { netUploadMbps = -1; netDownloadMbps = -1; }
 
             return Json(new
             {
                 cpu = cpuUsage,
                 ram = ramUsageMB,
-                api = apiRequest
+                disk = diskFreeGB,
+                netUpload = netUploadMbps,
+                netDownload = netDownloadMbps
             });
         }
 

@@ -46,8 +46,11 @@
 }
 
 /* === 房源圖片 === */
+
+/* 讓照片容器撐滿卡片左側高度；手機維持最小 200px 避免過窄 */
 .property-image {
-    height: 200px;
+    height: 100%;
+    min-height: 200px;
     overflow: hidden;
     border-radius: 12px 0 0 12px;
 }

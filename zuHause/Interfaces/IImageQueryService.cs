@@ -66,6 +66,14 @@ namespace zuHause.Interfaces
         Task<int> GetImageCountAsync(EntityType entityType, int entityId);
 
         /// <summary>
+        /// 生成圖片存取 URL（使用完整的圖片物件資訊）
+        /// </summary>
+        /// <param name="image">圖片物件</param>
+        /// <param name="size">圖片尺寸</param>
+        /// <returns>圖片 URL</returns>
+        string GenerateImageUrl(Image image, ImageSize size = ImageSize.Original);
+
+        /// <summary>
         /// 生成圖片存取 URL
         /// </summary>
         /// <param name="storedFileName">儲存檔名</param>

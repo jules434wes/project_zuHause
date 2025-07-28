@@ -25,8 +25,8 @@ namespace zuHause.Services
         // 上傳限制常數
         private const int MaxFileSize = 10 * 1024 * 1024; // 10MB
         private const int MaxImageCount = 15;
-        private static readonly string[] AllowedMimeTypes = { "image/jpeg", "image/png", "image/webp" };
-        private static readonly string[] AllowedExtensions = { ".jpg", ".jpeg", ".png", ".webp" };
+        private static readonly string[] AllowedMimeTypes = { "image/jpeg", "image/png", "image/webp", "application/pdf" };
+        private static readonly string[] AllowedExtensions = { ".jpg", ".jpeg", ".png", ".webp", ".pdf" };
 
         public ImageUploadService(
             ZuHauseContext context,
@@ -544,7 +544,7 @@ namespace zuHause.Services
         }
 
         /// <summary>
-        /// 從串流處理圖片
+        /// 從串流處理圖片或文件
         /// </summary>
         private async Task<ImageUploadResult> ProcessImageFromStreamAsync(
             Stream imageStream, 
@@ -559,14 +559,48 @@ namespace zuHause.Services
                 // 生成唯一識別碼
                 var imageGuid = Guid.NewGuid();
 
-                // 使用圖片處理器將圖片轉換為 WebP
-                var processingResult = await _imageProcessor.ConvertToWebPAsync(imageStream, 1200, 90);
-                if (!processingResult.Success)
-                {
-                    return ImageUploadResult.CreateFailure(originalFileName, $"圖片處理失敗: {processingResult.ErrorMessage}");
-                }
+                // 檢查是否為 PDF 文件
+                var fileExtension = Path.GetExtension(originalFileName).ToLowerInvariant();
+                var isPdfFile = fileExtension == ".pdf";
 
-                var processedFormat = processingResult.ProcessedFormat.ToLowerInvariant(); // webp
+                string processedFormat;
+                string mimeType;
+                long fileSizeBytes;
+                int width = 0;
+                int height = 0;
+                Stream uploadStream;
+
+                if (isPdfFile)
+                {
+                    // 對於 PDF 文件，跳過圖片處理
+                    processedFormat = "pdf";
+                    mimeType = "application/pdf";
+                    fileSizeBytes = imageStream.Length;
+                    
+                    // 確保流位置在開始處
+                    if (imageStream.CanSeek)
+                    {
+                        imageStream.Position = 0;
+                    }
+                    uploadStream = imageStream;
+                    // PDF 文件不需要尺寸資訊
+                }
+                else
+                {
+                    // 對於圖片文件，使用圖片處理器將圖片轉換為 WebP
+                    var processingResult = await _imageProcessor.ConvertToWebPAsync(imageStream, 1200, 90);
+                    if (!processingResult.Success)
+                    {
+                        return ImageUploadResult.CreateFailure(originalFileName, $"圖片處理失敗: {processingResult.ErrorMessage}");
+                    }
+
+                    processedFormat = processingResult.ProcessedFormat.ToLowerInvariant(); // webp
+                    mimeType = $"image/{processedFormat}";
+                    fileSizeBytes = processingResult.SizeBytes;
+                    width = processingResult.Width;
+                    height = processingResult.Height;
+                    uploadStream = processingResult.ProcessedStream!;
+                }
 
                 // === 上傳至 Azure Blob Storage 臨時區域 ===
                 try
@@ -584,17 +618,20 @@ namespace zuHause.Services
                     // 建立多尺寸串流字典
                     var streams = new Dictionary<ImageSize, Stream>
                     {
-                        { ImageSize.Original, processingResult.ProcessedStream! }
+                        { ImageSize.Original, uploadStream }
                     };
                     
-                    // 建立基礎路徑
-                    var basePath = $"temp/{tempSessionId}/{category.ToString().ToLowerInvariant()}/{entityId}/{imageGuid}";
+                    // 使用 N 格式 (無破折號) 的 GUID
+                    var guidNoDash = imageGuid.ToString("N");
+
+                    // 建立基礎路徑：temp/{session}/{category}/{entityId}/{guid}
+                    var basePath = $"temp/{tempSessionId}/{category.ToString().ToLowerInvariant()}/{entityId}/{guidNoDash}";
                     
                     // 上傳至臨時區域的多個尺寸
                     var uploadResult = await _blobStorageService.UploadMultipleSizesAsync(
                         streams,
                         basePath,
-                        $"image/{processedFormat}");
+                        mimeType);
                     
                     if (!uploadResult.Success)
                     {
@@ -603,7 +640,8 @@ namespace zuHause.Services
                     }
 
                     // 儲存 Blob 路徑作為 StoredFileName（用於後續識別）
-                    var storedFileName = $"temp/{tempSessionId}/{category.ToString().ToLowerInvariant()}/{entityId}/{imageGuid}.{processedFormat}";
+                    // StoredFileName 也採用無破折號 GUID
+                    var storedFileName = $"temp/{tempSessionId}/{category.ToString().ToLowerInvariant()}/{entityId}/{guidNoDash}.{processedFormat}";
 
                     // 儲存到資料庫
                     var image = new Image
@@ -612,12 +650,12 @@ namespace zuHause.Services
                         EntityType = entityType,
                         EntityId = entityId,
                         Category = category,
-                        MimeType = $"image/{processingResult.ProcessedFormat}",
+                        MimeType = mimeType,
                         OriginalFileName = originalFileName,
                         StoredFileName = storedFileName,
-                        FileSizeBytes = processingResult.SizeBytes,
-                        Width = processingResult.Width,
-                        Height = processingResult.Height,
+                        FileSizeBytes = fileSizeBytes,
+                        Width = width,
+                        Height = height,
                         DisplayOrder = null, // 稍後批次分配
                         IsActive = true,
                         UploadedByMemberId = uploadedByMemberId,
@@ -635,10 +673,10 @@ namespace zuHause.Services
                         entityType,
                         entityId,
                         category,
-                        processingResult.SizeBytes,
-                        processingResult.Width,
-                        processingResult.Height,
-                        $"image/{processingResult.ProcessedFormat}");
+                        fileSizeBytes,
+                        width,
+                        height,
+                        mimeType);
                 }
                 catch (Exception ex)
                 {

@@ -102,6 +102,333 @@
             margin-bottom: 1rem;
         }
         
+        /* PDF 文件上傳區域 */
+        .document-upload-area {
+            border: 2px dashed #ffc1cc;
+            border-radius: 0.5rem;
+            padding: 3rem 2rem;
+            text-align: center;
+            background-color: #fff5f5;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .document-upload-area:hover {
+            border-color: #dc3545;
+            background-color: #ffe6e6;
+        }
+        
+        .document-upload-area.dragover {
+            border-color: #c82333;
+            background-color: #ffccdd;
+        }
+        
+        /* 圖片預覽卡片 */
+        .image-preview-card {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            border: 2px solid #dee2e6;
+            background: white;
+            transition: all 0.3s ease;
+        }
+        
+        .image-preview-card:hover {
+            border-color: #3498db;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .image-preview-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .image-preview-card .remove-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(220, 53, 69, 0.9);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .image-preview-card .remove-btn:hover {
+            background: #dc3545;
+        }
+        
+        /* PDF 預覽卡片 */
+        .document-preview-card {
+            border: 2px solid #ffc1cc;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            background: #fff5f5;
+            position: relative;
+        }
+        
+        .document-preview-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .document-preview-item .file-icon {
+            font-size: 2rem;
+            color: #dc3545;
+        }
+        
+        .document-preview-item .file-info h6 {
+            margin: 0;
+            color: #333;
+        }
+        
+        .document-preview-item .file-info small {
+            color: #666;
+        }
+        
+        .document-preview-item .remove-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 0.25rem;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            cursor: pointer;
+        }
+        
+        .document-preview-item .remove-btn:hover {
+            background: #c82333;
+        }
+        
+        /* 編輯模式：現有圖片樣式 */
+        .image-preview-card .existing-badge {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            background: rgba(40, 167, 69, 0.9);
+            color: white;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+        
+        .image-preview-card.marked-for-deletion {
+            opacity: 0.5;
+            filter: grayscale(100%);
+            position: relative;
+        }
+        
+        .image-preview-card .deletion-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(220, 53, 69, 0.8);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            border-radius: 0.5rem;
+        }
+        
+        /* 拖曳排序增強樣式 */
+        .image-preview-card {
+            cursor: grab;
+            user-select: none;
+        }
+        
+        .image-preview-card:active {
+            cursor: grabbing;
+        }
+        
+        .image-preview-card.dragging {
+            opacity: 0.5;
+            transform: rotate(5deg) scale(1.05);
+            z-index: 1000;
+            transition: none;
+        }
+        
+        .image-preview-card.drag-over {
+            border-color: #3498db;
+            border-width: 3px;
+            transform: scale(1.05);
+            box-shadow: 0 8px 20px rgba(52, 152, 219, 0.3);
+        }
+        
+        .image-preview-card .drag-handle {
+            position: absolute;
+            top: 5px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(52, 152, 219, 0.9);
+            color: white;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: bold;
+            cursor: grab;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .image-preview-card:hover .drag-handle {
+            opacity: 1;
+        }
+        
+        .image-preview-card .drag-handle:active {
+            cursor: grabbing;
+        }
+        
+        /* 圖片容器拖曳回饋 */
+        .property-image-container {
+            min-height: 120px;
+            position: relative;
+        }
+        
+        .property-image-container.drop-zone-active {
+            background: linear-gradient(45deg, rgba(52, 152, 219, 0.1) 25%, transparent 25%),
+                        linear-gradient(-45deg, rgba(52, 152, 219, 0.1) 25%, transparent 25%),
+                        linear-gradient(45deg, transparent 75%, rgba(52, 152, 219, 0.1) 75%),
+                        linear-gradient(-45deg, transparent 75%, rgba(52, 152, 219, 0.1) 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+            border-radius: 0.5rem;
+            border: 2px dashed #3498db;
+        }
+        
+        /* 圖片數量限制提示樣式 */
+        .upload-limit-warning {
+            background: linear-gradient(135deg, #ff9800, #f57c00);
+            color: white;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin: 1rem 0;
+            box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);
+            animation: pulse-warning 2s infinite;
+        }
+        
+        @@keyframes pulse-warning {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.02); opacity: 0.9; }
+        }
+        
+        .upload-counter {
+            background: #e8f4fd;
+            color: #2980b9;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 1rem;
+            border: 1px solid #3498db;
+        }
+        
+        .upload-counter.near-limit {
+            background: #fff3cd;
+            color: #856404;
+            border-color: #ffc107;
+        }
+        
+        .upload-counter.at-limit {
+            background: #f8d7da;
+            color: #721c24;
+            border-color: #dc3545;
+        }
+        
+        /* 視覺回饋動畫增強 */
+        .image-preview-card.upload-success {
+            animation: uploadSuccess 0.6s ease-out;
+        }
+        
+        @@keyframes uploadSuccess {
+            0% {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.1);
+                opacity: 0.8;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        
+        .image-preview-card.remove-animation {
+            animation: removeImage 0.4s ease-out forwards;
+        }
+        
+        @@keyframes removeImage {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.1) rotate(5deg);
+                opacity: 0.5;
+            }
+            100% {
+                transform: scale(0);
+                opacity: 0;
+            }
+        }
+        
+        /* 響應式設計增強 */
+        @@media (max-width: 768px) {
+            .image-preview-card {
+                width: 100px;
+                height: 100px;
+            }
+            
+            .property-image-container {
+                gap: 0.75rem;
+            }
+            
+            .upload-limit-warning,
+            .upload-counter {
+                font-size: 0.8rem;
+                padding: 0.5rem 0.75rem;
+            }
+        }
+        
+        @@media (max-width: 576px) {
+            .image-preview-card {
+                width: 80px;
+                height: 80px;
+            }
+            
+            .property-image-container {
+                gap: 0.5rem;
+            }
+        }
+
+        .remove-btn.existing-image {
+            background: rgba(255, 193, 7, 0.9);
+        }
+        
+        .remove-btn.existing-image:hover {
+            background: #ffc107;
+        }
+        
         /* 刊登方案詳情高亮樣式 */
         .plan-details-highlight {
             color: #dc3545 !important;
@@ -565,12 +892,18 @@
                         <form id="propertyCreateForm" asp-action="@formAction" asp-controller="Property" method="post" enctype="multipart/form-data" novalidate>
                     @Html.AntiForgeryToken()
                     
+                    <!-- TempSessionId 隱藏欄位 -->
+                    <input type="hidden" id="tempSessionIdInput" name="TempSessionId" value="" />
+                    
                     @if (isEditMode && propertyId.HasValue)
                     {
                         <!-- 編輯模式：包含房源ID -->
                         <input type="hidden" name="id" value="@propertyId" />
                         <input type="hidden" asp-for="PropertyData.PropertyId" />
                     }
+                    
+                    <!-- 兩階段上傳：臨時會話ID -->
+                    <input type="hidden" asp-for="PropertyData.TempSessionId" id="tempSessionId" />
                     
                     <!-- 表單模式標識 -->
                     <input type="hidden" asp-for="FormMode" />
@@ -1107,39 +1440,93 @@
                         <span asp-validation-for="PropertyData.ListingPlanId" class="text-danger small"></span>
                     </div>
                     
-                    <!-- 圖片上傳區塊 -->
+                    <!-- 房源圖片上傳區塊 -->
                     <div class="form-section" id="imageInfo">
                         <h2 class="section-title">
                             <i class="fas fa-camera me-2"></i>房屋照片
                         </h2>
                         
                         <div class="form-group">
-                            <label class="form-label" for="ChineseCategory">圖片分類</label>
-                            <select class="form-select" id="ChineseCategory" name="ChineseCategory">
-                                @if (Model.AvailableChineseCategories != null)
-                                {
-                                    @foreach (var category in Model.AvailableChineseCategories)
-                                    {
-                                        <option value="@category">@category</option>
-                                    }
-                                }
-                            </select>
-                            <div class="form-text">請選擇要上傳圖片的分類</div>
+                            <label class="form-label required">房源圖片</label>
+                            <div class="image-upload-area" id="propertyImageUploadArea">
+                                <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                                <div class="upload-text">
+                                    <h4>點擊或拖曳圖片到此處</h4>
+                                    <p class="text-muted mb-3">支援 JPG、PNG、WebP 格式，單檔最大 2MB，最多可上傳 15 張圖片</p>
+                                </div>
+                                <input type="file" asp-for="PropertyData.PropertyImages" id="propertyImageFiles" multiple accept="image/jpeg,image/png,image/webp" style="display: none;">
+                                <button type="button" class="btn btn-outline-primary" onclick="document.getElementById('propertyImageFiles').click()">
+                                    <i class="fas fa-plus me-2"></i>選擇圖片
+                                </button>
+                            </div>
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                系統將自動轉換為 WebP 格式以提升載入速度
+                            </div>
+                            <span asp-validation-for="PropertyData.PropertyImages" class="text-danger small"></span>
                         </div>
                         
-                        <div class="image-upload-area" id="imageUploadArea">
-                            <i class="fas fa-cloud-upload-alt upload-icon"></i>
-                            <h4>點擊或拖曳圖片到此處</h4>
-                            <p class="text-muted mb-3">支援 JPG、PNG 格式，單檔最大 5MB</p>
-                            <input type="file" id="imageFiles" name="ImageFiles" multiple accept="image/*" style="display: none;">
-                            <button type="button" class="btn btn-outline-primary" onclick="document.getElementById('imageFiles').click()">
-                                <i class="fas fa-plus me-2"></i>選擇圖片
-                            </button>
+                        <!-- 圖片預覽區域 -->
+                        <div id="propertyImagePreview" class="mt-3" style="display: none;">
+                            <h6><i class="fas fa-eye me-2"></i>已上傳的圖片：</h6>
+                            <div id="propertyImageContainer" class="d-flex flex-wrap gap-3">
+                                <!-- 動態生成的圖片預覽卡片 -->
+                            </div>
                         </div>
                         
-                        <div id="imagePreview" class="mt-3" style="display: none;">
-                            <h6>已選擇的圖片：</h6>
-                            <div id="previewContainer" class="d-flex flex-wrap gap-2"></div>
+                        <!-- 上傳進度 -->
+                        <div id="propertyImageUploadProgress" class="mt-3" style="display: none;">
+                            <div class="d-flex align-items-center">
+                                <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                                <span>正在上傳圖片...</span>
+                            </div>
+                            <div class="progress mt-2">
+                                <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 房產證明文件上傳區塊 -->
+                    <div class="form-section" id="documentInfo">
+                        <h2 class="section-title">
+                            <i class="fas fa-file-pdf me-2"></i>房產證明文件
+                        </h2>
+                        
+                        <div class="form-group">
+                            <label class="form-label">房產證明文件 <span class="text-muted">(選填)</span></label>
+                            <div class="document-upload-area" id="documentUploadArea">
+                                <i class="fas fa-cloud-upload-alt upload-icon text-danger"></i>
+                                <h4>點擊或拖曳 PDF 文件到此處</h4>
+                                <p class="text-muted mb-3">支援 PDF 格式，單檔最大 10MB</p>
+                                <input type="file" asp-for="PropertyData.PropertyProofDocument" id="documentFile" accept="application/pdf" style="display: none;">
+                                <button type="button" class="btn btn-outline-danger" onclick="document.getElementById('documentFile').click()">
+                                    <i class="fas fa-file-pdf me-2"></i>選擇 PDF 文件
+                                </button>
+                            </div>
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                請上傳房屋所有權狀、租賃契約或其他相關證明文件
+                            </div>
+                            <span asp-validation-for="PropertyData.PropertyProofDocument" class="text-danger small"></span>
+                        </div>
+                        
+                        <!-- PDF 預覽區域 -->
+                        <div id="documentPreview" class="mt-3" style="display: none;">
+                            <h6><i class="fas fa-file-check me-2"></i>已上傳的文件：</h6>
+                            <div id="documentContainer" class="document-preview-card">
+                                <!-- 動態生成的 PDF 預覽卡片 -->
+                            </div>
+                        </div>
+                        
+                        <!-- 文件上傳進度 -->
+                        <div id="documentUploadProgress" class="mt-3" style="display: none;">
+                            <div class="d-flex align-items-center">
+                                <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                                <span>正在上傳文件...</span>
+                            </div>
+                            <div class="progress mt-2">
+                                <div class="progress-bar bg-danger" role="progressbar" style="width: 0%"></div>
+                            </div>
                         </div>
                     </div>
                     
@@ -1203,6 +1590,12 @@
                                     <li class="step-nav-item" data-target="imageInfo">
                                         <i class="fas fa-camera me-2"></i>房屋照片
                                         <span class="float-end" id="imageInfo-status">
+                                            <i class="fas fa-circle text-muted small"></i>
+                                        </span>
+                                    </li>
+                                    <li class="step-nav-item" data-target="documentInfo">
+                                        <i class="fas fa-file-pdf me-2"></i>房屋所有權證明
+                                        <span class="float-end" id="documentInfo-status">
                                             <i class="fas fa-circle text-muted small"></i>
                                         </span>
                                     </li>
@@ -1693,6 +2086,10 @@
                         document.body.classList.remove('modal-open');
                         document.body.style.removeProperty('padding-right');
                         document.body.style.removeProperty('overflow');
+                        
+                        // 🔧 修正：預覽模態框關閉後，重新檢查按鈕狀態
+                        console.log('🔄 預覽模態框關閉，重新檢查按鈕狀態');
+                        updateSubmitButtonState();
                     }, 100);
                 });
                 
@@ -1717,68 +2114,690 @@
                 };
             }
             
-            // 圖片上傳功能
-            const imageUploadArea = document.getElementById('imageUploadArea');
-            const imageFiles = document.getElementById('imageFiles');
-            const imagePreview = document.getElementById('imagePreview');
-            const previewContainer = document.getElementById('previewContainer');
+            // ========== 兩階段上傳系統 ==========
             
-            // 點擊上傳區域觸發文件選擇
-            imageUploadArea.addEventListener('click', function(e) {
+            // 上傳管理物件（暴露到全域作用域以供表單驗證使用）
+            window.UploadManager = {
+                tempSessionId: null,
+                uploadedImages: [],
+                uploadedDocument: null,
+                
+                // 初始化臨時會話
+                async initTempSession() {
+                    if (!this.tempSessionId) {
+                        this.tempSessionId = this.generateSessionId();
+                        document.getElementById('tempSessionId').value = this.tempSessionId;
+                        console.log('🔄 初始化臨時會話:', this.tempSessionId);
+                    }
+                    return this.tempSessionId;
+                },
+                
+                // 生成會話ID
+                generateSessionId() {
+                    return 'temp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                },
+                
+                // 上傳檔案到臨時區域
+                async uploadToTemp(files, category = 'Gallery') {
+                    await this.initTempSession();
+                    
+                    const formData = new FormData();
+                    formData.append('tempSessionId', this.tempSessionId);
+                    formData.append('category', category);
+                    
+                    // 添加多個檔案
+                    Array.from(files).forEach(file => {
+                        formData.append('files', file);
+                    });
+                    
+                    try {
+                        const response = await fetch('/api/images/temp-upload', {
+                            method: 'POST',
+                            headers: {
+                                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                            },
+                            body: formData
+                        });
+                        
+                        const result = await response.json();
+                        
+                        if (result.success) {
+                            console.log('✅ 檔案上傳成功:', result);
+                            return result;
+                        } else {
+                            console.error('❌ 檔案上傳失敗:', result.message);
+                            throw new Error(result.message || '上傳失敗');
+                        }
+                    } catch (error) {
+                        console.error('❌ 上傳過程發生錯誤:', error);
+                        throw error;
+                    }
+                }
+            };
+            
+            // ========== 房源圖片上傳邏輯 ==========
+            
+            const propertyImageUploadArea = document.getElementById('propertyImageUploadArea');
+            const propertyImageFiles = document.getElementById('propertyImageFiles');
+            const propertyImagePreview = document.getElementById('propertyImagePreview');
+            const propertyImageContainer = document.getElementById('propertyImageContainer');
+            const propertyImageUploadProgress = document.getElementById('propertyImageUploadProgress');
+            
+            // 點擊上傳區域觸發檔案選擇
+            propertyImageUploadArea.addEventListener('click', function(e) {
                 if (e.target.tagName !== 'BUTTON') {
-                    imageFiles.click();
+                    propertyImageFiles.click();
                 }
             });
             
             // 拖拽上傳
-            imageUploadArea.addEventListener('dragover', function(e) {
+            propertyImageUploadArea.addEventListener('dragover', function(e) {
                 e.preventDefault();
                 this.classList.add('dragover');
             });
             
-            imageUploadArea.addEventListener('dragleave', function(e) {
+            propertyImageUploadArea.addEventListener('dragleave', function(e) {
                 e.preventDefault();
                 this.classList.remove('dragover');
             });
             
-            imageUploadArea.addEventListener('drop', function(e) {
+            propertyImageUploadArea.addEventListener('drop', function(e) {
                 e.preventDefault();
                 this.classList.remove('dragover');
                 
-                const files = e.dataTransfer.files;
-                handleFiles(files);
-            });
-            
-            // 文件選擇處理
-            imageFiles.addEventListener('change', function() {
-                handleFiles(this.files);
-            });
-            
-            function handleFiles(files) {
-                previewContainer.innerHTML = '';
-                
+                const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
                 if (files.length > 0) {
-                    imagePreview.style.display = 'block';
+                    handlePropertyImageUpload(files);
+                }
+            });
+            
+            // 檔案選擇處理
+            propertyImageFiles.addEventListener('change', function() {
+                const files = Array.from(this.files).filter(f => f.type.startsWith('image/'));
+                if (files.length > 0) {
+                    handlePropertyImageUpload(files);
+                }
+            });
+            
+            // 處理房源圖片上傳
+            async function handlePropertyImageUpload(files) {
+                try {
+                    // 檢查總數量限制（包含已上傳的圖片）
+                    const maxImages = 15;
+                    const currentImageCount = UploadManager.uploadedImages.length;
+                    const newFilesArray = Array.from(files);
                     
-                    Array.from(files).forEach(function(file, index) {
-                        if (file.type.startsWith('image/')) {
-                            const reader = new FileReader();
-                            reader.onload = function(e) {
-                                const preview = document.createElement('div');
-                                preview.className = 'position-relative';
-                                preview.innerHTML = `
-                                    <img src="${e.target.result}" alt="預覽" 
-                                         style="width: 100px; height: 100px; object-fit: cover; border-radius: 0.5rem;">
-                                    <small class="d-block text-center mt-1">${file.name}</small>
-                                `;
-                                previewContainer.appendChild(preview);
+                    // 如果超過限制，只取前面可以上傳的數量
+                    const availableSlots = maxImages - currentImageCount;
+                    if (availableSlots <= 0) {
+                        alert(`最多僅可上傳 ${maxImages} 張圖片！目前已有 ${currentImageCount} 張圖片。`);
+                        return;
+                    }
+                    
+                    let filesToUpload = newFilesArray;
+                    if (newFilesArray.length > availableSlots) {
+                        filesToUpload = newFilesArray.slice(0, availableSlots);
+                        alert(`最多僅可上傳 ${maxImages} 張圖片！已選取前 ${availableSlots} 張圖片進行上傳。`);
+                    }
+                    
+                    // 檔案驗證
+                    const validFiles = [];
+                    for (const file of filesToUpload) {
+                        if (file.size > 2 * 1024 * 1024) { // 2MB
+                            alert(`檔案 ${file.name} 超過 2MB 限制`);
+                            continue;
+                        }
+                        if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+                            alert(`檔案 ${file.name} 格式不支援`);
+                            continue;
+                        }
+                        validFiles.push(file);
+                    }
+                    
+                    if (validFiles.length === 0) return;
+                    
+                    // 顯示上傳進度
+                    propertyImageUploadProgress.style.display = 'block';
+                    
+                    // 上傳到臨時區域
+                    const result = await UploadManager.uploadToTemp(validFiles, 'Gallery');
+                    
+                    // 檢查上傳結果並更新已上傳的圖片列表
+                    // API 回傳的是 images 陣列，不是 uploadResults
+                    if (result.images && result.images.length > 0) {
+                        // 設定 TempSessionId 到隱藏欄位
+                        if (result.tempSessionId) {
+                            const tempSessionIdInput = document.getElementById('tempSessionIdInput');
+                            if (tempSessionIdInput) {
+                                tempSessionIdInput.value = result.tempSessionId;
+                                console.log('🔑 設定 TempSessionId:', result.tempSessionId);
+                            }
+                        }
+                        
+                        // 為每個上傳的圖片添加本地預覽 URL
+                        const imagesWithLocalUrl = result.images.map((image, index) => {
+                            const originalFile = validFiles[index];
+                            return {
+                                ...image,
+                                localPreviewUrl: originalFile ? URL.createObjectURL(originalFile) : null,
+                                originalFile: originalFile,
+                                isNewUpload: true // 標記為新上傳，用於動畫效果
                             };
-                            reader.readAsDataURL(file);
+                        });
+                        UploadManager.uploadedImages = UploadManager.uploadedImages.concat(imagesWithLocalUrl);
+                        
+                        // 更新狀態指示器
+                        updateImageInfoStatus();
+                    } else {
+                        throw new Error('圖片上傳失敗：沒有收到上傳結果');
+                    }
+                    
+                    // 更新預覽顯示
+                    updatePropertyImagePreview();
+                    
+                    // 隱藏上傳進度
+                    propertyImageUploadProgress.style.display = 'none';
+                    
+                } catch (error) {
+                    console.error('圖片上傳失敗:', error);
+                    alert('圖片上傳失敗: ' + error.message);
+                    propertyImageUploadProgress.style.display = 'none';
+                }
+            }
+            
+            // 更新房源圖片預覽
+            function updatePropertyImagePreview() {
+                const currentCount = UploadManager.uploadedImages.length;
+                const maxImages = 15;
+                
+                // 更新上傳計數器
+                updateUploadCounter(currentCount, maxImages);
+                
+                if (currentCount > 0) {
+                    propertyImagePreview.style.display = 'block';
+                    propertyImageContainer.innerHTML = '';
+                    
+                    UploadManager.uploadedImages.forEach((image, index) => {
+                        const previewCard = document.createElement('div');
+                        previewCard.className = 'image-preview-card';
+                        previewCard.draggable = true;
+                        previewCard.dataset.index = index;
+                        
+                        // 區分現有圖片和新上傳圖片
+                        const isExisting = image && (image.isExisting === true);
+                        const deleteAction = isExisting ? 
+                            `markImageForDeletion(${index})` : 
+                            `removePropertyImage(${index})`;
+                        
+                        const cardClass = isExisting ? 'existing-image' : 'new-image';
+                        
+                        // 優先使用本地預覽 URL，然後是 API 回傳的 URL
+                        const imageUrl = image.localPreviewUrl || image.tempUrl || image.PreviewUrl || image.blobUrl || '/images/property-placeholder.jpg';
+                        const fileName = image.originalFileName || image.FileName || '未知檔案';
+                        
+                        previewCard.innerHTML = `
+                            <img src="${imageUrl}" alt="${fileName}" loading="lazy">
+                            <button type="button" class="remove-btn ${cardClass}" onclick="${deleteAction}" 
+                                    title="${isExisting ? '標記刪除' : '移除圖片'}">
+                                <i class="fas fa-${isExisting ? 'trash' : 'times'}"></i>
+                            </button>
+                            ${isExisting ? '<div class="existing-badge">現有</div>' : ''}
+                            ${image.markedForDeletion ? '<div class="deletion-overlay">已標記刪除</div>' : ''}
+                        `;
+                        
+                        // 為新上傳的圖片添加成功動畫
+                        if (image.isNewUpload) {
+                            previewCard.classList.add('upload-success');
+                            // 移除標記以避免重複動畫
+                            image.isNewUpload = false;
+                        }
+                        
+                        if (image.markedForDeletion) {
+                            previewCard.classList.add('marked-for-deletion');
+                        }
+                        
+                        propertyImageContainer.appendChild(previewCard);
+                    });
+                    
+                    // 添加拖曳排序功能
+                    setupImageDragAndDrop();
+                } else {
+                    propertyImagePreview.style.display = 'none';
+                }
+            }
+            
+            // 設置圖片拖曳排序功能（增強版）
+            function setupImageDragAndDrop() {
+                let draggedElement = null;
+                let draggedIndex = null;
+                
+                const cards = propertyImageContainer.querySelectorAll('.image-preview-card');
+                
+                cards.forEach(card => {
+                    // 添加拖曳控制指示
+                    if (!card.querySelector('.drag-handle')) {
+                        const dragHandle = document.createElement('div');
+                        dragHandle.className = 'drag-handle';
+                        dragHandle.innerHTML = '⋮⋮';
+                        dragHandle.title = '拖曳以排序';
+                        card.appendChild(dragHandle);
+                    }
+                    
+                    card.addEventListener('dragstart', (e) => {
+                        draggedElement = card;
+                        draggedIndex = parseInt(card.dataset.index);
+                        
+                        // 添加拖曳樣式
+                        card.classList.add('dragging');
+                        propertyImageContainer.classList.add('drop-zone-active');
+                        
+                        e.dataTransfer.effectAllowed = 'move';
+                        e.dataTransfer.setData('text/html', card.outerHTML);
+                        
+                        console.log('🎯 開始拖曳圖片:', draggedIndex);
+                    });
+                    
+                    card.addEventListener('dragend', (e) => {
+                        // 清除拖曳樣式
+                        card.classList.remove('dragging');
+                        propertyImageContainer.classList.remove('drop-zone-active');
+                        
+                        // 清除所有拖曳回饋樣式
+                        document.querySelectorAll('.image-preview-card').forEach(c => {
+                            c.classList.remove('drag-over');
+                        });
+                        
+                        draggedElement = null;
+                        draggedIndex = null;
+                    });
+                    
+                    card.addEventListener('dragenter', (e) => {
+                        e.preventDefault();
+                        if (draggedElement && draggedElement !== card) {
+                            card.classList.add('drag-over');
                         }
                     });
-                } else {
-                    imagePreview.style.display = 'none';
+                    
+                    card.addEventListener('dragleave', (e) => {
+                        e.preventDefault();
+                        // 只有當滑鼠真正離開元素時才移除樣式
+                        if (!card.contains(e.relatedTarget)) {
+                            card.classList.remove('drag-over');
+                        }
+                    });
+                    
+                    card.addEventListener('dragover', (e) => {
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = 'move';
+                    });
+                    
+                    card.addEventListener('drop', (e) => {
+                        e.preventDefault();
+                        card.classList.remove('drag-over');
+                        
+                        if (draggedElement && draggedElement !== card) {
+                            const targetIndex = parseInt(card.dataset.index);
+                            
+                            console.log('📍 拖放目標:', draggedIndex, '->', targetIndex);
+                            
+                            // 交換陣列中的位置
+                            const draggedImage = UploadManager.uploadedImages[draggedIndex];
+                            UploadManager.uploadedImages.splice(draggedIndex, 1);
+                            UploadManager.uploadedImages.splice(targetIndex, 0, draggedImage);
+                            
+                            // 重新渲染圖片預覽
+                            updatePropertyImagePreview();
+                            
+                            // 顯示成功回饋
+                            showSortSuccessMessage(draggedIndex + 1, targetIndex + 1);
+                            
+                            console.log('🔄 圖片順序已調整');
+                        }
+                    });
+                });
+            }
+            
+            // 顯示排序成功訊息
+            function showSortSuccessMessage(fromPos, toPos) {
+                const message = document.createElement('div');
+                message.className = 'alert alert-success alert-dismissible fade show position-fixed';
+                message.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+                message.innerHTML = `
+                    <i class="fas fa-check-circle"></i>
+                    圖片已從第 ${fromPos} 位移動到第 ${toPos} 位
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                
+                document.body.appendChild(message);
+                
+                // 3秒後自動移除
+                setTimeout(() => {
+                    if (message.parentNode) {
+                        message.remove();
+                    }
+                }, 3000);
+            }
+            
+            // 更新上傳計數器
+            function updateUploadCounter(currentCount, maxCount) {
+                // 尋找或創建計數器
+                let counter = document.querySelector('.upload-counter');
+                if (!counter) {
+                    counter = document.createElement('div');
+                    counter.className = 'upload-counter';
+                    
+                    // 插入到圖片上傳區域之前
+                    const uploadArea = document.querySelector('.image-upload-area');
+                    if (uploadArea && uploadArea.parentNode) {
+                        uploadArea.parentNode.insertBefore(counter, uploadArea);
+                    }
                 }
+                
+                // 更新內容和樣式
+                counter.innerHTML = `
+                    <i class="fas fa-images"></i>
+                    已上傳圖片: ${currentCount} / ${maxCount} 張
+                `;
+                
+                // 根據上傳數量調整樣式
+                counter.className = 'upload-counter';
+                if (currentCount >= maxCount) {
+                    counter.classList.add('at-limit');
+                } else if (currentCount >= maxCount - 3) {
+                    counter.classList.add('near-limit');
+                }
+                
+                // 更新上傳區域的可用性
+                const uploadArea = document.querySelector('.image-upload-area');
+                const uploadInput = document.querySelector('#propertyImages');
+                
+                if (currentCount >= maxCount) {
+                    if (uploadArea) {
+                        uploadArea.style.opacity = '0.5';
+                        uploadArea.style.pointerEvents = 'none';
+                        uploadArea.querySelector('.upload-text').innerHTML = 
+                            '<strong>已達圖片上傳上限</strong><br>請先移除部分圖片後再上傳';
+                    }
+                    if (uploadInput) uploadInput.disabled = true;
+                } else {
+                    if (uploadArea) {
+                        uploadArea.style.opacity = '1';
+                        uploadArea.style.pointerEvents = 'auto';
+                        const remainingSlots = maxCount - currentCount;
+                        uploadArea.querySelector('.upload-text').innerHTML = 
+                            `<strong>點擊或拖拽圖片到此處上傳</strong><br>還可上傳 ${remainingSlots} 張圖片`;
+                    }
+                    if (uploadInput) uploadInput.disabled = false;
+                }
+            }
+            
+            // 移除房源圖片（新上傳的圖片）
+            function removePropertyImage(index) {
+                const card = document.querySelector(`.image-preview-card[data-index="${index}"]`);
+                
+                if (card) {
+                    // 添加移除動畫
+                    card.classList.add('remove-animation');
+                    
+                    // 等待動畫完成後再移除
+                    setTimeout(() => {
+                        UploadManager.uploadedImages.splice(index, 1);
+                        updatePropertyImagePreview();
+                        updateImageInfoStatus();
+                        console.log('🗑️ 移除圖片，目前有', UploadManager.uploadedImages.length, '張圖片');
+                    }, 400); // 配合 CSS 動畫時間
+                } else {
+                    // 如果找不到卡片，直接移除
+                    UploadManager.uploadedImages.splice(index, 1);
+                    updatePropertyImagePreview();
+                    updateImageInfoStatus();
+                }
+            }
+            
+            // 標記現有圖片為刪除（編輯模式）
+            function markImageForDeletion(index) {
+                const image = UploadManager.uploadedImages[index];
+                if (image && image.isExisting) {
+                    image.markedForDeletion = !image.markedForDeletion;
+                    updatePropertyImagePreview();
+                    
+                    // 更新要刪除的圖片列表
+                    if (!UploadManager.imagesToDelete) {
+                        UploadManager.imagesToDelete = [];
+                    }
+                    
+                    if (image.markedForDeletion) {
+                        UploadManager.imagesToDelete.push(image.imageId);
+                    } else {
+                        const deleteIndex = UploadManager.imagesToDelete.indexOf(image.imageId);
+                        if (deleteIndex > -1) {
+                            UploadManager.imagesToDelete.splice(deleteIndex, 1);
+                        }
+                    }
+                    
+                    console.log('🗑️ 標記刪除圖片:', image.originalFileName, '| 待刪除:', UploadManager.imagesToDelete);
+                }
+            }
+            
+            // 暴露到全域作用域
+            window.removePropertyImage = removePropertyImage;
+            window.markImageForDeletion = markImageForDeletion;
+            
+            // ========== PDF 文件上傳邏輯 ==========
+            
+            const documentUploadArea = document.getElementById('documentUploadArea');
+            const documentFile = document.getElementById('documentFile');
+            const documentPreview = document.getElementById('documentPreview');
+            const documentContainer = document.getElementById('documentContainer');
+            const documentUploadProgress = document.getElementById('documentUploadProgress');
+            
+            // 點擊上傳區域觸發檔案選擇
+            documentUploadArea.addEventListener('click', function(e) {
+                if (e.target.tagName !== 'BUTTON') {
+                    documentFile.click();
+                }
+            });
+            
+            // 拖拽上傳
+            documentUploadArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                this.classList.add('dragover');
+            });
+            
+            documentUploadArea.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                this.classList.remove('dragover');
+            });
+            
+            documentUploadArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                this.classList.remove('dragover');
+                
+                const files = Array.from(e.dataTransfer.files).filter(f => f.type === 'application/pdf');
+                if (files.length > 0) {
+                    handleDocumentUpload(files[0]); // 只取第一個 PDF
+                }
+            });
+            
+            // 檔案選擇處理
+            documentFile.addEventListener('change', function() {
+                if (this.files.length > 0) {
+                    handleDocumentUpload(this.files[0]);
+                }
+            });
+            
+            // 處理 PDF 文件上傳
+            async function handleDocumentUpload(file) {
+                try {
+                    // 檔案驗證
+                    if (file.size > 10 * 1024 * 1024) { // 10MB
+                        alert('PDF 檔案超過 10MB 限制');
+                        return;
+                    }
+                    
+                    if (file.type !== 'application/pdf') {
+                        alert('只支援 PDF 格式的文件');
+                        return;
+                    }
+                    
+                    // 顯示上傳進度
+                    documentUploadProgress.style.display = 'block';
+                    
+                    // 上傳到臨時區域
+                    const result = await UploadManager.uploadToTemp([file], 'Document');
+                    
+                    // 檢查上傳結果並更新已上傳的文件
+                    // API 回傳的是 images 陣列，不是 uploadResults
+                    if (result.images && result.images.length > 0) {
+                        // 設定 TempSessionId 到隱藏欄位
+                        if (result.tempSessionId) {
+                            const tempSessionIdInput = document.getElementById('tempSessionIdInput');
+                            if (tempSessionIdInput) {
+                                tempSessionIdInput.value = result.tempSessionId;
+                                console.log('🔑 設定 TempSessionId (PDF):', result.tempSessionId);
+                            }
+                        }
+                        
+                        UploadManager.uploadedDocument = result.images[0];
+                        
+                        // 更新狀態指示器
+                        updateImageInfoStatus();
+                    } else {
+                        throw new Error('PDF 上傳失敗：沒有收到上傳結果');
+                    }
+                    
+                    // 更新預覽顯示
+                    updateDocumentPreview();
+                    
+                    // 隱藏上傳進度
+                    documentUploadProgress.style.display = 'none';
+                    
+                } catch (error) {
+                    console.error('PDF 上傳失敗:', error);
+                    alert('PDF 上傳失敗: ' + error.message);
+                    documentUploadProgress.style.display = 'none';
+                }
+            }
+            
+            // 更新 PDF 文件預覽
+            function updateDocumentPreview() {
+                if (UploadManager.uploadedDocument) {
+                    documentPreview.style.display = 'block';
+                    documentContainer.innerHTML = `
+                        <div class="document-preview-item">
+                            <div class="file-icon">
+                                <i class="fas fa-file-pdf"></i>
+                            </div>
+                            <div class="file-info flex-grow-1">
+                                <h6>${UploadManager.uploadedDocument.originalFileName || UploadManager.uploadedDocument.FileName}</h6>
+                                <small class="text-muted">
+                                    ${((UploadManager.uploadedDocument.fileSizeBytes || UploadManager.uploadedDocument.FileSizeBytes) / 1024 / 1024).toFixed(2)} MB
+                                </small>
+                            </div>
+                            <button type="button" class="remove-btn" onclick="removeDocument()">
+                                <i class="fas fa-times"></i> 移除
+                            </button>
+                        </div>
+                    `;
+                } else {
+                    documentPreview.style.display = 'none';
+                }
+            }
+            
+            // 移除 PDF 文件
+            function removeDocument() {
+                UploadManager.uploadedDocument = null;
+                
+                // 重置文件輸入元素，允許重新上傳相同檔案
+                const documentFileInput = document.getElementById('documentFile');
+                if (documentFileInput) {
+                    documentFileInput.value = '';
+                }
+                
+                updateDocumentPreview();
+                updateImageInfoStatus();
+                
+                console.log('🗑️ PDF 文件已移除，可重新上傳');
+            }
+            
+            // 更新房屋照片和證明文件狀態指示器
+            function updateImageInfoStatus() {
+                // 更新房屋照片狀態
+                const imageInfoStatus = document.getElementById('imageInfo-status');
+                if (imageInfoStatus) {
+                    const hasImages = UploadManager.uploadedImages && UploadManager.uploadedImages.length > 0;
+                    
+                    if (hasImages) {
+                        imageInfoStatus.innerHTML = '<i class="fas fa-check-circle text-success small"></i>';
+                        console.log('✅ 房屋照片已上傳，狀態更新為完成');
+                    } else {
+                        imageInfoStatus.innerHTML = '<i class="fas fa-circle text-muted small"></i>';
+                        console.log('⚪ 房屋照片未上傳，狀態為預設');
+                    }
+                }
+                
+                // 更新房屋所有權證明文件狀態
+                const documentInfoStatus = document.getElementById('documentInfo-status');
+                if (documentInfoStatus) {
+                    const hasDocument = UploadManager.uploadedDocument !== null && UploadManager.uploadedDocument !== undefined;
+                    
+                    if (hasDocument) {
+                        documentInfoStatus.innerHTML = '<i class="fas fa-check-circle text-success small"></i>';
+                        console.log('✅ 房屋所有權證明已上傳，狀態更新為完成');
+                    } else {
+                        documentInfoStatus.innerHTML = '<i class="fas fa-circle text-muted small"></i>';
+                        console.log('⚪ 房屋所有權證明未上傳，狀態為預設');
+                    }
+                }
+            }
+            
+            // 暴露到全域作用域
+            window.removeDocument = removeDocument;
+            
+            // ========== 編輯模式：載入現有圖片 ==========
+            
+            @if (Model.IsEditMode && Model.PropertyData.ExistingImages.Any())
+            {
+                <text>
+                // 編輯模式：載入現有圖片
+                console.log('🔄 編輯模式：載入現有圖片');
+                
+                @foreach (var existingImage in Model.PropertyData.ExistingImages.Where(img => img.Category == ImageCategory.Gallery))
+                {
+                    <text>
+                    // 載入現有圖片: @existingImage.OriginalFileName
+                    UploadManager.uploadedImages.push({
+                        imageGuid: '@existingImage.ImageGuid',
+                        originalFileName: '@existingImage.OriginalFileName',
+                        tempUrl: '@existingImage.ImageUrls["medium"]',
+                        isExisting: true,
+                        imageId: @existingImage.ImageId,
+                        displayOrder: @(existingImage.DisplayOrder ?? 0)
+                    });
+                    </text>
+                }
+                
+                // 更新圖片預覽顯示
+                updatePropertyImagePreview();
+                
+                @if (Model.PropertyData.ExistingImages.Any(img => img.Category == ImageCategory.Document))
+                {
+                    var existingDoc = Model.PropertyData.ExistingImages.First(img => img.Category == ImageCategory.Document);
+                    <text>
+                    // 載入現有 PDF 文件: @existingDoc.OriginalFileName
+                    UploadManager.uploadedDocument = {
+                        imageGuid: '@existingDoc.ImageGuid',
+                        originalFileName: '@existingDoc.OriginalFileName',
+                        fileSizeBytes: 0, // 暫時設為 0，實際大小需要從 API 取得
+                        isExisting: true,
+                        imageId: @existingDoc.ImageId
+                    };
+                    
+                    // 更新 PDF 預覽顯示
+                    updateDocumentPreview();
+                    </text>
+                }
+                </text>
             }
             
             // 初始化頁面狀態
@@ -1813,6 +2832,13 @@
             
             // 步驟導航邏輯
             initializeStepNavigation();
+            
+            // 初始化狀態更新
+            setTimeout(() => {
+                if (typeof updateImageInfoStatus === 'function') {
+                    updateImageInfoStatus();
+                }
+            }, 100);
             
             // 初始化城市區域選擇
             if (citySelect.value) {
@@ -1863,7 +2889,21 @@
             finalSubmitButton.addEventListener('click', function() {
                 const form = document.querySelector('#propertyCreateForm');
                 if (form) {
-                    form.submit();
+                    console.log('🚀 準備提交表單');
+                    
+                    // 檢查上傳狀態
+                    const tempSessionId = document.getElementById('tempSessionIdInput')?.value;
+                    console.log('🔑 TempSessionId:', tempSessionId || '(未設定)');
+                    console.log('🖼️ 已上傳圖片數量:', UploadManager.uploadedImages.length);
+                    console.log('📄 已上傳文件:', UploadManager.uploadedDocument ? '有' : '無');
+                    
+                    // 使用統一的表單驗證邏輯
+                    if (validateForm(true)) {
+                        console.log('✅ 最終驗證通過，提交表單');
+                        form.submit();
+                    } else {
+                        console.warn('❌ 最終驗證失敗，請檢查表單');
+                    }
                 } else {
                     console.error('找不到表單元素，無法提交');
                 }
@@ -1939,9 +2979,195 @@
         }
         
         /**
-         * 表單驗證
+         * 表單驗證（只在提交時顯示錯誤）
          */
-        function validateForm() {
+        function validateForm(showErrors = true) {
+            console.log('🔍 [validateForm] 開始表單驗證, showErrors:', showErrors);
+            
+            const requiredFields = [
+                'Title', 'CityId', 'DistrictId', 'AddressLine', 
+                'MonthlyRent', 'DepositAmount', 'RoomCount', 
+                'LivingRoomCount', 'BathroomCount', 'Area',
+                'CurrentFloor', 'TotalFloors', 'DepositMonths',
+                'MinimumRentalMonths', 'WaterFeeType', 'ElectricityFeeType'
+            ];
+            
+            let isValid = true;
+            let errorMessages = [];
+            
+            // 檢查基本必填欄位
+            requiredFields.forEach(fieldName => {
+                const field = document.querySelector(`[name="${fieldName}"]`);
+                if (field && (!field.value || field.value.trim() === '')) {
+                    isValid = false;
+                    if (showErrors) {
+                        errorMessages.push(`${fieldName}: 此欄位為必填`);
+                        console.log(`❌ [validateForm] 必填欄位缺失: ${fieldName}`);
+                    }
+                }
+            });
+            
+            // 檢查必選的 radio 按鈕組
+            const radioGroups = [
+                { name: 'ManagementFeeIncluded', label: '管理費' },
+                { name: 'CleaningFeeRequired', label: '清潔費' },
+                { name: 'ParkingAvailable', label: '停車位' }
+            ];
+            
+            radioGroups.forEach(group => {
+                const checkedRadio = document.querySelector(`input[name="${group.name}"]:checked`);
+                if (!checkedRadio) {
+                    isValid = false;
+                    if (showErrors) {
+                        errorMessages.push(`${group.label}: 請選擇一個選項`);
+                        console.log(`❌ [validateForm] 未選擇 radio: ${group.name}`);
+                    }
+                }
+            });
+            
+            // 檢查設備選擇（至少選擇一個）
+            const selectedEquipment = document.querySelectorAll('input[name="SelectedEquipmentIds"]:checked');
+            if (selectedEquipment.length === 0) {
+                isValid = false;
+                if (showErrors) {
+                    errorMessages.push('設備與服務: 請至少選擇一項設備或服務');
+                    console.log('❌ [validateForm] 未選擇任何設備');
+                }
+            }
+            
+            // 檢查刊登方案選擇
+            const selectedPlan = document.querySelector('input[name="ListingPlanId"]:checked');
+            if (!selectedPlan) {
+                isValid = false;
+                if (showErrors) {
+                    errorMessages.push('刊登方案: 請選擇一個刊登方案');
+                    console.log('❌ [validateForm] 未選擇刊登方案');
+                }
+            }
+            
+            // ✨ 重要：檢查 TempSessionId（兩階段上傳的核心）
+            const tempSessionIdInput = document.getElementById('tempSessionIdInput');
+            const tempSessionId = tempSessionIdInput ? tempSessionIdInput.value : '';
+            
+            if (showErrors) {
+                console.log(`🔍 [validateForm] TempSessionId 檢查: '${tempSessionId}'`);
+            }
+            
+            if (!tempSessionId || tempSessionId.trim() === '') {
+                isValid = false;
+                if (showErrors) {
+                    errorMessages.push('檔案上傳: 請先上傳房源圖片和房屋所有權證明文件');
+                    console.log('❌ [validateForm] TempSessionId 為空，表示沒有上傳檔案');
+                }
+            } else if (showErrors) {
+                console.log('✅ [validateForm] TempSessionId 存在，檔案上傳完成');
+            }
+            
+            // 檢查圖片上傳數量（使用 UploadManager 的實際數據）
+            const uploadedImageCount = UploadManager.uploadedImages ? UploadManager.uploadedImages.length : 0;
+            if (showErrors) {
+                console.log(`🔍 [validateForm] 已上傳圖片數量: ${uploadedImageCount}`);
+                console.log(`🔍 [validateForm] UploadManager.uploadedImages:`, UploadManager.uploadedImages);
+            }
+            
+            if (uploadedImageCount === 0) {
+                isValid = false;
+                if (showErrors) {
+                    errorMessages.push('房源圖片: 請至少上傳一張房源圖片');
+                    console.log('❌ [validateForm] 沒有上傳任何圖片');
+                }
+            }
+            
+            // 檢查 PDF 文件上傳（使用 UploadManager 的實際數據）
+            const hasDocument = UploadManager.uploadedDocument !== null && UploadManager.uploadedDocument !== undefined;
+            if (showErrors) {
+                console.log(`🔍 [validateForm] PDF 上傳狀態: ${hasDocument}`);
+                console.log(`🔍 [validateForm] UploadManager.uploadedDocument:`, UploadManager.uploadedDocument);
+            }
+            
+            if (!hasDocument) {
+                isValid = false;
+                if (showErrors) {
+                    errorMessages.push('房屋所有權證明: 請上傳房屋所有權證明文件（PDF 格式）');
+                    console.log('❌ [validateForm] 沒有上傳 PDF 文件');
+                }
+            }
+            
+            // 只有在 showErrors=true 且有錯誤時才顯示錯誤訊息
+            if (showErrors) {
+                if (!isValid) {
+                    console.log('❌ [validateForm] 表單驗證失敗，錯誤列表:', errorMessages);
+                    showValidationErrors(errorMessages);
+                } else {
+                    console.log('✅ [validateForm] 表單驗證通過');
+                    hideValidationErrors();
+                }
+            }
+            
+            return isValid;
+        }
+        
+        /**
+         * 顯示驗證錯誤訊息
+         */
+        function showValidationErrors(errors) {
+            // 移除舊的錯誤訊息
+            const existingAlert = document.querySelector('.validation-errors-alert');
+            if (existingAlert) {
+                existingAlert.remove();
+            }
+            
+            // 創建新的錯誤警告
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-danger validation-errors-alert';
+            alertDiv.style.marginTop = '20px';
+            
+            let alertContent = '<h6><i class="bi bi-exclamation-triangle-fill"></i> 表單驗證失敗，請檢查以下項目：</h6><ul>';
+            errors.forEach(error => {
+                alertContent += `<li>${error}</li>`;
+            });
+            alertContent += '</ul>';
+            
+            alertDiv.innerHTML = alertContent;
+            
+            // 插入到表單頂部
+            const form = document.getElementById('propertyCreateForm');
+            if (form) {
+                form.insertBefore(alertDiv, form.firstChild);
+                
+                // 滾動到錯誤訊息處
+                alertDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+        
+        /**
+         * 隱藏驗證錯誤訊息
+         */
+        function hideValidationErrors() {
+            const existingAlert = document.querySelector('.validation-errors-alert');
+            if (existingAlert) {
+                existingAlert.remove();
+            }
+        }
+        
+        /**
+         * 更新提交按鈕狀態（靜默檢查，不顯示錯誤）
+         */
+        function updateSubmitButtonState() {
+            const submitButton = document.getElementById('submitButton');
+            const isFormValid = validateFormSilent(); // 使用靜默版本
+            
+            if (isFormValid) {
+                submitButton.classList.add('active');
+            } else {
+                submitButton.classList.remove('active');
+            }
+        }
+        
+        /**
+         * 靜默表單驗證（不顯示錯誤訊息）
+         */
+        function validateFormSilent() {
             const requiredFields = [
                 'Title', 'CityId', 'DistrictId', 'AddressLine', 
                 'MonthlyRent', 'DepositAmount', 'RoomCount', 
@@ -1952,6 +3178,7 @@
             
             let isValid = true;
             
+            // 檢查基本必填欄位
             requiredFields.forEach(fieldName => {
                 const field = document.querySelector(`[name="${fieldName}"]`);
                 if (field && (!field.value || field.value.trim() === '')) {
@@ -1968,7 +3195,7 @@
                 }
             });
             
-            // 檢查設備選擇（至少選擇一個）
+            // 檢查設備選擇
             const selectedEquipment = document.querySelectorAll('input[name="SelectedEquipmentIds"]:checked');
             if (selectedEquipment.length === 0) {
                 isValid = false;
@@ -1980,21 +3207,22 @@
                 isValid = false;
             }
             
-            return isValid;
-        }
-        
-        /**
-         * 更新提交按鈕狀態
-         */
-        function updateSubmitButtonState() {
-            const submitButton = document.getElementById('submitButton');
-            const isFormValid = validateForm();
-            
-            if (isFormValid) {
-                submitButton.classList.add('active');
-            } else {
-                submitButton.classList.remove('active');
+            // 檢查檔案上傳
+            const tempSessionIdInput = document.getElementById('tempSessionIdInput');
+            const tempSessionId = tempSessionIdInput ? tempSessionIdInput.value : '';
+            if (!tempSessionId || tempSessionId.trim() === '') {
+                isValid = false;
             }
+            
+            // 檢查圖片和 PDF 檔案上傳
+            const uploadedImageCount = UploadManager.uploadedImages ? UploadManager.uploadedImages.length : 0;
+            const hasDocument = UploadManager.uploadedDocument !== null && UploadManager.uploadedDocument !== undefined;
+            
+            if (uploadedImageCount === 0 || !hasDocument) {
+                isValid = false;
+            }
+            
+            return isValid;
         }
         
         /**
@@ -2150,7 +3378,7 @@
          */
         function initializeStepNavigation() {
             const stepNavItems = document.querySelectorAll('.step-nav-item');
-            const sections = ['basicInfo', 'houseInfo', 'feeInfo', 'equipmentInfo', 'planInfo', 'imageInfo'];
+            const sections = ['basicInfo', 'houseInfo', 'feeInfo', 'equipmentInfo', 'planInfo', 'imageInfo', 'documentInfo'];
             
             // 檢查必要元素是否存在
             if (!stepNavItems.length) {
@@ -2228,7 +3456,7 @@
          * 更新當前步驟（基於滾動位置）
          */
         function updateCurrentStep() {
-            const sections = ['basicInfo', 'houseInfo', 'feeInfo', 'equipmentInfo', 'planInfo', 'imageInfo'];
+            const sections = ['basicInfo', 'houseInfo', 'feeInfo', 'equipmentInfo', 'planInfo', 'imageInfo', 'documentInfo'];
             const scrollPosition = window.scrollY + 200; // 偏移量
             
             let currentSection = '';
@@ -2254,27 +3482,37 @@
          * 更新進度條
          */
         function updateProgress() {
-            const sections = ['basicInfo', 'houseInfo', 'feeInfo', 'equipmentInfo', 'planInfo', 'imageInfo'];
-            let completedSteps = 0;
-            
-            sections.forEach(sectionId => {
-                const isComplete = validateSection(sectionId);
-                const statusIcon = document.querySelector(`#${sectionId}-status i`);
+            try {
+                const sections = ['basicInfo', 'houseInfo', 'feeInfo', 'equipmentInfo', 'planInfo', 'imageInfo', 'documentInfo'];
+                let completedSteps = 0;
                 
-                if (statusIcon) {
-                    if (isComplete) {
-                        statusIcon.className = 'fas fa-check-circle text-success small';
-                        completedSteps++;
-                    } else {
-                        statusIcon.className = 'fas fa-circle text-muted small';
+                sections.forEach(sectionId => {
+                    try {
+                        const isComplete = validateSection(sectionId);
+                        const statusIcon = document.querySelector(`#${sectionId}-status i`);
+                        
+                        if (statusIcon) {
+                            if (isComplete) {
+                                statusIcon.className = 'fas fa-check-circle text-success small';
+                                completedSteps++;
+                            } else {
+                                statusIcon.className = 'fas fa-circle text-muted small';
+                            }
+                        }
+                    } catch (error) {
+                        console.warn(`驗證步驟 ${sectionId} 時發生錯誤:`, error);
+                        // 錯誤時保持原狀態，不影響其他步驟
                     }
+                });
+                
+                const progressPercent = (completedSteps / sections.length) * 100;
+                const progressBar = document.getElementById('progressBar');
+                if (progressBar) {
+                    progressBar.style.width = progressPercent + '%';
                 }
-            });
-            
-            const progressPercent = (completedSteps / sections.length) * 100;
-            const progressBar = document.getElementById('progressBar');
-            if (progressBar) {
-                progressBar.style.width = progressPercent + '%';
+            } catch (error) {
+                console.error('更新進度條時發生錯誤:', error);
+                // 即使更新失敗也不影響其他功能
             }
         }
         
@@ -2377,7 +3615,14 @@
                     return document.querySelector('input[name="ListingPlanId"]:checked');
                     
                 case 'imageInfo':
-                    return document.getElementById('imageFiles')?.files?.length > 0;
+                    // 檢查房屋照片上傳狀態
+                    const hasImages = UploadManager.uploadedImages && UploadManager.uploadedImages.length > 0;
+                    return hasImages;
+                    
+                case 'documentInfo':
+                    // 檢查房屋所有權證明文件上傳狀態
+                    const hasDocument = UploadManager.uploadedDocument !== null && UploadManager.uploadedDocument !== undefined;
+                    return hasDocument;
                     
                 default:
                     return false;

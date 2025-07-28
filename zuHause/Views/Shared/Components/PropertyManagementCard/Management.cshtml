@@ -13,7 +13,7 @@
                     <img src="@property.ThumbnailUrl" 
                          class="card-img h-100" 
                          alt="@property.Title" 
-                         style="object-fit: cover;"
+                         style="object-fit: contain;background-color:#f8f9fa;"
                          onerror="this.src='/images/property-placeholder.jpg'">
                     
                     @if (Model.ShowStatusBadge)
@@ -124,11 +124,7 @@
                             <!-- 編輯功能（IDLE + LISTED） -->
                             @if (property.IsEditable)
                             {
-<<<<<<< HEAD
-                                <a href="/Property/Edit/@property.PropertyId" 
-=======
-                                <a href="/property/@property.PropertyId/edit" 
->>>>>>> origin/feature/property-management
+                                <a href="/property/@property.PropertyId/edit"
                                    class="btn btn-outline-secondary btn-sm"
                                    title="編輯房源資訊">
                                     <i class="fas fa-edit me-1"></i>編輯

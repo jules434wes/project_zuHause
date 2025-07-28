@@ -91,17 +91,17 @@ body {
 .quick-navigation-tabs .nav-link.active,
 .quick-navigation-tabs .nav-link[aria-selected="true"] {
     color: #212529;
-    background-color: #f8f9fa;
+    background-color: #ffffff;
     font-weight: 600;
-    border: 1px solid #dee2e6;
-    /* 保留完整外框 */
-    border-bottom-color: #dee2e6;
-    margin-bottom: 0; /* 同上，確保高度足夠 */
+    border: none; /* 移除整框 */
+    border-bottom: 3px solid var(--zh-primary, #1a7482); /* 只留下方強調線 */
+    margin-bottom: -1px; /* 把線貼齊 nav-tabs 底邊 */
 }
 
 .quick-navigation-tabs .nav-link:focus {
-    outline: 2px solid var(--zh-primary, #1a7482);
-    outline-offset: 2px;
+    outline: 1px solid var(--zh-primary, #1a7482); /* 縮小粗細 */
+    outline-offset: 1px; /* 避免被容器裁切 */
+    box-shadow: 0 0 0 2px rgba(26,116,130,.25); /* 額外聚焦效果但不超出 */
 }
 
 /* 房屋標題區域 */
@@ -144,14 +144,17 @@ body {
 }
 
 .main-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform 0.3s ease;
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain; /* 確保完整顯示，不被裁切 */
+    background-color: #f8f9fa; /* 若比例不同，留灰底 */
 }
 
+/* 取消 hover 放大，避免圖片超出容器 */
 .main-image:hover {
-    transform: scale(1.02);
+    transform: none;
 }
 
 .thumbnail-container {
@@ -541,4 +544,13 @@ body {
     line-height: 1;
     color: var(--zh-primary, #1a7482);
     margin-right: 0.4rem;
+}
+
+.modal-prev.thumb-prev,
+.modal-next.thumb-next {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    margin-top: 0.5rem; /* 讓按鈕位於次導覽列下方 */
+    z-index: 1;
 }

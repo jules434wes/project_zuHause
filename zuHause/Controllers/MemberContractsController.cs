@@ -9,6 +9,7 @@ using System.Text.Json;
 using zuHause.Models;
 using zuHause.Services;
 using zuHause.ViewModels.MemberViewModel;
+using zuHause.DTOs;
 
 namespace zuHause.Controllers
 {
@@ -163,6 +164,37 @@ namespace zuHause.Controllers
             return codeDict.TryGetValue(code, out var name) ? name : "未知狀態";
         }
 
+        [HttpPost]
+        public async Task<IActionResult> InboxAgreeApply(string type,int applicationId)
+        {
+            if(type== "ApplyRental")
+            {
+                await _applicationService.UpdateApplicationStatusAsync(applicationId, "WAITING_CONTRACT");
+
+                return RedirectToAction("ContractProduction", new { applicationId = applicationId });
+            }
+            else
+            {
+                await _applicationService.UpdateApplicationStatusAsync(applicationId, "APPROVED");
+                return RedirectToAction("Index", "MemberInbox");
+            }
+        }
+        [HttpPost]
+        public async Task<IActionResult> InboxRejectedApply(string type,int applicationId)
+        {
+            await _applicationService.UpdateApplicationStatusAsync(applicationId, "REJECTED");
+            return RedirectToAction("Index", "MemberInbox");
+        }
+
+
+
+        [HttpPost]
+        public async Task<IActionResult> UpdateStatusApi([FromBody] ApplicationStatusDto dto)
+        {
+            await _applicationService.UpdateApplicationStatusAsync(dto.ApplicationId, dto.Status);
+            return Ok(new { message = "狀態更新成功" });
+        }
+
 
 
         public async Task<IActionResult> ContractProduction(int applicationId)
@@ -249,7 +281,7 @@ namespace zuHause.Controllers
             {
                 RentalApplicationId = model.RentalApplicationId!.Value,
                 LandlordHouseholdAddress = fullAddress,
-                Status = "DRAFT",
+                Status = "PENDING",
                 CourtJurisdiction = model.CourtJurisdiction,
                 IsSublettable = model.IsSublettable,
                 UsagePurpose = model.UsagePurpose,

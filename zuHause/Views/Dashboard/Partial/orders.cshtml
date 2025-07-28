@@ -1,32 +1,44 @@
 ﻿@{
 }
-<div class="row g-3">
-    <!-- 圓餅圖 -->
-    <div class="col-md-6">
-        <canvas id="chartPay"></canvas>
-        <hr />
-        <!-- 總金額 -->
-        <div class="card p-3">💰 上架服務費應收總額：<h4 id="totalDue">Loading...</h4></div>
-        <br />
-        <div class="card p-3">💵 上架服務費實收總額：<h4 id="totalPaid">Loading...</h4></div>
+<div class="card mb-3 p-3">
+  <div class="row align-items-center">
+    <div class="col-auto"><strong>查詢區間：</strong></div>
+    <div class="col-auto">
+      <select id="selectYear" class="form-select"></select>
     </div>
-
-    <!-- 近五日折線圖 + 本月走勢圖 -->
-    <div class="col-md-6">
-        <div class="row">
-            <div class="col-md-12">
-                <canvas id="chartTrend"></canvas>
-            </div>
-            <div class="col-md-12 mt-4">
-                <canvas id="chartMonthlyPay"></canvas>
-            </div>
-        </div>
+    <div class="col-auto">
+      <select id="selectMonth" class="form-select"></select>
     </div>
+  </div>
 </div>
 
+<div class="row g-3">
+  <div class="col-md-4">
+    <div class="card p-3">
+      <h5>上架服務費收款圓餅圖</h5>
+      <div id="chartPayLoading" class="text-center my-3" style="display:none;"><div class="spinner-border"></div></div>
+      <canvas id="chartPay"></canvas>
+      <div class="mt-3">💰 應收：<span id="totalDue">Loading...</span></div>
+      <div>💵 實收：<span id="totalPaid">Loading...</span></div>
+      <div>🕑 未收：<span id="totalUnpaid">Loading...</span></div>
+    </div>
+  </div>
+  <div class="col-md-8">
+    <div class="card p-3 mb-3">
+      <h5>上架費收入走勢</h5>
+      <div id="chartTrendLoading" class="text-center my-3" style="display:none;"><div class="spinner-border"></div></div>
+      <canvas id="chartTrend"></canvas>
+    </div>
+    <div class="card p-3">
+      <h5 id="chartMonthlyPayTitle">本月每日上架費收款走勢</h5>
+      <div id="chartMonthlyPayLoading" class="text-center my-3" style="display:none;"><div class="spinner-border"></div></div>
+      <canvas id="chartMonthlyPay"></canvas>
+    </div>
+  </div>
+</div>
 
-<!-- 訂單統計 -->
 <div class="card p-3 mb-3">
-    <h5 class="mb-3">📅 當日租屋與租家具訂單概況</h5>
-    <div id="orderStatsTable">Loading...</div>
+  <h5 class="mb-3" id="orderStatsTitle">訂單概況</h5>
+  <div id="orderStatsLoading" class="text-center my-3" style="display:none;"><div class="spinner-border"></div></div>
+  <div id="orderStatsTable">Loading...</div>
 </div>
