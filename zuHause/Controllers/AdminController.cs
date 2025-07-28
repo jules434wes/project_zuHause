@@ -1605,51 +1605,65 @@ namespace zuHause.Controllers
         {
             try
             {
-                // 查找會員的身分證驗證申請
-                var approval = await _context.Approvals
-                    .FirstOrDefaultAsync(a => a.ApplicantMemberId == memberId && 
-                                             a.ModuleCode == "IDENTITY" && 
-                                             a.StatusCode == "PENDING");
-
-                if (approval == null)
-                {
-                    return Json(new { success = false, message = "找不到待審核的身分驗證申請" });
-                }
-
-                // 查找相關的檔案上傳記錄 - 直接查詢，簡化邏輯
-                var uploads = await _context.UserUploads
+                // 記錄 API 調用
+                Console.WriteLine($"[DEBUG] GetMemberIdentityDocuments 被調用 - memberId: {memberId}");
+                
+                // 直接查找身分證檔案上傳記錄，不依賴申請狀態
+                var uploadsRaw = await _context.UserUploads
                     .Where(u => u.MemberId == memberId && 
                                u.ModuleCode == "MemberInfo" && 
                                u.IsActive &&
                                (u.UploadTypeCode == "USER_ID_FRONT" || u.UploadTypeCode == "USER_ID_BACK"))
                     .OrderByDescending(u => u.UploadedAt)
-                    .Select(u => new
-                    {
-                        UploadId = u.UploadId,
-                        FileName = u.OriginalFileName,
-                        FileUrl = u.FilePath.StartsWith("/") ? u.FilePath : "/" + u.FilePath,
-                        UploadTypeCode = u.UploadTypeCode,
-                        TypeDisplay = u.UploadTypeCode == "USER_ID_FRONT" ? "身分證正面" : "身分證反面",
-                        UploadedAt = u.UploadedAt.ToString("yyyy-MM-dd HH:mm:ss"),
-                        FileSize = FormatFileSize(u.FileSize),
-                        ApprovalIdInfo = u.ApprovalId // 除錯用
-                    })
+                    .Take(2) // 只取最新的兩個檔案（正面和反面）
                     .ToListAsync();
+                
+                // 在記憶體中處理投影，避免 EF 投影錯誤
+                var uploads = uploadsRaw.Select(u => new
+                {
+                    UploadId = u.UploadId,
+                    FileName = u.OriginalFileName,
+                    FileUrl = u.FilePath, // 使用原始路徑
+                    UploadTypeCode = u.UploadTypeCode,
+                    TypeDisplay = u.UploadTypeCode == "USER_ID_FRONT" ? "身分證正面" : "身分證反面",
+                    UploadedAt = u.UploadedAt.ToString("yyyy-MM-dd HH:mm:ss"),
+                    FileSize = FormatFileSize(u.FileSize),
+                    ApprovalId = u.ApprovalId
+                }).ToList();
+                
+                Console.WriteLine($"[DEBUG] 查詢結果 - 找到 {uploads.Count} 個檔案");
+                foreach (var upload in uploads)
+                {
+                    Console.WriteLine($"[DEBUG] 檔案: {upload.FileName}, 路徑: {upload.FileUrl}, 類型: {upload.UploadTypeCode}");
+                }
+
+                if (uploads.Count == 0)
+                {
+                    Console.WriteLine($"[DEBUG] 會員 {memberId} 沒有上傳身分證檔案");
+                    return Json(new { success = false, message = "尚未找到身分證上傳檔案" });
+                }
+
+                // 查找相關的身分證驗證申請（可選）
+                var approval = await _context.Approvals
+                    .Where(a => a.ApplicantMemberId == memberId && a.ModuleCode == "IDENTITY")
+                    .OrderByDescending(a => a.CreatedAt)
+                    .FirstOrDefaultAsync();
 
                 return Json(new
                 {
                     success = true,
                     data = new
                     {
-                        ApprovalId = approval.ApprovalId,
+                        ApprovalId = approval?.ApprovalId,
                         Documents = uploads,
                         // 除錯資訊
                         Debug = new
                         {
                             MemberId = memberId,
                             ApprovalExists = approval != null,
+                            ApprovalStatus = approval?.StatusCode,
                             UploadCount = uploads.Count,
-                            AllUploads = uploads.Select(u => new { u.UploadTypeCode, u.ApprovalIdInfo }).ToList()
+                            FileUrls = uploads.Select(u => new { u.UploadTypeCode, u.FileUrl }).ToList()
                         }
                     }
                 });

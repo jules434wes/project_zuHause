@@ -24,13 +24,25 @@
                         <h6 class="mb-3">
                             <i class="bi bi-file-image me-2"></i>身分證明文件
                         </h6>
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            點擊下方連結將在新分頁中開啟原始檔案，請仔細核對身分證上的資訊。
+                        </div>
+                        <div class="mb-3">
+                            <button type="button" class="btn btn-sm btn-outline-primary me-2" onclick="testWithKnownMember(87)">
+                                <i class="bi bi-bug me-1"></i>測試會員 87
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="testWithKnownMember(88)">
+                                <i class="bi bi-bug me-1"></i>測試會員 88
+                            </button>
+                        </div>
                         <div class="row g-3" id="identityDocumentsArea">
-                            <!-- 文件將通過 JavaScript 載入 -->
+                            <!-- 身份證檔案外部連結將通過 JavaScript 載入 -->
                             <div class="col-12 text-center">
                                 <div class="spinner-border text-primary" role="status">
                                     <span class="visually-hidden">載入中...</span>
                                 </div>
-                                <p class="mt-2 text-muted">載入身分證檔案中...</p>
+                                <p class="mt-2 text-muted">載入身分證檔案連結中...</p>
                             </div>
                         </div>
                     </div>
@@ -112,49 +124,7 @@
     </div>
 </div>
 
-<!-- 身分證檔案查看 Modal -->
-<div class="modal fade" id="idDocumentModal" tabindex="-1" aria-labelledby="idDocumentModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="idDocumentModalLabel">
-                    <i class="bi bi-file-image me-2"></i>身分證檔案檢視
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="text-center">
-                    <div class="alert alert-info">
-                        <i class="bi bi-info-circle me-2"></i>
-                        會員 <strong>@Model.MemberName (ID: @Model.MemberID)</strong> 上傳的身分證檔案
-                    </div>
-                    
-                    <!-- 模擬身分證檔案顯示區域 -->
-                    <div class="border rounded p-4 bg-light" style="min-height: 400px;">
-                        <i class="bi bi-file-image fa-5x text-muted mb-3"></i>
-                        <p class="text-muted">身分證檔案預覽</p>
-                        <p class="small text-muted">（實際應用中這裡會顯示上傳的身分證圖片）</p>
-                        <p class="small text-muted">上傳時間：2024-01-20 15:45:00</p>
-                        
-                        <div class="mt-4">
-                            <button class="btn btn-outline-primary me-2">
-                                <i class="bi bi-download me-1"></i>下載原始檔案
-                            </button>
-                            <button class="btn btn-outline-secondary">
-                                <i class="bi bi-zoom-in me-1"></i>放大檢視
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                    <i class="bi bi-x me-1"></i>關閉
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
+<!-- 原身分證檔案查看 Modal 已移除，改為使用外部連結方式 -->
 
 <!-- Double Check 確認Modal -->
 <div class="modal fade" id="doubleCheckModal" tabindex="-1" aria-labelledby="doubleCheckModalLabel" aria-hidden="true">

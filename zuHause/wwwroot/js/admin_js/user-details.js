@@ -1,25 +1,90 @@
 // 會員詳情頁面 JavaScript
+console.log('user-details.js 檔案已載入');
+
 // 全域變數
 var currentMemberId = null;
 
-// 全域函數 - 開啟身分驗證Modal
-function openVerifyIdModal() {
-    // 載入身分證檔案
+// 測試全域函數是否可用
+window.testFunction = function() {
+    console.log('測試函數正常運作');
+    return '檔案載入成功';
+};
+
+// 測試特定會員ID的函數
+window.testWithKnownMember = function(testMemberId) {
+    console.log(`測試載入會員 ${testMemberId} 的身分證檔案`);
+    const originalMemberId = currentMemberId;
+    currentMemberId = testMemberId;
     loadIdentityDocuments();
+    // 不恢復原始 ID，讓管理員可以看到結果
+};
+
+// 測試函數是否可用
+window.openVerifyIdModal = function() {
+    console.log('openVerifyIdModal 被呼叫 - 會員ID:', currentMemberId);
     
-    var verifyModal = new bootstrap.Modal(document.getElementById('verifyIdModal'), {
-        backdrop: 'static',
-        keyboard: false
-    });
-    verifyModal.show();
-}
+    // 檢查 modal 元素是否存在
+    const modalElement = document.getElementById('verifyIdModal');
+    if (!modalElement) {
+        console.error('找不到 verifyIdModal 元素');
+        alert('Modal 元素不存在');
+        return;
+    }
+    // 先顯示簡單訊息
+    const documentsArea = document.getElementById('identityDocumentsArea');
+    if (documentsArea) {
+        documentsArea.innerHTML = `
+            <div class="col-12 text-center">
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    會員ID: ${currentMemberId || '未設定'}
+                </div>
+            </div>
+        `;
+    } else {
+        console.error('找不到 identityDocumentsArea 元素');
+    }
+    
+    try {
+        var verifyModal = new bootstrap.Modal(modalElement, {
+            backdrop: 'static',
+            keyboard: false
+        });
+        verifyModal.show();
+        
+        // Modal 開啟後再載入檔案
+        setTimeout(() => {
+            if (typeof loadIdentityDocuments === 'function') {
+                loadIdentityDocuments();
+            } else {
+                console.error('loadIdentityDocuments 函數不存在');
+            }
+        }, 500);
+    } catch (error) {
+        console.error('開啟 Modal 時發生錯誤:', error);
+        alert('Modal 開啟失敗: ' + error.message);
+    }
+};
 
 // 載入身分證檔案
 function loadIdentityDocuments() {
+    console.log('載入身分證檔案 - 會員ID:', currentMemberId, '類型:', typeof currentMemberId);
+    
     if (!currentMemberId) {
-        console.error('無法取得會員ID');
+        console.error('會員ID 為空');
+        showDocumentError('無法取得會員ID');
         return;
     }
+    
+    // 檢查會員ID是否為數字
+    const memberIdNum = parseInt(currentMemberId, 10);
+    if (isNaN(memberIdNum) || memberIdNum <= 0) {
+        console.error('會員ID 格式不正確:', currentMemberId);
+        showDocumentError('會員ID 格式不正確');
+        return;
+    }
+    
+    console.log('轉換後的會員ID:', memberIdNum);
 
     const documentsArea = document.getElementById('identityDocumentsArea');
     
@@ -34,31 +99,78 @@ function loadIdentityDocuments() {
     `;
 
     // 調用API載入檔案
-    fetch(`/Admin/GetMemberIdentityDocuments?memberId=${currentMemberId}`)
+    const apiUrl = `/Admin/GetMemberIdentityDocuments?memberId=${memberIdNum}`;
+    console.log('調用 API:', apiUrl);
+    
+    fetch(apiUrl)
         .then(response => {
+            console.log('API 回應狀態:', response.status, response.statusText);
+            console.log('Response headers:', response.headers);
+            
             if (!response.ok) {
+                console.error('網路錯誤:', response.status, response.statusText);
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
             return response.json();
         })
         .then(data => {
             console.log('API 返回數據：', data);
-            if (data.success && data.data && data.data.Documents) {
-                displayIdentityDocuments(data.data.Documents);
+            console.log('API success:', data.success);
+            console.log('data.data:', data.data);
+            
+            if (data.success && data.data) {
+                // 注意：API 返回的是 documents（小寫），不是 Documents（大寫）
+                console.log('documents 存在:', !!data.data.documents);
+                console.log('documents 類型:', typeof data.data.documents);
+                console.log('documents 內容:', data.data.documents);
+                
+                if (data.data.documents && Array.isArray(data.data.documents) && data.data.documents.length > 0) {
+                    console.log('找到檔案數量:', data.data.documents.length);
+                    displayIdentityDocuments(data.data.documents);
+                } else {
+                    console.log('沒有有效的 documents 陣列');
+                    showNoDocumentsMessage(memberIdNum);
+                }
             } else {
-                console.error('API 錯誤：', data);
-                showDocumentError(data.message || '載入檔案失敗');
+                console.log('API 失敗或無 data:', data.message);
+                showApiErrorMessage(data.message, memberIdNum);
             }
         })
         .catch(error => {
             console.error('載入檔案錯誤：', error);
-            showDocumentError('載入檔案時發生錯誤：' + error.message);
+            // 不停止 modal，只顯示錯誤訊息
+            const documentsArea = document.getElementById('identityDocumentsArea');
+            documentsArea.innerHTML = `
+                <div class="col-12 text-center">
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        網路錯誤，無法載入檔案
+                        <br><small>錯誤詳情: ${error.message}</small>
+                        <br><small>會員ID: ${memberIdNum}</small>
+                    </div>
+                    <div class="mt-3">
+                        <button class="btn btn-primary btn-sm me-2" onclick="loadIdentityDocuments()">
+                            <i class="bi bi-arrow-clockwise me-1"></i>重新載入
+                        </button>
+                        <button class="btn btn-outline-info btn-sm" onclick="window.open('/Admin/GetMemberIdentityDocuments?memberId=' + ${memberIdNum}, '_blank')">
+                            <i class="bi bi-box-arrow-up-right me-1"></i>直接檢查 API
+                        </button>
+                    </div>
+                </div>
+            `;
         });
 }
 
-// 顯示身分證檔案
+// 顯示身分證檔案 - 使用外部連結方式
 function displayIdentityDocuments(documents) {
+    console.log('displayIdentityDocuments 被呼叫:', documents);
+    console.log('檔案數量:', documents ? documents.length : 0);
+    
     const documentsArea = document.getElementById('identityDocumentsArea');
+    if (!documentsArea) {
+        console.error('找不到 identityDocumentsArea 元素');
+        return;
+    }
     
     if (!documents || documents.length === 0) {
         documentsArea.innerHTML = `
@@ -74,41 +186,52 @@ function displayIdentityDocuments(documents) {
 
     let html = '';
     documents.forEach(doc => {
-        // 確保 FileUrl 是完整的 URL
-        const imageUrl = doc.FileUrl.startsWith('http') ? doc.FileUrl : `${window.location.origin}/${doc.FileUrl.replace(/^\//, '')}`;
+        console.log('處理檔案物件:', doc); // 除錯日誌
+        
+        // 確保 fileUrl 是完整的 URL，用於外部連結
+        // 數據庫中的路徑格式: /uploads/userPhoto/filename.jpg
+        // 注意: API 返回的是 fileUrl（小寫 f）
+        const fileUrl = doc.fileUrl && doc.fileUrl.startsWith('http') 
+            ? doc.fileUrl 
+            : `${window.location.origin}${doc.fileUrl || ''}`;
+        
+        console.log('處理檔案URL:', doc.fileUrl, '→', fileUrl); // 除錯日誌
         
         html += `
             <div class="col-md-6">
                 <div class="card border-info">
                     <div class="card-header bg-info bg-opacity-10">
                         <h6 class="card-title mb-0">
-                            <i class="bi bi-file-image me-2"></i>${doc.TypeDisplay}
+                            <i class="bi bi-file-image me-2"></i>${doc.typeDisplay || doc.TypeDisplay || '身分證檔案'}
                         </h6>
                     </div>
                     <div class="card-body text-center">
-                        <div class="image-preview mb-3" style="height: 200px; overflow: hidden; border: 1px solid #ddd; border-radius: 8px;">
-                            <img src="${imageUrl}" 
-                                 alt="${doc.TypeDisplay}" 
-                                 class="img-fluid h-100 w-100" 
-                                 style="object-fit: contain; cursor: pointer;"
-                                 onclick="openImageModal('${imageUrl}', '${doc.TypeDisplay}')">
+                        <div class="mb-3 p-3">
+                            <div class="d-grid gap-2">
+                                <a href="${fileUrl}" target="_blank" class="btn btn-primary">
+                                    <i class="bi bi-box-arrow-up-right me-2"></i>${doc.typeDisplay || doc.TypeDisplay || '查看檔案'}
+                                </a>
+                            </div>
                         </div>
-                        <div class="document-info">
-                            <p class="mb-1"><small class="text-muted">檔案名稱：${doc.FileName}</small></p>
-                            <p class="mb-1"><small class="text-muted">上傳時間：${doc.UploadedAt}</small></p>
-                            <p class="mb-0"><small class="text-muted">檔案大小：${doc.FileSize}</small></p>
+                        <div class="document-info mb-3">
+                            <p class="mb-1"><small class="text-muted">檔案名稱：${escapeHtml(doc.fileName || doc.FileName || '')}</small></p>
+                            <p class="mb-1"><small class="text-muted">上傳時間：${doc.uploadedAt || doc.UploadedAt || ''}</small></p>
+                            <p class="mb-0"><small class="text-muted">檔案大小：${doc.fileSize || doc.FileSize || ''}</small></p>
                         </div>
-                        <button type="button" class="btn btn-outline-primary btn-sm mt-2" 
-                                onclick="openImageModal('${imageUrl}', '${doc.TypeDisplay}')">
-                            <i class="bi bi-zoom-in me-1"></i>放大檢視
-                        </button>
+                        <div class="d-flex justify-content-center gap-2">
+                            <a href="${fileUrl}" download="${escapeHtml(doc.fileName || doc.FileName || '')}" class="btn btn-outline-secondary btn-sm">
+                                <i class="bi bi-download me-1"></i>下載
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
         `;
     });
     
+    console.log('生成的 HTML:', html);
     documentsArea.innerHTML = html;
+    console.log('身分證檔案顯示完成');
 }
 
 // 顯示檔案載入錯誤
@@ -124,43 +247,7 @@ function showDocumentError(message) {
     `;
 }
 
-// 開啟圖片放大Modal
-function openImageModal(imageUrl, title) {
-    // 創建或更新圖片放大Modal
-    let imageModal = document.getElementById('imageZoomModal');
-    if (!imageModal) {
-        // 創建Modal HTML
-        const modalHtml = `
-            <div class="modal fade" id="imageZoomModal" tabindex="-1" aria-labelledby="imageZoomModalLabel" aria-hidden="true">
-                <div class="modal-dialog modal-lg modal-dialog-centered">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="imageZoomModalLabel">${escapeHtml(title)}</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body text-center">
-                            <img src="${imageUrl}" alt="${escapeHtml(title)}" class="img-fluid" style="max-height: 70vh;">
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">關閉</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-        document.body.insertAdjacentHTML('beforeend', modalHtml);
-        imageModal = document.getElementById('imageZoomModal');
-    } else {
-        // 更新現有Modal內容
-        imageModal.querySelector('.modal-title').textContent = title;
-        imageModal.querySelector('.modal-body img').src = imageUrl;
-        imageModal.querySelector('.modal-body img').alt = title;
-    }
-    
-    // 顯示Modal
-    const modal = new bootstrap.Modal(imageModal);
-    modal.show();
-}
+// 原 openImageModal 函數已移除，改為使用外部連結方式
 
 // 全域函數 - 開啟停用帳號Modal
 function openDeactivateModal() {
@@ -177,16 +264,45 @@ function openActivateModal() {
     console.log('啟用帳號功能 - MemberID: ' + currentMemberId);
 }
 
-// 全域函數 - 開啟身分證檔案查看Modal
-function openIdDocumentModal() {
-    var idDocumentModal = new bootstrap.Modal(document.getElementById('idDocumentModal'), {
-        backdrop: 'static',
-        keyboard: false
-    });
-    idDocumentModal.show();
+// 原 openIdDocumentModal 函數已移除，改為使用外部連結方式
+
+// 顯示無檔案訊息
+function showNoDocumentsMessage(memberId) {
+    const documentsArea = document.getElementById('identityDocumentsArea');
+    documentsArea.innerHTML = `
+        <div class="col-12 text-center">
+            <div class="alert alert-warning">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                尚未找到身分證上傳檔案
+                <br><small>會員ID: ${memberId}</small>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="loadIdentityDocuments()">
+                <i class="bi bi-arrow-clockwise me-1"></i>重新載入
+            </button>
+        </div>
+    `;
+}
+
+// 顯示 API 錯誤訊息
+function showApiErrorMessage(message, memberId) {
+    const documentsArea = document.getElementById('identityDocumentsArea');
+    documentsArea.innerHTML = `
+        <div class="col-12 text-center">
+            <div class="alert alert-danger">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                ${message || 'API 呼叫失敗'}
+                <br><small>會員ID: ${memberId}</small>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="loadIdentityDocuments()">
+                <i class="bi bi-arrow-clockwise me-1"></i>重新載入
+            </button>
+        </div>
+    `;
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('頁面載入完成 - user-details.js');
+    
     // 初始化頁籤功能
     var triggerTabList = [].slice.call(document.querySelectorAll('#memberDetailsTabs button'))
     triggerTabList.forEach(function (triggerEl) {
@@ -368,9 +484,10 @@ function getSortValue(row, sortField) {
 }
 
 // 設定當前會員ID的函數（供從外部呼叫）
-function setCurrentMemberId(memberId) {
+window.setCurrentMemberId = function(memberId) {
     currentMemberId = memberId;
-}
+    console.log('設定會員ID:', currentMemberId);
+};
 
 // ============ 發送系統訊息功能 ============
 
