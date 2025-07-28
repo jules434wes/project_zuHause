@@ -56,15 +56,14 @@
                                 }
                             </p>
                         </div>
+                        
                         <div class="card-footer text-end">
-                            @if (ticket.IsResolved)
-                            {
-                                <span class="badge bg-success">已回覆</span>
+                            @{
+                                var isReplied = !string.IsNullOrWhiteSpace(ticket.ReplyContent);
                             }
-                            else
-                            {
-                                <span class="badge bg-warning text-dark">等待回覆</span>
-                            }
+                            <span class="badge @(isReplied ? "bg-success" : "bg-warning text-dark")">
+                                @(isReplied ? "已回覆" : "等待回覆")
+                            </span>
                         </div>
                     </div>
                 }

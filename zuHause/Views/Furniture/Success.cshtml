@@ -2,9 +2,10 @@
     ViewData["Title"] = "付款成功";
     Layout = "~/Views/Shared/_NavigationBar.cshtml";
 }
-
+<h2>@ViewBag.Message</h2>
 <div class="text-center mt-5">
-    <h2 class="text-success"><i class="bi bi-check-circle-fill"></i> 簽署成功，付款完成！</h2>
-    <p>感謝您的租借，我們已收到您的付款。</p>
-    <a href="/Furniture/OrderHistory" class="btn btn-primary mt-3">查看訂單紀錄</a>
+    <h2>@ViewBag.Message</h2>
+    <p>您的訂單已成立！</p>
+    <p>訂單編號：@ViewBag.OrderId</p>
+    <p><a href="/Furniture/OrderHistory">查看訂單記錄</a></p>
 </div>
