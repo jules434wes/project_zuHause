@@ -201,7 +201,7 @@ app.MapControllerRoute(
 //pattern: "{controller=Dashboard}/{action=Index}/{id?}");
 
 //租屋首頁路由
-pattern: "{controller=MemberInbox}/{action=Index}/{id?}");
+pattern: "{controller=Tenant}/{action=FrontPage}/{id?}");
 
 
 
