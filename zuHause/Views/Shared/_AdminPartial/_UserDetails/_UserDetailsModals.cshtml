@@ -153,3 +153,117 @@
         </div>
     </div>
 </div>
+
+<!-- 發送系統訊息 Modal -->
+<div class="modal fade" id="sendMessageModal" tabindex="-1" aria-labelledby="sendMessageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="sendMessageModalLabel">
+                    <i class="bi bi-bell me-2"></i>發送系統訊息給 @memberData.MemberName
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    發送對象：<strong>@memberData.MemberName (ID: @memberData.MemberID)</strong>
+                </div>
+                
+                <form id="sendMessageForm">
+                    <div class="row g-3">
+                        <!-- 訊息標題 -->
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <label for="userMessageTitle" class="form-label mb-0">訊息標題 <span class="text-danger">*</span></label>
+                                <button type="button" class="btn btn-sm btn-outline-info" onclick="openUserTemplateModal()">
+                                    <i class="bi bi-file-text"></i> 插入模板
+                                </button>
+                            </div>
+                            <input type="text" class="form-control" id="userMessageTitle" name="userMessageTitle" required maxlength="100">
+                            <div class="form-text">最多100個字元</div>
+                        </div>
+
+                        <!-- 訊息內容 -->
+                        <div class="col-12">
+                            <label for="userMessageContent" class="form-label">訊息內容 <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="userMessageContent" name="userMessageContent" rows="8" required maxlength="2000" 
+                                      placeholder="請輸入訊息內容，或點擊上方按鈕選擇模板..."></textarea>
+                            <div class="form-text">
+                                最多2000個字元。支援參數化內容，如：{用戶姓名}、{時間} 等變數標記。
+                                <span id="userContentCharCount" class="float-end">0/2000</span>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="showUserMessageConfirmModal()">
+                    <i class="bi bi-send-fill"></i> 發送訊息
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 模板選擇 Modal -->
+<div class="modal fade" id="userTemplateModal" tabindex="-1" aria-labelledby="userTemplateModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="userTemplateModalLabel">
+                    <i class="bi bi-file-text me-2"></i>選擇系統訊息模板
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <input type="text" class="form-control" id="userTemplateSearch" placeholder="搜尋模板標題或內容...">
+                </div>
+                <div id="userTemplateList" class="list-group" style="max-height: 400px; overflow-y: auto;">
+                    <!-- 模板列表將通過 JavaScript 動態載入 -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">關閉</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 確認發送 Modal -->
+<div class="modal fade" id="userMessageConfirmModal" tabindex="-1" aria-labelledby="userMessageConfirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="userMessageConfirmModalLabel">
+                    <i class="bi bi-exclamation-triangle me-2"></i>確認發送訊息
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    您確定要發送此訊息給 <strong>@memberData.MemberName</strong> 嗎？
+                </div>
+                <p class="text-muted">
+                    <i class="bi bi-info-circle me-2"></i>注意：訊息一旦發送，即不可修改、刪除或撤回。
+                </p>
+                
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="userConfirmCheckbox">
+                    <label class="form-check-label" for="userConfirmCheckbox">
+                        我確認要發送此訊息
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="userFinalSendBtn" disabled onclick="sendUserMessage()">
+                    <i class="bi bi-send-fill"></i> 確認發送
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
