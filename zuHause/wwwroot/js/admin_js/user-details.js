@@ -299,7 +299,158 @@ function openActivateModal() {
     // 啟用帳號功能 - 後續開發
 }
 
-// 原 openIdDocumentModal 函數已移除，改為使用外部連結方式
+// 開啟身分證檔案檢視 Modal (純檢視功能)
+window.openIdDocumentModal = function() {
+    if (!currentMemberId) {
+        alert('無法獲取會員ID');
+        return;
+    }
+    
+    // 檢查 modal 元素是否存在
+    const modalElement = document.getElementById('idDocumentViewModal');
+    if (!modalElement) {
+        console.error('找不到 idDocumentViewModal 元素');
+        alert('Modal 元素不存在');
+        return;
+    }
+    
+    // 顯示 Modal
+    const viewModal = new bootstrap.Modal(modalElement, {
+        backdrop: 'static',
+        keyboard: false
+    });
+    viewModal.show();
+    
+    // Modal 開啟後載入檔案
+    setTimeout(() => {
+        loadIdDocumentsForView();
+    }, 300);
+};
+
+// 載入身分證檔案用於純檢視
+function loadIdDocumentsForView() {
+    if (!currentMemberId) {
+        showIdDocumentViewError('無法取得會員ID');
+        return;
+    }
+    
+    const memberIdNum = parseInt(currentMemberId, 10);
+    if (isNaN(memberIdNum) || memberIdNum <= 0) {
+        showIdDocumentViewError('會員ID 格式不正確');
+        return;
+    }
+
+    const documentsViewArea = document.getElementById('idDocumentsViewArea');
+    
+    // 顯示載入狀態
+    documentsViewArea.innerHTML = `
+        <div class="col-12 text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">載入中...</span>
+            </div>
+            <p class="mt-2 text-muted">載入身分證檔案中...</p>
+        </div>
+    `;
+
+    // 調用API載入檔案
+    const apiUrl = `/Admin/GetMemberIdentityDocuments?memberId=${memberIdNum}`;
+    
+    fetch(apiUrl)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success && data.data && data.data.documents && Array.isArray(data.data.documents) && data.data.documents.length > 0) {
+                displayIdDocumentsForView(data.data.documents);
+            } else {
+                showIdDocumentViewError(data.message || '無法載入身分證檔案');
+            }
+        })
+        .catch(error => {
+            console.error('載入檔案錯誤：', error);
+            showIdDocumentViewError('網路錯誤，無法載入檔案：' + error.message);
+        });
+}
+
+// 顯示身分證檔案用於純檢視
+function displayIdDocumentsForView(documents) {
+    const documentsViewArea = document.getElementById('idDocumentsViewArea');
+    
+    if (!documents || documents.length === 0) {
+        documentsViewArea.innerHTML = `
+            <div class="col-12 text-center">
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    尚未找到身分證上傳檔案
+                </div>
+            </div>
+        `;
+        return;
+    }
+
+    let html = '';
+    documents.forEach(doc => {
+        const fileUrl = doc.fileUrl && doc.fileUrl.startsWith('http') 
+            ? doc.fileUrl 
+            : `${window.location.origin}${doc.fileUrl || ''}`;
+        
+        html += `
+            <div class="col-md-6 mb-3">
+                <div class="card border-secondary">
+                    <div class="card-header bg-light">
+                        <h6 class="card-title mb-0">
+                            <i class="bi bi-file-image me-2"></i>${doc.typeDisplay || doc.TypeDisplay || '身分證檔案'}
+                        </h6>
+                    </div>
+                    <div class="card-body text-center p-2">
+                        <div class="mb-2 p-2 bg-light border rounded" style="min-height: 200px; display: flex; align-items: center; justify-content: center;">
+                            <img src="${fileUrl}" 
+                                 alt="${doc.typeDisplay || doc.TypeDisplay || '身分證檔案'}" 
+                                 class="img-fluid" 
+                                 style="max-height: 180px; max-width: 100%; object-fit: contain; cursor: pointer;"
+                                 onclick="openImageModal('${fileUrl}', '${doc.typeDisplay || doc.TypeDisplay || '身分證檔案'}')"
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"
+                                 loading="lazy">
+                            <div style="display: none; color: #6c757d;" class="text-center p-3">
+                                <i class="bi bi-image-alt fs-3 mb-2"></i>
+                                <p class="small">圖片載入失敗</p>
+                                <a href="${fileUrl}" target="_blank" class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-box-arrow-up-right me-1"></i>在新分頁開啟
+                                </a>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-center gap-1">
+                            <button class="btn btn-outline-primary btn-sm" onclick="openImageModal('${fileUrl}', '${doc.typeDisplay || doc.TypeDisplay || '身分證檔案'}')">
+                                <i class="bi bi-zoom-in me-1"></i>放大
+                            </button>
+                            <a href="${fileUrl}" target="_blank" class="btn btn-outline-secondary btn-sm">
+                                <i class="bi bi-box-arrow-up-right me-1"></i>新分頁
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    documentsViewArea.innerHTML = html;
+}
+
+// 顯示身分證檔案檢視錯誤
+function showIdDocumentViewError(message) {
+    const documentsViewArea = document.getElementById('idDocumentsViewArea');
+    documentsViewArea.innerHTML = `
+        <div class="col-12 text-center">
+            <div class="alert alert-danger">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                ${escapeHtml(message)}
+            </div>
+        </div>
+    `;
+}
 
 // 顯示無檔案訊息
 function showNoDocumentsMessage(memberId) {
