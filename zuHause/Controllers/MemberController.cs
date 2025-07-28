@@ -438,20 +438,20 @@ namespace zuHause.Controllers
             TempData["activePage"] = "FillInfomation";
 
             // 驗證手機驗證碼
-            if (!ModelState.IsValid)
-            {
-                return View("RegisterSendCode", model);
-            }
+            //if (!ModelState.IsValid)
+            //{
+            //    return View("RegisterSendCode", model);
+            //}
 
             // 這裡應該要驗證手機驗證碼，目前使用固定值 555666
-            if (model.Verify != 555666)
-            {
-                ModelState.AddModelError("Verify", "驗證碼錯誤");
-                return View("RegisterSendCode", model);
-            }
+            //if (model.Verify != 555666)
+            //{
+            //    ModelState.AddModelError("Verify", "驗證碼錯誤");
+            //    return View("RegisterSendCode", model);
+            //}
 
             // 驗證成功，將手機號碼和驗證狀態存到 TempData
-            TempData["phoneNumber"] = model.PhoneNumber;
+            //TempData["phoneNumber"] = model.PhoneNumber;
             TempData["phoneVerified"] = true; // 標記手機已驗證
 
             var cities = await _context.Cities.Select(c => new SelectListItem
