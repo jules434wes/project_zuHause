@@ -8,11 +8,13 @@ using System.Text.Encodings.Web;
 using System.Text.Unicode;
 using zuHause.Data;
 using zuHause.Helpers;
+using zuHause.Interfaces;
+using zuHause.Interfaces.TenantInterfaces;
 using zuHause.Middleware;
 using zuHause.Models;
-using zuHause.Services;
 using zuHause.Options;
-using zuHause.Interfaces;
+using zuHause.Services;
+using zuHause.Services.TenantServices;
 using zuHause.ViewModels;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -141,7 +143,8 @@ builder.Services.AddScoped<zuHause.Interfaces.IPropertyMapCacheService, zuHause.
 builder.Services.Configure<StripeSettings>(builder.Configuration.GetSection("StripeSettings"));
 StripeConfiguration.ApiKey = builder.Configuration["StripeSettings:SecretKey"];
 
-
+//首頁功能
+builder.Services.AddScoped<IDataAccessService, DataAccessService>();
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
