@@ -82,7 +82,8 @@
                                 </button>
                             }
                             
-                            @if (Model.Data?.ApprovalStatus == "未審核")
+                            @if (string.Equals(Model.Data?.ApprovalStatus?.Trim(), "審核中", StringComparison.Ordinal) || 
+                                 Model.Data?.StatusCode == "PENDING")
                             {
                                 <button class="btn btn-success" onclick="openApproveModal()">
                                     <i class="bi bi-check2-circle me-1"></i>通過審核
@@ -92,7 +93,9 @@
                                 </button>
                             }
                             
-                            @if (Model.Data?.PaymentStatus == "未付費" && Model.Data?.ApprovalStatus == "審核完成")
+                            @if ((string.Equals(Model.Data?.PaymentStatus?.Trim(), "未付費", StringComparison.Ordinal) && 
+                                  string.Equals(Model.Data?.ApprovalStatus?.Trim(), "待付款", StringComparison.Ordinal)) ||
+                                 (Model.Data?.StatusCode == "PENDING_PAYMENT"))
                             {
                                 <button class="btn btn-primary" onclick="openMarkAsPaidModal()">
                                     <i class="bi bi-credit-card me-1"></i>手動標記已付款
