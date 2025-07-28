@@ -142,8 +142,10 @@ namespace zuHause.Controllers
                                           PublishedAt = p.PublishedAt,
                                           ExpireAt = p.ExpireAt,
                                           IsPaid = p.IsPaid,
-                                          // 暫時設為空，稍後批量填充
-                                          ThumbnailUrl = string.Empty,
+                                          // 直接讀取資料庫中的 PreviewImageUrl，如果是相對路徑則轉為完整 URL
+                                          ThumbnailUrl = !string.IsNullOrEmpty(p.PreviewImageUrl) && !p.PreviewImageUrl.StartsWith("http") 
+                                              ? $"https://zuhauseimg.blob.core.windows.net/zuhaus-images/{p.PreviewImageUrl}" 
+                                              : p.PreviewImageUrl ?? "/images/property-placeholder.jpg",
                                           ImageUrls = new List<string>(),
                                           // 統計資料稍後批量查詢
                                           ViewCount = 0,
@@ -151,54 +153,43 @@ namespace zuHause.Controllers
                                           ApplicationCount = 0
                                       }).ToListAsync();
 
-                // 3. 批量載入圖片資料（防止 N+1 查詢）
+                // 3. 為沒有 PreviewImageUrl 的房源動態查詢主圖
                 var propertyIds = properties.Select(p => p.PropertyId).ToList();
+                
+                // 批量查詢主圖資料
+                var primaryImages = await _context.Images
+                    .Where(img => propertyIds.Contains(img.EntityId) &&
+                                  img.EntityType == EntityType.Property &&
+                                  img.Category == ImageCategory.Gallery &&
+                                  img.DisplayOrder == 1)
+                    .Select(img => new { img.EntityId, img.StoredFileName })
+                    .ToListAsync();
 
-                // 3.1 批量獲取主圖
-                var mainImages = new Dictionary<int, Image>();
-                foreach (var propertyId in propertyIds)
-                {
-                    var mainImage = await _imageQueryService.GetMainImageAsync(EntityType.Property, propertyId);
-                    if (mainImage != null)
-                    {
-                        mainImages[propertyId] = mainImage;
-                    }
-                }
+                var primaryImageDict = primaryImages.ToDictionary(img => img.EntityId, img => img.StoredFileName);
 
-                // 3.2 批量獲取所有圖片（用於 ImageUrls）
-                var allImages = new Dictionary<int, List<Image>>();
-                foreach (var propertyId in propertyIds)
-                {
-                    var images = await _imageQueryService.GetImagesByEntityAsync(EntityType.Property, propertyId);
-                    if (images.Any())
-                    {
-                        allImages[propertyId] = images;
-                    }
-                }
-
-                // 4. 填充圖片資料到 DTO
+                // 更新沒有 PreviewImageUrl 的房源的 ThumbnailUrl
                 foreach (var property in properties)
                 {
-                    // 4.1 設定 ThumbnailUrl
-                    if (mainImages.TryGetValue(property.PropertyId, out var mainImage))
+                    if (property.ThumbnailUrl == "/images/property-placeholder.jpg" && 
+                        primaryImageDict.TryGetValue(property.PropertyId, out var storedFileName))
                     {
-                        property.ThumbnailUrl = _imageQueryService.GenerateImageUrl(mainImage.StoredFileName, ImageSize.Medium);
-                    }
-                    else
-                    {
-                        property.ThumbnailUrl = "/images/property-placeholder.jpg";
-                    }
-
-                    // 4.2 設定 ImageUrls
-                    if (allImages.TryGetValue(property.PropertyId, out var images))
-                    {
-                        property.ImageUrls = images
-                            .Select(img => _imageQueryService.GenerateImageUrl(img.StoredFileName, ImageSize.Medium))
-                            .ToList();
+                        try
+                        {
+                            var dynamicUrl = _imageQueryService.GenerateImageUrl(storedFileName, ImageSize.Medium);
+                            if (!string.IsNullOrEmpty(dynamicUrl))
+                            {
+                                property.ThumbnailUrl = dynamicUrl;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogWarning("生成房源 {PropertyId} 主圖URL失敗: {Error}", 
+                                property.PropertyId, ex.Message);
+                        }
                     }
                 }
 
-                // 5. 批量載入統計資料（效能優化）
+                // 4. 批量載入統計資料（效能優化）
                 var statisticsDict = await LoadPropertyStatistics(propertyIds);
                 foreach (var property in properties)
                 {

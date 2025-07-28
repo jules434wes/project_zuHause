@@ -37,28 +37,7 @@ namespace zuHause.Components
                 throw new ArgumentNullException(nameof(property));
             }
 
-            // 動態更新圖片資料（如果未設定或需要重新整理）
-            if (string.IsNullOrEmpty(property.ThumbnailUrl) || 
-                property.ThumbnailUrl == "/images/property-placeholder.jpg")
-            {
-                try
-                {
-                    var mainImage = await _imageQueryService.GetMainImageAsync(EntityType.Property, property.PropertyId);
-                    if (mainImage != null)
-                    {
-                        property.ThumbnailUrl = _imageQueryService.GenerateImageUrl(mainImage.StoredFileName, ImageSize.Medium);
-                    }
-                    else
-                    {
-                        property.ThumbnailUrl = "/images/property-placeholder.jpg";
-                    }
-                }
-                catch (Exception)
-                {
-                    // 圖片服務失效時使用預設圖片
-                    property.ThumbnailUrl = "/images/property-placeholder.jpg";
-                }
-            }
+            // ThumbnailUrl 現在直接從資料庫的 PreviewImageUrl 欄位讀取，不需要動態更新
 
             // 確保 ImageUrls 有資料
             if (!property.ImageUrls.Any())
@@ -67,7 +46,7 @@ namespace zuHause.Components
                 {
                     var images = await _imageQueryService.GetImagesByEntityAsync(EntityType.Property, property.PropertyId);
                     property.ImageUrls = images
-                        .Select(img => _imageQueryService.GenerateImageUrl(img.StoredFileName, ImageSize.Medium))
+                        .Select(img => _imageQueryService.GenerateImageUrl(img, ImageSize.Medium))
                         .ToList();
                 }
                 catch (Exception)

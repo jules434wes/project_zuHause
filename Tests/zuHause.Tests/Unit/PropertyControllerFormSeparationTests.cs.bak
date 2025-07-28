@@ -1,0 +1,307 @@
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using Moq;
+using Xunit;
+using zuHause.Controllers;
+using zuHause.DTOs;
+using zuHause.Enums;
+using zuHause.Models;
+using zuHause.Services.Interfaces;
+using zuHause.ViewModels;
+using zuHause.Interfaces;
+using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Http;
+
+namespace zuHause.Tests.Unit
+{
+    /// <summary>
+    /// 房源編輯刊登邏輯分離測試
+    /// 測試 PropertyController 的 Create 和 Edit 方法完全獨立
+    /// </summary>
+    public class PropertyControllerFormSeparationTests
+    {
+        private readonly PropertyController _controller;
+        private readonly ZuHauseContext _context;
+        private readonly Mock<ILogger<PropertyController>> _loggerMock;
+        private readonly Mock<IPropertyImageService> _propertyImageServiceMock;
+        private readonly Mock<IImageUploadService> _imageUploadServiceMock;
+        private readonly Mock<IImageQueryService> _imageQueryServiceMock;
+        private readonly Mock<IListingPlanValidationService> _listingPlanValidationServiceMock;
+        private readonly Mock<IEquipmentCategoryQueryService> _equipmentCategoryQueryServiceMock;
+
+        public PropertyControllerFormSeparationTests()
+        {
+            // 使用完全隔離的 InMemory 資料庫設定
+            var options = new DbContextOptionsBuilder<ZuHauseContext>()
+                .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+                .ConfigureWarnings(x => x.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.InMemoryEventId.TransactionIgnoredWarning))
+                .Options;
+            _context = new ZuHauseContext(options);
+            _loggerMock = new Mock<ILogger<PropertyController>>();
+            _propertyImageServiceMock = new Mock<IPropertyImageService>();
+            _imageUploadServiceMock = new Mock<IImageUploadService>();
+            _imageQueryServiceMock = new Mock<IImageQueryService>();
+            _listingPlanValidationServiceMock = new Mock<IListingPlanValidationService>();
+            _equipmentCategoryQueryServiceMock = new Mock<IEquipmentCategoryQueryService>();
+
+            _controller = new PropertyController(
+                _context,
+                _loggerMock.Object,
+                _propertyImageServiceMock.Object,
+                _imageUploadServiceMock.Object,
+                _imageQueryServiceMock.Object,
+                _listingPlanValidationServiceMock.Object,
+                _equipmentCategoryQueryServiceMock.Object
+            );
+
+            // 設置 HTTP Context for Headers
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext()
+            };
+        }
+
+        /// <summary>
+        /// 測試：Create GET 應返回創建模式視圖，包含空模型
+        /// </summary>
+        [Fact]
+        public async Task Create_GET_ReturnsCreateView_WithEmptyModel()
+        {
+            // Arrange
+            SetupBasicMocks();
+
+            // Act
+            var result = await _controller.Create();
+
+            // Assert
+            Assert.IsType<ViewResult>(result);
+            var viewResult = (ViewResult)result;
+            var viewModel = viewResult.Model as PropertyCreateViewModel;
+
+            Assert.NotNull(viewModel);
+            Assert.Equal(PropertyFormMode.Create, viewModel.FormMode);
+            Assert.False(viewModel.IsEditMode);
+            Assert.Null(viewModel.PropertyId);
+            
+            // 驗證快取控制標頭
+            Assert.True(_controller.Response.Headers.ContainsKey("Cache-Control"));
+        }
+
+        /// <summary>
+        /// 測試：Edit GET 與有效ID應返回編輯視圖，包含預填資料
+        /// </summary>
+        [Fact]
+        public async Task Edit_GET_WithValidId_ReturnsEditView_WithPrefilledData()
+        {
+            // Arrange
+            var propertyId = 1;
+            var userId = 1;
+            SetupBasicMocks();
+            SetupAuthenticatedUser(userId);
+            SetupValidProperty(propertyId, userId);
+
+            // Act
+            var result = await _controller.Edit(propertyId);
+
+            // Assert
+            Assert.IsType<ViewResult>(result);
+            var viewResult = (ViewResult)result;
+            var viewModel = viewResult.Model as PropertyCreateViewModel;
+
+            Assert.NotNull(viewModel);
+            Assert.Equal(PropertyFormMode.Edit, viewModel.FormMode);
+            Assert.True(viewModel.IsEditMode);
+            Assert.Equal(propertyId, viewModel.PropertyId);
+
+            // 驗證快取控制標頭
+            Assert.True(_controller.Response.Headers.ContainsKey("Cache-Control"));
+        }
+
+        /// <summary>
+        /// 測試：Edit GET 與無效所有權應重定向到房源管理
+        /// </summary>
+        [Fact]
+        public async Task Edit_GET_WithInvalidOwnership_RedirectsToPropertyManagement()
+        {
+            // Arrange
+            var propertyId = 1;
+            var userId = 1;
+            var otherUserId = 2;
+            SetupBasicMocks();
+            SetupAuthenticatedUser(userId);
+            SetupValidProperty(propertyId, otherUserId); // 不同用戶的房源
+
+            // Act
+            var result = await _controller.Edit(propertyId);
+
+            // Assert
+            Assert.IsType<RedirectToActionResult>(result);
+            var redirectResult = (RedirectToActionResult)result;
+            Assert.Equal("PropertyManagement", redirectResult.ActionName);
+            Assert.Equal("Landlord", redirectResult.ControllerName);
+        }
+
+        /// <summary>
+        /// 測試：用戶流程 - 創建然後編輯不應相互干擾
+        /// </summary>
+        [Fact]
+        public async Task UserFlow_CreateThenEdit_ShouldNotInterfere()
+        {
+            // Arrange
+            SetupBasicMocks();
+            SetupAuthenticatedUser(1);
+            SetupValidProperty(1, 1);
+
+            // Act & Assert 1: 訪問創建頁面
+            var createResult = await _controller.Create();
+            var createViewModel = ((ViewResult)createResult).Model as PropertyCreateViewModel;
+            Assert.Equal(PropertyFormMode.Create, createViewModel.FormMode);
+            Assert.False(createViewModel.IsEditMode);
+
+            // Act & Assert 2: 訪問編輯頁面
+            var editResult = await _controller.Edit(1);
+            var editViewModel = ((ViewResult)editResult).Model as PropertyCreateViewModel;
+            Assert.Equal(PropertyFormMode.Edit, editViewModel.FormMode);
+            Assert.True(editViewModel.IsEditMode);
+
+            // Act & Assert 3: 再次訪問創建頁面，確保狀態不受影響
+            var createAgainResult = await _controller.Create();
+            var createAgainViewModel = ((ViewResult)createAgainResult).Model as PropertyCreateViewModel;
+            Assert.Equal(PropertyFormMode.Create, createAgainViewModel.FormMode);
+            Assert.False(createAgainViewModel.IsEditMode);
+            Assert.Null(createAgainViewModel.PropertyId);
+        }
+
+        /// <summary>
+        /// 測試：未登入用戶編輯房源應重定向到登入頁面
+        /// </summary>
+        [Fact]
+        public async Task Edit_GET_WithUnauthenticatedUser_RedirectsToLogin()
+        {
+            // Arrange
+            SetupBasicMocks();
+            // 不設置認證用戶
+
+            // Act
+            var result = await _controller.Edit(1);
+
+            // Assert
+            Assert.IsType<RedirectToActionResult>(result);
+            var redirectResult = (RedirectToActionResult)result;
+            Assert.Equal("Login", redirectResult.ActionName);
+            Assert.Equal("Member", redirectResult.ControllerName);
+        }
+
+        /// <summary>
+        /// 測試：不可編輯狀態的房源應拒絕編輯
+        /// </summary>
+        [Fact]
+        public async Task Edit_GET_WithNonEditableStatus_RedirectsToPropertyManagement()
+        {
+            // Arrange
+            var propertyId = 1;
+            var userId = 1;
+            SetupBasicMocks();
+            SetupAuthenticatedUser(userId);
+            SetupPropertyWithStatus(propertyId, userId, "SOLD"); // 已售出狀態不可編輯
+
+            // Act
+            var result = await _controller.Edit(propertyId);
+
+            // Assert
+            Assert.IsType<RedirectToActionResult>(result);
+            var redirectResult = (RedirectToActionResult)result;
+            Assert.Equal("PropertyManagement", redirectResult.ActionName);
+            Assert.Equal("Landlord", redirectResult.ControllerName);
+        }
+
+        #region 輔助方法
+
+        private void SetupBasicMocks()
+        {
+            // 設置基本的模擬數據
+            _listingPlanValidationServiceMock
+                .Setup(x => x.GetActiveListingPlansAsync())
+                .ReturnsAsync(new List<ListingPlan>());
+
+            _equipmentCategoryQueryServiceMock
+                .Setup(x => x.GetCategoriesHierarchyAsync())
+                .ReturnsAsync(new List<PropertyEquipmentCategoryHierarchy>());
+
+            // 建立最小化測試資料，避免資料庫操作衝突
+            var city = new City { CityId = 2, CityName = "台北市", IsActive = true, 
+                                  CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now, 
+                                  CityCode = "TPE", DisplayOrder = 1 };
+            
+            if (!_context.Cities.Any(c => c.CityId == 2))
+            {
+                _context.Cities.Add(city);
+                _context.SaveChanges();
+            }
+        }
+
+        private void SetupAuthenticatedUser(int userId)
+        {
+            var claims = new List<Claim>
+            {
+                new Claim("UserId", userId.ToString())
+            };
+
+            var identity = new ClaimsIdentity(claims, "Test");
+            var principal = new ClaimsPrincipal(identity);
+
+            _controller.ControllerContext.HttpContext.User = principal;
+        }
+
+        private void SetupValidProperty(int propertyId, int ownerId)
+        {
+            var property = new Property
+            {
+                PropertyId = propertyId,
+                LandlordMemberId = ownerId,
+                StatusCode = "IDLE", // 可編輯狀態
+                Title = "測試房源",
+                DeletedAt = null,
+                DistrictId = 1, // 預設區域
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now,
+                CityId = 2, // 台北市
+                PropertyEquipmentRelations = new List<PropertyEquipmentRelation>()
+            };
+
+            // 確保房源不重複新增
+            if (!_context.Properties.Any(p => p.PropertyId == propertyId))
+            {
+                _context.Properties.Add(property);
+                _context.SaveChanges();
+            }
+        }
+
+        private void SetupPropertyWithStatus(int propertyId, int ownerId, string statusCode)
+        {
+            var property = new Property
+            {
+                PropertyId = propertyId,
+                LandlordMemberId = ownerId,
+                StatusCode = statusCode,
+                Title = "測試房源",
+                DeletedAt = null,
+                DistrictId = 1, // 預設區域
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now,
+                CityId = 2, // 台北市
+                PropertyEquipmentRelations = new List<PropertyEquipmentRelation>()
+            };
+
+            // 確保房源不重複新增
+            if (!_context.Properties.Any(p => p.PropertyId == propertyId))
+            {
+                _context.Properties.Add(property);
+                _context.SaveChanges();
+            }
+        }
+
+        #endregion
+    }
+}

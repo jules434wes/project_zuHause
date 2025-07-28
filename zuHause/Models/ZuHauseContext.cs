@@ -2144,7 +2144,7 @@ public partial class ZuHauseContext : DbContext
             entity.HasIndex(e => e.StatusCode, "IX_properties_status");
 
             entity.Property(e => e.PropertyId)
-                .ValueGeneratedNever()
+                .ValueGeneratedOnAdd()
                 .HasComment("房源ID")
                 .HasColumnName("propertyID");
             entity.Property(e => e.AddressLine)
@@ -2294,6 +2294,14 @@ public partial class ZuHauseContext : DbContext
                 .HasMaxLength(20)
                 .HasComment("水費計算方式")
                 .HasColumnName("waterFeeType");
+            entity.Property(e => e.Latitude)
+                .HasPrecision(10, 8)
+                .HasComment("緯度")
+                .HasColumnName("Latitude");
+            entity.Property(e => e.Longitude)
+                .HasPrecision(11, 8)
+                .HasComment("經度")
+                .HasColumnName("Longitude");
 
             entity.HasOne(d => d.LandlordMember).WithMany(p => p.Properties)
                 .HasForeignKey(d => d.LandlordMemberId)

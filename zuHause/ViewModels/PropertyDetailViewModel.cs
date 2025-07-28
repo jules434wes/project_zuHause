@@ -19,7 +19,7 @@ namespace zuHause.ViewModels
         public bool IsFavorite { get; set; }
         
         // 房源圖片
-        public List<PropertyImageViewModel> Images { get; set; } = new List<PropertyImageViewModel>();
+        public List<ImageDisplayDto> Images { get; set; } = new List<ImageDisplayDto>();
         
         // 房源設備 - 按類型分組
         public List<PropertyEquipmentViewModel> Equipment { get; set; } = new List<PropertyEquipmentViewModel>();
@@ -45,14 +45,13 @@ namespace zuHause.ViewModels
         };
     }
     
-    public class PropertyImageViewModel
+    public class ImageDisplayDto
     {
-        public int PropertyImageId { get; set; }
+        public int ImageId { get; set; }
         public string ImagePath { get; set; } = string.Empty;
-        public string ImageDescription { get; set; } = string.Empty;
         public string? Category { get; set; }
         public bool IsMainImage { get; set; }
-        public int SortOrder { get; set; }
+        public int DisplayOrder { get; set; }
     }
     
     public class PropertyEquipmentViewModel

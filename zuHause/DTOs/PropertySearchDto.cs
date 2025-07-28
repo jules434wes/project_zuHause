@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
+using zuHause.Enums;
 
 namespace zuHause.DTOs
 {
@@ -477,6 +478,86 @@ namespace zuHause.DTOs
         /// </summary>
         [JsonPropertyName("propertyId")]
         public int? PropertyId { get; set; }
+
+        // === 臨時會話支援（兩階段上傳） ===
+
+        /// <summary>
+        /// 臨時會話ID（用於兩階段圖片上傳流程）
+        /// 前端先上傳圖片至臨時區域，取得此ID後在房源創建時遷移圖片
+        /// </summary>
+        [JsonPropertyName("tempSessionId")]
+        public string? TempSessionId { get; set; }
+
+        // === 前端檔案上傳支援（分離圖片和PDF） ===
+
+        /// <summary>
+        /// 房源圖片檔案（前端表單上傳用）
+        /// </summary>
+        [Display(Name = "房源圖片")]
+        public IFormFile[]? PropertyImages { get; set; }
+
+        /// <summary>
+        /// 房屋所有權證明文件（前端表單上傳用，支援PDF）
+        /// 在兩階段上傳模式下，此欄位為可選，檔案通過 TempSessionId 追蹤
+        /// </summary>
+        [Display(Name = "房屋所有權證明文件")]
+        public IFormFile? PropertyProofDocument { get; set; }
+
+        // === 編輯模式：現有圖片資訊 ===
+
+        /// <summary>
+        /// 現有的房源圖片列表（編輯模式使用）
+        /// </summary>
+        [JsonPropertyName("existingImages")]
+        public List<ExistingImageDto> ExistingImages { get; set; } = new List<ExistingImageDto>();
+    }
+
+    /// <summary>
+    /// 現有圖片資訊DTO（編輯模式使用）
+    /// </summary>
+    public class ExistingImageDto
+    {
+        /// <summary>
+        /// 圖片ID
+        /// </summary>
+        [JsonPropertyName("imageId")]
+        public long ImageId { get; set; }
+
+        /// <summary>
+        /// 圖片GUID
+        /// </summary>
+        [JsonPropertyName("imageGuid")]
+        public Guid ImageGuid { get; set; }
+
+        /// <summary>
+        /// 原始檔名
+        /// </summary>
+        [JsonPropertyName("originalFileName")]
+        public string OriginalFileName { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 圖片分類
+        /// </summary>
+        [JsonPropertyName("category")]
+        public ImageCategory Category { get; set; }
+
+        /// <summary>
+        /// 顯示順序
+        /// </summary>
+        [JsonPropertyName("displayOrder")]
+        public int? DisplayOrder { get; set; }
+
+        /// <summary>
+        /// 圖片URL（多種尺寸）
+        /// </summary>
+        [JsonPropertyName("imageUrls")]
+        public Dictionary<string, string> ImageUrls { get; set; } = new Dictionary<string, string>();
+
+        /// <summary>
+        /// 上傳時間
+        /// </summary>
+        [JsonPropertyName("uploadedAt")]
+        public DateTime UploadedAt { get; set; }
     }
 
     /// <summary>

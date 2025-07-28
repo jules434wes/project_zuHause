@@ -377,7 +377,11 @@ namespace zuHause.Migrations
                         {
                             t.HasComment("審核主檔");
 
-                            t.HasTrigger("trg_approvals_status_sync");
+                            t.HasTrigger("trg_approvals_identity_sync");
+
+                            t.HasTrigger("trg_approvals_landlord_sync");
+
+                            t.HasTrigger("trg_approvals_property_sync");
                         });
 
                     b.HasAnnotation("SqlServer:UseSqlOutputClause", false);
@@ -538,6 +542,9 @@ namespace zuHause.Migrations
                         .HasColumnName("updatedAt")
                         .HasDefaultValueSql("(CONVERT([datetime2](0),sysdatetime()))")
                         .HasComment("更新時間");
+
+                    b.Property<string>("WebUrl")
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("CarouselImageId");
 
@@ -763,6 +770,12 @@ namespace zuHause.Migrations
                         .HasDefaultValueSql("(CONVERT([datetime2](0),sysdatetime()))")
                         .HasComment("建立時間");
 
+                    b.Property<string>("CustomName")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("customName")
+                        .HasComment("合約自訂名稱");
+
                     b.Property<int?>("DepositAmount")
                         .HasColumnType("int")
                         .HasColumnName("depositAmount")
@@ -777,6 +790,11 @@ namespace zuHause.Migrations
                         .HasColumnType("bit")
                         .HasColumnName("isSublettable")
                         .HasComment("是否可轉租");
+
+                    b.Property<string>("LandlordHouseholdAddress")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<int?>("ManagementFee")
                         .HasColumnType("int")
@@ -2181,6 +2199,46 @@ namespace zuHause.Migrations
                         });
                 });
 
+            modelBuilder.Entity("zuHause.Models.GoogleMapsApiUsage", b =>
+                {
+                    b.Property<int>("GoogleMapsApiId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("googleMapsApiId");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("GoogleMapsApiId"));
+
+                    b.Property<string>("ApiType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("apiType");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("createdAt");
+
+                    b.Property<decimal>("EstimatedCost")
+                        .HasColumnType("decimal(10,4)")
+                        .HasColumnName("estimatedCost");
+
+                    b.Property<bool>("IsLimitReached")
+                        .HasColumnType("bit")
+                        .HasColumnName("isLimitReached");
+
+                    b.Property<int>("RequestCount")
+                        .HasColumnType("int")
+                        .HasColumnName("requestCount");
+
+                    b.Property<DateTime>("RequestDate")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("requestDate");
+
+                    b.HasKey("GoogleMapsApiId");
+
+                    b.ToTable("GoogleMapsApiUsage");
+                });
+
             modelBuilder.Entity("zuHause.Models.Image", b =>
                 {
                     b.Property<long>("ImageId")
@@ -2222,7 +2280,7 @@ namespace zuHause.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("imageGuid")
-                        .HasDefaultValueSql("newsequentialid()");
+                        .HasDefaultValueSql("(newsequentialid())");
 
                     b.Property<bool>("IsActive")
                         .ValueGeneratedOnAdd()
@@ -2256,13 +2314,13 @@ namespace zuHause.Migrations
                         .IsUnicode(false)
                         .HasColumnType("varchar(41)")
                         .HasColumnName("storedFileName")
-                        .HasComputedColumnSql("lower(CONVERT([char](36),[imageGuid]))+case [mimeType] when 'image/webp' then '.webp' when 'image/jpeg' then '.jpg' when 'image/png' then '.png' else '.bin' end", true);
+                        .HasComputedColumnSql("(lower(CONVERT([char](36),[imageGuid]))+case [mimeType] when 'image/webp' then '.webp' when 'image/jpeg' then '.jpg' when 'image/png' then '.png' else '.bin' end)", true);
 
                     b.Property<DateTime>("UploadedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime2")
                         .HasColumnName("uploadedAt")
-                        .HasDefaultValueSql("sysutcdatetime()");
+                        .HasDefaultValueSql("(DATEADD(HOUR, 8, sysutcdatetime()))");
 
                     b.Property<int?>("UploadedByMemberId")
                         .HasColumnType("int")
@@ -2273,36 +2331,16 @@ namespace zuHause.Migrations
                         .HasColumnName("width");
 
                     b.HasKey("ImageId")
-                        .HasName("PK__Images__7516F70C0063CFAC");
-
-                    b.HasIndex("ImageGuid")
-                        .IsUnique()
-                        .HasDatabaseName("uq_images_imageGuid");
+                        .HasName("pk_images");
 
                     b.HasIndex("UploadedByMemberId");
 
-                    b.HasIndex("EntityType", "EntityId", "Category", "DisplayOrder", "IsActive")
-                        .HasDatabaseName("ix_images_entity");
+                    b.HasIndex(new[] { "EntityType", "EntityId", "Category", "DisplayOrder", "IsActive" }, "ix_images_entity");
 
-                    SqlServerIndexBuilderExtensions.IncludeProperties(b.HasIndex("EntityType", "EntityId", "Category", "DisplayOrder", "IsActive"), new[] { "ImageGuid", "StoredFileName", "FileSizeBytes", "Width", "Height", "UploadedAt", "MimeType", "OriginalFileName" });
-
-                    b.HasIndex(new[] { "EntityType", "EntityId", "Category", "DisplayOrder", "IsActive" }, "IX_Images_EntityType_EntityId_Covering");
-
-                    b.HasIndex(new[] { "EntityType", "EntityId", "Category", "DisplayOrder" }, "IX_Images_UQ_DisplayOrder")
-                        .IsUnique()
-                        .HasFilter("([DisplayOrder] IS NOT NULL)");
-
-                    b.HasIndex(new[] { "ImageGuid" }, "UQ_Images_ImageGuid")
+                    b.HasIndex(new[] { "ImageGuid" }, "uq_images_imageGuid")
                         .IsUnique();
 
-                    b.ToTable("images", null, t =>
-                        {
-                            t.HasComment("圖片表");
-
-                            t.HasCheckConstraint("ck_images_category", "[category] IN ('BedRoom','Kitchen','Living','Balcony','Avatar','Gallery','Product')");
-
-                            t.HasCheckConstraint("ck_images_entityType", "[entityType] IN ('Member','Property','Furniture','Announcement')");
-                        });
+                    b.ToTable("images", (string)null);
                 });
 
             modelBuilder.Entity("zuHause.Models.InventoryEvent", b =>
@@ -2907,9 +2945,12 @@ namespace zuHause.Migrations
             modelBuilder.Entity("zuHause.Models.Property", b =>
                 {
                     b.Property<int>("PropertyId")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("int")
                         .HasColumnName("propertyID")
                         .HasComment("房源ID");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PropertyId"));
 
                     b.Property<string>("AddressLine")
                         .HasMaxLength(200)
@@ -3014,6 +3055,12 @@ namespace zuHause.Migrations
                         .HasColumnName("landlordMemberID")
                         .HasComment("房東會員ID");
 
+                    b.Property<decimal?>("Latitude")
+                        .HasPrecision(10, 8)
+                        .HasColumnType("decimal(10,8)")
+                        .HasColumnName("Latitude")
+                        .HasComment("緯度");
+
                     b.Property<int?>("ListingDays")
                         .HasColumnType("int")
                         .HasColumnName("listingDays")
@@ -3033,6 +3080,12 @@ namespace zuHause.Migrations
                         .HasColumnType("int")
                         .HasColumnName("livingRoomCount")
                         .HasComment("廳數");
+
+                    b.Property<decimal?>("Longitude")
+                        .HasPrecision(11, 8)
+                        .HasColumnType("decimal(11,8)")
+                        .HasColumnName("Longitude")
+                        .HasComment("經度");
 
                     b.Property<decimal?>("ManagementFeeAmount")
                         .HasColumnType("decimal(8, 2)")
@@ -3440,6 +3493,12 @@ namespace zuHause.Migrations
                         .HasColumnName("deletedAt")
                         .HasComment("刪除時間");
 
+                    b.Property<string>("HouseholdAddress")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("householdAddress")
+                        .HasComment("戶籍地址");
+
                     b.Property<bool>("IsActive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")
@@ -3778,9 +3837,12 @@ namespace zuHause.Migrations
             modelBuilder.Entity("zuHause.Models.SiteMessage", b =>
                 {
                     b.Property<int>("SiteMessagesId")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("int")
                         .HasColumnName("siteMessagesId")
                         .HasComment("訊息ID");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SiteMessagesId"));
 
                     b.Property<string>("AttachmentUrl")
                         .HasMaxLength(255)
@@ -4757,11 +4819,12 @@ namespace zuHause.Migrations
 
             modelBuilder.Entity("zuHause.Models.Image", b =>
                 {
-                    b.HasOne("zuHause.Models.Member", null)
-                        .WithMany()
+                    b.HasOne("zuHause.Models.Member", "UploadedByMember")
+                        .WithMany("Images")
                         .HasForeignKey("UploadedByMemberId")
-                        .OnDelete(DeleteBehavior.SetNull)
                         .HasConstraintName("fk_images_members");
+
+                    b.Navigation("UploadedByMember");
                 });
 
             modelBuilder.Entity("zuHause.Models.InventoryEvent", b =>
@@ -5178,6 +5241,8 @@ namespace zuHause.Migrations
                     b.Navigation("FurnitureCarts");
 
                     b.Navigation("FurnitureOrders");
+
+                    b.Navigation("Images");
 
                     b.Navigation("MemberVerifications");
 

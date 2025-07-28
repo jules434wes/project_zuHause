@@ -18,7 +18,7 @@ namespace zuHause.Data.Configurations
                 t.HasCheckConstraint("ck_images_entityType", 
                     "[entityType] IN ('Member','Property','Furniture','Announcement')");
                 t.HasCheckConstraint("ck_images_category", 
-                    "[category] IN ('BedRoom','Kitchen','Living','Balcony','Avatar','Gallery','Product')");
+                    "[category] IN ('BedRoom','Kitchen','Living','Balcony','Avatar','Gallery','Product','Document')");
             });
 
             // 主鍵設定
@@ -74,10 +74,10 @@ namespace zuHause.Data.Configurations
                 .IsRequired()
                 .HasMaxLength(255);
 
-            // StoredFileName 計算欄位
+            // StoredFileName 計算欄位（強制 .webp 格式）
             builder.Property(i => i.StoredFileName)
                 .HasColumnName("storedFileName")
-                .HasComputedColumnSql("lower(CONVERT([char](36),[imageGuid]))+case [mimeType] when 'image/webp' then '.webp' when 'image/jpeg' then '.jpg' when 'image/png' then '.png' else '.bin' end", stored: true);
+                .HasComputedColumnSql("lower(CONVERT(char(36), [imageGuid])) + '.webp'", stored: true);
 
             // FileSizeBytes 設定
             builder.Property(i => i.FileSizeBytes)
@@ -109,11 +109,11 @@ namespace zuHause.Data.Configurations
                 .HasColumnName("uploadedByMemberId")
                 .IsRequired(false);
 
-            // UploadedAt 設定
+            // UploadedAt 設定 (UTC+8 台灣時間)
             builder.Property(i => i.UploadedAt)
                 .HasColumnName("uploadedAt")
                 .IsRequired()
-                .HasDefaultValueSql("sysutcdatetime()");
+                .HasDefaultValueSql("DATEADD(hour, 8, sysutcdatetime())");
 
             // 暫時註解掉 RowVersion 配置，避免 EF Core timestamp 插入問題
             // TODO: 需要研究 EF Core 9.0.7 對 SQL Server timestamp/rowversion 的正確配置方法
