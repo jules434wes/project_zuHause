@@ -948,7 +948,7 @@ namespace zuHause.Controllers
                 .Include(t => t.Member)
                 .Include(t => t.Property)
                 .Include(t => t.FurnitureOrder)
-                .Where(t => t.MemberId == memberId)
+                .Where(t => t.MemberId == memberId && t.CategoryCode == "FURNITURE")
                 .OrderByDescending(t => t.CreatedAt)
                 .ToList();
             foreach (var t in tickets)
@@ -1025,9 +1025,9 @@ namespace zuHause.Controllers
                 PropertyId = PropertyId,
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now,
-                StatusCode = "NEW",
+                StatusCode = "PENDING",
                 IsResolved = false,
-                CategoryCode = "GENERAL"
+                CategoryCode = "FURNITURE"
             };
 
             _context.CustomerServiceTickets.Add(ticket);
@@ -1036,7 +1036,6 @@ namespace zuHause.Controllers
             TempData["SuccessMessage"] = "表單已送出，我們將盡快與您聯繫。";
             return RedirectToAction("ContactRecords");
         }
-
 
 
     }
