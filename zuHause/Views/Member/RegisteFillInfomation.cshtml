@@ -78,19 +78,19 @@
                     </div>
                     <div class="row align-items-start">
                         <label asp-for="Email" class="col-2 col-form-label text-end">電子信箱</label>
-                        <div class="col-5 pe-0">
+                        <div class="col-6 pe-0">
                             <input type="email" asp-for="Email" class="form-control" aria-describedby="inputEmailHelpInline"
                                    placeholder="請輸入電子信箱" required>
                             <span asp-validation-for="Email" class="invalid-feedback d-block opacity-100">
 
                             </span>
                         </div>
-                        <div class="col-auto">
+                        @* <div class="col-auto">
                             <!-- Button trigger modal -->
                             <button type="button" class="btn btn-aqua" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
                                 驗證信箱
                             </button>
-                        </div>
+                        </div> *@
                     </div>
                     <div class="row align-items-center">
                         <label asp-for="Gender" class="col-2 col-form-label text-end">性別</label>

@@ -5,7 +5,6 @@
      data-source-type="@Model.SourceType" 
      data-application-id="@(Model.SourceEntityId ?? 0)"
      data-module-code="@(Model.ModuleCode ?? "")">
-     <p>@Model.AudienceTypeCode</p>
     <div class="accordion-item border border-2 @(Model.AudienceTypeCode == "User" ? "border-success" : "border-info") mb-2 rounded-2">
         <h2 class="accordion-header">
             <button class="accordion-button fw-bold  collapsed" type="button"

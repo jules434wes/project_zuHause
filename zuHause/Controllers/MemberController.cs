@@ -390,8 +390,7 @@ namespace zuHause.Controllers
             var result = await _context.Members.Where(m => m.PhoneNumber == phoneNumber).ToListAsync();
             if (result.Count == 0)
             {
-                TempData["phoneNumber"] = phoneNumber;
-                return RedirectToAction("RegisterSendCode");
+                return RedirectToAction("RegisteFillInfomation",new{ phoneNumber}); // 不走手機認證
             }
             else
             {
@@ -418,7 +417,8 @@ namespace zuHause.Controllers
             return View(model);
         }
         [HttpPost]
-        public async Task<IActionResult> RegisteFillInfomation(VerifyCodeViewModel model)
+        [HttpGet]
+        public async Task<IActionResult> RegisteFillInfomation(string phoneNumber)
         {
 
             TempData["activePage"] = "FillInfomation";
@@ -432,7 +432,7 @@ namespace zuHause.Controllers
 
             RegisterViewModel memberInfo = new RegisterViewModel
             {
-                PhoneNumber = model.PhoneNumber,
+                PhoneNumber = phoneNumber,
                 CityOptions = cities,
             };
             return View(memberInfo);
