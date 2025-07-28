@@ -41,14 +41,49 @@ namespace zuHause.Controllers
 
             ViewBag.CarouselImages = carouselImages;
 
-            //  從資料庫抓出「熱門商品」（目前用最新上架前6筆商品代表熱門）
+            // 熱門商品編號清單
+            var popularProductNumbers = new List<string>
+            {
+                "FP20250729003831_7419f1",
+                "FP20250729003657_68276b",
+                "FP20250728235327_29c6d1",
+                "FP20250728233424_bb45e6",
+                "FP20250718154109_09bed9",
+                "FP20250718152649_70f278",
+                "FP20250718142629_dbab7f",
+                "FP20250714160534_c2fb78"
+            };
+            // 從資料庫撈出熱門商品清單
             var hotProducts = _context.FurnitureProducts
-                .Where(p => p.Status) // 只抓上架的
-                .OrderByDescending(p => p.CreatedAt) // 按建立時間倒序
-                .Take(8) // 只抓前8筆
+                .Where(p => popularProductNumbers.Contains(p.FurnitureProductId))
                 .ToList();
 
             ViewBag.hotProducts = hotProducts;
+
+            // 特惠商品編號清單（用 FurnitureProductId）
+            var discountProductIds = new List<string>
+            {
+                "FP20250721103313_9b5416",
+                "FP20250714160732_a2a78f",
+                "FP20250718142806_81ac8a",
+                "FP20250729001927_a3297d",
+                "FP20250729000557_9a001b"
+            };
+
+            // 從資料庫撈出特惠商品清單
+            var discountProducts = _context.FurnitureProducts
+                .Where(p => discountProductIds.Contains(p.FurnitureProductId))
+                .ToList();
+
+            ViewBag.discountProducts = discountProducts;
+
+            //顯示所有商品
+            var allProducts = _context.FurnitureProducts
+                .Where(p => p.Status && p.DeletedAt == null) // 僅顯示上架中且未刪除商品
+                .ToList();
+
+            ViewBag.allProducts = allProducts;
+
 
             return View();
         }
