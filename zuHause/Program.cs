@@ -2,19 +2,18 @@ using DinkToPdf;
 using DinkToPdf.Contracts;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Stripe;
 using System.Runtime.Loader;
 using System.Text.Encodings.Web;
 using System.Text.Unicode;
 using zuHause.Data;
 using zuHause.Helpers;
+using zuHause.Interfaces;
+using zuHause.Interfaces.TenantInterfaces;
 using zuHause.Middleware;
 using zuHause.Models;
-using zuHause.Services;
 using zuHause.Options;
-using zuHause.Interfaces;
-using zuHause.ViewModels;
-
+using zuHause.Services;
+using zuHause.Services.TenantServices;
 var builder = WebApplication.CreateBuilder(args);
 
 
@@ -46,8 +45,8 @@ builder.Services.AddAuthentication(options =>
 {
     options.LoginPath = "/Member/Login";
     options.AccessDeniedPath = "/Member/AccessDenied";
-    options.ExpireTimeSpan = TimeSpan.FromMinutes(60); // Cookie 有效時間 60 分鐘，確保完整支付流程
-    options.SlidingExpiration = true; // 滑動期限（有活動就重置60分鐘）
+    options.ExpireTimeSpan = TimeSpan.FromMinutes(15); // Cookie 有效時間 15 分鐘閒置登出
+    options.SlidingExpiration = true; // 滑動期限（有活動就重置15分鐘）
     options.Cookie.HttpOnly = true; // 增加安全性
     options.Cookie.IsEssential = true; // 設定為必要的 Cookie
 })
@@ -137,12 +136,6 @@ builder.Services.AddHttpClient<zuHause.Interfaces.IGoogleMapsService, zuHause.Se
 builder.Services.AddScoped<zuHause.Interfaces.IApiUsageTracker, zuHause.Services.ApiUsageTracker>();
 builder.Services.AddScoped<zuHause.Interfaces.IPropertyMapCacheService, zuHause.Services.PropertyMapCacheService>();
 
-//註冊 Stripe 第三方金流付款設定
-builder.Services.Configure<StripeSettings>(builder.Configuration.GetSection("StripeSettings"));
-StripeConfiguration.ApiKey = builder.Configuration["StripeSettings:SecretKey"];
-
-
-
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
@@ -155,6 +148,8 @@ builder.Services.AddSession(options =>
 });
 // =============================
 
+// 註冊首頁輪播圖與跑馬燈服務
+builder.Services.AddScoped<IDataAccessService, DataAccessService>();
 
 builder.Services.AddScoped<IPasswordHasher<Member>, PasswordHasher<Member>>();
 builder.Services.AddScoped<MemberService>();
@@ -193,7 +188,6 @@ app.UseAuthentication(); // 認證中間件需要在 Session 之前
 app.UseSession(); // 啟用 Session 中間件
 app.UseMiddleware<ModuleTrackingMiddleware>(); // 模組追蹤中間件
 app.UseAuthorization();
-app.MapControllers();
 
 // 先註冊 API Controllers 路由
 app.MapControllers();
