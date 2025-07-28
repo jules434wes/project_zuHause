@@ -3,6 +3,8 @@
 
 // 全域變數
 var currentMemberId = null;
+var currentIdNumber = null;
+var currentAction = null;
 
 // 測試函數已移除
 
@@ -346,9 +348,7 @@ document.addEventListener('DOMContentLoaded', function() {
         })
     })
 
-    // Double Check 確認機制
-    let currentAction = null;
-    let currentIdNumber = null;
+    // Double Check 確認機制已移至全域變數
 
     // 身分驗證確認按鈕事件
     document.getElementById('confirmVerifyBtn').addEventListener('click', function() {
