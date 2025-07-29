@@ -57,6 +57,8 @@ namespace zuHause.Controllers
             // 這些資訊在 AuthController.Login() 時從資料庫查詢並存入 Claims
             ViewBag.EmployeeID = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             ViewBag.Role = HttpContext.User.FindFirst("RoleName")?.Value;
+            ViewBag.Name = HttpContext.User.FindFirst(ClaimTypes.Name)?.Value;
+
 
             // === 步驟2：解析權限JSON ===
             // PermissionsJSON 來自資料庫 AdminRoles.PermissionsJson 欄位
@@ -1574,6 +1576,10 @@ namespace zuHause.Controllers
                 return Conflict("帳號已存在");
             }
 
+            // 🔢 自訂 ID：取最大 adminId + 1
+            var maxId = _context.Admins.Max(a => (int?)a.AdminId) ?? 1000;
+            var nextId = maxId + 1;
+
             // 產生 Salt 並雜湊密碼
             var salt = Guid.NewGuid().ToString("N").Substring(0, 8);
             var passwordHash = Convert.ToBase64String(
@@ -1585,6 +1591,7 @@ namespace zuHause.Controllers
 
             var admin = new Admin
             {
+                AdminId = nextId, // ✅ 手動指定主鍵 ID
                 Account = request.Account,
                 PasswordHash = passwordHash,
                 PasswordSalt = salt,
@@ -1599,8 +1606,14 @@ namespace zuHause.Controllers
             _context.Admins.Add(admin);
             _context.SaveChanges();
 
-            return Ok(new { success = true, message = "管理員新增成功" });
+            return Ok(new
+            {
+                success = true,
+                message = "後台管理人員新增成功 ID:",
+                adminId = admin.AdminId // ✅ 回傳 ID
+            });
         }
+
 
         public class CreateAdminRequest
         {
