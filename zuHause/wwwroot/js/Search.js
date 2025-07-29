@@ -262,7 +262,8 @@ async function performSearch() {
         const queryString = queryParams.toString();
         const newUrl = window.location.pathname + '?' + queryString;
         window.history.pushState({}, '', newUrl);
-        console.log('完整的搜尋 URL 已保存到 localStorage:', newUrl);
+        //console.log('完整的搜尋 URL 已保存到 localStorage:', newUrl);
+
         //存取url，更新猜你喜歡房源
         localStorage.setItem('lastFullSearchUrl', newUrl);
         const paramsForRecommendation = {};
@@ -278,13 +279,15 @@ async function performSearch() {
         // 發送 AJAX 請求
         // 注意：這裡假設後端 URL 仍是 /api/Tenant/Search/list
         const response = await fetch(`/api/Tenant/Search/list?${queryParams.toString()}`);
+        //console.log("搜索", queryParams.toString())
+        //console.log("結果", response)
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
 
         // 假設後端返回的 JSON 結構為 { totalCount: N, properties: [...], currentPage: X, totalPages: Y }
         const data = await response.json();
-        console.log("API 返回的數據:", data); // 方便除錯
+        //console.log("API 返回的數據:", data); // 方便除錯
 
         // 清空舊的搜尋結果和分頁
         searchResultsContainer.innerHTML = '';
@@ -340,7 +343,7 @@ async function performSearch() {
                         </div>
                         <div class="card-body">
                             <h5 class="card-title d-flex align-items-center">
-                                <a href="/Property/Details/${propertyId}" class="text-truncate me-2">${title}</a>
+                                <a href="/Property/${propertyId}" class="text-truncate me-2">${title}</a>
                             </h5>
                             <div class="location-info">
                                 <i class="bi bi-geo-alt-fill"></i> ${addressLine}
@@ -1055,7 +1058,7 @@ async function applyUrlParamsToUI() {
     if (urlParams.get('pageNumber')) {
         pageNumber = urlParams.get('pageNumber');
     }
-    console.log('--- 呼叫 applyUrlParamsToUI 中 ---', cityCode); // 觀察點 C
+    //console.log('--- 呼叫 applyUrlParamsToUI 中 ---', cityCode); // 觀察點 C
     isApplyingUrlParams = false; // UI 設置完成，解除旗標
 }
 
@@ -1110,9 +1113,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     if (window.location.search) {
-        console.log('--- 呼叫 applyUrlParamsToUI 開始 ---', cityCode); // 觀察點 A
+        //console.log('--- 呼叫 applyUrlParamsToUI 開始 ---', cityCode); // 觀察點 A
         await applyUrlParamsToUI()
-        console.log('--- applyUrlParamsToUI 完成，檢查 UI ---',cityCode); // 觀察點 B (你目前的斷點位置)
+        //console.log('--- applyUrlParamsToUI 完成，檢查 UI ---',cityCode); // 觀察點 B (你目前的斷點位置)
 
     }
     else {

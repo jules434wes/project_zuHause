@@ -3,27 +3,51 @@
 *@
 @{
 }
-<div class='row g-3'>
-    <!-- DAU 折線圖 -->
-    <div class='col-md-6'>
-        <div class='card p-3'>
-            📈 近五天活躍用戶
-            <canvas id='chartDAU'></canvas>
+<div class="mt-4">
+    <h5 class="fw-bold">📝 活躍用戶監控</h5>
+    <div class="row g-3">
+        <div class='col-md-6'>
+            <div class='card p-3'>
+                📈 近五天活躍用戶
+                <canvas id='chartDAU'></canvas>
+            </div>
+        </div>
+        <div class='col-md-6'>
+            <div class="card p-3">
+                📈 今年活躍用戶
+                <canvas id="chartYearDAU"></canvas>
+
+            </div>
+        </div>
+        <div class='col-md-6'>
+            <div class="card p-3">
+                📈 今月活躍用戶
+                <canvas id="chartMonthDAU"></canvas>
+            </div>
         </div>
     </div>
-    <div class='col-md-6'>
-        <div class="card p-3">
-            📈 今年活躍用戶
-            <canvas id="chartYearDAU"></canvas>
-            
+</div>
+<!-- 申請行為監控區塊 -->
+<div class="mt-4">
+    <h5 class="fw-bold">📝 申請行為監控</h5>
+    <div class="row g-3">
+        <div class="col-md-6">
+            <div class="card p-3">
+                📝 近五日申請行為（租賃 / 看房）
+                <canvas id="chartApplication"></canvas>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card p-3">
+                📈 今年每月申請趨勢
+                <canvas id="chartApplicationYear"></canvas>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card p-3">
+                📈 今月每日申請趨勢
+                <canvas id="chartApplicationMonth"></canvas>
+            </div>
         </div>
     </div>
-    <div class='col-md-6'>
-        <div class="card p-3">
-            📈 今月活躍用戶
-            <canvas id="chartMonthDAU"></canvas>
-         </div>
-    </div>
-    
-    
 </div>

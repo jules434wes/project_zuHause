@@ -412,7 +412,7 @@ namespace zuHause.Controllers
                                            Area = p.Area,
                                            MonthlyRent = p.MonthlyRent,
                                            ImagePath = p.PropertyImages
-                                                        .Where(img => img.PropertyId == p.PropertyId) // 確保關聯性，雖然通常不需要顯式寫這行，EF會處理
+                                                        .Where(img => img.PropertyId == p.PropertyId) 
                                                          .OrderBy(img => img.DisplayOrder) // IsPrimary 為 true 的會排在前面
                                                          .Select(img => img.ImagePath) // 選擇圖片路徑
                                                          .FirstOrDefault(),            // 取得第一張

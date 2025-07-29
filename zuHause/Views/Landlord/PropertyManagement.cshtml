@@ -12,17 +12,21 @@
 <!-- 房源管理頁面 -->
 <div class="container-fluid py-4">
     <!-- Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h2 class="mb-1">
-                <i class="fas fa-home me-2 text-primary"></i>房源管理
-            </h2>
-            <p class="text-muted mb-0">管理您的所有房源 • 總計 @Model.TotalCount 個房源</p>
-        </div>
-        <div>
-            <a href="/property/new" class="btn btn-primary btn-lg">
-                <i class="fas fa-plus me-2"></i>刊登新房源
-            </a>
+    <div class="property-management-header mb-5 bg-secondary-soft rounded">
+        <div class="d-flex justify-content-between align-items-center">
+            <div class="header-content">
+                <h1 class="page-title mb-2">
+                    <i class="fas fa-building me-3"></i>房源管理
+                </h1>
+                <p class="page-subtitle text-muted mb-0">
+                    <i class="fas fa-chart-line me-2"></i>管理您的所有房源 • 總計 <span class="fw-bold text-primary">@Model.TotalCount</span> 個房源
+                </p>
+            </div>
+            <div class="header-actions">
+                <a href="/property/new" class="btn interactive-primary btn-lg shadow-sm">
+                    <i class="fas fa-plus me-2"></i>刊登新房源
+                </a>
+            </div>
         </div>
     </div>
 
@@ -50,17 +54,23 @@
         @if (Model.AvailableProperties.Any())
         {
             <section class="property-section mb-5">
-                <div class="section-header mb-4">
-                    <h3 class="section-title">
-                        <i class="fas fa-check-circle text-success me-2"></i>
-                        可用房源 
-                        <span class="badge bg-success ms-2">@Model.AvailableCount</span>
-                    </h3>
-                    <p class="section-description text-muted mb-0">
-                        正在上架或已發出合約的房源
-                    </p>
+                <div class="section-header-modern mb-4">
+                    <div class="d-flex align-items-center">
+                        <div class="section-icon bg-success bg-opacity-10 me-3">
+                            <i class="fas fa-check-circle text-success"></i>
+                        </div>
+                        <div>
+                            <h3 class="section-title-modern mb-1">
+                                可用房源 
+                                <span class="badge bg-success ms-2">@Model.AvailableCount</span>
+                            </h3>
+                            <p class="section-description-modern text-muted mb-0">
+                                正在上架或已發出合約的房源
+                            </p>
+                        </div>
+                    </div>
                 </div>
-                <div class="row">
+                <div class="property-cards-container">
                     @foreach (var property in Model.AvailableProperties)
                     {
                         @await Component.InvokeAsync("PropertyManagementCard", new { property = property, displayMode = PropertyCardDisplayMode.Management })
@@ -73,17 +83,21 @@
         @if (Model.PendingProperties.Any())
         {
             <section class="property-section mb-5">
-                <div class="section-header mb-4">
-                    <h3 class="section-title">
-                        <i class="fas fa-clock text-warning me-2"></i>
-                        等待刊登的房源 
-                        <span class="badge bg-warning text-dark ms-2">@Model.PendingCount</span>
-                    </h3>
-                    <p class="section-description text-muted mb-0">
-                        審核中、待付款或需要補充資料的房源
-                    </p>
+                <div class="section-header-modern mb-4">
+                    <div class="d-flex align-items-center">
+                        <!-- 移除等待刊登區塊的圖示 -->
+                        <div>
+                            <h3 class="section-title-modern mb-1">
+                                等待刊登的房源 
+                                <span class="badge bg-warning text-dark ms-2">@Model.PendingCount</span>
+                            </h3>
+                            <p class="section-description-modern text-muted mb-0">
+                                審核中、待付款或需要補充資料的房源
+                            </p>
+                        </div>
+                    </div>
                 </div>
-                <div class="row">
+                <div class="property-cards-container">
                     @foreach (var property in Model.PendingProperties)
                     {
                         @await Component.InvokeAsync("PropertyManagementCard", new { property = property, displayMode = PropertyCardDisplayMode.Management })
@@ -96,17 +110,20 @@
         @if (Model.UnavailableProperties.Any())
         {
             <section class="property-section mb-5">
-                <div class="section-header mb-4">
-                    <h3 class="section-title">
-                        <i class="fas fa-ban text-secondary me-2"></i>
-                        目前不可用的房源 
-                        <span class="badge bg-secondary ms-2">@Model.UnavailableCount</span>
-                    </h3>
-                    <p class="section-description text-muted mb-0">
-                        出租中、已下架或已封鎖的房源
-                    </p>
+                <div class="section-header-modern mb-4">
+                    <div class="d-flex align-items-center">
+                        <div>
+                            <h3 class="section-title-modern mb-1">
+                                目前不可用的房源 
+                                <span class="badge bg-secondary ms-2">@Model.UnavailableCount</span>
+                            </h3>
+                            <p class="section-description-modern text-muted mb-0">
+                                出租中、已下架或已封鎖的房源
+                            </p>
+                        </div>
+                    </div>
                 </div>
-                <div class="row">
+                <div class="property-cards-container">
                     @foreach (var property in Model.UnavailableProperties)
                     {
                         @await Component.InvokeAsync("PropertyManagementCard", new { property = property, displayMode = PropertyCardDisplayMode.Management })
@@ -151,6 +168,21 @@
                 <button type="button" class="btn btn-danger" id="confirmButton">確認</button>
             </div>
         </div>
+    </div>
+</div>
+
+<!-- 申請 / 預約詳情 Offcanvas -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="applicationDetailsPanel" aria-labelledby="applicationDetailsLabel">
+    <div class="offcanvas-header border-bottom">
+        <div>
+            <h5 class="offcanvas-title" id="applicationDetailsLabel">申請詳情</h5>
+            <p class="text-muted small mb-0" id="applicationDetailsAddress"></p>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+        <!-- JS 動態注入 -->
+        <div id="applicationDetailsBody" class="p-4"></div>
     </div>
 </div>
 
