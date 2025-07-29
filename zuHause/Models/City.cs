@@ -45,4 +45,6 @@ public partial class City
     public virtual ICollection<Member> MemberPrimaryRentalCities { get; set; } = new List<Member>();
 
     public virtual ICollection<Member> MemberResidenceCities { get; set; } = new List<Member>();
+
+    public virtual ICollection<Property> Properties { get; set; } = new List<Property>();
 }
