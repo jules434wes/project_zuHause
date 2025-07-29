@@ -283,3 +283,35 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 });
+
+// 分頁功能
+let currentPageData = {
+    'all': 1,
+    'pending': 1
+};
+
+// 全域函數 - 分頁切換
+function changePage(page, tableType) {
+    if (page < 1) return;
+    
+    currentPageData[tableType] = page;
+    
+    // 重新載入頁面內容（這裡可以用 AJAX 來優化）
+    // 暫時使用重新載入的方式，之後可以改成 AJAX
+    const currentUrl = new URL(window.location);
+    currentUrl.searchParams.set(tableType + '_page', page);
+    window.location.href = currentUrl.toString();
+}
+
+// 獲取當前頁面
+function getCurrentPage(tableType) {
+    const urlParams = new URLSearchParams(window.location.search);
+    return parseInt(urlParams.get(tableType + '_page')) || 1;
+}
+
+// 初始化分頁
+document.addEventListener('DOMContentLoaded', function() {
+    // 從 URL 參數獲取當前頁面
+    currentPageData['all'] = getCurrentPage('all');
+    currentPageData['pending'] = getCurrentPage('pending');
+});
