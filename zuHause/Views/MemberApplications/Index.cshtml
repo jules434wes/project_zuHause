@@ -1,6 +1,7 @@
 ﻿@using zuHause.ViewModels.MemberViewModel
 @model List<ApplicationRecordViewModel>
 @{
+    ViewData["Title"] = "申請紀錄管理";
     ViewData["activePage"] = "MemberApplications";
 }
 
@@ -9,80 +10,51 @@
     <div class="col-10 d-flex justify-content-start flex-column
         align-items-center">
         <div class="row w-100">
-            <h1 class="fs-3 text-white px-0">申請紀錄管理</h1>
+            <h1 class="fs-3 text-white px-0 mb-3">申請紀錄管理</h1>
+            <hr />
             <div class="col-12 mt-3 px-0">
-                <ul class="nav nav-tabs" id="ApplicationType" role="tablist">
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link text-black active" id="allItemTab" data-bs-toggle="tab"
-                                data-bs-target="#allItemTab-pane" type="button" role="tab" aria-controls="allItemTab-pane"
-                                aria-selected="true">
-                            全部
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link text-black" id="applyHouseViewing" data-bs-toggle="tab"
-                                data-bs-target="#applyHouseViewing-pane" type="button" role="tab"
-                                aria-controls="applyHouseViewing-pane" aria-selected="false">
-                            申請看房
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link text-black" id="applyRental" data-bs-toggle="tab"
-                                data-bs-target="#applyRental-pane" type="button" role="tab" aria-controls="applyRental-pane"
-                                aria-selected="false">
-                            申請租賃
-                        </button>
-                    </li>
+                <ul class="d-flex gap-3 align-items-center p-0">
+                    <li><a class="btn @(ViewBag.type == "ALL" ? "btn-primary" : "btn-light")" href="@Url.Action("Index", "MemberApplications", new { type = "ALL" })">全部</a></li>
+                    <li><a class="btn @(ViewBag.type == "HOUSE_VIEWING" ? "btn-primary" : "btn-light")" href="@Url.Action("Index", "MemberApplications", new { type = "HOUSE_VIEWING" })">看房申請</a></li>
+                    <li><a class="btn @(ViewBag.type == "RENTAL" ? "btn-primary" : "btn-light")" href="@Url.Action("Index", "MemberApplications", new { type = "RENTAL" })">租賃申請</a></li>
                 </ul>
-                <div class="tab-content" id="ApplicationTypeContent">
-                    <div class="tab-pane fade show active py-3" id="allItemTab-pane" role="tabpanel"
-                         aria-labelledby="allItemTab" tabindex="0">
-                        <div class="row w-100 mx-0 mb-3 align-items-center justify-content-end">
-                            <div class="col-auto px-0">
-                                <select class="form-select" id="statusFilter" name="statusFilter">
-                                    <option value="">申請狀態</option>
-                                    @if (ViewBag.ApplicationStatusOptions is Dictionary<string, string> statusDict)
-                                    {
-                                        foreach (var status in statusDict)
-                                        {
-                                            <option value="@status.Key">@status.Value</option>
-                                        }
-                                    }
-                                </select>
-                            </div>
-                        </div>
-                        <div class="row w-100 mx-0 gy-3">
-                            @foreach (ApplicationRecordViewModel item in Model)
-                            {
-                                @await Component.InvokeAsync("MemberApplicationCard",new MemberApplicationCardInputViewModel
-                                {
-                                    Record = item,
-                                    StatusCodeDict = ViewBag.ApplicationStatusOptions as Dictionary<string, string> ?? new()
-                                })
-                             }
-                        </div>
-
-                    </div>
-                    <div class="tab-pane fade" id="applyHouseViewing-pane" role="tabpanel"
-                         aria-labelledby="applyHouseViewing" tabindex="0">
-                        ...
-                    </div>
-                    <div class="tab-pane fade" id="applyRental-pane" role="tabpanel" aria-labelledby="applyRental"
-                         tabindex="0">
-                        ...
-                    </div>
-                </div>
             </div>
         </div>
+        <div class="row w-100">
+            <form method="get" class="row px-0 w-100 mx-0 mb-3 align-items-center justify-content-end">
+                <input type="hidden" name="type" value="@ViewBag.type"/>
+                <div class="col-auto px-0">
+                    <select class="form-select" id="statusFilter" name="statusFilter" onchange="this.form.submit()">
+                        <option value="">申請狀態</option>
+                        @if (ViewBag.ApplicationStatusOptions is Dictionary<string, string> statusDict)
+                        {
+                            foreach (var status in statusDict)
+                            {
+                                <option value="@status.Key" selected="@(Context.Request.Query["statusFilter"] == status.Key ? "selected" : null)">@status.Value</option>
+                            }
+                        }
+                    </select>
+                </div>
+            </form>
+            <div class="row px-0 w-100 mx-0 gap-3">
+                @foreach (ApplicationRecordViewModel item in Model)
+                {
+                    @await Component.InvokeAsync("MemberApplicationCard",new MemberApplicationCardInputViewModel
+                    {
+                        Record = item,
+                        StatusCodeDict = ViewBag.ApplicationStatusOptions as Dictionary<string, string> ?? new()
+                    })
+                }
+            </div>
+
+        </div>
     </div>
-
-
-
 
 </div>
 
 @section Scripts {
     <script src="~/js/changeMemberContractCard.js"></script>
     <script src="~/js/signatureVerify.js"></script>
+    <script src="~/js/signatureValidation.js"></script>
 
 }

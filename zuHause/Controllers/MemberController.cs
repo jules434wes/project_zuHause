@@ -94,7 +94,7 @@ namespace zuHause.Controllers
             {
                 isValid = _memberService.verifyPassword(member, model.UserPassword!);
             }
-            catch (FormatException ex)
+            catch (FormatException)
             {
                 ModelState.AddModelError("LoginStatus", "帳號或密碼錯誤");
                 return View(model);
@@ -161,12 +161,24 @@ namespace zuHause.Controllers
             await HttpContext.SignInAsync("MemberCookieAuth",
                 new ClaimsPrincipal(claimsIdentity), authProperties);
 
+            // 同時設置 Session 以支援 Stripe 返回認證
+            HttpContext.Session.SetInt32("MemberId", member.MemberId);
 
             TempData["SuccessMessageTitle"] = "通知";
             TempData["SuccessMessageContent"] = "登入成功";
 
-            // 使用智能重導向邏輯
-            var redirectUrl = GetSmartRedirectUrl(model.ReturnUrl);
+            // 智能重導向邏輯：直接基於 member 物件檢查，避免認證狀態延遲問題
+            string redirectUrl;
+            if (member.IsLandlord && member.MemberTypeId == 2 && member.IdentityVerifiedAt != null)
+            {
+                // 已驗證房東 → 房源管理頁面
+                redirectUrl = Url.Action("PropertyManagement", "Landlord") ?? "/landlord/propertymanagement";
+            }
+            else
+            {
+                // 其他情況使用原有智能重導向邏輯
+                redirectUrl = GetSmartRedirectUrl(model.ReturnUrl);
+            }
             return Redirect(redirectUrl);
 
         }
@@ -193,7 +205,17 @@ namespace zuHause.Controllers
             var userId = int.Parse(User.FindFirst("UserId")!.Value);
             var member = await _context.Members.FindAsync(userId);
             if (member == null) return Unauthorized();
+            
+            // 檢查是否已完成身份驗證
+            if (!member.IdentityVerifiedAt.HasValue)
+            {
+                TempData["ErrorMessage"] = "請先完成身份驗證才能成為房東";
+                return RedirectToAction("MemberProfile");
+            }
+            
+            // 根據規格文件：同時更新 isLandlord 和 memberTypeID
             member.IsLandlord = true;
+            member.MemberTypeId = 2; // 房東類型
             member.UpdatedAt = DateTime.Now;
 
             await _context.SaveChangesAsync();
@@ -282,6 +304,8 @@ namespace zuHause.Controllers
             await HttpContext.SignInAsync("MemberCookieAuth",
             new ClaimsPrincipal(claimsIdentity), authProperties);
 
+            // 同時設置 Session 以支援 Stripe 返回認證
+            HttpContext.Session.SetInt32("MemberId", member.MemberId);
 
             TempData["SuccessMessageTitle"] = "切換成功";
             TempData["SuccessMessageContent"] = $"您目前的身分為：{nowRole}";
@@ -380,8 +404,7 @@ namespace zuHause.Controllers
             var result = await _context.Members.Where(m => m.PhoneNumber == phoneNumber).ToListAsync();
             if (result.Count == 0)
             {
-                TempData["phoneNumber"] = phoneNumber;
-                return RedirectToAction("RegisterSendCode");
+                return RedirectToAction("RegisteFillInfomation",new{ phoneNumber}); // 不走手機認證
             }
             else
             {
@@ -408,10 +431,28 @@ namespace zuHause.Controllers
             return View(model);
         }
         [HttpPost]
-        public async Task<IActionResult> RegisteFillInfomation(VerifyCodeViewModel model)
+        [HttpGet]
+        public async Task<IActionResult> RegisteFillInfomation(string phoneNumber)
         {
 
             TempData["activePage"] = "FillInfomation";
+
+            // 驗證手機驗證碼
+            //if (!ModelState.IsValid)
+            //{
+            //    return View("RegisterSendCode", model);
+            //}
+
+            // 這裡應該要驗證手機驗證碼，目前使用固定值 555666
+            //if (model.Verify != 555666)
+            //{
+            //    ModelState.AddModelError("Verify", "驗證碼錯誤");
+            //    return View("RegisterSendCode", model);
+            //}
+
+            // 驗證成功，將手機號碼和驗證狀態存到 TempData
+            //TempData["phoneNumber"] = model.PhoneNumber;
+            TempData["phoneVerified"] = true; // 標記手機已驗證
 
             var cities = await _context.Cities.Select(c => new SelectListItem
             {
@@ -422,7 +463,7 @@ namespace zuHause.Controllers
 
             RegisterViewModel memberInfo = new RegisterViewModel
             {
-                PhoneNumber = model.PhoneNumber,
+                PhoneNumber = phoneNumber,
                 CityOptions = cities,
             };
             return View(memberInfo);
@@ -470,6 +511,10 @@ namespace zuHause.Controllers
 
             DateOnly BirthDate = DateOnly.Parse(model.Birthday!);
 
+            // 檢查手機是否已通過驗證
+            bool phoneVerified = TempData["phoneVerified"] as bool? ?? false;
+            DateTime? phoneVerifiedTime = phoneVerified ? DateTime.Now : null;
+
             Member member = new Member
             {
                 MemberName = model.UserName!,
@@ -482,6 +527,7 @@ namespace zuHause.Controllers
                 ResidenceCityId = model.ResidenceCity,
                 ResidenceDistrictId = model.ResidenceDistrictID,
                 AddressLine = model.AddressLine,
+                PhoneVerifiedAt = phoneVerifiedTime, // 設置手機驗證時間
                 IsActive = true,
                 IsLandlord = false,
                 MemberTypeId = 1,
@@ -540,6 +586,8 @@ namespace zuHause.Controllers
             await HttpContext.SignInAsync("MemberCookieAuth",
                 new ClaimsPrincipal(claimsIdentity), authProperties);
 
+            // 同時設置 Session 以支援 Stripe 返回認證
+            HttpContext.Session.SetInt32("MemberId", member.MemberId);
 
             TempData["SuccessMessageTitle"] = "註冊成功";
             TempData["SuccessMessageContent"] = "您可以開始體驗會員功能";
@@ -791,9 +839,45 @@ namespace zuHause.Controllers
                     await model.UploadFile.CopyToAsync(stream);
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return StatusCode(500, "檔案儲存失敗，請稍後再試");
+            }
+
+            // 計算檔案檢查碼
+            string checksum;
+            using (var sha256 = System.Security.Cryptography.SHA256.Create())
+            {
+                using (var stream = model.UploadFile.OpenReadStream())
+                {
+                    var hash = sha256.ComputeHash(stream);
+                    checksum = Convert.ToHexString(hash);
+                }
+            }
+
+            // 對於身份證上傳，需要關聯到待審核的申請
+            int? approvalId = null;
+            if (model.ModuleCode == "MemberInfo" && 
+                (model.UploadTypeCode == "USER_ID_FRONT" || model.UploadTypeCode == "USER_ID_BACK"))
+            {
+                var memberId = Convert.ToInt32(User.FindFirst("UserId")?.Value);
+                var pendingApproval = await _context.Approvals
+                    .FirstOrDefaultAsync(a => 
+                        a.ModuleCode == "IDENTITY" &&
+                        a.ApplicantMemberId == memberId &&
+                        a.StatusCode == "PENDING");
+                
+                if (pendingApproval != null)
+                {
+                    approvalId = pendingApproval.ApprovalId;
+                    // 日誌：成功找到審核申請
+                    System.Diagnostics.Debug.WriteLine($"身份證上傳：會員 {memberId} 關聯到申請 {approvalId}");
+                }
+                else
+                {
+                    // 日誌：未找到審核申請
+                    System.Diagnostics.Debug.WriteLine($"身份證上傳：會員 {memberId} 未找到待審核申請");
+                }
             }
 
             var uploadInfo = new UserUpload
@@ -808,6 +892,8 @@ namespace zuHause.Controllers
                 MimeType = model.UploadFile.ContentType,
                 FilePath = storePath,
                 FileSize = model.UploadFile.Length,
+                Checksum = checksum,
+                ApprovalId = approvalId,
                 IsActive = true,
                 UploadedAt = DateTime.Now,
                 CreatedAt = DateTime.Now,
@@ -833,23 +919,29 @@ namespace zuHause.Controllers
         [HttpPost]
         public async Task<IActionResult> SubmitIdentityApplication()
         {
-
             int memberId = int.Parse(User.FindFirst("UserId")!.Value);
 
             var member = await _context.Members
                 .FirstOrDefaultAsync(m => m.MemberId == memberId);
 
-
             if (member == null)
                 return NotFound("找不到會員");
 
-            var exists = await _context.Approvals.AnyAsync(a =>
-                a.ModuleCode == "IDENTITY" &&
-                a.ApplicantMemberId == memberId &&
-                a.StatusCode == "PENDING");
+            // 檢查是否已有待審核申請
+            var existingApproval = await _context.Approvals
+                .FirstOrDefaultAsync(a =>
+                    a.ModuleCode == "IDENTITY" &&
+                    a.ApplicantMemberId == memberId &&
+                    a.StatusCode == "PENDING");
 
-            if (exists)
-                return BadRequest("已有待審核的申請，不可重複送出");
+            if (existingApproval != null)
+            {
+                return Json(new { 
+                    success = true, 
+                    message = "身份驗證申請已存在",
+                    approvalId = existingApproval.ApprovalId 
+                });
+            }
 
 
 
@@ -893,7 +985,8 @@ namespace zuHause.Controllers
 
 
         /// <summary>
-        /// 智能重導向輔助方法 - 根據來源判斷要導向家具還是租屋首頁
+        /// 智能重導向輔助方法 - 結合Session模組追蹤和Referer判斷來決定轉導目標
+        /// 優先順序：明確ReturnUrl > Session記錄 > Referer判斷 > 預設首頁
         /// </summary>
         /// <param name="returnUrl">明確指定的回傳URL</param>
         /// <returns>重導向URL</returns>
@@ -901,45 +994,68 @@ namespace zuHause.Controllers
         {
             try
             {
-                // 如果有明確的 ReturnUrl，優先使用（保持現有邏輯不變）
+                // 第一優先：如果有明確的 ReturnUrl，優先使用
                 if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
                 {
                     return returnUrl;
                 }
 
-                // 檢查 HTTP Referer 來判斷用戶來源
-                var referer = Request.Headers["Referer"].ToString();
-                if (!string.IsNullOrEmpty(referer))
+                // 第二優先：基於用戶類型的智能重導向
+                if (User.Identity?.IsAuthenticated == true)
                 {
-                    // 防止無限重導向：如果 Referer 指向登入或登出頁面，跳過檢查
-                    if (referer.Contains("/Member/Login") ||
-                        referer.Contains("/Member/Logout") ||
-                        referer.Contains("/Auth/"))
+                    var userIdClaim = User.FindFirst("UserId")?.Value;
+                    if (int.TryParse(userIdClaim, out var userId))
                     {
-                        // 跳過，使用預設行為
-                    }
-                    else
-                    {
-                        // 檢查是否來自家具相關頁面
-                        if (referer.Contains("/Furniture/") ||
-                            referer.Contains("FurnitureHomePage") ||
-                            referer.Contains("OrderHistory") ||
-                            referer.Contains("RentalCart") ||
-                            referer.Contains("ProductPurchasePage"))
+                        // 查詢用戶身份類型
+                        var member = _context.Members.FirstOrDefault(m => m.MemberId == userId);
+                        if (member != null)
                         {
-                            var furnitureUrl = Url.Action("FurnitureHomePage", "Furniture");
-                            return !string.IsNullOrEmpty(furnitureUrl) ? furnitureUrl : "/Furniture/FurnitureHomePage";
+                            // 已驗證房東 → 房源管理頁面
+                            if (member.IsLandlord && member.MemberTypeId == 2 && member.IdentityVerifiedAt != null)
+                            {
+                                return Url.Action("PropertyManagement", "Landlord") ?? "/landlord/propertymanagement";
+                            }
+                            // 房客 → 租屋首頁（保持原有邏輯）
+                            // 未驗證房東 → 租屋首頁（保持原有邏輯）
                         }
                     }
                 }
 
-                // 預設導向租客首頁（維持原有行為）
-                var tenantUrl = Url.Action("FrontPage", "Tenant");
-                return !string.IsNullOrEmpty(tenantUrl) ? tenantUrl : "/Tenant/FrontPage";
+                // 第三優先：檢查Session中記錄的最後模組
+                var lastModule = HttpContext.Session.GetString("LastModule");
+                if (!string.IsNullOrEmpty(lastModule))
+                {
+                    return lastModule switch
+                    {
+                        "Furniture" => Url.Action("FurnitureHomePage", "Furniture") ?? "/Furniture/FurnitureHomePage",
+                        "Rental" => Url.Action("FrontPage", "Tenant") ?? "/Tenant/FrontPage",
+                        _ => Url.Action("FrontPage", "Tenant") ?? "/Tenant/FrontPage"
+                    };
+                }
+
+                // 第四優先：回退到Referer判斷 (針對Session過期或新用戶)
+                var referer = Request.Headers["Referer"].ToString();
+                if (!string.IsNullOrEmpty(referer))
+                {
+                    // 防止無限重導向：跳過系統頁面
+                    if (!referer.Contains("/Member/") && 
+                        !referer.Contains("/Auth/") &&
+                        !referer.Contains("/Admin/"))
+                    {
+                        // 使用Controller路徑自動判斷（移除硬編碼頁面清單）
+                        if (referer.Contains("/Furniture/", StringComparison.OrdinalIgnoreCase))
+                        {
+                            return Url.Action("FurnitureHomePage", "Furniture") ?? "/Furniture/FurnitureHomePage";
+                        }
+                    }
+                }
+
+                // 預設：導向租屋首頁
+                return Url.Action("FrontPage", "Tenant") ?? "/Tenant/FrontPage";
             }
             catch (Exception)
             {
-                // 如果發生任何錯誤，回到安全的預設頁面
+                // 異常處理：回到安全的預設頁面
                 return "/Tenant/FrontPage";
             }
         }

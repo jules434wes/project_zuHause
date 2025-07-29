@@ -1,8 +1,8 @@
 ﻿@* 申請看房(完成)，會打資料到rentalApplications資料表 *@
-@* @await Component.InvokeAsync("ApplyHouseModal", new { propertyId = 3032, userId = Convert.ToInt32(User.FindFirst("UserId")!.Value) }) *@
+@await Component.InvokeAsync("ApplyHouseModal", new { propertyId = 5071, userId = Convert.ToInt32(User.FindFirst("UserId")!.Value) })
 
 @* 申請租賃(完成)，會打資料到rentalApplications資料表，及上傳圖片到userUploads *@
- @* @await Component.InvokeAsync("ApplyRentalModal", new { propertyId = 3032, userId = Convert.ToInt32(User.FindFirst("UserId")!.Value)}) *@
+ @await Component.InvokeAsync("ApplyRentalModal", new { propertyId = 5071, userId = Convert.ToInt32(User.FindFirst("UserId")!.Value)})
 
 
  @* 未完成：租客簽名、查看租客申請*@
@@ -13,10 +13,30 @@
 
 @* @await Component.InvokeAsync("SignContractModal") *@
 
+<p>21</p>
+<button onclick="updateStatus(21, 'PENDING')">待審核</button>
+<button onclick="updateStatus(21, 'WAITING_CONTRACT')">同意申請</button>
+<button onclick="updateStatus(21, 'REJECTED')">拒絕申請</button>
 
-<button onclick="updateStatus(20, 'PENDING')">待審核</button>
-<button onclick="updateStatus(20, 'APPROVED')">同意申請</button>
-<button onclick="updateStatus(20, 'REJECTED')">拒絕申請</button>
+<p>22</p>
+<button onclick="updateStatus(22, 'PENDING')">待審核</button>
+<button onclick="updateStatus(22, 'WAITING_CONTRACT')">同意申請</button>
+<button onclick="updateStatus(22, 'REJECTED')">拒絕申請</button>
+
+<p>23</p>
+<button onclick="updateStatus(23, 'PENDING')">待審核</button>
+<button onclick="updateStatus(23, 'WAITING_CONTRACT')">同意申請</button>
+<button onclick="updateStatus(23, 'REJECTED')">拒絕申請</button>
+
+<p>24</p>
+<button onclick="updateStatus(24, 'PENDING')">待審核</button>
+<button onclick="updateStatus(24, 'WAITING_CONTRACT')">同意申請</button>
+<button onclick="updateStatus(24, 'REJECTED')">拒絕申請</button>
+
+<p>25</p>
+<button onclick="updateStatus(25, 'PENDING')">待審核</button>
+<button onclick="updateStatus(25, 'WAITING_CONTRACT')">同意申請</button>
+<button onclick="updateStatus(25, 'REJECTED')">拒絕申請</button>
 
 
 @section Scripts {

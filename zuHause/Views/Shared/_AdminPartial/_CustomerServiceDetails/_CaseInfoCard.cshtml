@@ -1,47 +1,71 @@
+@model AdminCustomerServiceDetailsViewModel
 @{
-    var caseInfo = new {
-        TicketId = "CS-20240713-001",
-        Status = "處理中",
-        StatusBadge = "text-bg-warning",
-        MemberName = "王大明",
-        MemberId = "M000123",
-        RelatedItem = "房源ID: P12345",
-        RelatedItemLink = "/Admin/admin_propertyDetails?propertyId=P12345",
-        CreatedAt = "2024-07-13 10:30",
-        ReplyAt = "-"
+    // 根據類別代碼設定對應的標籤樣式和顯示文字
+    var categoryBadgeClass = Model.CategoryCode switch {
+        "CONTRACT" => "badge bg-secondary text-white",
+        "PROPERTY" => "badge bg-info text-white", 
+        "FURNITURE" => "badge bg-primary text-white",
+        _ => "badge bg-secondary text-white"
+    };
+    
+    var categoryDisplayText = Model.CategoryCode switch {
+        "CONTRACT" => "租約",
+        "PROPERTY" => "房源",
+        "FURNITURE" => "傢俱",
+        _ => Model.CategoryDisplay
+    };
+
+    var statusBadgeClass = Model.StatusCode switch {
+        "PENDING" => "badge bg-warning text-dark",
+        "PROGRESS" => "badge bg-primary text-white",
+        "RESOLVED" => "badge bg-secondary text-white",
+        _ => "badge bg-secondary text-white"
     };
 }
 
 <!-- 案件資訊卡片 -->
 <div class="card mb-4">
-    <div class="card-header">
-        案件資訊
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span>案件資訊</span>
+        <!-- 醒目的類別標籤 -->
+        <span class="@categoryBadgeClass fs-6">@categoryDisplayText</span>
     </div>
     <div class="card-body">
         <ul class="list-group list-group-flush">
             <li class="list-group-item d-flex justify-content-between align-items-center">
                 客服單號
-                <span>@caseInfo.TicketId</span>
+                <span>@Model.TicketIdDisplay</span>
             </li>
             <li class="list-group-item d-flex justify-content-between align-items-center">
                 案件狀態
-                <span class="badge @caseInfo.StatusBadge">@caseInfo.Status</span>
+                <span class="@statusBadgeClass">@Model.StatusDisplay</span>
             </li>
             <li class="list-group-item d-flex justify-content-between align-items-center">
                 申請會員
-                <a href="/Admin/admin_userDetails?userId=@caseInfo.MemberId">@caseInfo.MemberName (@caseInfo.MemberId)</a>
+                <a href="/Admin/admin_userDetails/@Model.MemberId" target="_blank" class="text-decoration-none">
+                    @Model.MemberName <i class="bi bi-box-arrow-up-right ms-1"></i>
+                </a>
             </li>
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-                關聯項目
-                <a href="@caseInfo.RelatedItemLink">@caseInfo.RelatedItem</a>
-            </li>
+            @if (Model.CategoryCode == "PROPERTY" && Model.PropertyId.HasValue)
+            {
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    相關房源
+                    <a href="/Admin/admin_propertyDetails?id=@Model.PropertyId" target="_blank" class="text-decoration-none">
+                        房源ID: @Model.PropertyId <i class="bi bi-box-arrow-up-right ms-1"></i>
+                    </a>
+                </li>
+            }
             <li class="list-group-item d-flex justify-content-between align-items-center">
                 申請時間
-                <span>@caseInfo.CreatedAt</span>
+                <span>@Model.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")</span>
             </li>
             <li class="list-group-item d-flex justify-content-between align-items-center">
                 最後回覆時間
-                <span>@caseInfo.ReplyAt</span>
+                <span>@(Model.ReplyAt?.ToString("yyyy-MM-dd HH:mm:ss") ?? "---")</span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                處理人員
+                <span>@Model.HandledByName</span>
             </li>
         </ul>
     </div>

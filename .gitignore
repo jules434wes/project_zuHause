@@ -41,6 +41,16 @@ packages/
 project.assets.json
 project.nuget.cache
 
+# Test files and temporary files
+test_*
+test-*
+Test*
+Tests/
+TempQueryApp/
+query*
+*.sql
+manual_coordinates_update.sql
+
 # MCP and temporary files
 .claude/
 .claude-credentials

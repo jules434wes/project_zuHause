@@ -23,6 +23,12 @@ function updateDuration() {
     }
 
     const diff = calculateDateDifference(start, end);
+
+    if (diff.years === 0 && diff.months === 0 && diff.days === 0) {
+        displayText.textContent = `${startValue} 至 ${endValue}，共 1 天`;
+        return;
+    }
+
     displayText.textContent = `${startValue} 至 ${endValue}，共 ${diff.years} 年 ${diff.months} 月 ${diff.days} 日`;
 }
 

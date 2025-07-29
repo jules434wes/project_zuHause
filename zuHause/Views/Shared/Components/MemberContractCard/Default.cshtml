@@ -1,5 +1,9 @@
 ﻿@using zuHause.ViewModels.MemberViewModel
+@using System.Security.Claims
 @model ContractsViewModel
+@{
+    string userRole = User.FindFirst(ClaimTypes.Role)?.Value ?? "";
+}
 
 
 <div class="card col-12 active-0">
@@ -12,7 +16,7 @@
         <div class="row">
             <div class="col-3 px-0">
                 <div class="property-img border ratio ratio-4x3">
-                    <img src="@Url.Content(Model.PreviewImageUrl)" class="w-100 h-100 object-fit-cover" alt="">
+                    <img src="@(Model.imgPath)" class="w-100 h-100 object-fit-cover" alt="">
 
                 </div>
             </div>
@@ -46,24 +50,48 @@
                     <span class="fs-6" title="房屋租金">房屋租金：NT$@Model.MonthlyRent.ToString("0") 元 / 月</span>
                 </div>
             </div>
-            <div class="col-auto d-flex flex-column align-items-start justify-content-start px-0 gap-2">
-                @* 接查看的API *@
-                <form asp-action="ViewContract" method="post" target="_blank" class="w-100">
-                    <input type="hidden" name="contractId" value="@Model.ContractId" />
-                    <button type="submit" class="btn btn-aqua py-0 w-100">查看租賃合約</button>
-                </form>
+            <div class="col-2 d-flex flex-column align-items-start justify-content-start px-0 gap-2">
+
+
+
+                @if (Model.Status == "SIGNED")
+                {
+                    <a href="@Url.Action("DownloadPdf", "MemberContracts", new { contractId = Model.ContractId })" class="btn btn-outline-secondary py-0 w-100">
+                        下載租賃合約
+                    </a>
+                }
                 <a href="@Url.Action("Preview", "MemberContracts", new { contractId = Model.ContractId })"
-                   class="btn btn-outline-secondary py-0 w-100" target="_blank">
-                    預覽合約
+                   class="btn btn-aqua py-0 w-100" target="_blank">
+                    @if (Model.CurrentStatus == "WAIT_LANDLORD_AGREE")
+                    {
+                        @:審閱並同意合約
+                    }
+                    else
+                    {
+                        @:查看租賃合約
+                    }
                 </a>
-                @await Html.PartialAsync("_PartialRentalApplicationsModal",Model)
+                @if (!string.IsNullOrEmpty(Model.HaveFurniture) && userRole=="1")
+                {
+                    <a href="@Url.Action("OrderHistory", "Furniture")" class="btn btn-aqua py-0 w-100" target="_blank">
+                        查看家具租賃訂單
+                    </a>
+                }
+
+                @* @await Html.PartialAsync("_PartialRentalApplicationsModal",Model) *@
 
                 @* <a href="#" class="btn btn-aqua py-0 w-100">頁面快照</a> *@
-                <a href="#" class="btn btn-aqua py-0 w-100">傳送訊息給房東</a>
+                @* <a href="#" class="btn btn-aqua py-0 w-100">傳送訊息給房東</a> *@
                 <button type="button" class="btn btn-aqua py-0 w-100" data-bs-toggle="modal"
                         data-bs-target="#contactService@(@Model.ContractId)">
                     聯絡客服
                 </button>
+                @if (Model.Status == "PENDING" || Model.Status == "BESIGNED")
+                {
+                    <button type="button" class="btn btn-outline-danger py-0 w-100">
+                        取消合約
+                    </button>
+                }
             </div>
         </div>
     </div>

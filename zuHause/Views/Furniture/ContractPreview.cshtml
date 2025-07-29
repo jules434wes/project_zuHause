@@ -1,5 +1,4 @@
-﻿
-@{
+﻿@{
     ViewBag.Title = "合約簽屬";
     Layout = "~/Views/Shared/_NavigationBar.cshtml";
     var contract = ViewBag.Contract;
@@ -62,7 +61,7 @@
     <p><strong>房屋地址：</strong> @property.AddressLine</p>
     <p><strong>租期起始日：</strong> @contract.StartDate.ToString("yyyy-MM-dd")</p>
     <p><strong>租期結束日：</strong> @contract.EndDate.ToString("yyyy-MM-dd")</p>
-    
+
     <h5 class="mt-4">二、租賃家具資訊</h5>
     <p><strong>家具承租起始日：</strong> @DateTime.Today.ToString("yyyy-MM-dd") </p>
     <p><strong>家具承租結束日：</strong> @contract.EndDate.ToString("yyyy-MM-dd")</p>
@@ -174,6 +173,31 @@
             confirmBtn.disabled = !(checkbox.checked && hasSigned);
         }
 
+        // 顯示簽名預覽
+        function showSignaturePreview() {
+            if (signatureImg) {
+                signatureImg.remove();
+            }
+            const dataURL = canvas.toDataURL("image/png");
+            signatureImg = document.createElement("img");
+            signatureImg.src = dataURL;
+            signatureImg.style.width = "250px";
+            signatureImg.style.height = "100px";
+            signatureImg.style.border = "1px solid #ccc";
+            signatureImg.style.marginTop = "10px";
+            previewContainer.innerHTML = "<p><strong>簽名預覽：</strong></p>";
+            previewContainer.appendChild(signatureImg);
+        }
+
+        // 清除簽名預覽
+        function clearPreview() {
+            previewContainer.innerHTML = "";
+            if (signatureImg) {
+                signatureImg.remove();
+                signatureImg = null;
+            }
+        }
+
         // 畫布簽名邏輯
         canvas.addEventListener("mousedown", () => drawing = true);
         canvas.addEventListener("mouseup", () => {
@@ -242,7 +266,20 @@
             .then(res => {
                 if (res.ok) {
                     // ✅ 簽名儲存成功，開始送 Stripe 表單
-                    document.getElementById("stripeForm").submit();
+                   fetch("/Furniture/BeforeStripePayment", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ selectedPropertyId: @ViewBag.SelectedPropertyId })
+                    })
+                    .then(res => {
+                        if (res.ok) {
+                            // 成功設置 TempData，送出 Stripe 表單
+                            document.getElementById("stripeForm").submit();
+                        } else {
+                            alert("付款前暫存失敗，請稍後再試");
+                        }
+                    });
+
                 } else {
                     alert("簽名儲存失敗，請稍後再試");
                 }
@@ -256,4 +293,3 @@
 
 
 
-                            

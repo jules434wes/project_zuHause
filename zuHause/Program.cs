@@ -9,19 +9,27 @@ using System.Text.Unicode;
 using zuHause.Data;
 using zuHause.Helpers;
 using zuHause.Interfaces;
+using zuHause.Interfaces.TenantInterfaces;
+using zuHause.Middleware;
 using zuHause.Models;
+using zuHause.Options;
 using zuHause.Services;
+using zuHause.Services.TenantServices;
 using zuHause.ViewModels;
 
 var builder = WebApplication.CreateBuilder(args);
 
 
-var context = new CustomAssemblyLoadContext();
+// 只在非測試環境載入 PDF 庫
+if (Environment.GetEnvironmentVariable("SKIP_PDF_LIBRARY") != "true")
+{
+    var context = new CustomAssemblyLoadContext();
 
-var path = Path.Combine(Directory.GetCurrentDirectory(), "DinkToPdfLib", "libwkhtmltox.dll");
-context.LoadUnmanagedLibrary(path);
+    var path = Path.Combine(Directory.GetCurrentDirectory(), "DinkToPdfLib", "libwkhtmltox.dll");
+    context.LoadUnmanagedLibrary(path);
 
-builder.Services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
+    builder.Services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
+}
 
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
@@ -40,8 +48,8 @@ builder.Services.AddAuthentication(options =>
 {
     options.LoginPath = "/Member/Login";
     options.AccessDeniedPath = "/Member/AccessDenied";
-    options.ExpireTimeSpan = TimeSpan.FromMinutes(15); // Cookie 有效時間 15 分鐘閒置登出
-    options.SlidingExpiration = true; // 滑動期限（有活動就重置15分鐘）
+    options.ExpireTimeSpan = TimeSpan.FromMinutes(60); // Cookie 有效時間 60 分鐘，確保完整支付流程
+    options.SlidingExpiration = true; // 滑動期限（有活動就重置60分鐘）
     options.Cookie.HttpOnly = true; // 增加安全性
     options.Cookie.IsEssential = true; // 設定為必要的 Cookie
 })
@@ -64,12 +72,40 @@ builder.Services.AddMemoryCache();
 // 註冊 HttpContextAccessor（用於取得 HTTP 上下文）
 builder.Services.AddHttpContextAccessor();
 
+// === Azure Blob Storage 配置與服務註冊 ===
+builder.Services.Configure<BlobStorageOptions>(
+    builder.Configuration.GetSection(BlobStorageOptions.SectionName));
+
+// 註冊 Azure Blob Storage 服務
+builder.Services.AddScoped<IBlobStorageConnectionTest, BlobStorageConnectionTest>();
+
+// === 註冊臨時會話管理服務 ===
+builder.Services.AddScoped<ITempSessionService, TempSessionService>();
+
+// === 註冊 URL 生成與 Blob 操作服務 ===
+builder.Services.AddScoped<IBlobUrlGenerator, BlobUrlGenerator>();
+builder.Services.AddScoped<IBlobStorageService, BlobStorageService>();
+
+// === 註冊檔案遷移服務 ===
+builder.Services.AddScoped<IBlobMigrationService, BlobMigrationService>();
+
+// === 註冊本地到雲端遷移服務 ===
+builder.Services.AddScoped<ILocalToBlobMigrationService, LocalToBlobMigrationService>();
+
+// === 註冊臨時檔案清理服務 ===
+builder.Services.AddScoped<ITempFileCleanupService, TempFileCleanupService>();
+builder.Services.AddHostedService<TempFileCleanupService>();
 
 // 註冊更新申請Log服務
 builder.Services.AddScoped<ApplicationService>();
 
 // 註冊 RealDataSeeder
 builder.Services.AddScoped<RealDataSeeder>();
+
+//註冊發送通知服務
+builder.Services.AddScoped<NotificationService>();
+//註冊圖片轉址服務
+builder.Services.AddScoped<ImageResolverService>();
 
 // 註冊圖片處理服務
 builder.Services.AddScoped<zuHause.Interfaces.IImageProcessor, zuHause.Services.ImageSharpProcessor>();
@@ -109,7 +145,8 @@ builder.Services.AddScoped<zuHause.Interfaces.IPropertyMapCacheService, zuHause.
 builder.Services.Configure<StripeSettings>(builder.Configuration.GetSection("StripeSettings"));
 StripeConfiguration.ApiKey = builder.Configuration["StripeSettings:SecretKey"];
 
-
+//首頁功能
+builder.Services.AddScoped<IDataAccessService, DataAccessService>();
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
@@ -159,7 +196,11 @@ app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthentication(); // 認證中間件需要在 Session 之前
 app.UseSession(); // 啟用 Session 中間件
+app.UseMiddleware<ModuleTrackingMiddleware>(); // 模組追蹤中間件
 app.UseAuthorization();
+app.MapControllers();
+
+// 先註冊 API Controllers 路由
 app.MapControllers();
 
 app.MapControllerRoute(
@@ -178,3 +219,6 @@ pattern: "{controller=Tenant}/{action=FrontPage}/{id?}");
 
 
 app.Run();
+
+// 讓測試專案可以存取 Program 類別
+public partial class Program { }

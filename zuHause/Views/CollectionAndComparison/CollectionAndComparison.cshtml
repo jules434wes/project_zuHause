@@ -1,0 +1,18 @@
+﻿
+@{
+    // ViewData["activePage"] = "CollectionAndComparison";
+    ViewData["activePage"] = "CollectionAndComparison";
+}
+<div class="row w-100 gx-5 justify-content-center position-relative h-100">
+    @await Html.PartialAsync("_PartialMemberSideBar")
+    <div class="col-10 d-flex justify-content-start flex-column 
+        align-items-center content-container overflow-hidden" style="height: 60vh;">
+        <div class="row w-100">
+            <h1 class="fs-3 text-white px-0">我的收藏</h1>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @* <script src="~/js/memberInboxJs/changeContentName.js"></script> *@
+}

@@ -9,6 +9,8 @@
 
     var steps = ViewData["Steps"] as List<string> ?? new();
     var activeStep = ViewData["ActiveStep"] as int? ?? 0;
+
+    string? statusName = ViewData["StepsName"]!.ToString();
 }
 
 <div class="card col-12 @(activeStep > 0 ? $"active-{activeStep}" : "active-0")">
@@ -26,7 +28,7 @@
         <div class="row">
             <div class="col-3 px-0">
                 <div class="property-img border">
-                    <img src="@Url.Content("~/images/logo.png")" class="image-area" alt="房源圖片">
+                    <img src="@(record.imgPath)" class="image-area" alt="房源圖片">
                 </div>
             </div>
             <div class="col">
@@ -55,27 +57,35 @@
                     </div>
                 }
             </div>
-            <div class="col-auto d-flex flex-column align-items-start justify-content-start px-0 gap-2">
-                @if (record.ContractId != null)
+            <div class="col-2 d-flex flex-column align-items-start justify-content-start px-0 gap-2">
+                @if (record.ApplicationType == "RENTAL")
                 {
+                    @if (statusName == "SIGNING")
+                    {
+                        // 簽署合約
+                        @await Html.PartialAsync("_PartialSignContract", new TenantSignViewModel { RentalApplicationId = @record.ApplicationId, ContractId = record.ContractId!.Value })
+                    }
+                    @if (statusName == "WAIT_TENANT_AGREE" || statusName == "WAIT_LANDLORD_AGREE" || statusName == "CONTRACTED")
+                    {
+                        // 查看合約(內有下載合約)
+                        <a href="@Url.Action("Preview", "MemberContracts", new { contractId = record.ContractId })" class="btn btn-outline-secondary py-0 w-100" target="_blank">
+                            瀏覽合約
+                        </a>
+                    }
 
-                    <a href="@Url.Action("Preview", "MemberContracts", new { contractId = record.ContractId })" class="btn btn-outline-secondary py-0 w-100" target="_blank">
-                        預覽合約
-                    </a>
-                    // @await Component.InvokeAsync("SignContractModal", new { applicationId = @record.ApplicationId, contractId = record.ContractId })
-                    @await Html.PartialAsync("_PartialSignContract", new TenantSignViewModel { RentalApplicationId = @record.ApplicationId, ContractId = record.ContractId.Value })
-                }
-                else
-                {
-                    <span class="btn btn-secondary py-0 w-100 disabled">尚無合約</span>
-                }
 
-                <a href="@Url.Action("Message", "Chat", new { landlordId = record.LandlordMemberId })" class="btn btn-aqua py-0 w-100">傳送訊息給房東</a>
+                }
+                <a href="@Url.Action("Message", "Chat", new { landlordId = record.LandlordMemberId })" class="btn btn-aqua py-0 w-100">查看房源</a>
 
                 <button type="button" class="btn btn-aqua py-0 w-100" data-bs-toggle="modal"
                         data-bs-target="#contactService@(record.ApplicationId)">
                     聯絡客服
                 </button>
+
+                <button type="button" class="btn btn-aqua py-0 w-100">
+                    取消申請
+                </button>
+                
             </div>
         </div>
 

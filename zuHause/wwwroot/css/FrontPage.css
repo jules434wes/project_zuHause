@@ -1,18 +1,20 @@
 ﻿
 /* 公告跑馬燈 */
 .announcement-marquee-container {
-    overflow: hidden;
-    white-space: nowrap;
-    position: relative;
-    z-index: 0; /* 確保輪播圖或其他內容不會被蓋住 */
+    overflow: hidden; /* 隱藏超出容器的內容 */
+    white-space: nowrap; /* 確保內容不換行 */
+    position: relative; /* 相對定位，以便內部絕對定位的元素參考 */
+    z-index: 0;
+    height: 30px;
 }
 
 .announcement-marquee-content {
-    display: inline-block; /* 允許內容水平流動 */
-    animation: marquee 15s linear infinite; /* 跑馬燈動畫 */
-    padding-left: 100%; /* 從螢幕右側開始 */
+    display: inline-block;
     font-size: 1.1em;
     color: #343a40;
+    position: absolute; /* 絕對定位，以便精確控制其 left 屬性 */
+    top: 0; /* 垂直對齊容器頂部 */
+    white-space: nowrap; /* 確保文字不換行 */
 }
 
 @keyframes marquee {
@@ -27,8 +29,15 @@
 
 /* 輪播圖和搜尋框的容器 */
 .carousel-container {
-    position: relative; /* 設置為相對定位，以便其子元素可以絕對定位 */
-    margin-bottom: 30px; /* 輪播圖下方留一些空間 */
+    position: relative;
+    margin-bottom: 30px;
+    /* 設定最大寬度，例如 1200px */
+    max-width: 1200px;
+    /* 讓容器寬度佔滿父容器，直到達到 max-width */
+    width: 100%; /* 這會讓它在小於 max-width 時響應式縮小 */
+    /* 水平居中 */
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .search-box-overlay {
@@ -246,7 +255,7 @@
     font-size: 0.9em; /* 字體大小 */
     cursor: pointer; /* 鼠標懸停時顯示指針 */
     background-color: #f0f0f0; /* 淺背景色 */
-    color: #333; /* 深文字色 */
+    color: #fff; /* 淺色文字 */
     display: inline-flex; /* 使用 flex 佈局，使文本和關閉按鈕對齊 */
     align-items: center; /* 垂直居中對齊項目 */
 }
@@ -258,7 +267,97 @@
         opacity: 0.7; /* 略微透明 */
     }
 
-        .search-history-item .btn-close:hover {
+    .search-history-item .btn-close:hover {
             opacity: 1;
             color: #000; /* 懸停時顏色變深 */
-        }
+    }
+
+
+
+/* 自定義圖片輪播圖樣式 */
+#myCustomCarousel {
+    width: 100%;
+    max-width: 1200px; /* 根據您的需求調整最大寬度 */
+    margin: 0 auto; /* 置中 */
+    overflow: hidden; /* 隱藏超出容器的圖片 */
+    position: relative; /* 為了絕對定位子元素 */
+}
+
+#carouselImagesContainer {
+    display: flex; /* 讓圖片水平排列 */
+    transition: transform 0.5s ease-in-out; /* 平滑過渡效果 */
+    /* 確保容器足夠寬，以容納所有圖片 */
+    /* 這將由 JS 動態調整 transform: translateX() 來實現滑動 */
+}
+
+    #carouselImagesContainer img {
+        width: 100%; /* 確保每張圖片佔滿容器寬度 */
+        flex-shrink: 0; /* 防止圖片在 flex 容器中縮小 */
+        display: block; /* 移除圖片底部可能的空白 */
+    }
+
+/* 導航按鈕樣式 */
+.carousel-control-prev,
+.carousel-control-next {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0, 0, 0, 0); /* 半透明背景 */
+    opacity: inherit; 
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    cursor: pointer;
+    border-radius: 5px;
+    z-index: 10; /* 確保按鈕在圖片之上 */
+    font-size: 24px; /* 調整箭頭大小 */
+    line-height: 1; /* 調整行高讓箭頭置中 */
+}
+
+.carousel-control-prev {
+    left: 10px;
+}
+
+.carousel-control-next {
+    right: 10px;
+}
+
+    /* 導航按鈕 hover 效果 */
+    .carousel-control-prev:hover,
+    .carousel-control-next:hover {
+        background: rgba(0, 0, 0, 0.3);
+    }
+
+/* 底部指示器樣式 */
+#carouselIndicators {
+    text-align: center;
+    position: absolute;
+    bottom: 10px;
+    width: 100%;
+    z-index: 10;
+}
+
+.custom-indicator {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    background-color: rgba(255, 255, 255, 0.7); /* 非活動狀態顏色 */
+    border-radius: 50%; /* 圓形 */
+    margin: 0 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease; /* 過渡效果 */
+}
+
+.custom-indicator.active {
+        background-color: rgba(255, 255, 255, 1); /* 活動狀態顏色 */
+}
+#carouselImagesContainer img {
+    width: 100%; /* 確保每張圖片佔滿容器寬度 */
+    /* height: auto; */ /* 移除這行或確保它不存在 */
+    flex-shrink: 0; /* 防止圖片在 flex 容器中縮小 */
+    display: block; /* 移除圖片底部可能的空白 */
+    /* === 在這裡添加或修改以下兩行 === */
+    height: 500px; /* 將這裡的值調低，例如 400px 或 350px */
+    object-fit: cover; /* 確保圖片能填滿空間，同時保持比例，超出部分會被裁剪 */
+    /* object-fit: contain; */ /* 如果你不想裁剪圖片，想讓圖片完整顯示，但可能會留白 */
+}

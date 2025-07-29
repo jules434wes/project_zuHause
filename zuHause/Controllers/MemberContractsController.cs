@@ -4,7 +4,10 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using System.Security.Claims;
 using System.Text.Json;
+using zuHause.DTOs;
 using zuHause.Models;
 using zuHause.Services;
 using zuHause.ViewModels.MemberViewModel;
@@ -12,18 +15,20 @@ using zuHause.ViewModels.MemberViewModel;
 namespace zuHause.Controllers
 {
     [Authorize(AuthenticationSchemes = "MemberCookieAuth")]
-    //[Authorize(Roles = "1", AuthenticationSchemes = "MemberCookieAuth")]
     public class MemberContractsController : Controller
     {
         public readonly ZuHauseContext _context;
         private readonly IConverter _converter;
         public readonly ApplicationService _applicationService;
-        public MemberContractsController(ZuHauseContext context, IConverter converter, ApplicationService applicationService)
+        public readonly ImageResolverService _imageResolverService;
+        public readonly NotificationService _notificationService;
+        public MemberContractsController(ZuHauseContext context, IConverter converter, ApplicationService applicationService, ImageResolverService imageResolverService, NotificationService notificationService)
         {
             _context = context;
             _converter = converter;
             _applicationService = applicationService;
-
+            _imageResolverService = imageResolverService;
+            _notificationService = notificationService;
         }
         public async Task<IActionResult> Index()
         {
@@ -33,87 +38,185 @@ namespace zuHause.Controllers
             }
 
             int userId = Convert.ToInt32(User.FindFirst("UserId")!.Value);
-            System.Diagnostics.Debug.WriteLine($"===={userId}===");
-            //查詢申請租賃紀錄
-            IQueryable<RentalApplication> rentalLog = _context.RentalApplications.Where(r => r.ApplicationType == "RENTAL" && r.MemberId == userId);
+            string? role = User.FindFirst(ClaimTypes.Role)?.Value;
 
-            var contractsLog = await rentalLog.Join(_context.Contracts,
-                r => r.ApplicationId,
-                c => c.RentalApplicationId,
-                (r, c) => new { r, c }).Join(_context.FurnitureOrders,
-                rc => rc.r.PropertyId,
-                f => f.PropertyId,
-                (rc, f) => new { rc, f }).Join(_context.Properties,
-                rcf => rcf.rc.r.PropertyId,
-                p => p.PropertyId,
-                (rcf, p) => new { rcf, p }).Join(_context.Members,
-                rcfp => rcfp.rcf.rc.r.MemberId,
-                m => m.MemberId,
-                (rcfp, m) => new ContractsViewModel
-                {
-                    ApplicationId = rcfp.rcf.rc.r.ApplicationId, // 申請ID
-                    ApplicationType = rcfp.rcf.rc.r.ApplicationType, // 申請類型(租賃/看房)
-                    MemberId = rcfp.rcf.rc.r.MemberId, // 會員ID
-                    PropertyId = rcfp.rcf.rc.r.PropertyId, // 房源編號
-                    CurrentStatus = rcfp.rcf.rc.r.CurrentStatus, // 申請狀態
-                    ContractId = rcfp.rcf.rc.c.ContractId, // 合約ID
-                    StartDate = rcfp.rcf.rc.c.StartDate, // 起始時間
-                    EndDate = rcfp.rcf.rc.c.EndDate, // 結束時間
-                    Status = rcfp.rcf.rc.c.Status, // 合約狀態
-                    CustomName = rcfp.rcf.rc.c.CustomName, // 合約備註
-                    HaveFurniture = rcfp.rcf.f.FurnitureOrderId, // 如果有代表有家具
-                    LandlordMemberId = rcfp.p.LandlordMemberId, // 房東ID
-                    PublishedAt = rcfp.p.PublishedAt, // 房東ID
-                    Title = rcfp.p.Title, // 
-                    AddressLine = rcfp.p.AddressLine,
-                    MonthlyRent = rcfp.p.MonthlyRent,
-                    PreviewImageUrl = rcfp.p.PreviewImageUrl,
-                    StatusDisplayName = GetStatusDisplayName(rcfp.rcf.rc.c.Status),
-                    ApplicantName = m.MemberName,
-                    ApplicantBath = m.BirthDate,
-                })
-                .ToListAsync();
+            List<ContractsViewModel> contractsLog;
+
+            var codeDict = await _context.SystemCodes
+                .Where(s => s.CodeCategory == "CONTRACT_STATUS")
+                .ToDictionaryAsync(s => s.Code, s => s.CodeName);
 
 
-            foreach (var log in contractsLog)
+
+
+
+
+
+            if (role == "1") // 房客
             {
 
-                System.Diagnostics.Debug.WriteLine($"===={log.StatusDisplayName}===");
+
+                System.Diagnostics.Debug.WriteLine($"===========房客=================");
+                contractsLog = await _context.RentalApplications
+                    .Where(r => r.ApplicationType == "RENTAL" && r.MemberId == userId)
+                    .Join(_context.Contracts,
+                        r => r.ApplicationId,
+                        c => c.RentalApplicationId,
+                        (r, c) => new { r, c })
+                    .GroupJoin(_context.FurnitureOrders,
+                        rc => rc.r.PropertyId,
+                        f => f.PropertyId,
+                        (rc, fs) => new { rc, fs })
+                    .SelectMany(
+                        temp => temp.fs.DefaultIfEmpty(), // Left Join 關鍵
+                        (temp, f) => new { temp.rc, f }
+                    )
+                    .Join(_context.Properties,
+                        rcf => rcf.rc.r.PropertyId,
+                        p => p.PropertyId,
+                        (rcf, p) => new { rcf, p })
+                    .Join(_context.Members,
+                        rcfp => rcfp.rcf.rc.r.MemberId,
+                        m => m.MemberId,
+                        (rcfp, m) => new ContractsViewModel
+                        {
+                            ApplicationId = rcfp.rcf.rc.r.ApplicationId,
+                            ApplicationType = rcfp.rcf.rc.r.ApplicationType,
+                            MemberId = rcfp.rcf.rc.r.MemberId,
+                            PropertyId = rcfp.rcf.rc.r.PropertyId,
+                            CurrentStatus = rcfp.rcf.rc.r.CurrentStatus,
+                            ContractId = rcfp.rcf.rc.c.ContractId,
+                            StartDate = rcfp.rcf.rc.c.StartDate,
+                            EndDate = rcfp.rcf.rc.c.EndDate,
+                            Status = rcfp.rcf.rc.c.Status,
+                            CustomName = rcfp.rcf.rc.c.CustomName,
+                            HaveFurniture = rcfp.rcf.f != null ? rcfp.rcf.f.FurnitureOrderId : null,
+                            LandlordMemberId = rcfp.p.LandlordMemberId,
+                            PublishedAt = rcfp.p.PublishedAt,
+                            Title = rcfp.p.Title,
+                            AddressLine = rcfp.p.AddressLine,
+                            MonthlyRent = rcfp.p.MonthlyRent,
+                            PreviewImageUrl = rcfp.p.PreviewImageUrl,
+                            StatusDisplayName = GetStatusDisplayName(rcfp.rcf.rc.c.Status, codeDict),
+                            ApplicantName = m.MemberName,
+                            ApplicantBath = m.BirthDate,
+                        }).OrderByDescending(x => x.ContractId)
+                    .ToListAsync();
 
             }
+            else if (role == "2") // 房東
+            {
+                System.Diagnostics.Debug.WriteLine($"===========房東=================");
+                contractsLog = await _context.Contracts
+                    .Where(c => c.RentalApplication != null &&
+                                c.RentalApplication.Property.LandlordMemberId == userId)
+                    .Select(c => new ContractsViewModel
+                    {
+                        ApplicationId = c.RentalApplication!.ApplicationId,
+                        ApplicationType = c.RentalApplication.ApplicationType,
+                        MemberId = c.RentalApplication.MemberId,
+                        PropertyId = c.RentalApplication.PropertyId,
+                        CurrentStatus = c.RentalApplication.CurrentStatus,
+                        ContractId = c.ContractId,
+                        StartDate = c.StartDate,
+                        EndDate = c.EndDate,
+                        Status = c.Status,
+                        CustomName = c.CustomName,
+                        HaveFurniture = _context.FurnitureOrders
+                            .Where(f => f.PropertyId == c.RentalApplication.PropertyId)
+                            .Select(f => f.FurnitureOrderId)
+                            .FirstOrDefault(), // 若沒有就為0
+                        LandlordMemberId = c.RentalApplication.Property.LandlordMemberId,
+                        PublishedAt = c.RentalApplication.Property.PublishedAt,
+                        Title = c.RentalApplication.Property.Title,
+                        AddressLine = c.RentalApplication.Property.AddressLine,
+                        MonthlyRent = c.RentalApplication.Property.MonthlyRent,
+                        PreviewImageUrl = c.RentalApplication.Property.PreviewImageUrl,
+                        StatusDisplayName = GetStatusDisplayName(c.Status,codeDict),
+                        ApplicantName = c.RentalApplication.Member.MemberName,
+                        ApplicantBath = c.RentalApplication.Member.BirthDate,
+                    }).OrderByDescending(x => x.ContractId)
+                    .ToListAsync();
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine($"===========未知身分=================");
+                contractsLog = new List<ContractsViewModel>(); // 若身分未知則給空
+            }
 
-            List<SystemCode> contractStatus = await _context.SystemCodes.Where(s => s.CodeCategory == "CONTRACT_STATUS").ToListAsync();
+            // 顯示代碼轉換
+            List<SystemCode> contractStatus = await _context.SystemCodes
+                .Where(s => s.CodeCategory == "CONTRACT_STATUS")
+                .ToListAsync();
 
             foreach (SystemCode item in contractStatus)
             {
-                item.CodeName = GetStatusDisplayName(item.Code);
+                item.CodeName = GetStatusDisplayName(item.Code, codeDict);
             }
+
             ViewBag.codeCategory = contractStatus;
 
 
 
+            string? filterStatus = Request.Query["statusFilter"];
+
+            if (!string.IsNullOrEmpty(filterStatus))
+            {
+                contractsLog = contractsLog
+                    .Where(c => c.Status == filterStatus)
+                    .ToList();
+            }
+
+            foreach(ContractsViewModel item in contractsLog)
+            {
+                string ImgUrl = await _imageResolverService.GetImageUrl(item.PropertyId, "Property", "Gallery", "medium");
+                item.imgPath = ImgUrl;
+            }
 
 
             return View(contractsLog);
         }
 
-        public static string GetStatusDisplayName(string? code)
+        public static string GetStatusDisplayName(string? code, Dictionary<string, string> codeDict)
         {
-            return code switch
+            if (string.IsNullOrEmpty(code)) return "狀態不明";
+            return codeDict.TryGetValue(code, out var name) ? name : "未知狀態";
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> InboxAgreeApply(string type,int applicationId)
+        {
+            if(type== "ApplyRental")
             {
-                "ACTIVE" => "進行中",
-                "EXPIRED" => "已到期",
-                "RENEWABLE" => "可續約",
-                "TERMINATED" => "已終止",
-                "RELISTABLE" => "已下架",
-                "BESIGNED" => "待簽約",
-                "SIGNED" => "已簽約",
-                _ => "狀態名稱"
-            };
+                await _applicationService.UpdateApplicationStatusAsync(applicationId, "WAITING_CONTRACT");
+
+                return RedirectToAction("ContractProduction", new { applicationId = applicationId });
+            }
+            else
+            {
+                await _applicationService.UpdateApplicationStatusAsync(applicationId, "APPROVED");
+                return RedirectToAction("Index", "MemberInbox");
+            }
+        }
+        [HttpPost]
+        public async Task<IActionResult> InboxRejectedApply(string type,int applicationId)
+        {
+            await _applicationService.UpdateApplicationStatusAsync(applicationId, "REJECTED");
+            return RedirectToAction("Index", "MemberInbox");
         }
 
 
-        public async Task<IActionResult> ContractProduction(int applicationId = 20)
+
+        [HttpPost]
+        public async Task<IActionResult> UpdateStatusApi([FromBody] ApplicationStatusDto dto)
+        {
+            await _applicationService.UpdateApplicationStatusAsync(dto.ApplicationId, dto.Status);
+            return Ok(new { message = "狀態更新成功" });
+        }
+
+
+
+        public async Task<IActionResult> ContractProduction(int applicationId)
         {
             var application = await _context.RentalApplications
                 .Include(a => a.Member) // 租客
@@ -127,21 +230,20 @@ namespace zuHause.Controllers
                 Text = c.CityName
             }).ToListAsync();
 
-            var templates = await _context.ContractTemplates
-                .Select(t => new SelectListItem
-                {
-                    Value = t.ContractTemplateId.ToString(),
-                    Text = t.TemplateName
-                }).ToListAsync();
+            var latestTemplate = await _context.ContractTemplates
+                .OrderByDescending(t => t.ContractTemplateId)
+                .FirstOrDefaultAsync();
 
 
 
             if (application == null)
                 return NotFound();
 
+            string ImgUrl = await _imageResolverService.GetImageUrl(application.PropertyId, "Property", "Gallery", "medium");
+
             var vm = new ContractFormViewModel
             {
-                TemplateOptions = templates,
+                SelectedTemplateId = latestTemplate!.ContractTemplateId,
                 RentalApplicationId = application.ApplicationId,
                 PropertyId = application.Property.PropertyId,
                 Title = application.Property.Title,
@@ -154,6 +256,7 @@ namespace zuHause.Controllers
                 RentalStartDate = application.RentalStartDate,
                 RentalEndDate = application.RentalEndDate,
                 CityOptions = cities,
+                imgPath = ImgUrl,
             };
 
             return View(vm);
@@ -174,11 +277,6 @@ namespace zuHause.Controllers
                 model.CityOptions = await _context.Cities
                     .Select(c => new SelectListItem { Value = c.CityId.ToString(), Text = c.CityName })
                     .ToListAsync();
-
-                model.TemplateOptions = await _context.ContractTemplates
-                    .Select(t => new SelectListItem { Value = t.ContractTemplateId.ToString(), Text = t.TemplateName })
-                    .ToListAsync();
-
 
                 return View(model);
             }
@@ -205,7 +303,7 @@ namespace zuHause.Controllers
             {
                 RentalApplicationId = model.RentalApplicationId!.Value,
                 LandlordHouseholdAddress = fullAddress,
-                Status = "BESIGNED",
+                Status = "PENDING",
                 CourtJurisdiction = model.CourtJurisdiction,
                 IsSublettable = model.IsSublettable,
                 UsagePurpose = model.UsagePurpose,
@@ -342,8 +440,7 @@ namespace zuHause.Controllers
 
             await _context.SaveChangesAsync();
 
-            //還沒決定好會去哪一頁    
-            return RedirectToAction("ContractList");
+            return RedirectToAction("Preview", new { contractId = contractId });
         }
 
 
@@ -351,6 +448,10 @@ namespace zuHause.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateTenantSign(TenantSignViewModel model)
         {
+
+            System.Diagnostics.Debug.WriteLine($"==========={model.RentalApplicationId}=================");
+            System.Diagnostics.Debug.WriteLine($"==========={model.ContractId}=================");
+
             if (!ModelState.IsValid)
             {
                 return Content("上傳失敗，請檢查檔案或申請");
@@ -398,7 +499,7 @@ namespace zuHause.Controllers
                 {
                     ContractId = model.ContractId,
                     SignerId = memberId,
-                    SignerRole = "TENANT", // 或 "TENANT"，你可以根據實際使用者判斷
+                    SignerRole = "TENANT", 
                     SignMethod = "UPLOAD",
                     SignatureFileUrl = upload.FilePath,
                     UploadId = upload.UploadId,
@@ -409,12 +510,11 @@ namespace zuHause.Controllers
 
             }
 
-
-
             await _context.SaveChangesAsync();
-            await _applicationService.UpdateApplicationStatusAsync(model.RentalApplicationId!.Value, "SIGNING");
+            await _applicationService.UpdateApplicationStatusAsync(model.RentalApplicationId!.Value, "WAIT_TENANT_AGREE");
 
-            return RedirectToAction("Index", "MemberApplications");
+
+            return RedirectToAction("Preview", "MemberContracts", new { contractId = model.ContractId });
         }
 
 
@@ -425,7 +525,7 @@ namespace zuHause.Controllers
             string contractName = data.ContractName!;
             System.Diagnostics.Debug.WriteLine($"===={contractId}===");
             System.Diagnostics.Debug.WriteLine($"===={contractName}===");
-            Contract? result = await _context.Contracts.Where(c => c.ContractId == contractId).FirstOrDefaultAsync();
+            Contract result = await _context.Contracts.Where(c => c.ContractId == contractId).FirstOrDefaultAsync();
             if (result == null) return BadRequest("請確認合約編號");
             result.CustomName = contractName;
             _context.Update(result);
@@ -438,10 +538,87 @@ namespace zuHause.Controllers
         }
         public async Task<IActionResult> Preview(int contractId)
         {
+            var contract = await _context.Contracts
+           .Include(c => c.RentalApplication)
+           .ThenInclude(a => a!.Property)
+           .ThenInclude(p => p.LandlordMember)
+           .Include(c => c.RentalApplication!.Member)
+           .FirstOrDefaultAsync(c => c.ContractId == contractId);
+
+            if (contract == null)
+                return NotFound();
+
+            var userId = int.Parse(User.FindFirst("UserId")!.Value);
+            string userRole = User.FindFirst(ClaimTypes.Role)?.Value ?? "";
+
+            string? actionType = "PIKA";
+
+
+            System.Diagnostics.Debug.WriteLine($"➡️ User身分: {userRole}");
+            System.Diagnostics.Debug.WriteLine($"➡️ UserId: {userId}");
+            System.Diagnostics.Debug.WriteLine($"➡️ 合約申請者ID: {contract.RentalApplication!.MemberId}");
+            System.Diagnostics.Debug.WriteLine($"➡️ 合約申請狀態: {contract.RentalApplication.CurrentStatus}");
+            //擬定合約
+            if (userRole == "2" && contract.RentalApplication!.Property.LandlordMemberId == userId &&
+                contract.RentalApplication.CurrentStatus == "WAITING_CONTRACT")
+            {
+                actionType = "SEND_CONTRACT";
+            }
+
+            if (userRole == "1" && contract.RentalApplication!.MemberId == userId &&
+            contract.RentalApplication.CurrentStatus == "WAIT_TENANT_AGREE")
+            {
+                actionType = "TENANT_NEED_AGREE";
+            }
+
+            if (userRole == "2" && contract.RentalApplication!.Property.LandlordMemberId == userId &&
+                contract.RentalApplication.CurrentStatus == "WAIT_LANDLORD_AGREE")
+            {
+                actionType = "LANDLORD_NEED_AGREE";
+            }
+
             var html = await GenerateContractHtml(contractId);
+
             ViewBag.ContractHtml = html;
+            ViewBag.type = actionType;
+
             return View(contractId);
         }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SendContract(int contractId)
+        {
+            var contract = await _context.Contracts
+                .Include(c => c.RentalApplication)
+                .ThenInclude(a => a.Property)
+                .FirstOrDefaultAsync(c => c.ContractId == contractId);
+
+            if (contract == null || !contract.RentalApplicationId.HasValue)
+                return BadRequest("找不到對應的合約申請紀錄");
+
+            var userId = int.Parse(User.FindFirst("UserId")!.Value);
+            if (contract.RentalApplication!.Property.LandlordMemberId != userId)
+                return Forbid();
+
+            int applicationId = contract.RentalApplicationId.Value;
+            var (success, message) = await _applicationService.UpdateApplicationStatusAsync(applicationId, "SIGNING");
+
+            if (!success)
+                return BadRequest(new { msg = message });
+
+
+            contract.Status = "BESIGNED";
+            contract.UpdatedAt = DateTime.Now;
+            _context.Update(contract);
+            await _context.SaveChangesAsync();
+
+
+
+            return RedirectToAction("Index", "MemberContracts", new { msg = message });
+        }
+
+
         private int CalculateMonthDifference(DateOnly start, DateOnly? end)
         {
             if (end == null) return 0;
@@ -461,16 +638,16 @@ namespace zuHause.Controllers
                  .Include(c => c.ContractComments)
                  .Include(c => c.ContractSignatures)
                  .Include(c => c.RentalApplication)
-                     .ThenInclude(a => a.Member) // ✅ 加這行
+                     .ThenInclude(a => a!.Member) // ✅ 加這行
                  .Include(c => c.RentalApplication)
-                     .ThenInclude(a => a.Property)
+                     .ThenInclude(a => a!.Property)
                          .ThenInclude(p => p.LandlordMember)
                  .Include(c => c.Template)
                  .FirstOrDefaultAsync(c => c.ContractId == contractId);
 
             // 備註條件區塊處理
             string commentBlock = "";
-            if (contract.ContractComments.Any())
+            if (contract!.ContractComments.Any())
             {
                 var sb = new System.Text.StringBuilder("<ul>");
                 foreach (var comment in contract.ContractComments)
@@ -682,11 +859,67 @@ namespace zuHause.Controllers
             };
 
             var file = _converter.Convert(doc);
-            return File(file, "application/pdf", $"Contract_{contractId}.pdf");
+            return File(file, "application/pdf", $"Contract_{contractId}_{DateTime.Today.ToString("yyyy-MM-dd")}.pdf");
         }
 
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AgreeContract(int contractId, string type)
+        {
+            var contract = await _context.Contracts
+                .Include(c => c.RentalApplication)
+                .ThenInclude(a => a.Property)
+                .FirstOrDefaultAsync(c => c.ContractId == contractId);
 
+            var userId = int.Parse(User.FindFirst("UserId")!.Value);
+
+            System.Diagnostics.Debug.WriteLine($"目前使用者ID：{userId}");
+            System.Diagnostics.Debug.WriteLine($"租客應為ID：{contract!.RentalApplication!.MemberId}");
+            System.Diagnostics.Debug.WriteLine($"TYPE：{type}");
+
+
+            if (type == "TENANT_NEED_AGREE" && contract!.RentalApplication!.MemberId == userId)
+            {
+                await _applicationService.UpdateApplicationStatusAsync(contract!.RentalApplicationId!.Value, "WAIT_LANDLORD_AGREE");
+                return RedirectToAction("Index", "MemberApplications");
+            }
+            else if (type == "LANDLORD_NEED_AGREE" && contract!.RentalApplication!.Property.LandlordMemberId == userId)
+            {
+                await _applicationService.UpdateApplicationStatusAsync(contract!.RentalApplicationId!.Value, "CONTRACTED");
+
+                contract.Status = "SIGNED";
+                contract.UpdatedAt = DateTime.Now;
+                _context.Update(contract);
+                await _context.SaveChangesAsync();
+
+                var (success, message) = await _notificationService.CreateUserNotificationAsync
+                    (
+                    receiverId: contract!.RentalApplication!.MemberId,
+                    typeCode: "CONTRACT_CONTRACTED",
+                    title: $"您申請的【{contract!.RentalApplication!.Property.Title}】租賃合約完成！",
+                    content:
+                        $"親愛的會員您好，\n您申請的【{contract!.RentalApplication!.Property.Title}】租賃合約完成！可至合約管理下載合約！",
+                    ModuleCode: "Contract",
+                    sourceEntityId: contract.ContractId // 合約編號
+                    );
+
+
+                return RedirectToAction("Index", "MemberContracts");
+            }
+            else
+            {
+                return Forbid();
+            }
+
+        }
+
+        public async Task<string> GetPropertyImageUrl(int propertyId)
+        {
+           string ImgUrl =  await _imageResolverService.GetImageUrl(propertyId, "Property", "Gallery", "medium");
+
+            return ImgUrl;
+        }
 
     }
     public class ContractNameDto

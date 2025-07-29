@@ -2,13 +2,17 @@
 
     Layout = "_Layout";
     var tenantControllers = new List<string> { "Announcement", "Tenant", "Search" };
-    List<string> LoginLayoutController = new List<string> { "Member", "MemberInbox", "MemberContracts", "MemberApplications" };
+    List<string> LoginLayoutController = new List<string> { "Member", "MemberInbox", "MemberContracts", "MemberApplications", "CollectionAndComparison" };
 
     if (LoginLayoutController.Contains(ViewContext.RouteData.Values["Controller"]?.ToString()!))
     {
         Layout = "_LoginLayout";
     }
     else if (tenantControllers.Contains(ViewContext.RouteData.Values["Controller"]?.ToString()!))
+    {
+        Layout = "_LayoutTenant";
+    }
+    else if (ViewContext.RouteData.Values["Controller"]?.ToString() == "Landlord")
     {
         Layout = "_LayoutTenant";
     }

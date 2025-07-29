@@ -52,11 +52,18 @@
 				</div>
 				<div class="col-md-4 text-center">
 					<ul class="list-inline">
-						<li class="list-inline-item"><a href="#" class="text-white text-decoration-none">服務條款</a></li>
-						<li class="list-inline-item">|</li>
-						<li class="list-inline-item"><a href="#" class="text-white text-decoration-none">免責聲明</a></li>
-						<li class="list-inline-item">|</li>
-						<li class="list-inline-item"><a href="#" class="text-white text-decoration-none">隱私權說明</a></li>
+						<li class="list-inline-item">
+							<a asp-controller="Announcement" asp-action="Announcement" asp-route-section="announcements" class="text-white text-decoration-none">最新公告</a>
+						</li>
+						<li class="list-inline-item">
+							<a asp-controller="Announcement" asp-action="Announcement" asp-route-section="terms" class="text-white text-decoration-none">服務條款</a>
+						</li>
+						<li class="list-inline-item">
+							<a asp-controller="Announcement" asp-action="Announcement" asp-route-section="disclaimer" class="text-white text-decoration-none">免責聲明</a>
+						</li>
+						<li class="list-inline-item">
+							<a asp-controller="Announcement" asp-action="Announcement" asp-route-section="privacy" class="text-white text-decoration-none">隱私權說明</a>
+						</li>
 					</ul>
 					<div class="social-icons mb-3">
 						<a href="#" class="text-white mx-2"><i class="bi bi-facebook bi-lg"></i></a>
@@ -65,7 +72,7 @@
 						<a href="#" class="text-white mx-2"><i class="bi bi-envelope bi-lg"></i></a>
 						<a href="#" class="text-white mx-2"><i class="bi bi-instagram bi-lg"></i></a>
 					</div>
-					<p class="text-muted small">Copyright © @DateTime.Now.Year 熊好租. All rights reserved.</p>
+					<p class="text-white text-decoration-none">Copyright © @DateTime.Now.Year 熊好租. All rights reserved.</p>
 				</div>
 			</div>
 		</div>
@@ -76,38 +83,7 @@
 	<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 	<script src="~/js/site.js" asp-append-version="true"></script>
 	
-	<script>
-		// 解決 Bootstrap 下拉選單干擾問題
-		document.addEventListener('DOMContentLoaded', function() {
-			// 修復登出按鈕
-			const logoutButton = document.getElementById('logoutSubmitButton');
-			const logoutForm = document.getElementById('logoutForm');
 
-			if (logoutButton && logoutForm) {
-				logoutButton.addEventListener('click', function(e) {
-					// 阻止按鈕的預設提交行為和事件冒泡，避免 Bootstrap 干擾
-					e.preventDefault();
-					e.stopPropagation();
-
-					// 手動觸發表單提交，繞過 Bootstrap 的事件攔截
-					logoutForm.submit();
-				});
-			}
-
-			// 修復下拉選單中的 a 標籤連結
-			document.querySelectorAll('a.dropdown-item[href]').forEach(link => {
-				link.addEventListener('click', function(e) {
-					// 阻止 Bootstrap 的事件攔截
-					e.preventDefault();
-					e.stopPropagation();
-
-					// 手動導航到連結目標
-					window.location.href = this.href;
-				});
-			});
-		});
-	</script>
-	
 	@await RenderSectionAsync("Scripts", required: false)
 
 </body>

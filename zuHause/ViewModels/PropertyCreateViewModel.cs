@@ -1,6 +1,7 @@
 using zuHause.DTOs;
 using zuHause.Models;
 using zuHause.Services.Interfaces;
+using zuHause.Enums;
 
 namespace zuHause.ViewModels
 {
@@ -73,5 +74,20 @@ namespace zuHause.ViewModels
         /// 電費計算方式選項
         /// </summary>
         public List<string> ElectricityFeeOptions { get; set; } = new List<string> { "台電", "自訂金額" };
+
+        /// <summary>
+        /// 表單模式
+        /// </summary>
+        public PropertyFormMode FormMode { get; set; } = PropertyFormMode.Create;
+
+        /// <summary>
+        /// 是否為編輯模式
+        /// </summary>
+        public bool IsEditMode { get; set; } = false;
+
+        /// <summary>
+        /// 房源ID (編輯模式使用)
+        /// </summary>
+        public int? PropertyId => IsEditMode ? PropertyData?.PropertyId : null;
     }
 }

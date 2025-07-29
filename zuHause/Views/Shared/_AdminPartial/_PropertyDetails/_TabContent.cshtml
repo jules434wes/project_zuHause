@@ -68,18 +68,22 @@
                         <div class="d-grid gap-2">
                             @if (Model.Data?.HasPropertyProof == true)
                             {
-                                <a href="@(Model.Data.PropertyProofUrl)" class="btn btn-info" target="_blank">
-                                    <i class="bi bi-download me-1"></i>查看產權證明
+                                <button class="btn btn-info" onclick="openPropertyProofModal()">
+                                    <i class="bi bi-file-earmark-pdf me-1"></i>檢視產權證明
+                                </button>
+                                <a href="@(Model.Data.PropertyProofUrl)" class="btn btn-outline-info" target="_blank">
+                                    <i class="bi bi-download me-1"></i>下載產權證明
                                 </a>
                             }
                             else
                             {
                                 <button class="btn btn-outline-secondary" disabled>
-                                    <i class="bi bi-download me-1"></i>無產權證明
+                                    <i class="bi bi-file-earmark-x me-1"></i>無產權證明
                                 </button>
                             }
                             
-                            @if (Model.Data?.ApprovalStatus == "未審核")
+                            @if (string.Equals(Model.Data?.ApprovalStatus?.Trim(), "審核中", StringComparison.Ordinal) || 
+                                 Model.Data?.StatusCode == "PENDING")
                             {
                                 <button class="btn btn-success" onclick="openApproveModal()">
                                     <i class="bi bi-check2-circle me-1"></i>通過審核
@@ -89,7 +93,9 @@
                                 </button>
                             }
                             
-                            @if (Model.Data?.PaymentStatus == "未付費" && Model.Data?.ApprovalStatus == "審核完成")
+                            @if ((string.Equals(Model.Data?.PaymentStatus?.Trim(), "未付費", StringComparison.Ordinal) && 
+                                  string.Equals(Model.Data?.ApprovalStatus?.Trim(), "待付款", StringComparison.Ordinal)) ||
+                                 (Model.Data?.StatusCode == "PENDING_PAYMENT"))
                             {
                                 <button class="btn btn-primary" onclick="openMarkAsPaidModal()">
                                     <i class="bi bi-credit-card me-1"></i>手動標記已付款
@@ -406,18 +412,26 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td>2024-07-12 10:00:00</td>
-                                <td><span class="badge bg-info">提交申請</span></td>
-                                <td>房東 (@(Model.Data?.LandlordName ?? "-"))</td>
-                                <td>-</td>
-                            </tr>
-                            <tr>
-                                <td>2024-07-12 10:05:00</td>
-                                <td><span class="badge bg-primary">系統檢查</span></td>
-                                <td>系統自動</td>
-                                <td>資料完整性檢查通過</td>
-                            </tr>
+                            @if (Model.ApprovalHistory.Any())
+                            {
+                                @foreach (var history in Model.ApprovalHistory)
+                                {
+                                    <tr>
+                                        <td>@history.OperationTime.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                                        <td><span class="badge @history.BadgeClass">@history.ActionTypeDisplay</span></td>
+                                        <td>@history.AdminName</td>
+                                        <td>@(string.IsNullOrEmpty(history.ActionNote) ? "-" : history.ActionNote)</td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted py-4">
+                                        <i class="bi bi-clock-history me-2"></i>尚無審核記錄
+                                    </td>
+                                </tr>
+                            }
                         </tbody>
                     </table>
                 </div>

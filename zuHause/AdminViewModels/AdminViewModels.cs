@@ -331,13 +331,21 @@ namespace zuHause.AdminViewModels
 
         private string GetPreferredRentalAreas(ZuHauseContext context, int memberId)
         {
-            var areas = context.RenterPosts
-                .Where(rp => rp.MemberId == memberId)
-                .Join(context.Districts, rp => rp.DistrictId, d => d.DistrictId, (rp, d) => d.DistrictName)
-                .Distinct()
-                .ToList();
+            var member = context.Members
+                .Include(m => m.PrimaryRentalCity)
+                .Include(m => m.PrimaryRentalDistrict)
+                .FirstOrDefault(m => m.MemberId == memberId);
             
-            return string.Join("、", areas);
+            if (member?.PrimaryRentalCity != null && member?.PrimaryRentalDistrict != null)
+            {
+                return $"{member.PrimaryRentalCity.CityName} {member.PrimaryRentalDistrict.DistrictName}";
+            }
+            else if (member?.PrimaryRentalCity != null)
+            {
+                return member.PrimaryRentalCity.CityName;
+            }
+            
+            return string.Empty;
         }
 
         private List<RentalContractData> LoadRentalContracts(ZuHauseContext context, int memberId)
@@ -563,7 +571,7 @@ namespace zuHause.AdminViewModels
                     LandlordId = p.LandlordId,
                     Address = p.Address,
                     RentPrice = p.RentPrice,
-                    Status = "未審核",
+                    Status = "審核中",
                     PaymentStatus = GetPaymentStatusDisplay(p.IsPaid, p.ExpireAt),
                     SubmissionDate = p.SubmissionDate,
                     UpdatedDate = p.UpdatedDate,
@@ -579,11 +587,20 @@ namespace zuHause.AdminViewModels
         {
             return statusCode switch
             {
-                "PENDING" => "未審核",
-                "ACTIVE" => "審核完成",
-                "REJECTED" => "未審核",
+                "PENDING" => "審核中",
+                "PENDING_PAYMENT" => "待付款",
+                "LISTED" => "上架中",
+                "CONTRACT_ISSUED" => "已發出合約",
+                "PENDING_RENEWAL" => "待續約",
+                "LEASE_EXPIRED_RENEWING" => "續約申請中",
+                "IDLE" => "閒置中",
+                "ALREADY_RENTED" => "出租中",
+                "REJECT_REVISE" => "審核未通過(待補件)",
+                "REJECTED" => "審核未通過",
+                "INVALID" => "房源已下架",
                 "BANNED" => "違規下架",
-                _ => "未審核"
+                "ACTIVE" => "審核完成(舊狀態)", // 向後相容，但不應該出現在新系統中
+                _ => "未知狀態"
             };
         }
 
@@ -625,6 +642,7 @@ namespace zuHause.AdminViewModels
             Complaints = LoadComplaints(context, propertyId);
             Equipment = LoadEquipment(context, propertyId);
             Images = LoadImages(context, imageQueryService, propertyId);
+            ApprovalHistory = LoadApprovalHistory(context, propertyId);
         }
 
         public PropertyDetailsData? Data { get; set; }
@@ -632,6 +650,7 @@ namespace zuHause.AdminViewModels
         public List<ComplaintDetailsData> Complaints { get; set; } = new();
         public List<EquipmentData> Equipment { get; set; } = new();
         public List<PropertyImageData> Images { get; set; } = new();
+        public List<ApprovalHistoryData> ApprovalHistory { get; set; } = new();
 
         private PropertyDetailsData? LoadPropertyDetailsFromDatabase(ZuHauseContext context, int propertyId)
         {
@@ -679,6 +698,7 @@ namespace zuHause.AdminViewModels
                 PropertyProofUrl = property.PropertyProofUrl,
                 PreviewImageUrl = property.PreviewImageUrl,
                 ApprovalStatus = GetApprovalStatusDisplay(property.StatusCode),
+                StatusCode = property.StatusCode, // 添加原始狀態碼
                 PaymentStatus = GetPaymentStatusDisplay(property.IsPaid, property.ExpireAt),
                 PublishedAt = property.PublishedAt,
                 ExpireAt = property.ExpireAt,
@@ -776,6 +796,38 @@ namespace zuHause.AdminViewModels
             }).ToList();
         }
 
+        private List<ApprovalHistoryData> LoadApprovalHistory(ZuHauseContext context, int propertyId)
+        {
+            var approvalHistory = new List<ApprovalHistoryData>();
+
+            // 取得房源相關的審核記錄
+            var approvals = context.Approvals
+                .Include(a => a.ApprovalItems)
+                .Where(a => a.SourcePropertyId == propertyId && a.ModuleCode == "PROPERTY")
+                .ToList();
+
+            foreach (var approval in approvals)
+            {
+                foreach (var item in approval.ApprovalItems.OrderBy(ai => ai.CreatedAt))
+                {
+                    var adminName = item.ActionBy.HasValue 
+                        ? context.Admins.FirstOrDefault(admin => admin.AdminId == item.ActionBy.Value)?.Name ?? "系統自動"
+                        : "系統自動";
+
+                    approvalHistory.Add(new ApprovalHistoryData
+                    {
+                        OperationTime = item.CreatedAt,
+                        ActionType = item.ActionType,
+                        ActionNote = item.ActionNote ?? "",
+                        AdminName = adminName,
+                        AdminId = item.ActionBy
+                    });
+                }
+            }
+
+            return approvalHistory.OrderByDescending(ah => ah.OperationTime).ToList();
+        }
+
         private static string GetImageCategoryDisplay(zuHause.Enums.ImageCategory category)
         {
             switch (category)
@@ -800,15 +852,33 @@ namespace zuHause.AdminViewModels
             switch (statusCode)
             {
                 case "PENDING":
-                    return "未審核";
-                case "ACTIVE":
-                    return "審核完成";
+                    return "審核中";
+                case "PENDING_PAYMENT":
+                    return "待付款";
+                case "LISTED":
+                    return "上架中";
+                case "CONTRACT_ISSUED":
+                    return "已發出合約";
+                case "PENDING_RENEWAL":
+                    return "待續約";
+                case "LEASE_EXPIRED_RENEWING":
+                    return "續約申請中";
+                case "IDLE":
+                    return "閒置中";
+                case "ALREADY_RENTED":
+                    return "出租中";
+                case "REJECT_REVISE":
+                    return "審核未通過(待補件)";
                 case "REJECTED":
-                    return "未審核";
+                    return "審核未通過";
+                case "INVALID":
+                    return "房源已下架";
                 case "BANNED":
                     return "違規下架";
+                case "ACTIVE": // 向後相容，但不應該出現在新系統中
+                    return "審核完成(舊狀態)";
                 default:
-                    return "未審核";
+                    return "未知狀態";
             }
         }
 
@@ -824,31 +894,7 @@ namespace zuHause.AdminViewModels
         }
     }
 
-    // 客服管理相關 ViewModels
-    public class AdminCustomerServiceDetailsViewModel : BaseDetailsViewModel<CustomerServiceCase>
-    {
-        public AdminCustomerServiceDetailsViewModel(string caseId = "CS001")
-        {
-            PageTitle = "客服案件詳情";
-            Data = GenerateMockCase(caseId);
-            IsEditMode = true;
-        }
-
-        private CustomerServiceCase GenerateMockCase(string caseId)
-        {
-            return new CustomerServiceCase
-            {
-                CaseID = caseId,
-                CaseTitle = "租屋糾紛處理",
-                MemberName = "王小明",
-                Category = "rental_dispute",
-                Priority = "high",
-                Status = "processing",
-                CreatedDate = "2024-07-10",
-                AssignedAdmin = "Admin001"
-            };
-        }
-    }
+    
 
     // 系統訊息相關 ViewModels
     public class AdminSystemMessageListViewModel : BaseListViewModel<SystemMessageData>
@@ -856,18 +902,71 @@ namespace zuHause.AdminViewModels
         public AdminSystemMessageListViewModel()
         {
             PageTitle = "系統訊息管理";
-            Items = GenerateMockMessages();
+            Items = new List<SystemMessageData>();
+            TotalCount = 0;
+            HasBulkActions = false;
+        }
+
+        public AdminSystemMessageListViewModel(ZuHauseContext context)
+        {
+            PageTitle = "系統訊息管理";
+            Items = LoadSystemMessagesFromDatabase(context);
             TotalCount = Items.Count;
             HasBulkActions = false;
         }
 
-        private List<SystemMessageData> GenerateMockMessages()
+        private List<SystemMessageData> LoadSystemMessagesFromDatabase(ZuHauseContext context)
         {
-            return new List<SystemMessageData>
+            return context.SystemMessages
+                .Include(sm => sm.Admin)
+                .Include(sm => sm.Receiver)
+                .Where(sm => sm.IsActive)
+                .OrderByDescending(sm => sm.CreatedAt)
+                .Select(sm => new SystemMessageData
+                {
+                    MessageID = sm.MessageId.ToString(),
+                    MessageTitle = sm.Title,
+                    MessageContent = sm.MessageContent,
+                    Category = sm.CategoryCode,
+                    CategoryDisplay = GetCategoryDisplay(sm.CategoryCode),
+                    AudienceType = sm.AudienceTypeCode,
+                    AudienceDisplay = GetAudienceDisplay(sm.AudienceTypeCode),
+                    // 根據發送對象類型顯示不同的接收者資訊
+                    ReceiverName = sm.AudienceTypeCode == "INDIVIDUAL" && sm.Receiver != null 
+                        ? sm.Receiver.MemberName 
+                        : GetAudienceDisplay(sm.AudienceTypeCode),
+                    ReceiverId = sm.ReceiverId.HasValue ? sm.ReceiverId.Value.ToString() : "",
+                    AdminName = sm.Admin.Name,
+                    SentAt = sm.SentAt.ToString("yyyy-MM-dd HH:mm:ss"),
+                    CreatedAt = sm.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss"),
+                })
+                .ToList();
+        }
+
+        private static string GetCategoryDisplay(string categoryCode)
+        {
+            return categoryCode switch
             {
-                new SystemMessageData { MessageID = "SM001", MessageTitle = "系統維護通知", Category = "maintenance", Audience = "all_members", AdminName = "系統管理員", SendDate = "2024-07-10", Status = "sent" },
-                new SystemMessageData { MessageID = "SM002", MessageTitle = "優惠活動公告", Category = "promotion", Audience = "all_landlords", AdminName = "行銷部", SendDate = "2024-07-08", Status = "draft" },
-                new SystemMessageData { MessageID = "SM003", MessageTitle = "個別用戶通知", Category = "announcement", Audience = "individual", AdminName = "客服部", SendDate = "2024-07-05", Status = "sent" }
+                "ANNOUNCEMENT" => "一般公告",
+                "UPDATE" => "功能更新",
+                "SECURITY" => "安全提醒",
+                "MAINTENANCE" => "系統維護",
+                "POLICY" => "政策更新",
+                "ORDER" => "訂單通知",
+                "PROPERTY" => "房源通知",
+                "ACCOUNT" => "帳戶通知",
+                _ => "其他"
+            };
+        }
+
+        private static string GetAudienceDisplay(string audienceTypeCode)
+        {
+            return audienceTypeCode switch
+            {
+                "INDIVIDUAL" => "個別用戶",
+                "ALL_MEMBERS" => "全體會員",
+                "ALL_LANDLORDS" => "全體房東",
+                _ => "未知"
             };
         }
     }
@@ -878,12 +977,16 @@ namespace zuHause.AdminViewModels
         {
             PageTitle = "新增系統訊息";
             AvailableUsers = new List<UserSelectData>();
+            AvailableTemplates = new List<SystemMessageTemplateData>();
+            MessageCategories = new List<CategorySelectData>();
         }
 
         public AdminSystemMessageNewViewModel(ZuHauseContext context)
         {
             PageTitle = "新增系統訊息";
             AvailableUsers = LoadAvailableUsers(context);
+            AvailableTemplates = LoadAvailableTemplates(context);
+            MessageCategories = LoadMessageCategories();
         }
 
         [Required(ErrorMessage = "訊息標題為必填")]
@@ -901,8 +1004,11 @@ namespace zuHause.AdminViewModels
         public string? SelectedUserId { get; set; }
         public bool IsScheduled { get; set; } = false;
         public string? ScheduledDate { get; set; }
+        public string? AttachmentUrl { get; set; }
         
         public List<UserSelectData> AvailableUsers { get; set; }
+        public List<SystemMessageTemplateData> AvailableTemplates { get; set; }
+        public List<CategorySelectData> MessageCategories { get; set; }
 
         private List<UserSelectData> LoadAvailableUsers(ZuHauseContext context)
         {
@@ -917,6 +1023,37 @@ namespace zuHause.AdminViewModels
                     NationalNo = m.NationalIdNo ?? ""
                 })
                 .ToList();
+        }
+
+        private List<SystemMessageTemplateData> LoadAvailableTemplates(ZuHauseContext context)
+        {
+            return context.AdminMessageTemplates
+                .Where(t => t.CategoryCode == "SYSTEM_MESSAGE" && t.IsActive)
+                .OrderBy(t => t.Title)
+                .Select(t => new SystemMessageTemplateData
+                {
+                    TemplateID = t.TemplateId,
+                    Title = t.Title,
+                    TemplateContent = t.TemplateContent,
+                    ContentPreview = t.TemplateContent.Length > 50 ? t.TemplateContent.Substring(0, 50) + "..." : t.TemplateContent,
+                    CreatedAt = t.CreatedAt.ToString("yyyy-MM-dd")
+                })
+                .ToList();
+        }
+
+        private List<CategorySelectData> LoadMessageCategories()
+        {
+            return new List<CategorySelectData>
+            {
+                new CategorySelectData { Value = "ANNOUNCEMENT", Text = "一般公告" },
+                new CategorySelectData { Value = "UPDATE", Text = "功能更新" },
+                new CategorySelectData { Value = "SECURITY", Text = "安全提醒" },
+                new CategorySelectData { Value = "MAINTENANCE", Text = "系統維護" },
+                new CategorySelectData { Value = "POLICY", Text = "政策更新" },
+                new CategorySelectData { Value = "ORDER", Text = "訂單通知" },
+                new CategorySelectData { Value = "PROPERTY", Text = "房源通知" },
+                new CategorySelectData { Value = "ACCOUNT", Text = "帳戶通知" }
+            };
         }
     }
 
@@ -968,6 +1105,7 @@ namespace zuHause.AdminViewModels
         // 額外屬性用於UI顯示
         public bool IsActive => AccountStatus == "active";
         public bool IsIdentityVerified => VerificationStatus == "verified";
+        public bool HasPendingIdentityApplication => VerificationStatus == "pending";
     }
 
     public class PropertyData
@@ -1003,11 +1141,33 @@ namespace zuHause.AdminViewModels
     {
         public string MessageID { get; set; } = string.Empty;
         public string MessageTitle { get; set; } = string.Empty;
+        public string MessageContent { get; set; } = string.Empty;
         public string Category { get; set; } = string.Empty;
-        public string Audience { get; set; } = string.Empty;
+        public string CategoryDisplay { get; set; } = string.Empty;
+        public string AudienceType { get; set; } = string.Empty;
+        public string AudienceDisplay { get; set; } = string.Empty;
+        public string ReceiverName { get; set; } = string.Empty;
+        public string ReceiverId { get; set; } = string.Empty;
         public string AdminName { get; set; } = string.Empty;
-        public string SendDate { get; set; } = string.Empty;
-        public string Status { get; set; } = string.Empty;
+        public string SentAt { get; set; } = string.Empty;
+        public string CreatedAt { get; set; } = string.Empty;
+        // 格式化屬性
+        public string ContentPreview => MessageContent.Length > 50 ? MessageContent.Substring(0, 50) + "..." : MessageContent;
+    }
+
+    public class SystemMessageTemplateData
+    {
+        public int TemplateID { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public string TemplateContent { get; set; } = string.Empty;
+        public string ContentPreview { get; set; } = string.Empty;
+        public string CreatedAt { get; set; } = string.Empty;
+    }
+
+    public class CategorySelectData
+    {
+        public string Value { get; set; } = string.Empty;
+        public string Text { get; set; } = string.Empty;
     }
 
     public class UserSelectData
@@ -1097,6 +1257,7 @@ namespace zuHause.AdminViewModels
         public string? PropertyProofUrl { get; set; }
         public string? PreviewImageUrl { get; set; }
         public string ApprovalStatus { get; set; } = string.Empty;
+        public string StatusCode { get; set; } = string.Empty; // 原始狀態碼
         public string PaymentStatus { get; set; } = string.Empty;
         public DateTime? PublishedAt { get; set; }
         public DateTime? ExpireAt { get; set; }
@@ -1108,7 +1269,7 @@ namespace zuHause.AdminViewModels
         public string Layout => $"{RoomCount}房{LivingRoomCount}廳{BathroomCount}衛";
         public string FloorDisplay => $"{CurrentFloor}樓";
         public string TotalFloorsDisplay => $"{TotalFloors}樓";
-        public bool IsActive => ApprovalStatus == "審核完成";
+        public bool IsActive => ApprovalStatus == "上架中" || ApprovalStatus == "已發出合約" || ApprovalStatus == "出租中";
         public bool HasPropertyProof => !string.IsNullOrEmpty(PropertyProofUrl);
     }
 
@@ -1206,5 +1367,123 @@ namespace zuHause.AdminViewModels
             "OTHER" => "其他",
             _ => "未分類"
         };
+    }
+
+    public class ApprovalHistoryData
+    {
+        public DateTime OperationTime { get; set; }
+        public string ActionType { get; set; } = string.Empty;
+        public string ActionNote { get; set; } = string.Empty;
+        public string AdminName { get; set; } = string.Empty;
+        public int? AdminId { get; set; }
+
+        public string ActionTypeDisplay => ActionType switch
+        {
+            "SUBMIT" => "提交申請",
+            "APPROVE" => "審核通過",
+            "REJECT" => "審核駁回",
+            "REVISE" => "要求修正",
+            "MARK_PAID" => "標記已付款",
+            "PUBLISH" => "發布上架",
+            "SUSPEND" => "暫停",
+            "REACTIVATE" => "重新啟用",
+            _ => ActionType
+        };
+
+        public string BadgeClass => ActionType switch
+        {
+            "SUBMIT" => "bg-info",
+            "APPROVE" => "bg-success", 
+            "REJECT" => "bg-danger",
+            "REVISE" => "bg-warning",
+            "MARK_PAID" => "bg-primary",
+            "PUBLISH" => "bg-success",
+            "SUSPEND" => "bg-secondary",
+            "REACTIVATE" => "bg-info",
+            _ => "bg-secondary"
+        };
+    }
+
+    // 房源投訴管理相關 ViewModels
+    public class AdminPropertyComplaintsViewModel : BaseListViewModel<PropertyComplaintData>
+    {
+        public AdminPropertyComplaintsViewModel()
+        {
+            PageTitle = "房源投訴管理";
+            Items = new List<PropertyComplaintData>();
+            TotalCount = 0;
+            HasBulkActions = false;
+        }
+
+        public AdminPropertyComplaintsViewModel(ZuHauseContext context)
+        {
+            PageTitle = "房源投訴管理";
+            Items = LoadComplaintsFromDatabase(context);
+            TotalCount = Items.Count;
+            HasBulkActions = false;
+        }
+
+        private List<PropertyComplaintData> LoadComplaintsFromDatabase(ZuHauseContext context)
+        {
+            // 正確的查詢方式：在Select中直接導航，不需要Include
+            var complaints = context.PropertyComplaints
+                .OrderByDescending(pc => pc.CreatedAt)
+                .Select(pc => new PropertyComplaintData
+                {
+                    ComplaintId = pc.ComplaintId,
+                    ComplainantName = pc.Complainant != null ? pc.Complainant.MemberName : "未知用戶",
+                    ComplainantId = pc.ComplainantId,
+                    PropertyTitle = pc.Property != null ? pc.Property.Title : "未知房源",
+                    PropertyId = pc.PropertyId,
+                    LandlordName = pc.Landlord != null ? pc.Landlord.MemberName : "未知房東",
+                    LandlordId = pc.LandlordId,
+                    ComplaintContent = pc.ComplaintContent ?? "",
+                    Status = pc.StatusCode ?? "UNKNOWN",
+                    CreatedAt = pc.CreatedAt,
+                    UpdatedAt = pc.UpdatedAt,
+                    ResolvedAt = pc.ResolvedAt,
+                    InternalNote = pc.InternalNote,
+                    HandledBy = pc.HandledBy
+                })
+                .ToList();
+
+            return complaints;
+        }
+    }
+
+    // 房源投訴資料模型
+    public class PropertyComplaintData
+    {
+        public int ComplaintId { get; set; }
+        public string ComplainantName { get; set; } = string.Empty;
+        public int ComplainantId { get; set; }
+        public string PropertyTitle { get; set; } = string.Empty;
+        public int PropertyId { get; set; }
+        public string LandlordName { get; set; } = string.Empty;
+        public int LandlordId { get; set; }
+        public string ComplaintContent { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+        public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
+        public DateTime? ResolvedAt { get; set; }
+        public string? InternalNote { get; set; }
+        public int? HandledBy { get; set; }
+
+        // 格式化屬性
+        public string ComplaintIdDisplay => $"CMPL-{ComplaintId:0000}";
+        public string StatusDisplay => Status switch
+        {
+            "OPEN" => "處理中",
+            "RESOLVED" => "已處理",
+            "CLOSED" => "已關閉",
+            _ => "未知"
+        };
+        public string Summary => ComplaintContent.Length > 50 
+            ? ComplaintContent.Substring(0, 50) + "..."
+            : ComplaintContent;
+        public string ComplaintUrl => $"/Admin/admin_propertyComplaints/{ComplaintId}";
+        public string PropertyUrl => $"/Admin/admin_propertyDetails/{PropertyId}";
+        public string ComplainantUrl => $"/Admin/admin_userDetails/{ComplainantId}";
+        public string LandlordUrl => $"/Admin/admin_userDetails/{LandlordId}";
     }
 }

@@ -20,9 +20,19 @@
                         var approvalStatus = Model.Data?.ApprovalStatus ?? "";
                         var approvalBadgeClass = approvalStatus switch
                         {
-                            "未審核" => "text-bg-warning",
-                            "審核完成" => "text-bg-success", 
+                            "審核中" => "text-bg-warning",
+                            "待付款" => "text-bg-info",
+                            "上架中" => "text-bg-success",
+                            "已發出合約" => "text-bg-primary",
+                            "待續約" => "text-bg-warning",
+                            "續約申請中" => "text-bg-info",
+                            "閒置中" => "text-bg-secondary",
+                            "出租中" => "text-bg-success",
+                            "審核未通過(待補件)" => "text-bg-warning",
+                            "審核未通過" => "text-bg-danger",
+                            "房源已下架" => "text-bg-secondary",
                             "違規下架" => "text-bg-danger",
+                            "審核完成(舊狀態)" => "text-bg-success",
                             _ => "text-bg-dark"
                         };
                         

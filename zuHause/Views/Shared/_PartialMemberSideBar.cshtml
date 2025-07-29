@@ -1,14 +1,17 @@
-﻿@{
+﻿@using System.Security.Claims
+@{
     string page = ViewData["activePage"] as string ?? "MemberProfile";
+    string? role = User.FindFirst(ClaimTypes.Role)?.Value;
 }
-
 
 <div class="list-group col-2 px-3 d-flex flex-column gap-3 position-sticky top-0">
     <a asp-controller="Member" asp-action="MemberProfile" class="list-group-item list-group-item-action rounded-1 text-center @(page == "MemberProfile" ? "active" : "") " aria-current="true">
-        會員資料管理
+        個人檔案
     </a>
-    <a asp-controller="MemberInbox" asp-action="Index" class="list-group-item list-group-item-action rounded-1 text-center  @(page == "MemberInbox" ? "active" : "") ">通知/訊息管理</a>
-    <a asp-controller="MemberApplications" asp-action="Index" class="list-group-item list-group-item-action rounded-1 text-center  @(page == "MemberApplications" ? "active" : "") ">申請紀錄管理</a>
+    <a asp-controller="MemberInbox" asp-action="Index" class="list-group-item list-group-item-action rounded-1 text-center  @(page == "MemberInbox" ? "active" : "") ">通知管理</a>
+    @if(role == "1")
+    {
+        <a asp-controller="MemberApplications" asp-action="Index" class="list-group-item list-group-item-action rounded-1 text-center  @(page == "MemberApplications" ? "active" : "") ">申請紀錄管理</a>  
+    }
     <a asp-controller="MemberContracts" asp-action="Index" class="list-group-item list-group-item-action rounded-1 text-center  @(page == "MemberContracts" ? "active" : "") ">我的合約</a>
-    <a asp-action="CollectionAndComparison" asp-controller="Tenant" class="list-group-item list-group-item-action rounded-1 text-center">我的收藏</a>
 </div>

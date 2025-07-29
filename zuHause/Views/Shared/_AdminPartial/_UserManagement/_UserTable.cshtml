@@ -207,8 +207,8 @@
                                 <td>
                                     @if (user.HasIdentityUploads)
                                     {
-                                        <span class="badge bg-success">已上傳</span><br>
-                                        <button class="btn btn-sm btn-outline-primary mt-1" data-bs-toggle="modal" data-bs-target="#@(idPrefix)viewDocumentModal" onclick="@(string.IsNullOrEmpty(idPrefix) ? "loadDocuments" : idPrefix + "loadDocuments")('@user.MemberID')">查看證件</button>
+                                        // <span class="badge bg-success">已上傳</span><br>
+                                        <button class="btn btn-sm btn-outline-info mt-1" onclick="setCurrentMemberIdAndOpenModal('@user.MemberID', 'view')">查看證件</button>
                                     }
                                     else
                                     {
@@ -227,7 +227,7 @@
                                     }
                                 </td>
                                 <td>
-                                    <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#verificationModal">進行驗證操作</button>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="setCurrentMemberIdAndOpenModal('@user.MemberID', 'verify')">進行驗證操作</button>
                                 </td>
                             </tr>
                         }
@@ -258,7 +258,7 @@
                                     @if (user.HasIdentityUploads)
                                     {
                                         <span class="badge bg-success">已上傳</span><br>
-                                        <button class="btn btn-sm btn-outline-primary mt-1" data-bs-toggle="modal" data-bs-target="#@(idPrefix)viewDocumentModal" onclick="@(string.IsNullOrEmpty(idPrefix) ? "loadDocuments" : idPrefix + "loadDocuments")('@user.MemberID')">查看證件</button>
+                                        <button class="btn btn-sm btn-outline-primary mt-1" onclick="setCurrentMemberIdAndOpenModal('@user.MemberID', 'view')">查看證件</button>
                                     }
                                     else
                                     {
@@ -277,7 +277,7 @@
                                     }
                                 </td>
                                 <td>
-                                    <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#landlordVerificationModal">進行驗證操作</button>
+                                    <button class="btn btn-sm btn-primary" onclick="setCurrentMemberIdAndOpenModal('@user.MemberID', 'verify')">進行驗證操作</button>
                                 </td>
                             </tr>
                         }

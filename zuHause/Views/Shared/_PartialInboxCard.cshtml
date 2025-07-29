@@ -1,0 +1,67 @@
+﻿@using zuHause.ViewModels.MemberViewModel
+@model SystemMessageViewModel
+<div class="accordion accordion-area" id="accordionNotification@(ViewData["count"])" data-info="@(Model.NotificationId)"
+     data-notification-id="@(Model.NotificationId)"
+     data-source-type="@Model.SourceType" 
+     data-application-id="@(Model.SourceEntityId ?? 0)"
+     data-module-code="@(Model.ModuleCode ?? "")">
+    <div class="accordion-item border border-2 @(Model.AudienceTypeCode == "User" ? "border-success" : "border-info") mb-2 rounded-2">
+        <h2 class="accordion-header">
+            <button class="accordion-button fw-bold  collapsed" type="button"
+                    data-bs-toggle="collapse" data-bs-target="#notification@(ViewData["count"])" aria-expanded="true"
+                    aria-controls="notification@(ViewData["count"])">
+                <div class="row p-0 w-100  d-flex justify-content-between align-items-center gap-1">
+                    @if (Model.IsRead != true && Model.ModuleCode != "System")
+                    {
+                        <span class="col-auto badge bg-primary">未讀</span>
+                    }
+                    <span class="col-auto badge @(Model.AudienceTypeCode == "User" ? "bg-success" : "bg-info")">@(Model.AudienceTypeCode == "User" ? "通知" : "公告")</span>
+                    <span class="col">@Model.Title</span>
+                    <small class="col-auto text-muted me-3">@Model.SentAt.ToString("yyyy-MM-dd HH:mm")</small>
+                </div>
+            </button>
+        </h2>
+        <div id="notification@(ViewData["count"])" class="accordion-collapse collapse">
+            <div class="accordion-body">
+                @Html.Raw(Model.NotificationContent.Replace("\n", "<br>"))
+                @foreach (string item in Model.ImageUrls)
+                {
+                    <img src="@item" style="max-width:350px;" />
+                }
+
+                @if (Model.SourceType != "SystemMessage")
+                {
+                    <div class="mt-3 text-end d-flex align-content-center justify-content-end gap-2">
+
+                        @if ((Model.ModuleCode == "ApplyRental" || Model.ModuleCode == "ApplyHouse") && Model.ApplicationStatus == "PENDING")
+                        {
+
+                            <form asp-action="InboxAgreeApply" asp-controller="MemberContracts" method="post">
+                                <input type="hidden" name="type" value="@(Model.ModuleCode)" />
+                                <input type="hidden" name="applicationId" value="@Model.SourceEntityId" />
+                                <button type="submit" class="btn btn-sm btn-secondary">同意申請</button>
+                            </form>
+
+                            <form asp-action="InboxRejectedApply" asp-controller="MemberContracts" method="post">
+                                <input type="hidden" name="type" value="@(Model.ModuleCode)" />
+                                <input type="hidden" name="applicationId" value="@Model.SourceEntityId" />
+                                <button type="submit" class="btn btn-sm btn-danger">拒絕申請</button>
+                            </form>
+                        }
+                        @if ((Model.ModuleCode == "Contract") && Model.TypeCode == "CONTRACT_CONTRACTED")
+                        {
+                            <a class="btn btn-success" href="@Url.Action("Index","MemberContracts")">合約管理</a>
+                        }
+
+
+                        <form method="post" asp-action="DeleteNotification" asp-controller="MemberInbox">
+                            <input type="hidden" name="notificationId" value="@Model.NotificationId" />
+                            <button class="btn py-0 btn-outline-danger"><i class="bi bi-trash"></i></button>
+                        </form>
+
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
