@@ -126,15 +126,15 @@
                                     <li>
                                         <a asp-action="MemberProfile" asp-controller="Member" class="dropdown-item text-center">個人檔案</a>
                                     </li>
-                                    @if (role == "1")
-                                    {
-                                        <li>
-                                            <a asp-action="Index" asp-controller="MemberApplications" class="dropdown-item text-center">申請紀錄</a>
-                                        </li>
-                                    }
                                     <li>
                                         <a asp-action="Index" asp-controller="MemberInbox" class="dropdown-item text-center">通知管理</a>
                                     </li>
+                                    @if (role == "1")
+                                    {
+                                        <li>
+                                            <a asp-action="Index" asp-controller="MemberApplications" class="dropdown-item text-center">申請紀錄管理</a>
+                                        </li>
+                                    }
                                     <li>
                                         <a asp-action="Index" asp-controller="MemberContracts" class="dropdown-item text-center">我的合約</a>
                                     </li>

@@ -63,45 +63,41 @@ namespace zuHause.Controllers
                         r => r.ApplicationId,
                         c => c.RentalApplicationId,
                         (r, c) => new { r, c })
-                    .GroupJoin(_context.FurnitureOrders,
-                        rc => rc.r.PropertyId,
-                        f => f.PropertyId,
-                        (rc, fs) => new { rc, fs })
-                    .SelectMany(
-                        temp => temp.fs.DefaultIfEmpty(), // Left Join 關鍵
-                        (temp, f) => new { temp.rc, f }
-                    )
                     .Join(_context.Properties,
-                        rcf => rcf.rc.r.PropertyId,
+                        rc => rc.r.PropertyId,
                         p => p.PropertyId,
-                        (rcf, p) => new { rcf, p })
+                        (rc, p) => new { rc, p })
                     .Join(_context.Members,
-                        rcfp => rcfp.rcf.rc.r.MemberId,
+                        rcp => rcp.rc.r.MemberId,
                         m => m.MemberId,
-                        (rcfp, m) => new ContractsViewModel
+                        (rcp, m) => new ContractsViewModel
                         {
-                            ApplicationId = rcfp.rcf.rc.r.ApplicationId,
-                            ApplicationType = rcfp.rcf.rc.r.ApplicationType,
-                            MemberId = rcfp.rcf.rc.r.MemberId,
-                            PropertyId = rcfp.rcf.rc.r.PropertyId,
-                            CurrentStatus = rcfp.rcf.rc.r.CurrentStatus,
-                            ContractId = rcfp.rcf.rc.c.ContractId,
-                            StartDate = rcfp.rcf.rc.c.StartDate,
-                            EndDate = rcfp.rcf.rc.c.EndDate,
-                            Status = rcfp.rcf.rc.c.Status,
-                            CustomName = rcfp.rcf.rc.c.CustomName,
-                            HaveFurniture = rcfp.rcf.f != null ? rcfp.rcf.f.FurnitureOrderId : null,
-                            LandlordMemberId = rcfp.p.LandlordMemberId,
-                            PublishedAt = rcfp.p.PublishedAt,
-                            Title = rcfp.p.Title,
-                            AddressLine = rcfp.p.AddressLine,
-                            MonthlyRent = rcfp.p.MonthlyRent,
-                            PreviewImageUrl = rcfp.p.PreviewImageUrl,
-                            StatusDisplayName = GetStatusDisplayName(rcfp.rcf.rc.c.Status, codeDict),
+                            ApplicationId = rcp.rc.r.ApplicationId,
+                            ApplicationType = rcp.rc.r.ApplicationType,
+                            MemberId = rcp.rc.r.MemberId,
+                            PropertyId = rcp.rc.r.PropertyId,
+                            CurrentStatus = rcp.rc.r.CurrentStatus,
+                            ContractId = rcp.rc.c.ContractId,
+                            StartDate = rcp.rc.c.StartDate,
+                            EndDate = rcp.rc.c.EndDate,
+                            Status = rcp.rc.c.Status,
+                            CustomName = rcp.rc.c.CustomName,
+                            HaveFurniture = _context.FurnitureOrders
+                                .Any(f => f.PropertyId == rcp.rc.r.PropertyId) ? "是" : null,
+
+                            LandlordMemberId = rcp.p.LandlordMemberId,
+                            PublishedAt = rcp.p.PublishedAt,
+                            Title = rcp.p.Title,
+                            AddressLine = rcp.p.AddressLine,
+                            MonthlyRent = rcp.p.MonthlyRent,
+                            PreviewImageUrl = rcp.p.PreviewImageUrl,
+                            StatusDisplayName = GetStatusDisplayName(rcp.rc.c.Status, codeDict),
                             ApplicantName = m.MemberName,
                             ApplicantBath = m.BirthDate,
-                        }).OrderByDescending(x => x.ContractId)
+                        })
+                    .OrderByDescending(x => x.ContractId)
                     .ToListAsync();
+
 
             }
             else if (role == "2") // 房東
@@ -267,6 +263,10 @@ namespace zuHause.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ContractProduction(ContractFormViewModel model)
         {
+
+
+
+
             if (!ModelState.IsValid)
             {
                 // 若驗證失敗，回傳城市選單重新載入 View
@@ -277,6 +277,19 @@ namespace zuHause.Controllers
                 model.CityOptions = await _context.Cities
                     .Select(c => new SelectListItem { Value = c.CityId.ToString(), Text = c.CityName })
                     .ToListAsync();
+
+
+                foreach (var entry in ModelState)
+                {
+                    if (entry.Value?.Errors.Count > 0)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"欄位 {entry.Key} 有錯誤：");
+                        foreach (var error in entry.Value.Errors)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"- {error.ErrorMessage}");
+                        }
+                    }
+                }
 
                 return View(model);
             }
