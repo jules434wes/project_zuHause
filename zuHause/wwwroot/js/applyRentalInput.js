@@ -72,6 +72,21 @@ addBtn.addEventListener("click", function () {
 
 const form = document.querySelector(".apply-rental-form");
 
+const canvas = document.getElementById("signatureCanvas");
+const signaturePad = new SignaturePad(canvas);
+
+function clearSignature() {
+    signaturePad.clear();
+}
+
+form.addEventListener("submit", function (e) {
+    if (!signaturePad.isEmpty()) {
+        const dataURL = signaturePad.toDataURL("image/png");
+        document.getElementById("SignatureDataUrl").value = dataURL;
+    }
+});
+
+
 form.addEventListener("submit", function (e) {
     const inputItems = uploadInputArea.querySelectorAll(".input-item");
     let hasError = false;
@@ -118,8 +133,10 @@ form.addEventListener("submit", function (e) {
     if (document.querySelector(".note-area")) {
         notesError = validateNotes();
     }
-    if (document.querySelector(".signature-upload-area")) {
-    signatureError = validateSignatureFile();   
+    if (signaturePad.isEmpty()) {
+        alert("請於畫布上簽名再送出合約！");
+        e.preventDefault();
+        return;
     }
     console.log("==== submit 開始 ====");
     console.log("上傳區塊有錯：", hasError);
@@ -133,10 +150,14 @@ form.addEventListener("submit", function (e) {
 
 
     if (hasError) {
-        console.log("為啥還會近來")
         e.preventDefault();
         alert("請修正檔案上傳錯誤再送出表單！");
     }
+
+    const dataURL = signaturePad.toDataURL("image/png");
+    document.getElementById("SignatureDataUrl").value = dataURL;
+
+
 });
 
 
@@ -186,39 +207,23 @@ function validateNotes() {
 
 function validateSignatureFile() {
     const area = document.querySelector(".signature-upload-area");
-    if (!area || area.closest(".d-none")) return false; // 若區塊沒出現，不驗證
+    if (!area || area.closest(".d-none")) return false;
 
     const input = area.querySelector("input[type='file']");
     const feedback = area.querySelector(".input-feedback small");
     const fileNameDisplay = area.querySelector(".input-file-name");
-
-    let hasError = false;
     const file = input.files[0];
 
-    if (!file) {
-        feedback.textContent = "請選擇簽名檔案";
-        feedback.classList.add("text-danger");
-        hasError = true;
-    } else {
-        const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
-        const maxSize = 5 * 1024 * 1024;
+    // 新增對 Canvas 的判斷
+    const canvas = document.getElementById("signatureCanvas");
+    const hasCanvasSignature = canvas && new SignaturePad(canvas).isEmpty() === false;
 
-        if (!allowedTypes.includes(file.type)) {
-            feedback.textContent = "檔案格式錯誤，只允許 jpg/png/webp";
-            feedback.classList.add("text-danger");
-            hasError = true;
-        } else if (file.size > maxSize) {
-            feedback.textContent = "檔案過大，請小於 5MB";
-            feedback.classList.add("text-danger");
-            hasError = true;
-        } else {
-            feedback.textContent = "檔案格式與大小正確";
-            feedback.classList.remove("text-danger");
-            feedback.classList.add("text-muted");
-            fileNameDisplay.textContent = file.name;
-        }
+    // 若 Canvas 有簽名，就不再驗證圖片檔案
+    if (hasCanvasSignature) {
+        feedback.textContent = "已使用 Canvas 簽名";
+        feedback.classList.remove("text-danger");
+        feedback.classList.add("text-muted");
+        hasError =  false; // 沒錯誤
     }
-
-    console.log("validateSignatureFile" ,hasError)
     return hasError;
 }

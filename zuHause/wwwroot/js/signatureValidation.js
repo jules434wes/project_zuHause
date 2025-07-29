@@ -1,73 +1,41 @@
-﻿document.addEventListener("DOMContentLoaded", function () {
-    const signatureAreas = document.querySelectorAll(".signature-upload-area");
+﻿const signaturePads = {};
 
-    signatureAreas.forEach(signatureArea => {
-        const form = signatureArea.closest("form");
-        const input = signatureArea.querySelector("input[type='file']");
-        const feedback = signatureArea.querySelector(".input-feedback small");
-        const fileNameDisplay = signatureArea.querySelector(".input-file-name");
+document.addEventListener("DOMContentLoaded", function () {
+    const modals = document.querySelectorAll(".modal");
 
-        if (!form || !input || !feedback) return;
+    modals.forEach(modal => {
+        modal.addEventListener("shown.bs.modal", function () {
+            const form = modal.querySelector("form");
+            const canvas = modal.querySelector("canvas");
+            const hiddenInput = modal.querySelector("input[name='SignatureDataUrl']");
+            const clearBtn = modal.querySelector(".clear-signature-btn");
 
-        input.addEventListener("change", function () {
-            const file = input.files[0];
+            if (!form || !canvas || !hiddenInput) return;
 
-            if (!file) {
-                feedback.textContent = "請選擇簽名檔案";
-                feedback.classList.add("text-danger");
-                feedback.classList.remove("text-muted");
-                fileNameDisplay.textContent = "";
-                return;
-            }
+            const id = modal.id;
+            if (signaturePads[id]) return;
 
-            const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
-            const maxSize = 5 * 1024 * 1024;
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
 
-            if (!allowedTypes.includes(file.type)) {
-                feedback.textContent = "檔案格式錯誤，只允許 jpg/png/webp";
-                feedback.classList.add("text-danger");
-                feedback.classList.remove("text-muted");
-                fileNameDisplay.textContent = "";
-            } else if (file.size > maxSize) {
-                feedback.textContent = "檔案過大，請小於 5MB";
-                feedback.classList.add("text-danger");
-                feedback.classList.remove("text-muted");
-                fileNameDisplay.textContent = "";
-            } else {
-                feedback.textContent = "檔案格式與大小正確";
-                feedback.classList.remove("text-danger");
-                feedback.classList.add("text-muted");
-                fileNameDisplay.textContent = file.name;
-            }
-        });
+            const signaturePad = new SignaturePad(canvas);
+            signaturePads[id] = signaturePad;
 
-        form.addEventListener("submit", function (e) {
-            const file = input.files[0];
-            const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
-            const maxSize = 5 * 1024 * 1024;
+            form.addEventListener("submit", function (e) {
+                if (signaturePad.isEmpty()) {
+                    e.preventDefault();
+                    alert("請於畫布上簽名後再送出！");
+                    return;
+                }
 
-            let hasError = false;
+                const dataURL = signaturePad.toDataURL("image/png");
+                hiddenInput.value = dataURL;
+            });
 
-            if (!file) {
-                feedback.textContent = "請選擇簽名檔案";
-                feedback.classList.add("text-danger");
-                feedback.classList.remove("text-muted");
-                hasError = true;
-            } else if (!allowedTypes.includes(file.type)) {
-                feedback.textContent = "檔案格式錯誤，只允許 jpg/png/webp";
-                feedback.classList.add("text-danger");
-                feedback.classList.remove("text-muted");
-                hasError = true;
-            } else if (file.size > maxSize) {
-                feedback.textContent = "檔案過大，請小於 5MB";
-                feedback.classList.add("text-danger");
-                feedback.classList.remove("text-muted");
-                hasError = true;
-            }
-
-            if (hasError) {
-                e.preventDefault();
-                alert("請確認簽名檔案符合格式與大小！");
+            if (clearBtn) {
+                clearBtn.addEventListener("click", () => {
+                    signaturePad.clear();
+                });
             }
         });
     });

@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using System.Security.Claims;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using zuHause.DTOs;
 using zuHause.Models;
 using zuHause.Services;
@@ -400,17 +401,15 @@ namespace zuHause.Controllers
             }
 
             // 儲存簽名檔案（UserUpload）
-            if (model.SignatureFile != null)
+
+            if (!string.IsNullOrEmpty(model.SignatureDataUrl))
             {
-                var file = model.SignatureFile;
-                string storedFileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
+                var base64Data = Regex.Match(model.SignatureDataUrl, @"data:image/(?<type>.+?);base64,(?<data>.+)").Groups["data"].Value;
+                var imageBytes = Convert.FromBase64String(base64Data);
+
+                string storedFileName = $"{Guid.NewGuid()}.png";
                 string filePath = Path.Combine("wwwroot/uploads/signatures", storedFileName);
-                using (var stream = new FileStream(filePath, FileMode.Create))
-                {
-                    await file.CopyToAsync(stream);
-                }
-
-
+                await System.IO.File.WriteAllBytesAsync(filePath, imageBytes);
 
                 var upload = new UserUpload
                 {
@@ -418,12 +417,12 @@ namespace zuHause.Controllers
                     ModuleCode = "CONTRACT",
                     SourceEntityId = contractId,
                     UploadTypeCode = "LANDLORD_SIGNATURE",
-                    OriginalFileName = file.FileName,
+                    OriginalFileName = "signature.png",
                     StoredFileName = storedFileName,
-                    FileExt = Path.GetExtension(file.FileName),
-                    MimeType = file.ContentType,
+                    FileExt = ".png",
+                    MimeType = "image/png",
                     FilePath = $"/uploads/signatures/{storedFileName}",
-                    FileSize = file.Length,
+                    FileSize = imageBytes.Length,
                     UploadedAt = now,
                     CreatedAt = now,
                     UpdatedAt = now,
@@ -433,20 +432,18 @@ namespace zuHause.Controllers
                 _context.UserUploads.Add(upload);
                 await _context.SaveChangesAsync();
 
-                // 新增對應的 ContractSignature 資料
                 var contractSignature = new ContractSignature
                 {
                     ContractId = contractId,
                     SignerId = memberId,
-                    SignerRole = "LANDLORD", // 或 "TENANT"，你可以根據實際使用者判斷
-                    SignMethod = "UPLOAD",
+                    SignerRole = "LANDLORD",
+                    SignMethod = "CANVAS",
                     SignatureFileUrl = upload.FilePath,
                     UploadId = upload.UploadId,
                     SignedAt = now
                 };
 
                 _context.ContractSignatures.Add(contractSignature);
-
             }
 
 
@@ -456,79 +453,66 @@ namespace zuHause.Controllers
             return RedirectToAction("Preview", new { contractId = contractId });
         }
 
-
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateTenantSign(TenantSignViewModel model)
         {
-
-            System.Diagnostics.Debug.WriteLine($"==========={model.RentalApplicationId}=================");
-            System.Diagnostics.Debug.WriteLine($"==========={model.ContractId}=================");
-
-            if (!ModelState.IsValid)
+            if (!ModelState.IsValid || string.IsNullOrEmpty(model.SignatureDataUrl))
             {
-                return Content("上傳失敗，請檢查檔案或申請");
+                return Content("簽名失敗，請重新確認是否有簽名！");
             }
 
             var memberId = int.Parse(User.FindFirst("UserId")!.Value);
             var now = DateTime.Now;
 
-            // 儲存簽名檔案（UserUpload）
-            if (model.SignatureFile != null)
+            // 將 base64 圖片儲存
+            var base64Data = Regex.Match(model.SignatureDataUrl, @"data:image/(?<type>.+?);base64,(?<data>.+)").Groups["data"].Value;
+            var imageBytes = Convert.FromBase64String(base64Data);
+
+            string storedFileName = $"{Guid.NewGuid()}.png";
+            string filePath = Path.Combine("wwwroot/uploads/signatures", storedFileName);
+            await System.IO.File.WriteAllBytesAsync(filePath, imageBytes);
+
+            var upload = new UserUpload
             {
-                var file = model.SignatureFile;
-                string storedFileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
-                string filePath = Path.Combine("wwwroot/uploads/signatures", storedFileName);
-                using (var stream = new FileStream(filePath, FileMode.Create))
-                {
-                    await file.CopyToAsync(stream);
-                }
+                MemberId = memberId,
+                ModuleCode = "CONTRACT",
+                SourceEntityId = model.ContractId,
+                UploadTypeCode = "TENANT_SIGNATURE",
+                OriginalFileName = "signature.png",
+                StoredFileName = storedFileName,
+                FileExt = ".png",
+                MimeType = "image/png",
+                FilePath = $"/uploads/signatures/{storedFileName}",
+                FileSize = imageBytes.Length,
+                UploadedAt = now,
+                CreatedAt = now,
+                UpdatedAt = now,
+                IsActive = true
+            };
 
-
-
-                var upload = new UserUpload
-                {
-                    MemberId = memberId,
-                    ModuleCode = "CONTRACT",
-                    SourceEntityId = model.ContractId,
-                    UploadTypeCode = "TENANT_SIGNATURE",
-                    OriginalFileName = file.FileName,
-                    StoredFileName = storedFileName,
-                    FileExt = Path.GetExtension(file.FileName),
-                    MimeType = file.ContentType,
-                    FilePath = $"/uploads/signatures/{storedFileName}",
-                    FileSize = file.Length,
-                    UploadedAt = now,
-                    CreatedAt = now,
-                    UpdatedAt = now,
-                    IsActive = true
-                };
-
-                _context.UserUploads.Add(upload);
-                await _context.SaveChangesAsync();
-
-                // 新增對應的 ContractSignature 資料
-                var contractSignature = new ContractSignature
-                {
-                    ContractId = model.ContractId,
-                    SignerId = memberId,
-                    SignerRole = "TENANT", 
-                    SignMethod = "UPLOAD",
-                    SignatureFileUrl = upload.FilePath,
-                    UploadId = upload.UploadId,
-                    SignedAt = now
-                };
-
-                _context.ContractSignatures.Add(contractSignature);
-
-            }
-
+            _context.UserUploads.Add(upload);
             await _context.SaveChangesAsync();
-            await _applicationService.UpdateApplicationStatusAsync(model.RentalApplicationId!.Value, "WAIT_TENANT_AGREE");
 
+            var contractSignature = new ContractSignature
+            {
+                ContractId = model.ContractId,
+                SignerId = memberId,
+                SignerRole = "TENANT",
+                SignMethod = "CANVAS",
+                SignatureFileUrl = upload.FilePath,
+                UploadId = upload.UploadId,
+                SignedAt = now
+            };
+
+            _context.ContractSignatures.Add(contractSignature);
+            await _context.SaveChangesAsync();
+
+            await _applicationService.UpdateApplicationStatusAsync(model.RentalApplicationId!.Value, "WAIT_TENANT_AGREE");
 
             return RedirectToAction("Preview", "MemberContracts", new { contractId = model.ContractId });
         }
+
 
 
         [HttpPost]
