@@ -267,16 +267,16 @@ document.addEventListener('DOMContentLoaded', function() {
         
         switch(sortField) {
             case 'publishDate':
-                return cells[5].textContent.trim(); // 上架時間 (僅all表格)
+                return cells[4].textContent.trim(); // 建立時間 (all表格，第5欄)
             case 'applyTime':
-                return cells[5].textContent.trim(); // 申請審核時間 (pending表格)
+                return cells[4].textContent.trim(); // 申請審核時間 (pending表格，第5欄)
             case 'expiryDate':
-                return cells[7].textContent.trim(); // 上架期限 (all表格)
+                return cells[6].textContent.trim(); // 上架期限 (all表格，第7欄)
             case 'updateTime':
                 if (tableType === 'pending') {
-                    return cells[7].textContent.trim(); // pending表格的更新時間
+                    return cells[6].textContent.trim(); // pending表格的更新時間 (第7欄)
                 } else {
-                    return cells[8].textContent.trim(); // all表格的更新時間
+                    return cells[7].textContent.trim(); // all表格的更新時間 (第8欄)
                 }
             default:
                 return '';
