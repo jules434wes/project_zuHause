@@ -335,7 +335,7 @@
 							<tr>
 								<th>投訴單號</th>
 								<th>投訴人</th>
-								<th>投訴內容摘要</th>
+								<th width="50%">投訴內容摘要</th>
 								<th class="sortable" data-sort="complaintDate">
 									投訴時間
 									<i class="bi bi-sort-down sort-icon active" data-direction="desc"></i>
@@ -376,9 +376,9 @@
 											<span class="badge @complaintBadgeClass">@complaint.StatusDisplay</span>
 										</td>
 										<td>
-											<button class="btn btn-sm btn-outline-primary" onclick="handleComplaint(@complaint.ComplaintId)">
-												<i class="bi bi-arrow-right me-1"></i>前往處理
-											</button>
+											<a href="/Admin/admin_propertiesList" class="btn btn-sm btn-outline-primary" target="_blank">
+												前往處理
+											</a>
 										</td>
 									</tr>
 								}
