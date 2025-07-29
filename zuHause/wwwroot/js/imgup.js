@@ -26,7 +26,11 @@
                     <div class="card-body py-2 px-2">
                         <p class="mb-1"><strong>編號：</strong>${img.carouselImageId}</p>
                         <p class="mb-1"><strong>名稱：</strong>${img.imagesName}</p>
-                        <p class="mb-1"><strong>類別：</strong>${img.category}</p>
+                        <p class="mb-1"><strong>類別：</strong>
+                          ${img.category === 'tenant' ? '租客首頁輪播' :
+                            img.category === 'landlord' ? '房東首頁輪播' :
+                            img.category === 'furniture' ? '家具首頁輪播' : '未知類別'}
+                        </p>
                         <p class="mb-1"><strong>連結：</strong>
                           ${img.webUrl ? `<a href="${img.webUrl}" target="_blank">${img.webUrl}</a>` : ""}
                         </p>
