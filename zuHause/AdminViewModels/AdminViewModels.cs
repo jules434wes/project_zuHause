@@ -489,6 +489,7 @@ namespace zuHause.AdminViewModels
             Items = LoadPropertiesFromDatabase(context);
             TotalCount = Items.Count;
             PendingProperties = LoadPendingProperties(context);
+            Cities = LoadCitiesFromDatabase(context);
             
             BulkConfig = new BulkActionConfig
             {
@@ -500,6 +501,7 @@ namespace zuHause.AdminViewModels
         }
 
         public List<PropertyData> PendingProperties { get; set; } = new List<PropertyData>();
+        public List<City> Cities { get; set; } = new List<City>();
 
         private List<PropertyData> LoadPropertiesFromDatabase(ZuHauseContext context)
         {
@@ -591,6 +593,15 @@ namespace zuHause.AdminViewModels
                 .ToList();
 
             return pendingProperties;
+        }
+
+        private List<City> LoadCitiesFromDatabase(ZuHauseContext context)
+        {
+            return context.Cities
+                .Where(c => c.IsActive)
+                .OrderBy(c => c.DisplayOrder)
+                .ThenBy(c => c.CityName)
+                .ToList();
         }
 
         private string GetPropertyStatusDisplay(string statusCode, bool isPaid, DateTime? expireAt)

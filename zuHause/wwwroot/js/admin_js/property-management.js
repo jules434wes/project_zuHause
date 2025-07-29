@@ -96,7 +96,7 @@ document.addEventListener('DOMContentLoaded', function() {
         var searchBtn = document.getElementById('searchBtn' + suffix);
         if (searchBtn) {
             searchBtn.addEventListener('click', function() {
-                console.log('搜尋' + tabName);
+                performSearch(suffix);
             });
         }
 
@@ -105,7 +105,8 @@ document.addEventListener('DOMContentLoaded', function() {
         if (resetBtn) {
             resetBtn.addEventListener('click', function() {
                 resetFormFields(suffix);
-                console.log('重置' + tabName + '搜尋條件');
+                // 清除所有篩選參數並重新載入頁面
+                window.location.href = window.location.pathname;
             });
         }
 
@@ -121,12 +122,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 if (collapseElement.classList.contains('show')) {
                     collapse.hide();
-                    icon.className = 'fas fa-chevron-down';
-                    this.innerHTML = '<i class="fas fa-chevron-down"></i> 進階篩選';
+                    icon.className = 'bi bi-chevron-down';
+                    this.innerHTML = '<i class="bi bi-chevron-down"></i> 進階篩選';
                 } else {
                     collapse.show();
-                    icon.className = 'fas fa-chevron-up';
-                    this.innerHTML = '<i class="fas fa-chevron-up"></i> 收合篩選';
+                    icon.className = 'bi bi-chevron-up';
+                    this.innerHTML = '<i class="bi bi-chevron-up"></i> 收合篩選';
                 }
             });
         }
@@ -307,6 +308,83 @@ function changePage(page, tableType) {
 function getCurrentPage(tableType) {
     const urlParams = new URLSearchParams(window.location.search);
     return parseInt(urlParams.get(tableType + '_page')) || 1;
+}
+
+// 搜尋功能實現
+function performSearch(suffix) {
+    const url = new URL(window.location);
+    
+    // 清除舊的搜尋參數
+    const searchParams = ['search', 'searchField', 'propertyStatus', 'paymentStatus', 'documentUploadStatus', 
+                         'cityID', 'rentMin', 'rentMax', 'publishDateStart', 'publishDateEnd', 
+                         'applyDateStart', 'applyDateEnd', 'updateDateStart', 'updateDateEnd'];
+    searchParams.forEach(param => url.searchParams.delete(param));
+    
+    // 重置分頁到第一頁
+    url.searchParams.delete('all_page');
+    url.searchParams.delete('pending_page');
+    
+    // 添加新的搜尋參數
+    const searchInput = document.getElementById('searchInput' + suffix);
+    const searchField = document.getElementById('searchField' + suffix);
+    const propertyStatus = document.getElementById('propertyStatus' + suffix);
+    const paymentStatus = document.getElementById('paymentStatus' + suffix);
+    const documentUploadStatus = document.getElementById('documentUploadStatus' + suffix);
+    const cityID = document.getElementById('cityID' + suffix);
+    const rentMin = document.getElementById('rentMin' + suffix);
+    const rentMax = document.getElementById('rentMax' + suffix);
+    const publishDateStart = document.getElementById('publishDateStart' + suffix);
+    const publishDateEnd = document.getElementById('publishDateEnd' + suffix);
+    const applyDateStart = document.getElementById('applyDateStart' + suffix);
+    const applyDateEnd = document.getElementById('applyDateEnd' + suffix);
+    const updateDateStart = document.getElementById('updateDateStart' + suffix);
+    const updateDateEnd = document.getElementById('updateDateEnd' + suffix);
+    
+    if (searchInput && searchInput.value.trim()) {
+        url.searchParams.set('search', searchInput.value.trim());
+    }
+    if (searchField && searchField.value) {
+        url.searchParams.set('searchField', searchField.value);
+    }
+    if (propertyStatus && propertyStatus.value) {
+        url.searchParams.set('propertyStatus', propertyStatus.value);
+    }
+    if (paymentStatus && paymentStatus.value) {
+        url.searchParams.set('paymentStatus', paymentStatus.value);
+    }
+    if (documentUploadStatus && documentUploadStatus.value) {
+        url.searchParams.set('documentUploadStatus', documentUploadStatus.value);
+    }
+    if (cityID && cityID.value) {
+        url.searchParams.set('cityID', cityID.value);
+    }
+    if (rentMin && rentMin.value) {
+        url.searchParams.set('rentMin', rentMin.value);
+    }
+    if (rentMax && rentMax.value) {
+        url.searchParams.set('rentMax', rentMax.value);
+    }
+    if (publishDateStart && publishDateStart.value) {
+        url.searchParams.set('publishDateStart', publishDateStart.value);
+    }
+    if (publishDateEnd && publishDateEnd.value) {
+        url.searchParams.set('publishDateEnd', publishDateEnd.value);
+    }
+    if (applyDateStart && applyDateStart.value) {
+        url.searchParams.set('applyDateStart', applyDateStart.value);
+    }
+    if (applyDateEnd && applyDateEnd.value) {
+        url.searchParams.set('applyDateEnd', applyDateEnd.value);
+    }
+    if (updateDateStart && updateDateStart.value) {
+        url.searchParams.set('updateDateStart', updateDateStart.value);
+    }
+    if (updateDateEnd && updateDateEnd.value) {
+        url.searchParams.set('updateDateEnd', updateDateEnd.value);
+    }
+    
+    // 跳轉到新的URL
+    window.location.href = url.toString();
 }
 
 // 初始化分頁
