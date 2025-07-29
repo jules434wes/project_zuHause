@@ -43,6 +43,13 @@
                     }
                 </div>
                 <div>
+                    @* @if (!memberData.IsIdentityVerified && memberData.HasPendingIdentityApplication)
+                    {
+                        <button class="btn btn-primary" onclick="openVerifyIdModal()">
+                            <i class="bi bi-check2-circle me-1"></i> 手動驗證身分
+                        </button>
+                    } *@
+                    
                     @if (memberData.IsActive)
                     {
                         <button class="btn btn-outline-danger" onclick="openDeactivateModal()">
@@ -55,7 +62,7 @@
                             <i class="bi bi-check-circle me-1"></i>啟用帳號
                         </button>
                     }
-                    <button class="btn btn-outline-secondary">
+                    <button class="btn btn-outline-secondary" onclick="openSendMessageModal()">
                         <i class="bi bi-bell me-1"></i>發送系統訊息
                     </button>
                     <button class="btn btn-outline-secondary">

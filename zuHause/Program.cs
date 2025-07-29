@@ -8,11 +8,13 @@ using System.Text.Encodings.Web;
 using System.Text.Unicode;
 using zuHause.Data;
 using zuHause.Helpers;
+using zuHause.Interfaces;
+using zuHause.Interfaces.TenantInterfaces;
 using zuHause.Middleware;
 using zuHause.Models;
-using zuHause.Services;
 using zuHause.Options;
-using zuHause.Interfaces;
+using zuHause.Services;
+using zuHause.Services.TenantServices;
 using zuHause.ViewModels;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -102,6 +104,8 @@ builder.Services.AddScoped<RealDataSeeder>();
 
 //註冊發送通知服務
 builder.Services.AddScoped<NotificationService>();
+//註冊圖片轉址服務
+builder.Services.AddScoped<ImageResolverService>();
 
 // 註冊圖片處理服務
 builder.Services.AddScoped<zuHause.Interfaces.IImageProcessor, zuHause.Services.ImageSharpProcessor>();
@@ -141,7 +145,8 @@ builder.Services.AddScoped<zuHause.Interfaces.IPropertyMapCacheService, zuHause.
 builder.Services.Configure<StripeSettings>(builder.Configuration.GetSection("StripeSettings"));
 StripeConfiguration.ApiKey = builder.Configuration["StripeSettings:SecretKey"];
 
-
+//首頁功能
+builder.Services.AddScoped<IDataAccessService, DataAccessService>();
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
@@ -208,7 +213,7 @@ app.MapControllerRoute(
 //pattern: "{controller=Dashboard}/{action=Index}/{id?}");
 
 //租屋首頁路由
-pattern: "{controller=MemberInbox}/{action=Index}/{id?}");
+pattern: "{controller=Tenant}/{action=FrontPage}/{id?}");
 
 
 

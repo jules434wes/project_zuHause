@@ -17,11 +17,13 @@ namespace zuHause.Controllers
         public readonly ZuHauseContext _context;
         public readonly ApplicationService _applicationService;
         public readonly NotificationService _notificationService;
-        public MemberApplicationsController(ZuHauseContext context, ApplicationService applicationService, NotificationService notificationService)
+        public readonly ImageResolverService _imageResolverService;
+        public MemberApplicationsController(ZuHauseContext context, ApplicationService applicationService, NotificationService notificationService, ImageResolverService imageResolverService)
         {
             _context = context;
             _applicationService = applicationService;
             _notificationService = notificationService;
+            _imageResolverService = imageResolverService;
         }
 
 
@@ -77,6 +79,13 @@ namespace zuHause.Controllers
                         }).ToList()
                 }).OrderByDescending(x => x.ApplicationId)
                 .ToListAsync();
+
+
+            foreach(ApplicationRecordViewModel item in viewModel)
+            {
+            string ImgUrl = await _imageResolverService.GetImageUrl(item.PropertyId, "Property", "Gallery", "medium");
+                item.imgPath = ImgUrl;
+            }
 
 
 

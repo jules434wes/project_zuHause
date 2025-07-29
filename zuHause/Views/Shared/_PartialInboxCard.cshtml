@@ -48,6 +48,10 @@
                                 <button type="submit" class="btn btn-sm btn-danger">拒絕申請</button>
                             </form>
                         }
+                        @if ((Model.ModuleCode == "Contract") && Model.TypeCode == "CONTRACT_CONTRACTED")
+                        {
+                            <a class="btn btn-success" href="@Url.Action("Index","MemberContracts")">合約管理</a>
+                        }
 
 
                         <form method="post" asp-action="DeleteNotification" asp-controller="MemberInbox">

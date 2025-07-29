@@ -1,6 +1,7 @@
 ﻿@{
 
     ViewBag.Title = "合約預覽";
+    Layout = "_LayoutContract";
 }
 @model Int32
 
@@ -13,7 +14,6 @@
                 <div class="bg-white p-4 shadow-sm rounded">
                     @Html.Raw(ViewBag.ContractHtml)
                 </div>
-
                 <div class="mt-4 text-center">
                     <div class="row justify-content-center">
                         <div class="col-3">

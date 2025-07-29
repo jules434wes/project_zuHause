@@ -18,8 +18,9 @@ namespace zuHause.Controllers
             _context = context;
             _notificationService = notificationService;
         }
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int? notificationId)
         {
+            ViewBag.HighlightId = notificationId;
             //所有人都有會員訊息，有房東身分的就會收到房東訊息
             var userIdClaim = User.FindFirst("UserId");
 

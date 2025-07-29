@@ -1,55 +1,44 @@
-﻿@{
+﻿@using System.Linq
+@model zuHause.ViewModels.TenantViewModel.FrontPageViewModel
+
+@{
     ViewData["Title"] = "首頁";
 }
 
+@section Styles {
+    <link rel="stylesheet" href="~/css/FrontPage.css" asp-append-version="true" />
+}
 <main>
     @* 公告跑馬燈 *@
     <div class="announcement-marquee-container">
-        <div class="announcement-marquee-content">
-            📢 本網站將於 @DateTime.Now.AddDays(3).ToString("yyyy-MM-dd") 進行系統維護，請提前儲存您的資料！
-        </div>
+        <span id="dynamicMarqueeContent" class="announcement-marquee-content">
+            @*跑馬燈內容*@
+        </span>
     </div>
 
-    @* 輪播圖和搜尋框 *@
-    <div class="container carousel-container">
-        <div id="propertyCarousel" class="carousel slide" data-bs-ride="carousel">
-            <div class="carousel-inner" style="height: 400px; background-color: #e9ecef;">
-                <div class="carousel-item active">
-                    <img src="https://via.placeholder.com/1200x400?text=Carousel+Image+1" class="d-block w-100" alt="Property Image 1">
-                    <div class="carousel-caption d-none d-md-block">
-                        <h5>房源標題 1</h5>
-                        <p>簡短描述 1</p>
-                    </div>
-                </div>
-                <div class="carousel-item">
-                    <img src="https://via.placeholder.com/1200x400?text=Carousel+Image+2" class="d-block w-100" alt="Property Image 2">
-                    <div class="carousel-caption d-none d-md-block">
-                        <h5>房源標題 2</h5>
-                        <p>簡短描述 2</p>
-                    </div>
-                </div>
+    <div class="carousel-container">
+        <div id="myCustomCarousel" >
+            <div id="carouselImagesContainer" >
             </div>
-            <button class="carousel-control-prev" type="button" data-bs-target="#propertyCarousel" data-bs-slide="prev">
+
+            <button id="prevBtn" class="carousel-control-prev" >
                 <span class="carousel-control-prev-icon" aria-hidden="true"></span>
                 <span class="visually-hidden">Previous</span>
             </button>
-            <button class="carousel-control-next" type="button" data-bs-target="#propertyCarousel" data-bs-slide="next">
+            <button id="nextBtn" class="carousel-control-next" >
                 <span class="carousel-control-next-icon" aria-hidden="true"></span>
                 <span class="visually-hidden">Next</span>
             </button>
+
+            <div id="carouselIndicators" >
+            </div>
         </div>
 
 
-        @* 確保頁面頂部有引入 Bootstrap JS 和你的 custom JS *@
-        @* 例如在 _Layout.cshtml 或此頁面底部引入 *@
-        @* <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script> *@
-        @* <script src="~/js/site.js"></script> (如果你的 JS 在 site.js) *@
-        @* 或者直接在當前頁面加入 <script> 區塊 *@
-
         <div class="search-box-overlay">
             <div class="input-group">
-                <button class="btn btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" id="cityDropdownBtn">
-                    台北市 @* 預設顯示台北市，與圖片一致 *@
+                <button class="btn btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-citycode="TPE" id="cityDropdownBtn">
+                    臺北市 @* 預設顯示臺北市，與圖片一致 *@
                 </button>
 
                 <div class="dropdown-menu dropdown-menu-grid row g-2" aria-labelledby="cityDropdownBtn" style="min-width: 400px; padding: 15px;">
@@ -57,13 +46,13 @@
                         @* 北部地區列 *@
                         <h6 class="dropdown-header">北部</h6>
                         <div class="custom-city-list">
-                            <a class="dropdown-item" href="#" data-city="基隆市">基隆市</a>
-                            <a class="dropdown-item active" href="#" data-city="台北市">台北市</a> @* 預設 active，用於粗體變色 *@
-                            <a class="dropdown-item" href="#" data-city="新北市">新北市</a>
-                            <a class="dropdown-item" href="#" data-city="桃園市">桃園市</a>
-                            <a class="dropdown-item" href="#" data-city="新竹縣">新竹縣</a>
-                            <a class="dropdown-item" href="#" data-city="新竹市">新竹市</a>
-                            <a class="dropdown-item" href="#" data-city="宜蘭縣">宜蘭縣</a>
+                            <a class="dropdown-item" href="#" data-city="基隆市" data-cityCode="KEE">基隆市</a>
+                            <a class="dropdown-item active" href="#" data-city="臺北市" data-cityCode="TPE">臺北市</a> @* 預設 active，用於粗體變色 *@
+                            <a class="dropdown-item" href="#" data-city="新北市" data-cityCode="NTPC">新北市</a>
+                            <a class="dropdown-item" href="#" data-city="桃園市" data-cityCode="TAO">桃園市</a>
+                            <a class="dropdown-item" href="#" data-city="新竹縣" data-cityCode="HSQ">新竹縣</a>
+                            <a class="dropdown-item" href="#" data-city="新竹市" data-cityCode="HSZ">新竹市</a>
+                            <a class="dropdown-item" href="#" data-city="宜蘭縣" data-cityCode="ILA">宜蘭縣</a>
                         </div>
                     </div>
 
@@ -71,11 +60,11 @@
                         @* 中部地區列 *@
                         <h6 class="dropdown-header">中部</h6>
                         <div class="custom-city-list">
-                            <a class="dropdown-item" href="#" data-city="苗栗縣">苗栗縣</a>
-                            <a class="dropdown-item" href="#" data-city="台中市">台中市</a>
-                            <a class="dropdown-item" href="#" data-city="彰化縣">彰化縣</a>
-                            <a class="dropdown-item" href="#" data-city="南投縣">南投縣</a>
-                            <a class="dropdown-item" href="#" data-city="雲林縣">雲林縣</a>
+                            <a class="dropdown-item" href="#" data-city="苗栗縣" data-cityCode="MIA">苗栗縣</a>
+                            <a class="dropdown-item" href="#" data-city="臺中市" data-cityCode="TXG">臺中市</a>
+                            <a class="dropdown-item" href="#" data-city="彰化縣" data-cityCode="CHA">彰化縣</a>
+                            <a class="dropdown-item" href="#" data-city="南投縣" data-cityCode="NAN">南投縣</a>
+                            <a class="dropdown-item" href="#" data-city="雲林縣" data-cityCode="YUN">雲林縣</a>
                         </div>
                     </div>
 
@@ -83,11 +72,12 @@
                         @* 南部地區列 *@
                         <h6 class="dropdown-header">南部</h6>
                         <div class="custom-city-list">
-                            <a class="dropdown-item" href="#" data-city="嘉義縣">嘉義縣</a>
-                            <a class="dropdown-item" href="#" data-city="嘉義市">嘉義市</a>
-                            <a class="dropdown-item" href="#" data-city="台南市">台南市</a>
-                            <a class="dropdown-item" href="#" data-city="高雄市">高雄市</a>
-                            <a class="dropdown-item" href="#" data-city="屏東縣">屏東縣</a>
+                            <a class="dropdown-item" href="#" data-city="嘉義縣" data-cityCode="CYQ">嘉義縣</a>
+                            <a class="dropdown-item" href="#" data-city="嘉義市" data-cityCode="CYI">嘉義市</a>
+                            <a class="dropdown-item" href="#" data-city="臺南市" data-cityCode="TNN">臺南市</a>
+                            <a class="dropdown-item" href="#" data-city="高雄市" data-cityCode="KHH">高雄市</a>
+                            <a class="dropdown-item" href="#" data-city="屏東縣" data-cityCode="PIF">屏東縣</a>
+
                         </div>
                     </div>
 
@@ -95,8 +85,8 @@
                         @* 東部地區列 *@
                         <h6 class="dropdown-header">東部</h6>
                         <div class="custom-city-list">
-                            <a class="dropdown-item" href="#" data-city="花蓮縣">花蓮縣</a>
-                            <a class="dropdown-item" href="#" data-city="台東縣">台東縣</a>
+                            <a class="dropdown-item" href="#" data-city="花蓮縣" data-cityCode="HUA">花蓮縣</a>
+                            <a class="dropdown-item" href="#" data-city="臺東縣" data-cityCode="TTT">臺東縣</a>
                         </div>
                     </div>
 
@@ -104,9 +94,9 @@
                         @* 離島地區列 *@
                         <h6 class="dropdown-header">離島</h6>
                         <div class="custom-city-list">
-                            <a class="dropdown-item" href="#" data-city="澎湖縣">澎湖縣</a>
-                            <a class="dropdown-item" href="#" data-city="金門縣">金門縣</a>
-                            <a class="dropdown-item" href="#" data-city="連江">連江</a>
+                            <a class="dropdown-item" href="#" data-city="澎湖縣" data-cityCode="PEN">澎湖縣</a>
+                            <a class="dropdown-item" href="#" data-city="金門縣" data-cityCode="KIN">金門縣</a>
+                            <a class="dropdown-item" href="#" data-city="連江" data-cityCode="LIE">連江</a>
                         </div>
                     </div>
                 </div>
@@ -126,11 +116,11 @@
                 猜你喜歡
                 <i class="bi bi-search" data-bs-toggle="tooltip" data-bs-placement="top" title="根據使用者的進階搜尋內容顯示，若未搜尋過則根據填寫的主要承租區域而定。"></i>
             </h2>
-            <a href="@Url.Action("Results", "Search")" class="text-decoration-none h5">
-                探索更多物件 <i class="fas fa-chevron-right"></i>
+            <a id="exploreMoreBtn" class="text-decoration-none h5">
+                探索更多物件 <i class="bi bi-chevron-right"></i>
             </a>
         </div>
-        <div class="row row-cols-1 row-cols-md-4 g-4">
+        <div class="row row-cols-1 row-cols-md-4 g-4" id="youMayLikeProperties">
             @* Changed to row-cols-md-4 for better layout on medium screens and up *@
             @for (int i = 0; i < 8; i++) @* 範例：顯示8個卡片，與圖片一致 *@
             {
@@ -139,7 +129,7 @@
                         <img src="https://via.placeholder.com/400x250?text=Property+Image" class="card-img-top" alt="Property Image">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-center mb-2">
-                                <h5 class="card-title mb-0">台中市南屯區</h5> @* 房源標題 *@
+                                <h5 class="card-title mb-0">臺中市南屯區</h5> @* 房源標題 *@
                                 <button type="button" class="btn btn-link p-0 love-button" data-favorited="false">
                                     <i class="bi bi-heart love-icon empty"></i> @* 預設空心愛心 *@
                                 </button>
@@ -160,12 +150,12 @@
     </section>
 
     @* 特色房源區塊 *@
-    <section class="container my-5">
+    @* <section class="container my-5">
         <div class="row align-items-center">
             <div class="col-md-6 mb-4 mb-md-0">
-                @* Added mb-4 for spacing on smaller screens *@
+               
                 <div class="bg-light p-3 rounded d-flex align-items-center justify-content-center" style="height: 300px; overflow: hidden;">
-                    @* Adjusted style *@
+                   
                     <img src="https://via.placeholder.com/600x300?text=Featured+Property" class="img-fluid" alt="Featured Property">
                 </div>
             </div>
@@ -179,14 +169,14 @@
                     </h2>
                 </div>
                 <p class="lead text-danger">10000/月</p>
-                <p>台中市南屯區公益路二段51號</p>
+                <p>臺中市南屯區公益路二段51號</p>
                 <p>這是一個特色房源的詳細描述，可以包含多行文字，例如：可養寵、可短租、家電齊全、交通便利等。</p>
                 <a href="@Url.Action("Detail", "Property", new { id = 1 })" class="btn btn-outline-primary mt-3">
                     了解更多 <i class="fas fa-chevron-right"></i>
                 </a>
             </div>
         </div>
-    </section>
+    </section> *@
 
 </main>
 
@@ -196,5 +186,12 @@
 
 
 @section Scripts {
+
+    <script>
+        var clientCarouselImageUrls = @Html.Raw(Json.Serialize(Model.Carousel.ImageUrls));
+        var clientMarqueeMessages = @Html.Raw(Json.Serialize(Model.Marquee.MarqueeMessages));
+        var clientIsAuthenticated = @(User.Identity?.IsAuthenticated == true ? "true" : "false");
+
+    </script>
     <script src="~/js/FrontPage.js" asp-append-version="true"></script>
 }

@@ -1,6 +1,7 @@
 ﻿@using zuHause.ViewModels.MemberViewModel
 @model List<ApplicationRecordViewModel>
 @{
+    ViewData["Title"] = "申請紀錄管理";
     ViewData["activePage"] = "MemberApplications";
 }
 
@@ -41,9 +42,9 @@
                     @await Component.InvokeAsync("MemberApplicationCard",new MemberApplicationCardInputViewModel
                     {
                         Record = item,
-                                StatusCodeDict = ViewBag.ApplicationStatusOptions as Dictionary<string, string> ?? new()
-                                })
-                                }
+                        StatusCodeDict = ViewBag.ApplicationStatusOptions as Dictionary<string, string> ?? new()
+                    })
+                }
             </div>
 
         </div>

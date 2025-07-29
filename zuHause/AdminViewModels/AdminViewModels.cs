@@ -331,13 +331,21 @@ namespace zuHause.AdminViewModels
 
         private string GetPreferredRentalAreas(ZuHauseContext context, int memberId)
         {
-            var areas = context.RenterPosts
-                .Where(rp => rp.MemberId == memberId)
-                .Join(context.Districts, rp => rp.DistrictId, d => d.DistrictId, (rp, d) => d.DistrictName)
-                .Distinct()
-                .ToList();
+            var member = context.Members
+                .Include(m => m.PrimaryRentalCity)
+                .Include(m => m.PrimaryRentalDistrict)
+                .FirstOrDefault(m => m.MemberId == memberId);
             
-            return string.Join("、", areas);
+            if (member?.PrimaryRentalCity != null && member?.PrimaryRentalDistrict != null)
+            {
+                return $"{member.PrimaryRentalCity.CityName} {member.PrimaryRentalDistrict.DistrictName}";
+            }
+            else if (member?.PrimaryRentalCity != null)
+            {
+                return member.PrimaryRentalCity.CityName;
+            }
+            
+            return string.Empty;
         }
 
         private List<RentalContractData> LoadRentalContracts(ZuHauseContext context, int memberId)
@@ -563,7 +571,7 @@ namespace zuHause.AdminViewModels
                     LandlordId = p.LandlordId,
                     Address = p.Address,
                     RentPrice = p.RentPrice,
-                    Status = "未審核",
+                    Status = "審核中",
                     PaymentStatus = GetPaymentStatusDisplay(p.IsPaid, p.ExpireAt),
                     SubmissionDate = p.SubmissionDate,
                     UpdatedDate = p.UpdatedDate,
@@ -579,11 +587,20 @@ namespace zuHause.AdminViewModels
         {
             return statusCode switch
             {
-                "PENDING" => "未審核",
-                "ACTIVE" => "審核完成",
-                "REJECTED" => "未審核",
+                "PENDING" => "審核中",
+                "PENDING_PAYMENT" => "待付款",
+                "LISTED" => "上架中",
+                "CONTRACT_ISSUED" => "已發出合約",
+                "PENDING_RENEWAL" => "待續約",
+                "LEASE_EXPIRED_RENEWING" => "續約申請中",
+                "IDLE" => "閒置中",
+                "ALREADY_RENTED" => "出租中",
+                "REJECT_REVISE" => "審核未通過(待補件)",
+                "REJECTED" => "審核未通過",
+                "INVALID" => "房源已下架",
                 "BANNED" => "違規下架",
-                _ => "未審核"
+                "ACTIVE" => "審核完成(舊狀態)", // 向後相容，但不應該出現在新系統中
+                _ => "未知狀態"
             };
         }
 
@@ -625,6 +642,7 @@ namespace zuHause.AdminViewModels
             Complaints = LoadComplaints(context, propertyId);
             Equipment = LoadEquipment(context, propertyId);
             Images = LoadImages(context, imageQueryService, propertyId);
+            ApprovalHistory = LoadApprovalHistory(context, propertyId);
         }
 
         public PropertyDetailsData? Data { get; set; }
@@ -632,6 +650,7 @@ namespace zuHause.AdminViewModels
         public List<ComplaintDetailsData> Complaints { get; set; } = new();
         public List<EquipmentData> Equipment { get; set; } = new();
         public List<PropertyImageData> Images { get; set; } = new();
+        public List<ApprovalHistoryData> ApprovalHistory { get; set; } = new();
 
         private PropertyDetailsData? LoadPropertyDetailsFromDatabase(ZuHauseContext context, int propertyId)
         {
@@ -679,6 +698,7 @@ namespace zuHause.AdminViewModels
                 PropertyProofUrl = property.PropertyProofUrl,
                 PreviewImageUrl = property.PreviewImageUrl,
                 ApprovalStatus = GetApprovalStatusDisplay(property.StatusCode),
+                StatusCode = property.StatusCode, // 添加原始狀態碼
                 PaymentStatus = GetPaymentStatusDisplay(property.IsPaid, property.ExpireAt),
                 PublishedAt = property.PublishedAt,
                 ExpireAt = property.ExpireAt,
@@ -776,6 +796,38 @@ namespace zuHause.AdminViewModels
             }).ToList();
         }
 
+        private List<ApprovalHistoryData> LoadApprovalHistory(ZuHauseContext context, int propertyId)
+        {
+            var approvalHistory = new List<ApprovalHistoryData>();
+
+            // 取得房源相關的審核記錄
+            var approvals = context.Approvals
+                .Include(a => a.ApprovalItems)
+                .Where(a => a.SourcePropertyId == propertyId && a.ModuleCode == "PROPERTY")
+                .ToList();
+
+            foreach (var approval in approvals)
+            {
+                foreach (var item in approval.ApprovalItems.OrderBy(ai => ai.CreatedAt))
+                {
+                    var adminName = item.ActionBy.HasValue 
+                        ? context.Admins.FirstOrDefault(admin => admin.AdminId == item.ActionBy.Value)?.Name ?? "系統自動"
+                        : "系統自動";
+
+                    approvalHistory.Add(new ApprovalHistoryData
+                    {
+                        OperationTime = item.CreatedAt,
+                        ActionType = item.ActionType,
+                        ActionNote = item.ActionNote ?? "",
+                        AdminName = adminName,
+                        AdminId = item.ActionBy
+                    });
+                }
+            }
+
+            return approvalHistory.OrderByDescending(ah => ah.OperationTime).ToList();
+        }
+
         private static string GetImageCategoryDisplay(zuHause.Enums.ImageCategory category)
         {
             switch (category)
@@ -800,15 +852,33 @@ namespace zuHause.AdminViewModels
             switch (statusCode)
             {
                 case "PENDING":
-                    return "未審核";
-                case "ACTIVE":
-                    return "審核完成";
+                    return "審核中";
+                case "PENDING_PAYMENT":
+                    return "待付款";
+                case "LISTED":
+                    return "上架中";
+                case "CONTRACT_ISSUED":
+                    return "已發出合約";
+                case "PENDING_RENEWAL":
+                    return "待續約";
+                case "LEASE_EXPIRED_RENEWING":
+                    return "續約申請中";
+                case "IDLE":
+                    return "閒置中";
+                case "ALREADY_RENTED":
+                    return "出租中";
+                case "REJECT_REVISE":
+                    return "審核未通過(待補件)";
                 case "REJECTED":
-                    return "未審核";
+                    return "審核未通過";
+                case "INVALID":
+                    return "房源已下架";
                 case "BANNED":
                     return "違規下架";
+                case "ACTIVE": // 向後相容，但不應該出現在新系統中
+                    return "審核完成(舊狀態)";
                 default:
-                    return "未審核";
+                    return "未知狀態";
             }
         }
 
@@ -1035,6 +1105,7 @@ namespace zuHause.AdminViewModels
         // 額外屬性用於UI顯示
         public bool IsActive => AccountStatus == "active";
         public bool IsIdentityVerified => VerificationStatus == "verified";
+        public bool HasPendingIdentityApplication => VerificationStatus == "pending";
     }
 
     public class PropertyData
@@ -1186,6 +1257,7 @@ namespace zuHause.AdminViewModels
         public string? PropertyProofUrl { get; set; }
         public string? PreviewImageUrl { get; set; }
         public string ApprovalStatus { get; set; } = string.Empty;
+        public string StatusCode { get; set; } = string.Empty; // 原始狀態碼
         public string PaymentStatus { get; set; } = string.Empty;
         public DateTime? PublishedAt { get; set; }
         public DateTime? ExpireAt { get; set; }
@@ -1197,7 +1269,7 @@ namespace zuHause.AdminViewModels
         public string Layout => $"{RoomCount}房{LivingRoomCount}廳{BathroomCount}衛";
         public string FloorDisplay => $"{CurrentFloor}樓";
         public string TotalFloorsDisplay => $"{TotalFloors}樓";
-        public bool IsActive => ApprovalStatus == "審核完成";
+        public bool IsActive => ApprovalStatus == "上架中" || ApprovalStatus == "已發出合約" || ApprovalStatus == "出租中";
         public bool HasPropertyProof => !string.IsNullOrEmpty(PropertyProofUrl);
     }
 
@@ -1294,6 +1366,41 @@ namespace zuHause.AdminViewModels
             "EXTERIOR" => "外觀",
             "OTHER" => "其他",
             _ => "未分類"
+        };
+    }
+
+    public class ApprovalHistoryData
+    {
+        public DateTime OperationTime { get; set; }
+        public string ActionType { get; set; } = string.Empty;
+        public string ActionNote { get; set; } = string.Empty;
+        public string AdminName { get; set; } = string.Empty;
+        public int? AdminId { get; set; }
+
+        public string ActionTypeDisplay => ActionType switch
+        {
+            "SUBMIT" => "提交申請",
+            "APPROVE" => "審核通過",
+            "REJECT" => "審核駁回",
+            "REVISE" => "要求修正",
+            "MARK_PAID" => "標記已付款",
+            "PUBLISH" => "發布上架",
+            "SUSPEND" => "暫停",
+            "REACTIVATE" => "重新啟用",
+            _ => ActionType
+        };
+
+        public string BadgeClass => ActionType switch
+        {
+            "SUBMIT" => "bg-info",
+            "APPROVE" => "bg-success", 
+            "REJECT" => "bg-danger",
+            "REVISE" => "bg-warning",
+            "MARK_PAID" => "bg-primary",
+            "PUBLISH" => "bg-success",
+            "SUSPEND" => "bg-secondary",
+            "REACTIVATE" => "bg-info",
+            _ => "bg-secondary"
         };
     }
 

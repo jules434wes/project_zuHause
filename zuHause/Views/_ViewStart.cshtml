@@ -2,7 +2,7 @@
 
     Layout = "_Layout";
     var tenantControllers = new List<string> { "Announcement", "Tenant", "Search" };
-    List<string> LoginLayoutController = new List<string> { "Member", "MemberInbox", "MemberContracts", "MemberApplications" };
+    List<string> LoginLayoutController = new List<string> { "Member", "MemberInbox", "MemberContracts", "MemberApplications", "CollectionAndComparison" };
 
     if (LoginLayoutController.Contains(ViewContext.RouteData.Values["Controller"]?.ToString()!))
     {

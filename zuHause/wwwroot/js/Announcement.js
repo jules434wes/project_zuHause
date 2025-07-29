@@ -13,7 +13,17 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentPage = 1; // 當前公告頁碼
     const announcementCache = {}; // 新增：用於快取已載入的公告詳細內容 {id: {fullContent: '...', attachmentUrl: '...'}}
 
-    // === 輔助函數定義 ===
+    const urlParams = new URLSearchParams(window.location.search);
+    const targetSectionFromUrl = urlParams.get('section'); // 讀取 'section' 參數的值
+
+    let initialTargetId = 'announcements'; // 預設顯示公告
+    if (targetSectionFromUrl) {
+        // 檢查 URL 參數是否對應到一個有效的 content-section id
+        const validSection = document.getElementById(targetSectionFromUrl);
+        if (validSection) {
+            initialTargetId = targetSectionFromUrl;
+        }
+    }
 
     /**
      * 清空指定容器的內容。
@@ -43,23 +53,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return true;
         }
         return false;
-    }
-
-    /**
-     * 格式化公告內容，確保換行符能正確顯示
-     * @param {string} content - 原始內容文字
-     * @returns {string} 格式化後的內容
-     */
-    function formatAnnouncementContent(content) {
-        if (!content) return '';
-        
-        // 如果內容中包含HTML標籤，直接返回（避免重複處理）
-        if (/<[^>]*>/g.test(content)) {
-            return content;
-        }
-        
-        // 將換行符轉換為HTML換行標籤，作為CSS white-space: pre-wrap 的備用方案
-        return content.replace(/\n/g, '<br>');
     }
 
     /**
@@ -128,13 +121,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
         announcementListContainer.innerHTML = '<p>載入中，請稍候...</p>'; // 顯示載入提示
 
+        console.log('Attempting to load announcements for page:', page); // <<<<<<<<<< 新增這行
+        console.log('API URL:', `${API_BASE_URL}/Announcements/list?pageNumber=${page}&pageSize=6`); // <<<<<<<<<< 新增這行
+
         try {
             const response = await fetch(`${API_BASE_URL}/Announcements/list?pageNumber=${page}&pageSize=6`);
+            console.log('API Response status:', response.status); // <<<<<<<<<< 新增這行
+
             if (!response.ok) {
                 // 如果 HTTP 狀態碼不是 2xx，拋出錯誤
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             const data = await response.json(); // 解析 JSON 回應
+            console.log('API Response data:', data); // <<<<<<<<<< 新增這行
 
             if (data.announcements && data.announcements.length > 0) {
                 clearContent(announcementListContainer); // 成功載入後清除載入提示
@@ -167,8 +166,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     const toggleButton = announcementBody.querySelector('.toggle-button');
 
                     // 初始顯示部分內容，並在數據屬性中儲存原始預覽內容
-                    announcementContentDiv.innerHTML = formatAnnouncementContent(announcement.contentPreview);
-                    announcementContentDiv.dataset.contentPreview = formatAnnouncementContent(announcement.contentPreview);
+                    announcementContentDiv.innerHTML = announcement.contentPreview;
+                    announcementContentDiv.dataset.contentPreview = announcement.contentPreview;
 
                     // --- 公告標題點擊事件監聽器 ---
                     announcementHeader.addEventListener('click', () => {
@@ -275,7 +274,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 }
 
                                 // 顯示完整內容
-                                announcementContentDiv.innerHTML = formatAnnouncementContent(announcementCache[currentAnnouncementId].fullContent);
+                                announcementContentDiv.innerHTML = announcementCache[currentAnnouncementId].fullContent;
 
                                 // 處理附件 (統一使用 createAttachmentElement 函數，確保即使替換 innerHTML 也能重新添加)
                                 const attachmentUrl = announcementCache[currentAnnouncementId].attachmentUrl;
@@ -307,6 +306,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
         } catch (error) {
+
             console.error('Error loading announcements:', error);
             announcementListContainer.innerHTML = '<p>載入公告失敗，請稍後再試。</p>';
             clearContent(paginationContainer); // 載入失敗時清空分頁
@@ -439,6 +439,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // 頁面載入後，預設顯示「公告」內容
-    switchContent('announcements');
+ 
+    switchContent(initialTargetId);
 });

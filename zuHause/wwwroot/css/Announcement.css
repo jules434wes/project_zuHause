@@ -242,9 +242,6 @@ body {
     color: #555;
     position: static; /* 將此改為 static，移除相對定位 */
     padding-bottom: 0; /* 將此改為 0，或直接移除，不再為附件預留空間 */
-    white-space: pre-wrap; /* 保留換行符和空格，支持自動換行 */
-    word-wrap: break-word; /* 長單詞自動換行 */
-    word-break: break-word; /* 強制長單詞換行，避免溢出 */
 }
 
     .announcement-content p {

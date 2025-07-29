@@ -8,26 +8,86 @@
 
 <div class="container main-content">
 
-	<div class="search-bar-container mb-4">
-		<div class="row g-2 align-items-center">
-			<div class="col-md-1">
-				<select class="form-select" id="citySelect" aria-label="城市選擇">
-					<option value="" disabled selected>載入城市...</option>
-				</select>
+	<div class="container my-4 ">
+		<div class="filters-container ">
+			<div class="input-group">
+				<button class="btn btn-secondary dropdown-toggle" type="button" id="cityDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false">
+					臺北市
+				</button>
+
+				<div class="dropdown-menu dropdown-menu-grid row g-2" aria-labelledby="cityDropdownBtn">
+
+					<div class="col-6 col-md-2">
+						<h6 class="dropdown-header">北部地區</h6>
+						<div class="custom-city-list">
+							<a class="dropdown-item" href="#" data-city-code="KEE">基隆市</a>
+							<a class="dropdown-item active" href="#" data-city-code="TPE">臺北市</a>
+							<a class="dropdown-item" href="#" data-city-code="NTPC">新北市</a>
+							<a class="dropdown-item" href="#" data-city-code="TAO">桃園市</a>
+							<a class="dropdown-item" href="#" data-city-code="HSQ">新竹縣</a>
+							<a class="dropdown-item" href="#" data-city-code="HSZ">新竹市</a>
+							<a class="dropdown-item" href="#" data-city-code="ILA">宜蘭縣</a>
+
+						</div>
+					</div>
+
+					<div class="col-6 col-md-2">
+						<h6 class="dropdown-header">中部地區</h6>
+						<div class="custom-city-list">
+							<a class="dropdown-item" href="#" data-city-code="MIA">苗栗縣</a>
+							<a class="dropdown-item" href="#" data-city-code="TXG">臺中市</a>
+							<a class="dropdown-item" href="#" data-city-code="CHA">彰化縣</a>
+							<a class="dropdown-item" href="#" data-city-code="NAN">南投縣</a>
+							<a class="dropdown-item" href="#" data-city-code="YUN">雲林縣</a>
+						</div>
+					</div>
+
+					<div class="col-6 col-md-2">
+						<h6 class="dropdown-header">南部地區</h6>
+						<div class="custom-city-list">
+							<a class="dropdown-item" href="#" data-city-code="CYQ">嘉義縣</a>
+							<a class="dropdown-item" href="#" data-city-code="CYI">嘉義市</a>
+							<a class="dropdown-item" href="#" data-city-code="TNN">臺南市</a>
+							<a class="dropdown-item" href="#" data-city-code="KHH">高雄市</a>
+							<a class="dropdown-item" href="#" data-city-code="PIF">屏東縣</a>
+						</div>
+					</div>
+
+					<div class="col-6 col-md-2">
+						<h6 class="dropdown-header">東部地區</h6>
+						<div class="custom-city-list">
+							<a class="dropdown-item" href="#" data-city-code="HUA">花蓮縣</a>
+							<a class="dropdown-item" href="#" data-city-code="TTT">臺東縣</a>
+						</div>
+					</div>
+
+					<div class="col-6 col-md-2">
+						<h6 class="dropdown-header">離島地區</h6>
+						<div class="custom-city-list">
+							<a class="dropdown-item" href="#" data-city-code="PEN">澎湖縣</a>
+							<a class="dropdown-item" href="#" data-city-code="KIN">金門縣</a>
+							<a class="dropdown-item" href="#" data-city-code="LIE">連江縣</a>
+						</div>
+					</div>
+
+				</div>
+
+
+				<input type="text" class="form-control" placeholder="請輸入關鍵字 (社區名、街道名、捷運名稱等)" aria-label="Keyword input" id="keywordSearch">
+
+
+				<button class="btn btn-primary" type="button" id="searchButton"><i class="bi bi-search"></i> 搜尋</button>
 			</div>
-			<div class="col-md-10">
-				<input type="text" class="form-control" id="keywordSearch" placeholder="請輸入關鍵字 (社區名、街道名、捷運名稱等)">
-			</div>
-			<div class="col-md-1 d-grid">
-				<button class="btn btn-primary" type="button" id="searchButton">搜尋</button>
+
+
+			<div id="searchHistory" class="text-start d-flex flex-wrap gap-2 mt-2">
+				@* 搜尋歷史紀錄將通過 JavaScript 動態載入  *@
 			</div>
 		</div>
 	</div>
 
 	<div class="filters-container">
 		<div class="row g-3">
-			@* 使用 row 和 g-3 (gap) 保持間距 *@
-
 			<div class="col-12 filter-group d-flex align-items-baseline flex-wrap">
 				@* 使用 align-items-baseline for better label alignment *@
 				<label class="form-label me-2 mb-0">位置</label>
@@ -45,26 +105,26 @@
 				@* align-items-baseline *@
 				<label class="form-label me-2 mb-0">租金</label>
 				<div class="btn-group me-2" role="group" aria-label="租金不限">
-					<input type="radio" class="btn-check" name="rent" id="rentNoLimit" autocomplete="off" checked>
+					<input type="radio" class="btn-check" name="rent_range" id="rentNoLimit" autocomplete="off" checked>
 					<label class="btn btn-outline-secondary btn-sm" for="rentNoLimit" data-filter-type="rent">不限</label>
 				</div>
 				<div class="d-flex align-items-center flex-wrap ms-2">
-					<input type="radio" class="btn-check" name="rent" id="rent5k" autocomplete="off" value="0-5000">
+					<input type="checkbox" class="btn-check" name="rent_range" id="rent5k" autocomplete="off" value="0-5000">
 					<label class="btn btn-outline-secondary btn-sm me-1 mb-1" for="rent5k">5000以下</label>
 
-					<input type="radio" class="btn-check" name="rent" id="rent5-10k" autocomplete="off" value="5000-10000">
+					<input type="checkbox" class="btn-check" name="rent_range" id="rent5-10k" autocomplete="off" value="5000-10000">
 					<label class="btn btn-outline-secondary btn-sm me-1 mb-1" for="rent5-10k">5000-10000</label>
 
-					<input type="radio" class="btn-check" name="rent" id="rent10-20k" autocomplete="off" value="10000-20000">
+					<input type="checkbox" class="btn-check" name="rent_range" id="rent10-20k" autocomplete="off" value="10000-20000">
 					<label class="btn btn-outline-secondary btn-sm me-1 mb-1" for="rent10-20k">10000-20000</label>
 
-					<input type="radio" class="btn-check" name="rent" id="rent20-30k" autocomplete="off" value="20000-30000">
+					<input type="checkbox" class="btn-check" name="rent_range" id="rent20-30k" autocomplete="off" value="20000-30000">
 					<label class="btn btn-outline-secondary btn-sm me-1 mb-1" for="rent20-30k">20000-30000</label>
 
-					<input type="radio" class="btn-check" name="rent" id="rent30-40k" autocomplete="off" value="30000-40000">
+					<input type="checkbox" class="btn-check" name="rent_range" id="rent30-40k" autocomplete="off" value="30000-40000">
 					<label class="btn btn-outline-secondary btn-sm me-1 mb-1" for="rent30-40k">30000-40000</label>
 
-					<input type="radio" class="btn-check" name="rent" id="rent40kUp" autocomplete="off" value="40000-max">
+					<input type="checkbox" class="btn-check" name="rent_range" id="rent40kUp" autocomplete="off" value="40000-9999999">
 					<label class="btn btn-outline-secondary btn-sm me-1 mb-1" for="rent40kUp">40000以上</label>
 				</div>
 				<div class="d-flex align-items-center ms-3">
@@ -76,58 +136,58 @@
 			</div>
 
 			<div class="col-12 filter-group d-flex align-items-baseline flex-wrap">
-				@* align-items-baseline *@
 				<label class="form-label me-2 mb-0">格局</label>
 				<div class="btn-group me-2" role="group" aria-label="格局不限">
-					<input type="radio" class="btn-check" name="layout" id="layoutNoLimit" autocomplete="off" checked>
+					<input type="radio" class="btn-check" name="layout_group" id="layoutNoLimit" autocomplete="off" checked>
 					<label class="btn btn-outline-secondary btn-sm" for="layoutNoLimit" data-filter-type="layout">不限</label>
 				</div>
 				<div class="d-flex align-items-center flex-wrap ms-2">
-					<input type="checkbox" class="btn-check" id="room1" autocomplete="off" value="1">
+					<input type="checkbox" class="btn-check" name="layout_group" id="room1" autocomplete="off" value="1">
 					<label class="btn btn-outline-secondary btn-sm me-1 mb-1" for="room1">1房</label>
-					<input type="checkbox" class="btn-check" id="room2" autocomplete="off" value="2">
+					<input type="checkbox" class="btn-check" name="layout_group" id="room2" autocomplete="off" value="2">
 					<label class="btn btn-outline-secondary btn-sm me-1 mb-1" for="room2">2房</label>
-					<input type="checkbox" class="btn-check" id="room3" autocomplete="off" value="3">
+					<input type="checkbox" class="btn-check" name="layout_group" id="room3" autocomplete="off" value="3">
 					<label class="btn btn-outline-secondary btn-sm me-1 mb-1" for="room3">3房</label>
-					<input type="checkbox" class="btn-check" id="room4up" autocomplete="off" value="4">
+					<input type="checkbox" class="btn-check" name="layout_group" id="room4up" autocomplete="off" value="4">
 					<label class="btn btn-outline-secondary btn-sm me-1 mb-1" for="room4up">4房以上</label>
 				</div>
 			</div>
 
-			@* 新增一個衛浴篩選器 *@
 			<div class="col-12 filter-group d-flex align-items-baseline flex-wrap">
 				<label class="form-label me-2 mb-0">衛浴</label>
 				<div class="btn-group me-2" role="group" aria-label="衛浴不限">
-					<input type="radio" class="btn-check" name="bathroom" id="bathroomNoLimit" autocomplete="off" checked>
+					<input type="radio" class="btn-check" name="bathroom_group" id="bathroomNoLimit" autocomplete="off" checked>
 					<label class="btn btn-outline-secondary btn-sm" for="bathroomNoLimit" data-filter-type="bathroom">不限</label>
 				</div>
 				<div class="d-flex align-items-center flex-wrap ms-2">
-					<input type="checkbox" class="btn-check" id="bathroom1" autocomplete="off" value="1">
+					<input type="checkbox" class="btn-check" name="bathroom_group" id="bathroom1" autocomplete="off" value="1">
 					<label class="btn btn-outline-secondary btn-sm me-1 mb-1" for="bathroom1">1衛</label>
-					<input type="checkbox" class="btn-check" id="bathroom2" autocomplete="off" value="2">
+					<input type="checkbox" class="btn-check" name="bathroom_group" id="bathroom2" autocomplete="off" value="2">
 					<label class="btn btn-outline-secondary btn-sm me-1 mb-1" for="bathroom2">2衛</label>
-					<input type="checkbox" class="btn-check" id="bathroom3" autocomplete="off" value="3">
+					<input type="checkbox" class="btn-check" name="bathroom_group" id="bathroom3" autocomplete="off" value="3">
 					<label class="btn btn-outline-secondary btn-sm me-1 mb-1" for="bathroom3">3衛</label>
-					<input type="checkbox" class="btn-check" id="bathroom4up" autocomplete="off" value="4">
+					<input type="checkbox" class="btn-check" name="bathroom_group" id="bathroom4up" autocomplete="off" value="4">
 					<label class="btn btn-outline-secondary btn-sm me-1 mb-1" for="bathroom4up">4衛以上</label>
 				</div>
 			</div>
 
 			<div class="col-12 filter-group d-flex align-items-baseline flex-wrap">
-				@* align-items-baseline *@
 				<label class="form-label me-2 mb-0">樓層</label>
 				<div class="btn-group me-2" role="group" aria-label="樓層不限">
 					<input type="radio" class="btn-check" name="floor" id="floorNoLimit" autocomplete="off" checked>
 					<label class="btn btn-outline-secondary btn-sm" for="floorNoLimit" data-filter-type="floor">不限</label>
 				</div>
 				<div class="d-flex align-items-center flex-wrap ms-2">
-					<input type="radio" class="btn-check" name="floor" id="floor1" autocomplete="off" value="1">
+					<input type="checkbox" class="btn-check floor-checkbox" name="floor" id="floor1" autocomplete="off" value="1">
 					<label class="btn btn-outline-secondary btn-sm me-1 mb-1" for="floor1">1樓</label>
-					<input type="radio" class="btn-check" name="floor" id="floor2-6" autocomplete="off" value="2-6">
+
+					<input type="checkbox" class="btn-check floor-checkbox" name="floor" id="floor2-6" autocomplete="off" value="2-6">
 					<label class="btn btn-outline-secondary btn-sm me-1 mb-1" for="floor2-6">2-6樓</label>
-					<input type="radio" class="btn-check" name="floor" id="floor6-12" autocomplete="off" value="6-12">
+
+					<input type="checkbox" class="btn-check floor-checkbox" name="floor" id="floor6-12" autocomplete="off" value="6-12">
 					<label class="btn btn-outline-secondary btn-sm me-1 mb-1" for="floor6-12">6-12樓</label>
-					<input type="radio" class="btn-check" name="floor" id="floor12up" autocomplete="off" value="12up">
+
+					<input type="checkbox" class="btn-check floor-checkbox" name="floor" id="floor12up" autocomplete="off" value="12-999">
 					<label class="btn btn-outline-secondary btn-sm me-1 mb-1" for="floor12up">12樓以上</label>
 				</div>
 			</div>
@@ -140,17 +200,17 @@
 					<label class="btn btn-outline-secondary btn-sm" for="areaNoLimit" data-filter-type="areaSize">不限</label>
 				</div>
 				<div class="d-flex align-items-center flex-wrap ms-2">
-					<input type="radio" class="btn-check" name="areaSize" id="area10below" autocomplete="off" value="0-10">
+					<input type="checkbox" class="btn-check" name="areaSize" id="area10below" autocomplete="off" value="0-10">
 					<label class="btn btn-outline-secondary btn-sm me-1 mb-1" for="area10below">10坪以下</label>
-					<input type="radio" class="btn-check" name="areaSize" id="area10-20" autocomplete="off" value="10-20">
+					<input type="checkbox" class="btn-check" name="areaSize" id="area10-20" autocomplete="off" value="10-20">
 					<label class="btn btn-outline-secondary btn-sm me-1 mb-1" for="area10-20">10-20坪</label>
-					<input type="radio" class="btn-check" name="areaSize" id="area20-30" autocomplete="off" value="20-30">
+					<input type="checkbox" class="btn-check" name="areaSize" id="area20-30" autocomplete="off" value="20-30">
 					<label class="btn btn-outline-secondary btn-sm me-1 mb-1" for="area20-30">20-30坪</label>
-					<input type="radio" class="btn-check" name="areaSize" id="area30-40" autocomplete="off" value="30-40">
+					<input type="checkbox" class="btn-check" name="areaSize" id="area30-40" autocomplete="off" value="30-40">
 					<label class="btn btn-outline-secondary btn-sm me-1 mb-1" for="area30-40">30-40坪</label>
-					<input type="radio" class="btn-check" name="areaSize" id="area40-50" autocomplete="off" value="40-50">
+					<input type="checkbox" class="btn-check" name="areaSize" id="area40-50" autocomplete="off" value="40-50">
 					<label class="btn btn-outline-secondary btn-sm me-1 mb-1" for="area40-50">40-50坪</label>
-					<input type="radio" class="btn-check" name="areaSize" id="area50up" autocomplete="off" value="50-max">
+					<input type="checkbox" class="btn-check" name="areaSize" id="area50up" autocomplete="off" value="50-9999">
 					<label class="btn btn-outline-secondary btn-sm me-1 mb-1" for="area50up">50坪以上</label>
 				</div>
 				<div class="d-flex align-items-center ms-3">
@@ -165,119 +225,116 @@
 			<div class="collapse" id="moreFilters">
 				<div class="row g-3">
 					<div class="col-12 filter-group d-flex align-items-baseline flex-wrap">
-						@* align-items-baseline *@
 						<label class="form-label me-2 mb-0">特色</label>
 						<div class="btn-group me-2" role="group" aria-label="特色不限">
-							<input type="radio" class="btn-check" name="feature" id="featureNoLimit" autocomplete="off" checked>
-							<label class="btn btn-outline-secondary btn-sm" for="featureNoLimit" data-filter-type="feature">不限</label>
+							@* 將 type 改為 radio，name 設為 feature_group *@
+							<input type="radio" class="btn-check" name="feature_group" id="featureNoLimit" autocomplete="off" checked>
+							<label class="btn btn-outline-secondary btn-sm" for="featureNoLimit">不限</label>
 						</div>
-						<div class="d-flex align-items-center flex-wrap ms-2">
-							<input type="checkbox" class="btn-check" id="rentSubsidy" autocomplete="off" value="可租屋補助">
+						<div id="featureCheckboxes" class="d-flex align-items-center flex-wrap ms-2">
+							@* 為所有個別特色 checkbox 添加 name="feature_group" *@
+							<input type="checkbox" class="btn-check" name="feature_group" id="rentSubsidy" autocomplete="off" value="可租屋補助">
 							<label class="btn btn-outline-secondary btn-sm me-1 mb-1" for="rentSubsidy">可租屋補助</label>
 
-							<input type="checkbox" class="btn-check" id="noSmoking" autocomplete="off" value="禁菸">
-							<label class="btn btn-outline-secondary btn-sm me-1 mb-1" for="noSmoking">禁菸</label>
+							<input type="checkbox" class="btn-check" name="feature_group" id="noSmoking" autocomplete="off" value="禁煙">
+							<label class="btn btn-outline-secondary btn-sm me-1 mb-1" for="noSmoking">禁煙</label>
 
-							<input type="checkbox" class="btn-check" id="petFriendly" autocomplete="off" value="可養寵">
+							<input type="checkbox" class="btn-check" name="feature_group" id="petFriendly" autocomplete="off" value="可養寵">
 							<label class="btn btn-outline-secondary btn-sm me-1 mb-1" for="petFriendly">可養寵</label>
 
-							<input type="checkbox" class="btn-check" id="householdRegistration" autocomplete="off" value="可入戶籍">
+							<input type="checkbox" class="btn-check" name="feature_group" id="householdRegistration" autocomplete="off" value="可入戶籍">
 							<label class="btn btn-outline-secondary btn-sm me-1 mb-1" for="householdRegistration">可入戶籍</label>
 
-							<input type="checkbox" class="btn-check" id="accessControl" autocomplete="off" value="門禁系統">
+							<input type="checkbox" class="btn-check" name="feature_group" id="accessControl" autocomplete="off" value="門禁系統">
 							<label class="btn btn-outline-secondary btn-sm me-1 mb-1" for="accessControl">門禁系統</label>
 
-							<input type="checkbox" class="btn-check" id="manager24hr" autocomplete="off" value="24小時管理員">
+							<input type="checkbox" class="btn-check" name="feature_group" id="manager24hr" autocomplete="off" value="24小時管理員">
 							<label class="btn btn-outline-secondary btn-sm me-1 mb-1" for="manager24hr">24小時管理員</label>
 
-							<input type="checkbox" class="btn-check" id="parcelService" autocomplete="off" value="收發包裹">
+							<input type="checkbox" class="btn-check" name="feature_group" id="parcelService" autocomplete="off" value="收發包裹">
 							<label class="btn btn-outline-secondary btn-sm me-1 mb-1" for="parcelService">收發包裹</label>
 
-							<input type="checkbox" class="btn-check" id="wasteDisposal" autocomplete="off" value="廢棄物處理">
+							<input type="checkbox" class="btn-check" name="feature_group" id="wasteDisposal" autocomplete="off" value="廢棄物處理">
 							<label class="btn btn-outline-secondary btn-sm me-1 mb-1" for="wasteDisposal">廢棄物處理</label>
 
-							<input type="checkbox" class="btn-check" id="recycling" autocomplete="off" value="資源回收">
+							<input type="checkbox" class="btn-check" name="feature_group" id="recycling" autocomplete="off" value="資源回收">
 							<label class="btn btn-outline-secondary btn-sm me-1 mb-1" for="recycling">資源回收</label>
 						</div>
 					</div>
 
 					<div class="col-12 filter-group d-flex align-items-baseline flex-wrap">
-						@* align-items-baseline *@
 						<label class="form-label me-2 mb-0">設施</label>
 						<div class="btn-group me-2" role="group" aria-label="設施不限">
-							<input type="radio" class="btn-check" name="facilities" id="facilitiesNoLimit" autocomplete="off" checked>
-							<label class="btn btn-outline-secondary btn-sm" for="facilitiesNoLimit" data-filter-type="facilities">不限</label>
+							@* 將 type 改為 radio，name 設為 facilities_group *@
+							<input type="radio" class="btn-check" name="facilities_group" id="facilitiesNoLimit" autocomplete="off" checked>
+							<label class="btn btn-outline-secondary btn-sm" for="facilitiesNoLimit">不限</label>
 						</div>
-						<div class="d-flex align-items-center flex-wrap ms-2">
-							<input type="checkbox" class="btn-check" id="parkingSpace" autocomplete="off" value="停車位">
-							<label class="btn btn-outline-secondary btn-sm me-1 mb-1" for="parkingSpace">停車位</label>
-
-							<input type="checkbox" class="btn-check" id="elevator" autocomplete="off" value="電梯">
+						<div id="facilitiesCheckboxes" class="d-flex align-items-center flex-wrap ms-2">
+							@* 為所有個別設施 checkbox 添加 name="facilities_group" *@
+							<input type="checkbox" class="btn-check" name="facilities_group" id="elevator" autocomplete="off" value="電梯">
 							<label class="btn btn-outline-secondary btn-sm me-1 mb-1" for="elevator">電梯</label>
 
-							<input type="checkbox" class="btn-check" id="waterDispenser" autocomplete="off" value="飲水機">
+							<input type="checkbox" class="btn-check" name="facilities_group" id="waterDispenser" autocomplete="off" value="飲水機">
 							<label class="btn btn-outline-secondary btn-sm me-1 mb-1" for="waterDispenser">飲水機</label>
 
-							<input type="checkbox" class="btn-check" id="laundryRoom" autocomplete="off" value="洗衣房">
+							<input type="checkbox" class="btn-check" name="facilities_group" id="laundryRoom" autocomplete="off" value="洗衣房">
 							<label class="btn btn-outline-secondary btn-sm me-1 mb-1" for="laundryRoom">洗衣房</label>
 
-							<input type="checkbox" class="btn-check" id="kitchen" autocomplete="off" value="廚房">
+							<input type="checkbox" class="btn-check" name="facilities_group" id="kitchen" autocomplete="off" value="廚房">
 							<label class="btn btn-outline-secondary btn-sm me-1 mb-1" for="kitchen">廚房</label>
 
-							<input type="checkbox" class="btn-check" id="balcony" autocomplete="off" value="陽台">
+							<input type="checkbox" class="btn-check" name="facilities_group" id="balcony" autocomplete="off" value="陽台">
 							<label class="btn btn-outline-secondary btn-sm me-1 mb-1" for="balcony">陽台</label>
 
-
-							<input type="checkbox" class="btn-check" id="kidsPlayroom" autocomplete="off" value="兒童遊戲間">
+							<input type="checkbox" class="btn-check" name="facilities_group" id="kidsPlayroom" autocomplete="off" value="兒童遊戲間">
 							<label class="btn btn-outline-secondary btn-sm me-1 mb-1" for="kidsPlayroom">兒童遊戲間</label>
 
-							<input type="checkbox" class="btn-check" id="gym" autocomplete="off" value="健身房">
+							<input type="checkbox" class="btn-check" name="facilities_group" id="gym" autocomplete="off" value="健身房">
 							<label class="btn btn-outline-secondary btn-sm me-1 mb-1" for="gym">健身房</label>
 						</div>
 					</div>
 
 					<div class="col-12 filter-group d-flex align-items-baseline flex-wrap">
-						@* align-items-baseline *@
 						<label class="form-label me-2 mb-0">設備</label>
 						<div class="btn-group me-2" role="group" aria-label="設備不限">
-							<input type="radio" class="btn-check" name="equipment" id="equipmentNoLimit" autocomplete="off" checked>
-							<label class="btn btn-outline-secondary btn-sm" for="equipmentNoLimit" data-filter-type="equipment">不限</label>
+							@* 將 type 改為 radio，name 設為 equipment_group *@
+							<input type="radio" class="btn-check" name="equipment_group" id="equipmentNoLimit" autocomplete="off" checked>
+							<label class="btn btn-outline-secondary btn-sm" for="equipmentNoLimit">不限</label>
 						</div>
-						<div class="d-flex align-items-center flex-wrap ms-2">
-
-							<input type="checkbox" class="btn-check" id="desk" autocomplete="off" value="書桌">
+						<div id="equipmentCheckboxes" class="d-flex align-items-center flex-wrap ms-2">
+							@* 為所有個別設備 checkbox 添加 name="equipment_group" *@
+							<input type="checkbox" class="btn-check" name="equipment_group" id="desk" autocomplete="off" value="書桌">
 							<label class="btn btn-outline-secondary btn-sm me-1 mb-1" for="desk">書桌</label>
 
-							<input type="checkbox" class="btn-check" id="builtInWardrobe" autocomplete="off" value="系統櫃">
+							<input type="checkbox" class="btn-check" name="equipment_group" id="builtInWardrobe" autocomplete="off" value="系統櫃">
 							<label class="btn btn-outline-secondary btn-sm me-1 mb-1" for="builtInWardrobe">系統櫃</label>
 
-							<input type="checkbox" class="btn-check" id="internet" autocomplete="off" value="網路">
+							<input type="checkbox" class="btn-check" name="equipment_group" id="internet" autocomplete="off" value="網路">
 							<label class="btn btn-outline-secondary btn-sm me-1 mb-1" for="internet">網路</label>
 
-							<input type="checkbox" class="btn-check" id="tv" autocomplete="off" value="電視">
+							<input type="checkbox" class="btn-check" name="equipment_group" id="tv" autocomplete="off" value="電視">
 							<label class="btn btn-outline-secondary btn-sm me-1 mb-1" for="tv">電視</label>
 
-							<input type="checkbox" class="btn-check" id="refrigerator" autocomplete="off" value="冰箱">
+							<input type="checkbox" class="btn-check" name="equipment_group" id="refrigerator" autocomplete="off" value="冰箱">
 							<label class="btn btn-outline-secondary btn-sm me-1 mb-1" for="refrigerator">冰箱</label>
 
-							<input type="checkbox" class="btn-check" id="airConditioner" autocomplete="off" value="冷氣">
+							<input type="checkbox" class="btn-check" name="equipment_group" id="airConditioner" autocomplete="off" value="冷氣">
 							<label class="btn btn-outline-secondary btn-sm me-1 mb-1" for="airConditioner">冷氣</label>
 
-							<input type="checkbox" class="btn-check" id="dehumidifier" autocomplete="off" value="除濕機">
+							<input type="checkbox" class="btn-check" name="equipment_group" id="dehumidifier" autocomplete="off" value="除濕機">
 							<label class="btn btn-outline-secondary btn-sm me-1 mb-1" for="dehumidifier">除濕機</label>
 
-							<input type="checkbox" class="btn-check" id="washingMachine" autocomplete="off" value="洗衣機">
+							<input type="checkbox" class="btn-check" name="equipment_group" id="washingMachine" autocomplete="off" value="洗衣機">
 							<label class="btn btn-outline-secondary btn-sm me-1 mb-1" for="washingMachine">洗衣機</label>
 
-							<input type="checkbox" class="btn-check" id="dryer" autocomplete="off" value="烘衣機">
+							<input type="checkbox" class="btn-check" name="equipment_group" id="dryer" autocomplete="off" value="烘衣機">
 							<label class="btn btn-outline-secondary btn-sm me-1 mb-1" for="dryer">烘衣機</label>
 
-							<input type="checkbox" class="btn-check" id="privateBathroom" autocomplete="off" value="獨立衛浴">
+							<input type="checkbox" class="btn-check" name="equipment_group" id="privateBathroom" autocomplete="off" value="獨立衛浴">
 							<label class="btn btn-outline-secondary btn-sm me-1 mb-1" for="privateBathroom">獨立衛浴</label>
 
-							<input type="checkbox" class="btn-check" id="bidetToilet" autocomplete="off" value="免治馬桶">
+							<input type="checkbox" class="btn-check" name="equipment_group" id="bidetToilet" autocomplete="off" value="免治馬桶">
 							<label class="btn btn-outline-secondary btn-sm me-1 mb-1" for="bidetToilet">免治馬桶</label>
-
 						</div>
 					</div>
 				</div>
@@ -294,38 +351,40 @@
 		</div>
 	</div>
 	<hr class="my-4">
-	
-		
-		<div class="d-flex justify-content-between align-items-center mb-3">
-			<h5 class="mb-0">搜尋結果</h5>
-			@* 這是您的排序按鈕組，使用 .sort-btn class 和 data-屬性 *@
-			<div class="btn-group" role="group" aria-label="排序選項">
-				<button type="button" class="btn btn-outline-secondary btn-sm sort-btn active" data-sort-field="PublishedAt" data-sort-order="desc">
-					@* 注意這裡我預設給了 active class *@
-					最新上架 <i class="bi bi-sort-up"></i> @* 初始預設為升序*@
-				</button>
-				<button type="button" class="btn btn-outline-secondary btn-sm sort-btn" data-sort-field="MonthlyRent" data-sort-order="asc">
-					租金 <i class="bi bi-sort-up"></i> @* 初始預設為升序 *@
-				</button>
-				<button type="button" class="btn btn-outline-secondary btn-sm sort-btn" data-sort-field="Area" data-sort-order="asc">
-					坪數 <i class="bi bi-sort-up"></i> @* 初始預設為升序 *@
-				</button>
-			</div>
-		</div>
-		<span id="totalResultsCount" class="text-muted me-auto "></span>
 
-		@* 用於動態載入搜尋結果的容器 *@
-		<div id="searchResultsContainer" class="mt-3">
-			@* 房源卡片將在這裡由 JavaScript 動態插入 *@
-		</div>
 
-		@* 分頁導航將在這裡動態生成 *@
-		<nav aria-label="Page navigation" class="mt-4">
-			<ul class="pagination justify-content-center" id="paginationContainer">
-				@* 分頁按鈕將由 JavaScript 動態插入 *@
-			</ul>
-		</nav>
+	<div class="d-flex justify-content-between align-items-center mb-3">
+		<h5 class="mb-0">搜尋結果</h5>
+		@* 這是您的排序按鈕組，使用 .sort-btn class 和 data-屬性 *@
+		<div class="btn-group" role="group" aria-label="排序選項">
+			<button type="button" class="btn btn-outline-secondary btn-sm sort-btn active" data-sort-field="PublishedAt" data-sort-order="desc">
+				@* 注意這裡我預設給了 active class *@
+				最新上架 <i class="bi bi-sort-up"></i> @* 初始預設為升序*@
+			</button>
+			<button type="button" class="btn btn-outline-secondary btn-sm sort-btn" data-sort-field="MonthlyRent" data-sort-order="asc">
+				租金 <i class="bi bi-sort-up"></i> @* 初始預設為升序 *@
+			</button>
+			<button type="button" class="btn btn-outline-secondary btn-sm sort-btn" data-sort-field="Area" data-sort-order="asc">
+				坪數 <i class="bi bi-sort-up"></i> @* 初始預設為升序 *@
+			</button>
+		</div>
+	</div>
 	
+				
+	<span id="totalResultsCount" class="text-muted me-auto mb-6 "></span>
+
+	@* 用於動態載入搜尋結果的容器 *@
+	<div id="searchResultsContainer" class="mt-6">
+		@* 房源卡片將在這裡由 JavaScript 動態插入 *@
+	</div>
+
+	@* 分頁導航將在這裡動態生成 *@
+	<nav aria-label="Page navigation" class="mt-4">
+		<ul class="pagination justify-content-center" id="paginationContainer">
+			@* 分頁按鈕將由 JavaScript 動態插入 *@
+		</ul>
+	</nav>
+
 </div>
 
 
