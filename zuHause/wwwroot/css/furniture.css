@@ -51,14 +51,20 @@
         box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     }
 
+    @media (max-width: 768px) {
+        .bg-furniture-wrapper .row {
+            flex-direction: column;
+        }
+
         .navbar-collapse .nav-link {
             display: block;
             margin-bottom: 0.75rem;
             font-size: 1.1rem;
         }
 
-    .navbar .container-fluid {
-        position: relative;
+        .navbar .container-fluid {
+            position: relative;
+        }
     }
-}
+
 

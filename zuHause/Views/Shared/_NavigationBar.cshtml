@@ -84,7 +84,7 @@
         </nav>
     </header>
 
-    <main class="container-fluid mt-3">
+    <main class="container-fluid mt-1">
         @RenderBody()
     </main>
 
@@ -128,29 +128,38 @@
 
     <style>
         /* 淺綠導覽列背景 + 高度 */
-.navbar {
-    background-color: #c5eee5 !important;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    height: 77px;
-    position: relative;
-    z-index: 1050;
-}
+            .navbar {
+                background-color: #c5eee5 !important;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                height: 77px;
+                position: relative;
+                z-index: 1050;
+            }
 
-    .navbar .nav-link,
-    .navbar .navbar-brand,
-    .navbar span {
-        color: #006b5e !important; /* 深綠字 */
-        font-weight: 500;
-    }
+            .navbar .nav-link,
+            .navbar .navbar-brand,
+            .navbar span {
+                color: #006b5e !important; /* 深綠字 */
+                font-weight: 500;
+            }
 
-.navbar-brand img {
-    height: 65px;
-    margin-top: -5px;
-}
+            .navbar-brand img {
+                height: 65px;
+                margin-top: -5px;
+            }
 
-main {
-    padding: 0;
-}
+            main {
+                padding: 0;
+            }
+
+
+            .bg-furniture-wrapper {
+                padding-bottom: 60px;
+            }
+            footer {
+                margin-top: 60px; /* 調整距離可自行加大 */
+                padding-top: 30px; /* 若要內距感覺更空 */
+            }
 
     </style>
 

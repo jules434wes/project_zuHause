@@ -74,8 +74,8 @@
             const labels = stats.weekly.labels;
 
             renderChart('total_registration', '註冊量', stats.weekly.register, labels);
-            renderChart('Total_Listings_Houses', '周上架房源量', stats.weekly.property, labels);
-            renderChart('Total_Shelves_Furniture', '周出租家具量', stats.weekly.furniture, labels);
+            renderChart('Total_Listings_Houses', '上架房源量', stats.weekly.property, labels);
+            renderChart('Total_Shelves_Furniture', '出租家具訂單量', stats.weekly.furniture, labels);
             renderChart('chartOrders', '出租家具金額', stats.weekly.furnitureRevenue, labels, 'bar', '#4e73df');
             renderChart('chartRevenue', '上架服務費金額', stats.weekly.listingFee, labels, 'line', '#36b9cc');
 
