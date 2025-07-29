@@ -1,8 +1,9 @@
-﻿using zuHause.Interfaces.TenantInterfaces;
-using zuHause.ViewModels.TenantViewModel;
-using zuHause.Models;
+﻿using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq;
+using zuHause.Interfaces.TenantInterfaces;
+using zuHause.Models;
+using zuHause.ViewModels.TenantViewModel;
 
 namespace zuHause.Services.TenantServices
 {
@@ -73,6 +74,35 @@ namespace zuHause.Services.TenantServices
                            .FirstOrDefault();
 
             return cityCode;
+        }
+
+
+        // **新增：實現 GetMemberByIdAsync 方法**
+        public async Task<Member?> GetMemberByIdAsync(int memberId)
+        {
+            // 使用 FirstOrDefaultAsync 異步地查詢會員
+            return await _context.Members
+                                 .FirstOrDefaultAsync(m => m.MemberId == memberId);
+        }
+
+        // **新增：實現 GetCityCodeByIdAsync 方法**
+        public async Task<string?> GetCityCodeByIdAsync(int cityId)
+        {
+            // 使用 FirstOrDefaultAsync 異步地查詢 CityCode
+            return await _context.Cities
+                                 .Where(c => c.CityId == cityId) 
+                                 .Select(c => c.CityCode)
+                                 .FirstOrDefaultAsync();
+        }
+
+        // **新增：實現 GetDistrictCodeByIdAsync 方法**
+        public async Task<string?> GetDistrictCodeByIdAsync(int districtId)
+        {
+            // 使用 FirstOrDefaultAsync 異步地查詢 DistrictCode
+            return await _context.Districts
+                                 .Where(d => d.DistrictId == districtId) 
+                                 .Select(d => d.DistrictCode)
+                                 .FirstOrDefaultAsync();
         }
     }
     
