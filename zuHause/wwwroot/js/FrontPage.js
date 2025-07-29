@@ -373,44 +373,39 @@
     // 輔助函數：判斷使用者是否登入
     function isLoggedIn() {
         // **[變更標註]** 修正 clientIsAuthenticated 的類型檢查，因為它可能是字串 "true" 或 "false"
-        localStorage.clear();
+        //localStorage.clear();
         return window.clientIsAuthenticated === true || window.clientIsAuthenticated === "true";
     }
 
     // 輔助函數：如果租客已登入，從後端獲取其 PrimaryRentalDistrictID 對應的 CityCode
     async function getTenantPreferredCityCode() {
+        // 保留用戶未登入的檢查
         if (!isLoggedIn()) {
-            
-            console.log("用戶未登入，不獲取租客偏好城市代碼。");
-            return null;
+            //console.log("用戶未登入，不獲取租客偏好城市代碼。");
+            return null; // 或者返回 { cityCode: null, districtCode: null }，取決於您的後續處理
         }
         try {
-            //var memberIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            //console.log("token", memberIdString);
-            const token = localStorage.getItem('authToken'); // 假設 token 儲存在 localStorage
-            if (!token) {
-                console.warn("用戶已登入但無 authToken，無法獲取偏好城市代碼。");
-                return null;
-            }
-
-            const response = await fetch('/api/Member/UserCityCode', { // 請確保這個 API 返回的是 CityCode
+            const response = await fetch('/api/Member/UserCityCode', {
                 method: 'GET',
                 headers: {
-                    'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 }
             });
+
             if (response.ok) {
                 const data = await response.json();
-                console.log("從後端獲取的租客偏好城市代碼:", data);
-                // 假設 data 物件中包含 cityCode 屬性
-                return data.cityCode;
+                //console.log("從後端獲取的租客偏好城市和區域代碼:", data);
+                return {
+                    cityCode: data.cityCode,
+                    districtCode: data.districtCode // 添加 districtCode
+                };
+            } else {
+                //console.error('Failed to fetch tenant preferred city/district code:', response.status, response.statusText);
+                return null; // 或 { cityCode: null, districtCode: null }
             }
-            console.error('Failed to fetch tenant preferred city code:', response.status, response.statusText);
-            return null;
         } catch (error) {
-            console.error('Error fetching tenant preferred city code:', error);
-            return null;
+            //console.error('Error fetching tenant preferred city/district code:', error);
+            return null; // 或 { cityCode: null, districtCode: null }
         }
     }
 
@@ -423,13 +418,16 @@
 
         try {
             const response = await fetch(`/api/Tenant/Search/list?${queryString}`);
+            //console.log(`Fetching properties with query: ${queryString}`);
+            //console.log(response)
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             const data = await response.json();
+            console.log("房源資訊", data.properties)
             return data.properties || []; // 假設 API 返回的數據中有 properties 陣列
         } catch (error) {
-            console.error('Error fetching properties from API:', error);
+            //console.error('Error fetching properties from API:', error);
             return [];
         }
     }
@@ -462,8 +460,12 @@
 
             const layoutInfo = `${roomCount}房${livingRoomCount}廳${bathroomCount}衛`;
             const rentText = monthlyRent !== undefined && monthlyRent !== null ? `NT$ ${monthlyRent.toLocaleString()}/月` : '價格面議';
-            const propertyUrl = `/Property/Details/${propertyId}`;
+            const propertyUrl = `/Property/${propertyId}`;
 
+
+            //<button type="button" class="btn btn-link p-0 love-button" data-favorited="${isFavorited}" data-property-id="${propertyId}">
+            //    <i class="bi ${isFavorited ? 'bi-heart-fill' : 'bi-heart'} love-icon"></i>
+            //</button>
             htmlContent += `
                 <div class="col">
                     <div class="card card-listing">
@@ -471,11 +473,9 @@
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <h5 class="card-title mb-0">
-                                    <a href="${propertyUrl}" class="your-text-element" title="${title}">${title}</a>
+                                    <a href="${propertyUrl}" class="your-text-element" style="text-decoration: none" title="${title}">${title}</a>
                                 </h5>
-                                <button type="button" class="btn btn-link p-0 love-button" data-favorited="${isFavorited}" data-property-id="${propertyId}">
-                                    <i class="bi ${isFavorited ? 'bi-heart-fill' : 'bi-heart'} love-icon"></i>
-                                </button>
+                                
                             </div>
                             <p class="card-text">
                                 <i class="bi bi-geo-alt-fill"></i> ${addressLine}<br>
@@ -532,9 +532,9 @@
 
                 if (initialSearchParams.cityCode) {
                     targetCityCode = initialSearchParams.cityCode; // 更新 targetCityCode
-                    console.log("使用上次搜尋的城市偏好:", targetCityCode);
+                    //console.log("使用上次搜尋的城市偏好:", targetCityCode);
                 } else {
-                    console.log("上次搜尋未包含城市偏好。");
+                    //console.log("上次搜尋未包含城市偏好。");
                 }
 
             } catch (e) {
@@ -546,15 +546,15 @@
         // 2. 如果使用者已登入，且 initialSearchParams 中沒有 cityCode 或 districtCode
         //    則嘗試獲取租客的 PrimaryRentalDistrictID 對應的 CityCode (租客偏好優先於預設值)
         if (isLoggedIn() && (!initialSearchParams.cityCode && !initialSearchParams.districtCode)) {
-            console.log("用戶已登入且無上次搜尋城市/區域偏好，嘗試獲取租客預設城市。");
+            //console.log("用戶已登入且無上次搜尋城市/區域偏好，嘗試獲取租客預設城市。");
             const tenantPreferredCityCode = await getTenantPreferredCityCode();
             if (tenantPreferredCityCode) {
-                initialSearchParams.cityCode = tenantPreferredCityCode; // 覆蓋或添加 cityCode
+                initialSearchParams= tenantPreferredCityCode; // 覆蓋或添加 cityCode
                 targetCityCode = tenantPreferredCityCode; // 也更新給 exploreMoreBtn 用
-                console.log("使用租客偏好城市:", targetCityCode);
+                //console.log("使用租客偏好城市:", targetCityCode);
             }
         } else if (!isLoggedIn() && !initialSearchParams.cityCode && !initialSearchParams.districtCode) {
-            console.log("用戶未登入且無上次搜尋城市/區域偏好，將使用預設城市 TPE。");
+            //console.log("用戶未登入且無上次搜尋城市/區域偏好，將使用預設城市 TPE。");
         }
 
 
@@ -563,14 +563,17 @@
         if (!initialSearchParams.cityCode && !initialSearchParams.districtCode) { // 這裡條件應更精確
             initialSearchParams.cityCode = 'TPE'; // 確保至少有 TPE 作為搜尋條件
             targetCityCode = 'TPE'; // 也更新給 exploreMoreBtn 用
-            console.log("最終推薦房源參數使用預設城市 TPE。");
+            //console.log("最終推薦房源參數使用預設城市 TPE。");
         } else {
-            console.log("最終推薦房源參數使用:", initialSearchParams);
+            //console.log("最終推薦房源參數使用:", initialSearchParams);
         }
 
 
         // A. 第一輪 API 搜尋 (使用處理後的 initialSearchParams)
-        const firstBatchProperties = await fetchPropertiesFromApi(initialSearchParams, 12); // 請求多一點以備去重
+        const firstBatchProperties = await fetchPropertiesFromApi(initialSearchParams, 8); 
+        let pageNum = 1; // 用於追蹤分頁的頁碼
+        const BATCH_SIZE = 12; // 每次 API 請求的數量，保持較大以增加去重後的成功率
+        const MAX_FETCH_ATTEMPTS = 5; // 設定最大嘗試次數，避免無限迴圈
 
         let finalProperties = [];
         const uniquePropertyIds = new Set();
@@ -583,21 +586,21 @@
         });
 
         // B. 補足機制：如果房源少於 8 個，則發送第二次請求「無搜尋條件」的房源
-        if (finalProperties.length < 8) {
-            const neededCount = 8 - finalProperties.length;
-            console.log(`第一輪房源不足 ${neededCount} 個，發送第二次請求補足。`);
+        while (finalProperties.length < 8 && pageNum < MAX_FETCH_ATTEMPTS) {
+            pageNum++;
+            //console.log(`第一輪房源不足 ${neededCount} 個，發送第二次請求補足。`);
             const noFilterParams = {}; // 空參數表示無篩選
-            const secondBatchProperties = await fetchPropertiesFromApi(noFilterParams, neededCount);
+            const secondBatchProperties = await fetchPropertiesFromApi(noFilterParams, 8);
 
             secondBatchProperties.forEach(p => {
                 if (finalProperties.length < 8 && !uniquePropertyIds.has(p.propertyId)) {
                     finalProperties.push(p);
-                    uniquePropertyIds.add(p.id); // 注意這裡應該是 p.propertyId 而不是 p.id
+                    uniquePropertyIds.add(p.propertyId); 
                 }
             });
-        } else {
-            console.log("第一輪房源已足夠 8 個。");
+
         }
+        console.log(`最終準備渲染的房源數量 (去重後): ${finalProperties.length}`); // <-- 添加這行
 
         // 渲染最終的房源列表 (取前 8 個)
         renderYouMayLikeSection(finalProperties.slice(0, 8));
@@ -616,7 +619,7 @@
 
         if ($exploreMoreBtn.length > 0) {
             $exploreMoreBtn.attr('href', exploreLink); // 直接設置 href
-            console.log("探索更多物件按鈕的 href 已設置為:", exploreLink);
+            //console.log("探索更多物件按鈕的 href 已設置為:", exploreLink);
         }
     }
 
