@@ -26,7 +26,7 @@
         <div class="main-content" style="margin-left: 260px; padding: 2rem;">
             <div class="d-flex justify-content-end align-items-center mb-3">
                 <span class="me-3">
-                    歡迎 @ViewBag.Role｜ID <span id="EmployeeID">@ViewBag.EmployeeID</span>
+                    歡迎 @ViewBag.Name｜ID <span id="EmployeeID">@ViewBag.EmployeeID</span>
                     權限：<span id="roleDisplay">@ViewBag.Role</span>
                 </span>
                 <a href="/Auth/Logout" class="btn btn-outline-secondary">登出</a>
@@ -46,6 +46,7 @@
         const roleAccess = @Html.Raw(JsonSerializer.Serialize(ViewBag.RoleAccess));
         const currentUserRole = @Html.Raw(JsonSerializer.Serialize(ViewBag.Role));
         const EmployeeID = @Html.Raw(JsonSerializer.Serialize(ViewBag.EmployeeID));
+
     </script>
 
 
