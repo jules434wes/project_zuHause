@@ -228,6 +228,10 @@ public partial class Property
     /// </summary>
     public decimal? Longitude { get; set; }
 
+    public virtual City City { get; set; } = null!;
+
+    public virtual District District { get; set; } = null!;
+
     public virtual ICollection<Approval> Approvals { get; set; } = new List<Approval>();
 
     public virtual ICollection<Chatroom> Chatrooms { get; set; } = new List<Chatroom>();

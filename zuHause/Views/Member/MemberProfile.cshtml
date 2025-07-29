@@ -2,7 +2,7 @@
 @model MemberProfileViewModel
 
 @{
-    ViewData["Title"] = "個人檔案檢視";
+    ViewData["Title"] = "個人檔案";
     ViewData["activePage"] = "MemberProfile";
 }
 
@@ -226,10 +226,10 @@
                                 <input type="email" asp-for="Email" class="form-control"
                                        aria-describedby="inputEmailHelpInline" placeholder="請輸入電子信箱">
                             </div>
-                            <button type="button" class="btn btn-aqua py-0 col-auto" data-bs-toggle="modal"
+                            @* <button type="button" class="btn btn-aqua py-0 col-auto" data-bs-toggle="modal"
                                     data-bs-target="#verificationEmail">
                                 驗證信箱
-                            </button>
+                            </button> *@
                             <span class="invalid-feedback d-block opacity-100" asp-validation-for="Email"></span>
                         </div>
                     </div>

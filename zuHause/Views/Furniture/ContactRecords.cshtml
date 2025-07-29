@@ -46,9 +46,13 @@
                             <p><strong>需求內容：</strong>@ticket.TicketContent</p>
                             <p class="mb-0">
                                 <strong>回覆內容：</strong><br />
+
                                 @if (!string.IsNullOrEmpty(ticket.ReplyContent))
                                 {
                                     <span class="text-success">@Html.Raw(ticket.ReplyContent)</span>
+                                    <div class="text-muted" style="font-size: 0.9em;">
+                                        回覆時間：@ticket.ReplyAt?.ToString("yyyy-MM-dd HH:mm")
+                                    </div>
                                 }
                                 else
                                 {
@@ -56,7 +60,7 @@
                                 }
                             </p>
                         </div>
-                        
+
                         <div class="card-footer text-end">
                             @{
                                 var isReplied = !string.IsNullOrWhiteSpace(ticket.ReplyContent);

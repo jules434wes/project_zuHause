@@ -372,12 +372,14 @@ namespace zuHause.AdminViewModels
         private List<PropertyData> LoadOwnedProperties(ZuHauseContext context, int memberId)
         {
             return context.Properties
+                .Include(p => p.City)
+                .Include(p => p.District)
                 .Where(p => p.LandlordMemberId == memberId)
                 .Select(p => new PropertyData
                 {
                     PropertyID = p.PropertyId.ToString(),
                     PropertyTitle = p.Title,
-                    Address = p.AddressLine ?? "",
+                    Address = $"{(p.City != null ? p.City.CityName : "")}{(p.District != null ? p.District.DistrictName : "")}{p.AddressLine ?? ""}".Trim(),
                     Status = p.StatusCode == "ACTIVE" ? "已上架" : "未上架",
                     ExpiryDate = p.ExpireAt.HasValue ? p.ExpireAt.Value.ToString("yyyy-MM-dd") : "-"
                 })
@@ -503,6 +505,8 @@ namespace zuHause.AdminViewModels
         {
             var properties = context.Properties
                 .Include(p => p.LandlordMember)
+                .Include(p => p.City)
+                .Include(p => p.District)
                 .Include(p => p.Approvals.Where(a => a.ModuleCode == "PROPERTY"))
                 .OrderByDescending(p => p.UpdatedAt)
                 .Select(p => new
@@ -511,6 +515,8 @@ namespace zuHause.AdminViewModels
                     PropertyTitle = p.Title,
                     LandlordName = p.LandlordMember.MemberName,
                     LandlordId = p.LandlordMemberId.ToString(),
+                    CityName = p.City != null ? p.City.CityName : "",
+                    DistrictName = p.District != null ? p.District.DistrictName : "",
                     Address = p.AddressLine ?? "",
                     RentPrice = (int)p.MonthlyRent,
                     StatusCode = p.StatusCode,
@@ -527,7 +533,7 @@ namespace zuHause.AdminViewModels
                     PropertyTitle = p.PropertyTitle,
                     LandlordName = p.LandlordName,
                     LandlordId = p.LandlordId,
-                    Address = p.Address,
+                    Address = $"{p.CityName}{p.DistrictName}{p.Address}".Trim(),
                     RentPrice = p.RentPrice,
                     Status = GetPropertyStatusDisplay(p.StatusCode, p.IsPaid, p.ExpireAt),
                     PaymentStatus = GetPaymentStatusDisplay(p.IsPaid, p.ExpireAt),
@@ -544,6 +550,8 @@ namespace zuHause.AdminViewModels
         {
             var pendingProperties = context.Properties
                 .Include(p => p.LandlordMember)
+                .Include(p => p.City)
+                .Include(p => p.District)
                 .Include(p => p.Approvals.Where(a => a.ModuleCode == "PROPERTY"))
                 .Where(p => p.StatusCode == "PENDING" || p.StatusCode == "REJECTED")
                 .OrderBy(p => p.CreatedAt)
@@ -553,6 +561,8 @@ namespace zuHause.AdminViewModels
                     PropertyTitle = p.Title,
                     LandlordName = p.LandlordMember.MemberName,
                     LandlordId = p.LandlordMemberId.ToString(),
+                    CityName = p.City != null ? p.City.CityName : "",
+                    DistrictName = p.District != null ? p.District.DistrictName : "",
                     Address = p.AddressLine ?? "",
                     RentPrice = (int)p.MonthlyRent,
                     IsPaid = p.IsPaid,
@@ -569,7 +579,7 @@ namespace zuHause.AdminViewModels
                     PropertyTitle = p.PropertyTitle,
                     LandlordName = p.LandlordName,
                     LandlordId = p.LandlordId,
-                    Address = p.Address,
+                    Address = $"{p.CityName}{p.DistrictName}{p.Address}".Trim(),
                     RentPrice = p.RentPrice,
                     Status = "審核中",
                     PaymentStatus = GetPaymentStatusDisplay(p.IsPaid, p.ExpireAt),
@@ -656,6 +666,8 @@ namespace zuHause.AdminViewModels
         {
             var property = context.Properties
                 .Include(p => p.LandlordMember)
+                .Include(p => p.City)
+                .Include(p => p.District)
                 .Include(p => p.ListingPlan)
                 .Include(p => p.Approvals.Where(a => a.ModuleCode == "PROPERTY"))
                 .FirstOrDefault(p => p.PropertyId == propertyId);
@@ -671,7 +683,7 @@ namespace zuHause.AdminViewModels
                 Title = property.Title,
                 LandlordName = property.LandlordMember.MemberName,
                 LandlordId = property.LandlordMemberId.ToString(),
-                Address = property.AddressLine ?? "",
+                Address = $"{property.City?.CityName ?? ""}{property.District?.DistrictName ?? ""}{property.AddressLine ?? ""}".Trim(),
                 MonthlyRent = property.MonthlyRent,
                 DepositAmount = property.DepositAmount,
                 DepositMonths = property.DepositMonths,
@@ -1319,9 +1331,9 @@ namespace zuHause.AdminViewModels
 
         public string StatusDisplay => Status switch
         {
-            "OPEN" => "處理中",
+            "PENDING" => "待處理",
+            "PROGRESS" => "處理中",
             "RESOLVED" => "已處理",
-            "CLOSED" => "已關閉",
             _ => "未知"
         };
 
@@ -1473,9 +1485,9 @@ namespace zuHause.AdminViewModels
         public string ComplaintIdDisplay => $"CMPL-{ComplaintId:0000}";
         public string StatusDisplay => Status switch
         {
-            "OPEN" => "處理中",
+            "PENDING" => "待處理",
+            "PROGRESS" => "處理中",
             "RESOLVED" => "已處理",
-            "CLOSED" => "已關閉",
             _ => "未知"
         };
         public string Summary => ComplaintContent.Length > 50 

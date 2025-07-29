@@ -1,4 +1,6 @@
 using System.ComponentModel.DataAnnotations;
+using zuHause.Models;
+using zuHause.ViewModels.MemberViewModel;
 
 namespace zuHause.ViewModels
 {
@@ -37,7 +39,12 @@ namespace zuHause.ViewModels
         /// 是否已登入
         /// </summary>
         public bool IsAuthenticated { get; set; }
-        
+
+        public int NeverReadCount { get; set; }
+
+        public List<SystemMessageViewModel> LatestNotifications { get; set; } = new();
+
+
         /// <summary>
         /// 應顯示的導航類型 (landlord: 房東導航, tenant: 房客導航, guest: 訪客導航)
         /// </summary>

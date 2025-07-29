@@ -20,9 +20,9 @@
             } *@
         </div>
         <div id="statusSummary">
-            <span class="badge bg-danger me-2">處理中: <span id="openCount">0</span></span>
-            <span class="badge bg-success me-2">已處理: <span id="resolvedCount">0</span></span>
-            <span class="badge bg-secondary">已關閉: <span id="closedCount">0</span></span>
+            <span class="badge bg-warning me-2">待處理: <span id="pendingCount">0</span></span>
+            <span class="badge bg-info me-2">處理中: <span id="progressCount">0</span></span>
+            <span class="badge bg-success">已處理: <span id="resolvedCount">0</span></span>
         </div>
     </div>
 
@@ -50,9 +50,8 @@
                 <select id="statusFilter" class="form-select">
                     <option value="">全部</option>
                     <option value="PENDING">待處理</option>
-                    <option value="OPEN">處理中</option>
+                    <option value="PROGRESS">處理中</option>
                     <option value="RESOLVED">已處理</option>
-                    <option value="CLOSED">已關閉</option>
                 </select>
             </div>
             <div class="col-md-3">
@@ -140,10 +139,9 @@
                                         @{
                                             string badgeClass = complaint.Status switch
                                             {
-                                                "OPEN" => "bg-danger",
-                                                "RESOLVED" => "bg-success",
-                                                "CLOSED" => "bg-secondary",
                                                 "PENDING" => "bg-warning",
+                                                "PROGRESS" => "bg-info",
+                                                "RESOLVED" => "bg-success",
                                                 _ => "bg-dark"
                                             };
                                         }

@@ -4,12 +4,13 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using System.Security.Claims;
 using System.Text.Json;
+using zuHause.DTOs;
 using zuHause.Models;
 using zuHause.Services;
 using zuHause.ViewModels.MemberViewModel;
-using zuHause.DTOs;
 
 namespace zuHause.Controllers
 {
@@ -19,12 +20,15 @@ namespace zuHause.Controllers
         public readonly ZuHauseContext _context;
         private readonly IConverter _converter;
         public readonly ApplicationService _applicationService;
-        public MemberContractsController(ZuHauseContext context, IConverter converter, ApplicationService applicationService)
+        public readonly ImageResolverService _imageResolverService;
+        public readonly NotificationService _notificationService;
+        public MemberContractsController(ZuHauseContext context, IConverter converter, ApplicationService applicationService, ImageResolverService imageResolverService, NotificationService notificationService)
         {
             _context = context;
             _converter = converter;
             _applicationService = applicationService;
-
+            _imageResolverService = imageResolverService;
+            _notificationService = notificationService;
         }
         public async Task<IActionResult> Index()
         {
@@ -44,6 +48,10 @@ namespace zuHause.Controllers
 
 
 
+
+
+
+
             if (role == "1") // 房客
             {
 
@@ -55,10 +63,14 @@ namespace zuHause.Controllers
                         r => r.ApplicationId,
                         c => c.RentalApplicationId,
                         (r, c) => new { r, c })
-                    .Join(_context.FurnitureOrders,
+                    .GroupJoin(_context.FurnitureOrders,
                         rc => rc.r.PropertyId,
                         f => f.PropertyId,
-                        (rc, f) => new { rc, f })
+                        (rc, fs) => new { rc, fs })
+                    .SelectMany(
+                        temp => temp.fs.DefaultIfEmpty(), // Left Join 關鍵
+                        (temp, f) => new { temp.rc, f }
+                    )
                     .Join(_context.Properties,
                         rcf => rcf.rc.r.PropertyId,
                         p => p.PropertyId,
@@ -78,7 +90,7 @@ namespace zuHause.Controllers
                             EndDate = rcfp.rcf.rc.c.EndDate,
                             Status = rcfp.rcf.rc.c.Status,
                             CustomName = rcfp.rcf.rc.c.CustomName,
-                            HaveFurniture = rcfp.rcf.f.FurnitureOrderId,
+                            HaveFurniture = rcfp.rcf.f != null ? rcfp.rcf.f.FurnitureOrderId : null,
                             LandlordMemberId = rcfp.p.LandlordMemberId,
                             PublishedAt = rcfp.p.PublishedAt,
                             Title = rcfp.p.Title,
@@ -88,8 +100,9 @@ namespace zuHause.Controllers
                             StatusDisplayName = GetStatusDisplayName(rcfp.rcf.rc.c.Status, codeDict),
                             ApplicantName = m.MemberName,
                             ApplicantBath = m.BirthDate,
-                        }).OrderByDescending(x=>x.ContractId)
+                        }).OrderByDescending(x => x.ContractId)
                     .ToListAsync();
+
             }
             else if (role == "2") // 房東
             {
@@ -152,6 +165,12 @@ namespace zuHause.Controllers
                 contractsLog = contractsLog
                     .Where(c => c.Status == filterStatus)
                     .ToList();
+            }
+
+            foreach(ContractsViewModel item in contractsLog)
+            {
+                string ImgUrl = await _imageResolverService.GetImageUrl(item.PropertyId, "Property", "Gallery", "medium");
+                item.imgPath = ImgUrl;
             }
 
 
@@ -220,6 +239,8 @@ namespace zuHause.Controllers
             if (application == null)
                 return NotFound();
 
+            string ImgUrl = await _imageResolverService.GetImageUrl(application.PropertyId, "Property", "Gallery", "medium");
+
             var vm = new ContractFormViewModel
             {
                 SelectedTemplateId = latestTemplate!.ContractTemplateId,
@@ -235,6 +256,7 @@ namespace zuHause.Controllers
                 RentalStartDate = application.RentalStartDate,
                 RentalEndDate = application.RentalEndDate,
                 CityOptions = cities,
+                imgPath = ImgUrl,
             };
 
             return View(vm);
@@ -503,7 +525,7 @@ namespace zuHause.Controllers
             string contractName = data.ContractName!;
             System.Diagnostics.Debug.WriteLine($"===={contractId}===");
             System.Diagnostics.Debug.WriteLine($"===={contractName}===");
-            Contract? result = await _context.Contracts.Where(c => c.ContractId == contractId).FirstOrDefaultAsync();
+            Contract result = await _context.Contracts.Where(c => c.ContractId == contractId).FirstOrDefaultAsync();
             if (result == null) return BadRequest("請確認合約編號");
             result.CustomName = contractName;
             _context.Update(result);
@@ -529,9 +551,13 @@ namespace zuHause.Controllers
             var userId = int.Parse(User.FindFirst("UserId")!.Value);
             string userRole = User.FindFirst(ClaimTypes.Role)?.Value ?? "";
 
-            string? actionType = null;
+            string? actionType = "PIKA";
 
 
+            System.Diagnostics.Debug.WriteLine($"➡️ User身分: {userRole}");
+            System.Diagnostics.Debug.WriteLine($"➡️ UserId: {userId}");
+            System.Diagnostics.Debug.WriteLine($"➡️ 合約申請者ID: {contract.RentalApplication!.MemberId}");
+            System.Diagnostics.Debug.WriteLine($"➡️ 合約申請狀態: {contract.RentalApplication.CurrentStatus}");
             //擬定合約
             if (userRole == "2" && contract.RentalApplication!.Property.LandlordMemberId == userId &&
                 contract.RentalApplication.CurrentStatus == "WAITING_CONTRACT")
@@ -867,6 +893,18 @@ namespace zuHause.Controllers
                 _context.Update(contract);
                 await _context.SaveChangesAsync();
 
+                var (success, message) = await _notificationService.CreateUserNotificationAsync
+                    (
+                    receiverId: contract!.RentalApplication!.MemberId,
+                    typeCode: "CONTRACT_CONTRACTED",
+                    title: $"您申請的【{contract!.RentalApplication!.Property.Title}】租賃合約完成！",
+                    content:
+                        $"親愛的會員您好，\n您申請的【{contract!.RentalApplication!.Property.Title}】租賃合約完成！可至合約管理下載合約！",
+                    ModuleCode: "Contract",
+                    sourceEntityId: contract.ContractId // 合約編號
+                    );
+
+
                 return RedirectToAction("Index", "MemberContracts");
             }
             else
@@ -875,6 +913,14 @@ namespace zuHause.Controllers
             }
 
         }
+
+        public async Task<string> GetPropertyImageUrl(int propertyId)
+        {
+           string ImgUrl =  await _imageResolverService.GetImageUrl(propertyId, "Property", "Gallery", "medium");
+
+            return ImgUrl;
+        }
+
     }
     public class ContractNameDto
     {

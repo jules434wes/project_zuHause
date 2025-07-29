@@ -5,19 +5,19 @@
         <div class="col-9 mx-auto px-0">
             <div class="progress-stacked w-100 mb-5" style=" --bs-progress-height: 2rem;">
                 <div class="progress border-end border-secondary" role="progressbar" aria-label="Segment one" aria-valuenow="25" aria-valuemin="0"
-                     aria-valuemax="100" style="width: 25%;  --bs-progress-height: 2rem;">
+                     aria-valuemax="100" style="width: calc(100% / 3);  --bs-progress-height: 2rem;">
                     <div class="progress-bar @(Model == "VerifyPhone" ? "bg-aqua-deep" : "bg-aqua text-dark")">輸入手機號碼</div>
                 </div>
-                <div class="progress border-end border-secondary" role="progressbar" aria-label="Segment two" aria-valuenow="25" aria-valuemin="0"
+                @* <div class="progress border-end border-secondary" role="progressbar" aria-label="Segment two" aria-valuenow="25" aria-valuemin="0"
                      aria-valuemax="100" style="width: 25%;  --bs-progress-height: 2rem;">
                     <div class="progress-bar @(Model == "SendCode" ? "bg-aqua-deep" : "bg-aqua text-dark")">輸入驗證碼</div>
-                </div>
+                </div> *@
                 <div class="progress border-end border-secondary" role="progressbar" aria-label="Segment three" aria-valuenow="25" aria-valuemin="0"
-                     aria-valuemax="100" style="width: 25%;  --bs-progress-height: 2rem;">
+                     aria-valuemax="100" style="width: calc(100% / 3);  --bs-progress-height: 2rem;">
                     <div class="progress-bar  @(Model == "FillInfomation" ? "bg-aqua-deep" : "bg-aqua text-dark")">填寫會員資訊</div>
                 </div>
                 <div class="progress" role="progressbar" aria-label="Segment four" aria-valuenow="25" aria-valuemin="0"
-                     aria-valuemax="100" style="width: 25%;  --bs-progress-height: 2rem;">
+                     aria-valuemax="100" style="width: calc(100% / 3);  --bs-progress-height: 2rem;">
                     <div class="progress-bar  @(Model == "RegisteSuccess" ? "bg-aqua-deep" : "bg-aqua text-dark")">完成註冊</div>
                 </div>
             </div>

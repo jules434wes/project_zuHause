@@ -24,6 +24,22 @@ namespace zuHause.Interfaces
             int entityId);
 
         /// <summary>
+        /// 將臨時區域的檔案移動到正式區域（包含圖片順序）
+        /// </summary>
+        /// <param name="tempSessionId">臨時會話ID</param>
+        /// <param name="imageGuids">要遷移的圖片GUID列表</param>
+        /// <param name="category">目標類別</param>
+        /// <param name="entityId">目標實體ID</param>
+        /// <param name="imageOrder">圖片順序（ImageGuid 列表，按照 DisplayOrder 排序）</param>
+        /// <returns>遷移結果</returns>
+        Task<MigrationResult> MoveTempToPermanentAsync(
+            string tempSessionId, 
+            IEnumerable<Guid> imageGuids, 
+            ImageCategory category, 
+            int entityId,
+            IEnumerable<string>? imageOrder);
+
+        /// <summary>
         /// 驗證臨時檔案是否存在且有效
         /// </summary>
         /// <param name="tempSessionId">臨時會話ID</param>

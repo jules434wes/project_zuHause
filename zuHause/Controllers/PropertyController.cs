@@ -614,7 +614,7 @@ namespace zuHause.Controllers
                         _logger.LogInformation("📸 [步驟2/4] 開始處理臨時會話圖片遷移 - TempSessionId: {TempSessionId}", dto.TempSessionId);
                         
                         // 在同一交易內進行圖片遷移
-                        var migrationResult = await ProcessTempImageMigrationInTransactionAsync(property.PropertyId, dto.TempSessionId);
+                        var migrationResult = await ProcessTempImageMigrationInTransactionAsync(property.PropertyId, dto.TempSessionId, dto.ImageOrder);
                         rollbackInfo = rollbackInfo with { MigratedBlobPaths = migrationResult.MovedBlobPaths };
                         
                         if (!migrationResult.Success)
@@ -2032,7 +2032,7 @@ namespace zuHause.Controllers
         /// <summary>
         /// 在交易內處理臨時圖片遷移 - 新版本，支援交易內執行
         /// </summary>
-        private async Task<(bool Success, string ErrorMessage, List<string> MovedBlobPaths)> ProcessTempImageMigrationInTransactionAsync(int propertyId, string tempSessionId)
+        private async Task<(bool Success, string ErrorMessage, List<string> MovedBlobPaths)> ProcessTempImageMigrationInTransactionAsync(int propertyId, string tempSessionId, IEnumerable<string>? imageOrder = null)
         {
             var movedBlobPaths = new List<string>();
             
@@ -2090,7 +2090,8 @@ namespace zuHause.Controllers
                         tempSessionId,
                         galleryGuids,
                         ImageCategory.Gallery,
-                        propertyId
+                        propertyId,
+                        imageOrder
                     );
                     
                     _logger.LogInformation("📊 [交易內] Gallery 遷移結果: Success={Success}, ErrorMessage={ErrorMessage}", 
@@ -2159,7 +2160,7 @@ namespace zuHause.Controllers
         /// <summary>
         /// 舊版本方法 - 保持向後相容性
         /// </summary>
-        private async Task ProcessTempImageMigrationAsync(int propertyId, string tempSessionId)
+        private async Task ProcessTempImageMigrationAsync(int propertyId, string tempSessionId, IEnumerable<string>? imageOrder = null)
         {
             try
             {
@@ -2235,7 +2236,8 @@ namespace zuHause.Controllers
                             tempSessionId,
                             galleryGuids,
                             ImageCategory.Gallery,
-                            propertyId
+                            propertyId,
+                            imageOrder
                         );
                         
                         _logger.LogInformation("📊 Gallery 遷移結果: Success={Success}, ErrorMessage={ErrorMessage}", 

@@ -63,4 +63,6 @@ public partial class District
     public virtual ICollection<Member> MemberPrimaryRentalDistricts { get; set; } = new List<Member>();
 
     public virtual ICollection<Member> MemberResidenceDistricts { get; set; } = new List<Member>();
+
+    public virtual ICollection<Property> Properties { get; set; } = new List<Property>();
 }

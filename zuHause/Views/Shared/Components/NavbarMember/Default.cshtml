@@ -1,5 +1,9 @@
+@using zuHause.ViewModels.MemberViewModel;
+@using System.Security.Claims
+@{
+    string? role = User.FindFirst(ClaimTypes.Role)?.Value;
+}
 @model zuHause.ViewModels.NavbarMemberViewModel
-
 <header class="position-sticky w-100 top-0 z-3">
     <nav class="navbar navbar-expand-lg position-relative py-0" data-bs-theme="aqua">
         <div class="container-fluid">
@@ -41,7 +45,7 @@
                                 </a>
                             </li>
                             break;
-                            
+
                         case "tenant":
                             <!-- 房客或未驗證房東：顯示成為房東 -->
                             <li class="nav-item mx-3">
@@ -50,7 +54,7 @@
                                 </a>
                             </li>
                             break;
-                            
+
                         case "guest":
                         default:
                             <!-- 未登入用戶：顯示成為房東 -->
@@ -64,10 +68,14 @@
                             <button type="button" class="btn dropdown-toggle d-flex align-items-center gap-2 ps-0 position-relative"
                                     data-bs-toggle="dropdown" aria-expanded="false">
                                 通知總覽
-                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                                    99+
-                                    <span class="visually-hidden">通知總覽</span>
-                                </span>
+                                @if (User.Identity?.IsAuthenticated == true && (Model.NeverReadCount>0))
+                                {
+                                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                        
+                                            @(Model.NeverReadCount > 99 ? "99+" : Model.NeverReadCount.ToString())
+                                            <span class="visually-hidden">通知總覽</span>
+                                        </span>
+                                }
                             </button>
                             <ul class="dropdown-menu dropdown-msg left-50 p-0 rounded-0">
                                 <li class="py-1 px-2">
@@ -78,38 +86,27 @@
                                 </li>
                                 <li>
                                     <ul class="dropdown-sub-list p-0">
-                                        <li class="border-bottom">
-                                            <a class="dropdown-item">
-                                                <div class="d-flex w-100 justify-content-between">
-                                                    <p class="mb-1">系統公告</p>
-                                                    <small>2025-06-25</small>
-                                                </div>
-                                                <small class="mb-0 text-start">您申請的房源已通過審核...</small>
-                                            </a>
-                                        </li>
-                                        <li class="border-bottom">
-                                            <a class="dropdown-item">
-                                                <div class="d-flex w-100 justify-content-between">
-                                                    <p class="mb-1">系統公告</p>
-                                                    <small>2025-06-25</small>
-                                                </div>
-                                                <small class="mb-0 text-start">您申請的房源已通過審核...</small>
-                                            </a>
-                                        </li>
-                                        <li class="border-bottom">
-                                            <a class="dropdown-item">
-                                                <div class="d-flex w-100 justify-content-between lis">
-                                                    <p class="mb-1">系統公告</p>
-                                                    <small>2025-06-25</small>
-                                                </div>
-                                                <small class="mb-0 text-start">您申請的房源已通過審核...</small>
-                                            </a>
-                                        </li>
+
+
+                                        @foreach (SystemMessageViewModel item in Model.LatestNotifications)
+                                        {
+                                            <li class="border-bottom @((item.IsRead == false && item.ModuleCode != "System") ? "border-primary bg-primary-subtle" : "")">
+                                                <a class="dropdown-item" asp-action="Index" asp-controller="MemberInbox" asp-route-notificationId="@item.NotificationId">
+                                                    <div class="d-flex w-100 justify-content-between">
+                                                        <p class="mb-1">
+                                                            @(item.AudienceTypeCode == "User" ? "系統通知" : "系統公告")
+                                                        </p>
+                                                        <small>@(item.SentAt)</small>
+                                                    </div>
+                                                    <small class="mb-0 text-start text-truncate d-block w-100">@(item.Title)</small>
+                                                </a>
+                                            </li>
+                                        }
+
                                     </ul>
                                 </li>
                                 <li class="d-flex justify-content-center p-0">
-                                    <a asp-action="Index" asp-controller="MemberInbox" class="dropdown-item text-center btn btn-outline-aqua rounded-0">我的通知</a>
-                                    <a asp-action="PrivateMessage" asp-controller="MemberInbox" class="dropdown-item text-center btn btn-outline-aqua rounded-0">我的訊息</a>
+                                    <a asp-action="Index" asp-controller="MemberInbox" class=" d-block text-center btn btn-aqua rounded-0 w-100">我的通知</a>
                                 </li>
                             </ul>
                         </div>
@@ -118,8 +115,8 @@
                     {
                         <li class="nav-item ms-3">
                             <!-- Example single danger button -->
-                            <div class="btn-group">
-                                <button type="button" class="btn dropdown-toggle d-flex align-items-center gap-2 ps-0"
+                            <div class="btn-group w-100">
+                                <button type="button" class="btn dropdown-toggle d-flex align-items-center gap-2 ps-0 w-100"
                                         data-bs-toggle="dropdown" aria-expanded="false">
                                     <div class="user-img rounded-circle">
                                         <img src="@Url.Content(Model.Avatar)" alt="" class="rounded-circle">
@@ -129,14 +126,17 @@
                                     <li>
                                         <a asp-action="MemberProfile" asp-controller="Member" class="dropdown-item text-center">個人檔案</a>
                                     </li>
+                                    @if (role == "1")
+                                    {
+                                        <li>
+                                            <a asp-action="Index" asp-controller="MemberApplications" class="dropdown-item text-center">申請紀錄</a>
+                                        </li>
+                                    }
                                     <li>
-                                        <a asp-action="Index" asp-controller="MemberApplications" class="dropdown-item text-center">申請紀錄</a>
+                                        <a asp-action="Index" asp-controller="MemberInbox" class="dropdown-item text-center">通知管理</a>
                                     </li>
                                     <li>
                                         <a asp-action="Index" asp-controller="MemberContracts" class="dropdown-item text-center">我的合約</a>
-                                    </li>
-                                    <li>
-                                        <a asp-action="CollectionAndComparison" asp-controller="Tenant" class="dropdown-item text-center">我的收藏</a>
                                     </li>
                                     <li>
                                         <hr class="dropdown-divider">

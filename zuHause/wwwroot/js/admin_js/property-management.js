@@ -267,19 +267,51 @@ document.addEventListener('DOMContentLoaded', function() {
         
         switch(sortField) {
             case 'publishDate':
-                return cells[5].textContent.trim(); // 上架時間 (僅all表格)
+                return cells[4].textContent.trim(); // 建立時間 (all表格，第5欄)
             case 'applyTime':
-                return cells[5].textContent.trim(); // 申請審核時間 (pending表格)
+                return cells[4].textContent.trim(); // 申請審核時間 (pending表格，第5欄)
             case 'expiryDate':
-                return cells[7].textContent.trim(); // 上架期限 (all表格)
+                return cells[6].textContent.trim(); // 上架期限 (all表格，第7欄)
             case 'updateTime':
                 if (tableType === 'pending') {
-                    return cells[7].textContent.trim(); // pending表格的更新時間
+                    return cells[6].textContent.trim(); // pending表格的更新時間 (第7欄)
                 } else {
-                    return cells[8].textContent.trim(); // all表格的更新時間
+                    return cells[7].textContent.trim(); // all表格的更新時間 (第8欄)
                 }
             default:
                 return '';
         }
     }
+});
+
+// 分頁功能
+let currentPageData = {
+    'all': 1,
+    'pending': 1
+};
+
+// 全域函數 - 分頁切換
+function changePage(page, tableType) {
+    if (page < 1) return;
+    
+    currentPageData[tableType] = page;
+    
+    // 重新載入頁面內容（這裡可以用 AJAX 來優化）
+    // 暫時使用重新載入的方式，之後可以改成 AJAX
+    const currentUrl = new URL(window.location);
+    currentUrl.searchParams.set(tableType + '_page', page);
+    window.location.href = currentUrl.toString();
+}
+
+// 獲取當前頁面
+function getCurrentPage(tableType) {
+    const urlParams = new URLSearchParams(window.location.search);
+    return parseInt(urlParams.get(tableType + '_page')) || 1;
+}
+
+// 初始化分頁
+document.addEventListener('DOMContentLoaded', function() {
+    // 從 URL 參數獲取當前頁面
+    currentPageData['all'] = getCurrentPage('all');
+    currentPageData['pending'] = getCurrentPage('pending');
 });

@@ -2311,6 +2311,16 @@ public partial class ZuHauseContext : DbContext
             entity.HasOne(d => d.ListingPlan).WithMany(p => p.Properties)
                 .HasForeignKey(d => d.ListingPlanId)
                 .HasConstraintName("FK_properties_listingPlan");
+
+            entity.HasOne(d => d.City).WithMany(p => p.Properties)
+                .HasForeignKey(d => d.CityId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_properties_city");
+
+            entity.HasOne(d => d.District).WithMany(p => p.Properties)
+                .HasForeignKey(d => d.DistrictId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_properties_district");
         });
 
         modelBuilder.Entity<PropertyComplaint>(entity =>
