@@ -2066,7 +2066,7 @@ namespace zuHause.Controllers
             });
         }
 
-        [HttpGet("dashboard/hot-rankings")]
+        [HttpGet("hot-rankings")]
         public async Task<IActionResult> GetHotRankings()
         {
             // 熱門家具承租排行榜（依歷史訂單統計）
@@ -2098,11 +2098,18 @@ namespace zuHause.Controllers
                     Count = g.Count()
                 }
             ).Take(5).ToListAsync();
+            // 驗證房源數量排行榜（依有效狀態的房源）
+            // 統一視為「已審核房源」的 statusCode 範圍
+            string[] verifiedStatusCodes = new[]
+            {
+                "PENDING_PAYMENT", "LISTED"
+            };
+
             var verifiedProperties = await (
                 from p in _context.Properties
                 join d in _context.Districts on p.DistrictId equals d.DistrictId
                 join city in _context.Cities on d.CityId equals city.CityId
-                where p.StatusCode == "ACTIVE"
+                where verifiedStatusCodes.Contains(p.StatusCode)
                 group p by city.CityName into g
                 orderby g.Count() descending
                 select new
@@ -2114,6 +2121,7 @@ namespace zuHause.Controllers
 
 
 
+            // 待審核房源數量排行榜（依待審核狀態的房源）
             var pendingProperties = await (
                     from p in _context.Properties
                     join d in _context.Districts on p.DistrictId equals d.DistrictId
