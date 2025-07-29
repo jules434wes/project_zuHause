@@ -10,6 +10,22 @@
     var paginationLabel = ViewData["PaginationLabel"] as string ?? "屋源分頁";
     
     var propertiesToShow = tableType == "pending" ? Model.PendingProperties : Model.Items;
+    
+    // 分頁設定
+    int pageSize = 15;
+    string pageParamName = tableType == "pending" ? "pending_page" : "all_page";
+    int currentPage = 1;
+    if (Context.Request.Query.ContainsKey(pageParamName))
+    {
+        int.TryParse(Context.Request.Query[pageParamName], out currentPage);
+        if (currentPage < 1) currentPage = 1;
+    }
+    int totalItems = propertiesToShow.Count();
+    int totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
+    if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
+    
+    // 當前頁面要顯示的資料
+    var pagedProperties = propertiesToShow.Skip((currentPage - 1) * pageSize).Take(pageSize);
 }
 
 <div class="card mt-3">
@@ -74,7 +90,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var property in propertiesToShow)
+                    @foreach (var property in pagedProperties)
                     {
                         <tr>
                             @* 勾選框功能暫時隱藏
@@ -171,21 +187,88 @@
             </table>
         </div>
         
-        <nav aria-label="@paginationLabel">
-            <ul class="pagination justify-content-center">
-                <li class="page-item disabled">
-                    <a class="page-link" href="#" tabindex="-1">上一頁</a>
-                </li>
-                <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                @if (tableType != "pending")
-                {
-                    <li class="page-item"><a class="page-link" href="#">2</a></li>
-                    <li class="page-item"><a class="page-link" href="#">3</a></li>
-                }
-                <li class="page-item">
-                    <a class="page-link" href="#">下一頁</a>
-                </li>
-            </ul>
-        </nav>
+        @if (totalPages > 1)
+        {
+            <nav aria-label="@paginationLabel">
+                <ul class="pagination justify-content-center">
+                    <!-- 上一頁 -->
+                    <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                        <a class="page-link" href="#" onclick="changePage(@(currentPage - 1), '@tableType')" tabindex="@(currentPage == 1 ? "-1" : "")">上一頁</a>
+                    </li>
+                    
+                    @{
+                        int startPage = Math.Max(1, currentPage - 2);
+                        int endPage = Math.Min(totalPages, currentPage + 2);
+                        
+                        // 確保至少顯示5頁（如果總頁數>=5）
+                        if (endPage - startPage < 4 && totalPages >= 5)
+                        {
+                            if (startPage == 1)
+                            {
+                                endPage = Math.Min(totalPages, startPage + 4);
+                            }
+                            else if (endPage == totalPages)
+                            {
+                                startPage = Math.Max(1, endPage - 4);
+                            }
+                        }
+                    }
+                    
+                    <!-- 第一頁和省略號 -->
+                    @if (startPage > 1)
+                    {
+                        <li class="page-item">
+                            <a class="page-link" href="#" onclick="changePage(1, '@tableType')">1</a>
+                        </li>
+                        @if (startPage > 2)
+                        {
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                        }
+                    }
+                    
+                    <!-- 頁碼 -->
+                    @for (int i = startPage; i <= endPage; i++)
+                    {
+                        <li class="page-item @(i == currentPage ? "active" : "")">
+                            <a class="page-link" href="#" onclick="changePage(@i, '@tableType')">@i</a>
+                        </li>
+                    }
+                    
+                    <!-- 省略號和最後一頁 -->
+                    @if (endPage < totalPages)
+                    {
+                        @if (endPage < totalPages - 1)
+                        {
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                        }
+                        <li class="page-item">
+                            <a class="page-link" href="#" onclick="changePage(@totalPages, '@tableType')">@totalPages</a>
+                        </li>
+                    }
+                    
+                    <!-- 下一頁 -->
+                    <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                        <a class="page-link" href="#" onclick="changePage(@(currentPage + 1), '@tableType')">下一頁</a>
+                    </li>
+                </ul>
+                
+                <!-- 頁面資訊 -->
+                <div class="text-center mt-2">
+                    <small class="text-muted">
+                        顯示第 @((currentPage - 1) * pageSize + 1) - @(Math.Min(currentPage * pageSize, totalItems)) 筆，共 @totalItems 筆資料 (@totalPages 頁)
+                    </small>
+                </div>
+            </nav>
+        }
+        else if (totalItems > 0)
+        {
+            <div class="text-center mt-3">
+                <small class="text-muted">共 @totalItems 筆資料</small>
+            </div>
+        }
     </div>
 </div>
