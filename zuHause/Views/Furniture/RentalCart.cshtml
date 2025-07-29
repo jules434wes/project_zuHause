@@ -28,14 +28,15 @@
             <li class="list-group-item active"><a href="/Furniture/RentalCart" class="text-white text-decoration-none">購物車</a></li>
         </ul>
     </div>
-<!-- 右側內容區 -->
+        <!-- 右側內容區 -->
         
-<!--條件顯示購物車內容-->
+        <!--條件顯示購物車內容-->
     <div class="col-md-10">
         <h2 class="mt-4">購物車清單</h2>
 
-        @if (Model != null && Model.FurnitureCartItems != null && Model.FurnitureCartItems.Any())
+             @if (Model != null && Model.FurnitureCartItems != null)
         {
+            <!-- 始終顯示房源選單與房源資訊 -->
             <div class="card p-3 mb-3 shadow-sm">
                 <h5 class="card-title mb-3">目前綁定房屋：</h5>
                 <div class="mb-3 d-flex align-items-center">
@@ -94,7 +95,7 @@
                                     <span>@item.Product?.ProductName</span>
                                 </div>
                             </td>
-                            <td>
+                             <td>
                                     @{
                                             var inventoryMap = ViewBag.InventoryMap as Dictionary<string, int>;
                                             var available = inventoryMap != null && inventoryMap.ContainsKey(item.ProductId)

@@ -2,6 +2,8 @@
 @{
     Layout = "~/Views/Shared/_NavigationBar.cshtml";
     ViewBag.Title = "聯繫紀錄";
+
+    var orderItemDict = ViewBag.OrderItemDict as Dictionary<string, zuHause.Models.FurnitureOrderItem>;
 }
 
 <div class="container-fluid">
@@ -10,21 +12,20 @@
         <div class="col-md-2">
             <h5>會員功能</h5>
             <ul class="list-group">
-                <li class="list-group-item">
-                    <a href="/Furniture/OrderHistory" class="text-decoration-none">租借 / 購買付款查詢</a>
-                </li>
-                <li class="list-group-item active">
-                    <a href="/Furniture/ContactRecords" class="text-white text-decoration-none">聯繫紀錄</a>
-                </li>
-                <li class="list-group-item">
-                    <a href="/Furniture/RentalCart" class="text-decoration-none">購物車</a>
-                </li>
+                <li class="list-group-item"><a href="/Furniture/OrderHistory">租借 / 購買付款查詢</a></li>
+                <li class="list-group-item active"><a href="/Furniture/ContactRecords" class="text-white text-decoration-none">聯繫紀錄</a></li>
+                <li class="list-group-item"><a href="/Furniture/RentalCart">購物車</a></li>
             </ul>
         </div>
 
         <!-- 右側內容 -->
         <div class="col-md-10">
-            <h2 class="mb-4">聯繫紀錄</h2>
+            <!-- 🔍 查詢欄位 -->
+            <input type="text" id="searchInput" class="form-control" placeholder="🔍搜尋主旨、商品名稱、內容...">
+
+            <div class="mb-3">
+                <h2 class="mt-4">聯繫紀錄</h2>
+            </div>
 
             @if (Model == null || !Model.Any())
             {
@@ -34,7 +35,12 @@
             {
                 foreach (var ticket in Model)
                 {
-                    <div class="card mb-4">
+                    var orderId = ticket.FurnitureOrderId;
+                    var orderItem = orderId != null && orderItemDict.ContainsKey(orderId)
+                    ? orderItemDict[orderId]
+                    : null;
+
+                    <div class="card mb-4 contact-card">
                         <div class="card-header bg-light">
                             <strong>表單編號：</strong>REQ@(@ticket.TicketId.ToString("D12"))<br />
                             <strong>填寫時間：</strong>@ticket.CreatedAt.ToString("yyyy-MM-dd HH:mm")
@@ -43,10 +49,21 @@
                             <p><strong>主旨：</strong>@ticket.Subject</p>
                             <p><strong>房源編號：</strong>@ticket.Property?.PropertyId</p>
                             <p><strong>聯絡人：</strong>@ticket.Member.MemberName　|　Email：@ticket.Member.Email　|　電話：@ticket.Member.PhoneNumber</p>
+
+                            @if (!string.IsNullOrEmpty(orderId))
+                            {
+                                <p><strong>訂單編號：</strong>@orderId</p>
+                            }
+
+                            @if (orderItem != null)
+                            {
+                                <p><strong>商品名稱：</strong> @orderItem.Product.ProductName × @orderItem.Quantity</p>
+                            }
+
                             <p><strong>需求內容：</strong>@ticket.TicketContent</p>
+
                             <p class="mb-0">
                                 <strong>回覆內容：</strong><br />
-
                                 @if (!string.IsNullOrEmpty(ticket.ReplyContent))
                                 {
                                     <span class="text-success">@Html.Raw(ticket.ReplyContent)</span>
@@ -62,17 +79,24 @@
                         </div>
 
                         <div class="card-footer text-end">
-                            @{
-                                var isReplied = !string.IsNullOrWhiteSpace(ticket.ReplyContent);
-                            }
-                            <span class="badge @(isReplied ? "bg-success" : "bg-warning text-dark")">
-                                @(isReplied ? "已回覆" : "等待回覆")
+                            <span class="badge @(string.IsNullOrWhiteSpace(ticket.ReplyContent) ? "bg-warning text-dark" : "bg-success")">
+                                @(string.IsNullOrWhiteSpace(ticket.ReplyContent) ? "等待回覆" : "已回覆")
                             </span>
                         </div>
                     </div>
                 }
             }
-
         </div>
     </div>
 </div>
+
+<!-- 🔍 搜尋功能 -->
+<script>
+    document.getElementById("searchInput").addEventListener("input", function () {
+        const keyword = this.value.toLowerCase();
+        document.querySelectorAll(".contact-card").forEach(card => {
+            const text = card.innerText.toLowerCase();
+            card.style.display = text.includes(keyword) ? "" : "none";
+        });
+    });
+</script>
