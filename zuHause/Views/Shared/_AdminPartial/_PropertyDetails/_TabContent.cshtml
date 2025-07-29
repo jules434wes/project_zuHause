@@ -265,7 +265,7 @@
 									租期
 									<i class="bi bi-sort-up-alt sort-icon" data-direction="none"></i>
 								</th>
-								<th>合約狀態</th>
+								@* <th>合約狀態</th> *@
 								<th>操作</th>
 							</tr>
 						</thead>
@@ -278,7 +278,7 @@
 										<td>C@(rental.ContractId.ToString("000"))</td>
 										<td><a href="/Admin/admin_userDetails/@rental.TenantId" class="text-decoration-none">@rental.TenantName</a></td>
 										<td>@rental.RentalPeriod</td>
-										<td>
+										@* <td>
 											@{
 												string statusBadgeClass;
 												switch (rental.Status)
@@ -298,7 +298,7 @@
 												}
 											}
 											<span class="badge @statusBadgeClass">@rental.StatusDisplay</span>
-										</td>
+										</td> *@
 										<td>
 											<button class="btn btn-sm btn-outline-primary" onclick="viewContractDetails(@rental.ContractId)">
 												<i class="bi bi-eye me-1"></i>查看詳情
