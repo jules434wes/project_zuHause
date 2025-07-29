@@ -45,7 +45,7 @@
     top: 50%; /* 距離頂部 50% */
     left: 50%; /* 距離左側 50% */
     transform: translate(-50%, -50%); /* 將元素自身往左上移動其寬高的一半，實現精確居中 */
-    z-index: 10; /* 確保它在輪播圖上方 */
+    z-index: 0; /* 確保它在輪播圖上方 */
     width: 70%; /* 設定搜尋框的寬度，你可以調整這個值 */
     max-width: 600px; /* 限制最大寬度，防止過大 */
     padding: 15px; /* 給搜尋框內容一點內邊距 */
@@ -309,7 +309,7 @@
     padding: 10px 15px;
     cursor: pointer;
     border-radius: 5px;
-    z-index: 10; /* 確保按鈕在圖片之上 */
+    z-index: 0; /* 確保按鈕在圖片之上 */
     font-size: 24px; /* 調整箭頭大小 */
     line-height: 1; /* 調整行高讓箭頭置中 */
 }

@@ -31,13 +31,15 @@
         });
     }
 
-    // 3. Search input, button, and dropdown logic
+    //  Search input, button, and dropdown logic
     const $cityDropdownBtn = $('#cityDropdownBtn');
     const $searchInput = $('#searchInput');
     const $searchBtn = $('#searchBtn');
     const $dropdownItems = $('.dropdown-menu .dropdown-item'); // 使用 jQuery 選擇器
     let selectedCity = $cityDropdownBtn.text().trim(); // 初始化為按鈕上的預設城市
     let selectedCityCode = $cityDropdownBtn.data('citycode'); // 初始化為按鈕上的預設城市代碼
+
+   
 
     // 處理城市下拉選單點擊事件
     $dropdownItems.on('click', function (event) {
