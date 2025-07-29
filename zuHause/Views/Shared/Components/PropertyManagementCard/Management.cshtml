@@ -3,122 +3,242 @@
     var property = Model.Property;
 }
 
-<!-- 橫向房源卡片（管理模式） -->
-<div class="col-12 mb-4">
-    <div class="card property-management-card @Model.CustomCssClass">
-        <div class="row g-0">
+<!-- 緊湊型房源卡片（管理模式） -->
+<div class="col-12 mb-3">
+    <div class="card property-card-compact @Model.CustomCssClass">
+        @* 根據房源狀態顯示提醒列 *@
+        @switch (property.StatusCode.ToUpper())
+        {
+            case "PENDING":
+                <div class="property-status-alert status-alert-under-review">
+                    <i class="bi bi-lock-fill me-2"></i>
+                    <span>此房源審核中，暫時鎖定編輯功能</span>
+                </div>
+                break;
+            case "PENDING_RENEWAL":
+                <div class="property-status-alert status-alert-under-review">
+                    <i class="bi bi-lock-fill me-2"></i>
+                    <span>房源租約即將到期，請確認租客是否續約</span>
+                </div>
+                break;
+            case "PENDING_PAYMENT":
+                <div class="property-status-alert status-alert-payment">
+                    <i class="bi bi-exclamation-circle-fill me-2"></i>
+                    <span>此房源待付款，完成付款後即可上架</span>
+                </div>
+                break;
+            case "REJECT_REVISE":
+                <div class="property-status-alert status-alert-review-failed">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <span>此房源審核不通過，需補充資料後重新審核</span>
+                </div>
+                break;
+            case "REJECTED":
+                <div class="property-status-alert status-alert-review-failed">
+                    <i class="bi bi-lock-fill me-2"></i>
+                    <span>此房源審核不通過，若有疑問，請洽客服中心</span>
+                </div>
+                break;
+            case "CONTRACT_ISSUED":
+                <div class="property-status-alert status-alert-contract-issued">
+                    <i class="bi bi-lock-fill me-2"></i>
+                    <span>此房源已發出合約，暫時鎖定編輯功能</span>
+                </div>
+                break;
+            case "LEASE_RENEWING":
+                <div class="property-status-alert status-alert-contract-issued">
+                    <i class="bi bi-lock-fill me-2"></i>
+                    <span>此房源租期續約中，暫時鎖定編輯功能</span>
+                </div>
+                break;
+            case "ALREADY_RENTED":
+                <div class="property-status-alert status-alert-rented">
+                    <i class="bi bi-check-circle me-2"></i>
+                    <span>此房源已出租，合約已成立</span>
+                </div>
+                break;
+            case "INVALID":
+                <div class="property-status-alert status-alert-invalid">
+                    <i class="bi bi-x-circle me-2"></i>
+                    <span>此房源已下架，無法進行任何操作</span>
+                </div>
+                break;
+            default:
+                break;
+        }
+        <div class="row g-0 align-items-center">
             <!-- 房源圖片區域（左側） -->
-            <div class="col-md-4">
-                <div class="property-image position-relative">
+            <div class="col">
+                <div class="property-image-compact position-relative">
                     <img src="@property.ThumbnailUrl" 
-                         class="card-img h-100" 
+                         class="card-img" 
                          alt="@property.Title" 
-                         style="object-fit: contain;background-color:#f8f9fa;"
-                         onerror="this.src='/images/property-placeholder.jpg'">
+                         style="object-fit: cover;"
+                         onerror="this.src='/images/default-picture.png'">
                     
-                    @if (Model.ShowStatusBadge)
-                    {
-                        <span class="badge bg-@property.StatusStyle position-absolute top-0 start-0 m-2">
-                            @property.StatusDisplayName
-                        </span>
-                    }
+                    <!-- 已移除圖片左上角狀態徽章，改至標題區域顯示 -->
                     
-                    @if (property.RequiresAction)
-                    {
-                        <div class="action-required-badge position-absolute top-0 end-0 m-2">
-                            <i class="fas fa-exclamation-circle text-warning fs-5"></i>
-                        </div>
-                    }
+                    <!-- 移除行動指示器 (action-indicator) -->
 
                     @if (property.IsLegacyStatus)
                     {
-                        <div class="legacy-status-badge position-absolute bottom-0 start-0 m-2">
-                            <small class="badge bg-secondary">過時狀態</small>
+                        <div class="legacy-indicator position-absolute bottom-0 start-0 m-1">
+                            <small class="badge bg-secondary compact-badge">過時</small>
                         </div>
                     }
                 </div>
             </div>
             
-            <!-- 房源內容區域（右側） -->
-            <div class="col-md-8">
-                <div class="card-body">
-                    <!-- 標題與價格 -->
-                    <div class="d-flex justify-content-between align-items-start mb-2">
-                        <h5 class="card-title mb-0 flex-grow-1">@property.Title</h5>
-                        <p class="property-price text-primary fw-bold mb-0 ms-3">@property.PriceDisplay</p>
+            <!-- 房源內容區域（中間） -->
+            <div class="col-md-6 col-sm-8">
+                <div class="card-body-compact">
+                    <!-- 標題與基本信息 -->
+                    <div class="property-header d-flex justify-content-between align-items-start mb-2">
+                        <h6 class="property-title mb-1 flex-grow-1">@property.Title</h6>
+                        @if (Model.ShowStatusBadge)
+                        {
+                            <span class="badge bg-@property.StatusStyle status-badge-pill ms-2">@property.StatusDisplayName</span>
+                        }
                     </div>
-                    
-                    <!-- 地址 -->
-                    <p class="property-address text-muted mb-3">
-                        <i class="fas fa-map-marker-alt me-1"></i>@property.Address
+
+                    <p class="property-address-compact mb-2">
+                        <i class="bi bi-geo-alt-fill me-1"></i>@property.Address
                     </p>
                     
-                    <!-- 房源詳細資訊 -->
-                    <div class="property-details mb-3">
-                        <span class="badge bg-light text-dark me-2">
+                    <!-- 房源詳細資訊（基於 PropertyInfoSection 樣式）-->
+                    <div class="property-info-section mb-2">
+                        <div class="property-info-tags">
+                            <span class="info-tag">
+                                <i class="fas fa-home me-1"></i>@property.LayoutDisplay
+                            </span>
+                            @if (property.Area.HasValue)
+                            {
+                                <span class="info-tag">
+                                    <i class="fas fa-expand-arrows-alt me-1"></i>@property.AreaDisplay
+                                </span>
+                            }
+                            <span class="info-tag">
+                                <i class="fas fa-layer-group me-1"></i>@property.FloorInfo
+                            </span>
+                            <span class="info-tag">
+                                <i class="fas fa-car me-1"></i>@property.ParkingDisplay
+                            </span>
+                            <span class="info-tag">
+                                <i class="fas fa-calendar-clock me-1"></i>@property.MinimumRentalDisplay
+                            </span>
+                            <span class="info-tag">
+                                <i class="fas fa-coins me-1"></i>@property.DepositDisplay
+                            </span>
+                            <span class="info-tag">
+                                <i class="fas fa-cog me-1"></i>@property.ManagementFeeDisplay
+                            </span>
+                            @if (property.IsPaid)
+                            {
+                                <span class="info-tag paid">
+                                    <i class="fas fa-check-circle me-1"></i>已付款
+                                </span>
+                            }
+                            @if (property.PublishedAt.HasValue)
+                            {
+                                <span class="info-tag published">
+                                    <i class="fas fa-globe me-1"></i>已上架
+                                </span>
+                            }
+                        </div>
+                    </div>
+                    
+                    <!-- 原始標籤（保留作為備用） -->
+                    <div class="property-details-compact mb-2" style="display: none;">
+                        <span class="detail-badge">
                             <i class="fas fa-bed me-1"></i>@property.LayoutDisplay
                         </span>
                         @if (property.Area.HasValue)
                         {
-                            <span class="badge bg-light text-dark me-2">
+                            <span class="detail-badge">
                                 <i class="fas fa-expand-arrows-alt me-1"></i>@property.AreaDisplay
                             </span>
                         }
-                        <span class="badge bg-light text-dark me-2">
+                        <span class="detail-badge">
                             <i class="fas fa-layer-group me-1"></i>@property.FloorInfo
                         </span>
+                        <span class="detail-badge">
+                            <i class="fas fa-calendar-alt me-1"></i>@property.CreatedAtDisplay
+                        </span>
+                        @if (property.PublishedAt.HasValue)
+                        {
+                            <span class="detail-badge">
+                                <i class="fas fa-globe me-1"></i>已上架
+                            </span>
+                        }
                         @if (property.IsPaid)
                         {
-                            <span class="badge bg-success text-white">
+                            <span class="detail-badge paid">
                                 <i class="fas fa-check me-1"></i>已付款
+                            </span>
+                        }
+                        @if (property.ViewCount > 0)
+                        {
+                            <span class="detail-badge">
+                                <i class="fas fa-eye me-1"></i>@property.ViewCount 次瀏覽
+                            </span>
+                        }
+                        @if (property.FavoriteCount > 0)
+                        {
+                            <span class="detail-badge">
+                                <i class="fas fa-heart me-1"></i>@property.FavoriteCount 次收藏
                             </span>
                         }
                     </div>
                     
-                    @if (Model.ShowStats)
-                    {
-                        <!-- 房源統計 -->
-                        <div class="property-stats mb-3">
-                            <small class="text-muted me-3">
-                                <i class="fas fa-eye me-1"></i>瀏覽 @property.ViewCount
-                            </small>
-                            <small class="text-muted me-3">
-                                <i class="fas fa-heart me-1"></i>收藏 @property.FavoriteCount
-                            </small>
-                            <small class="text-muted me-3">
-                                <i class="fas fa-file-alt me-1"></i>申請 @property.ApplicationCount
-                            </small>
-                        </div>
-                    }
-                    
-                    <!-- 時間資訊 -->
-                    <div class="property-meta mb-3">
-                        <small class="text-muted">
-                            <i class="fas fa-calendar-plus me-1"></i>建立於 @property.CreatedAtDisplay
-                        </small>
-                        @if (property.UpdatedAt.Date != property.CreatedAt.Date)
-                        {
-                            <small class="text-muted ms-3">
-                                <i class="fas fa-clock me-1"></i>更新於 @property.UpdatedAtDisplay
-                            </small>
-                        }
+                    <!-- 移除房源統計區塊 (property-stats-compact) -->
+                </div>
+            </div>
+            
+            <!-- 價格與操作區域（右側） -->
+            <div class="col-md-3 col-12">
+                <div class="property-actions-panel">
+                    <!-- 價格顯示 -->
+                    <div class="price-section text-center mb-3">
+                        <div class="property-price-compact">@property.PriceDisplay</div>
                         @if (property.ExpireAt.HasValue)
                         {
-                            <small class="text-warning ms-3">
-                                <i class="fas fa-hourglass-end me-1"></i>到期 @property.ExpireAtDisplay
+                            <small class="expire-date">
+                                <i class="fas fa-hourglass-end me-1"></i>預計上架到期日：@property.ExpireAtDisplay
                             </small>
                         }
                     </div>
+
+                    <!-- 通知概要（緊湊版） -->
+                    @if (property.ApplicationCount > 0) {
+                        <div class="notification-compact mb-3">
+                            <div class="notification-alert">
+                                <i class="fas fa-bell text-warning me-1"></i>
+                                <span class="notification-count">@property.ApplicationCount 筆待處理</span>
+                            </div>
+                            <button type="button" class="btn btn-outline-primary btn-sm w-100 show-application-detail" data-property-id="@property.PropertyId">
+                                查看詳情
+                            </button>
+                        </div>
+                    }
                     
                     @if (Model.ShowActions)
                     {
-                        <!-- 條件式操作按鈕 -->
-                        <div class="card-actions">
+                        <!-- 操作按鈕（緊湊版） -->
+                        <div class="card-actions-compact">
+                            <!-- 付款按鈕（僅 PENDING_PAYMENT） -->
+                            @if (property.StatusCode == "PENDING_PAYMENT")
+                            {
+                                <a href="#" class="btn-payment" title="立即付款">
+                                    <i class="fas fa-credit-card"></i>
+                                    <span>立即付款</span>
+                                </a>
+                            }
+
                             <!-- 檢視房源（通用功能） -->
                             <a href="/Property/Detail/@property.PropertyId" 
                                class="btn btn-outline-primary btn-sm"
                                title="檢視房源詳細資訊">
-                                <i class="fas fa-eye me-1"></i>檢視房源
+                                <i class="fas fa-eye"></i> 檢視
                             </a>
                             
                             <!-- 編輯功能（IDLE + LISTED） -->
@@ -127,7 +247,7 @@
                                 <a href="/property/@property.PropertyId/edit"
                                    class="btn btn-outline-secondary btn-sm"
                                    title="編輯房源資訊">
-                                    <i class="fas fa-edit me-1"></i>編輯
+                                    <i class="fas fa-edit"></i> 編輯
                                 </a>
                             }
                             
@@ -137,17 +257,16 @@
                                 <button class="btn btn-outline-danger btn-sm" 
                                         onclick="confirmTakeDown(@property.PropertyId)"
                                         title="下架房源">
-                                    <i class="fas fa-eye-slash me-1"></i>下架
+                                    <i class="fas fa-eye-slash"></i> 下架
                                 </button>
                             }
                             
                             <!-- 補充資料功能（僅REJECT_REVISE） -->
                             @if (property.RequiresDataSupplement)
                             {
-                                <a href="/Property/Supplement/@property.PropertyId" 
-                                   class="btn btn-warning btn-sm"
-                                   title="補充審核要求的資料">
-                                    <i class="fas fa-plus-circle me-1"></i>補充資料
+                                <a href="/Property/Supplement/@property.PropertyId" class="btn-supplement-data" title="立即補充資料">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    <span>立即補充資料</span>
                                 </a>
                             }
                             
@@ -157,11 +276,24 @@
                                 <button class="btn btn-info btn-sm" 
                                         onclick="contactCustomerService(@property.PropertyId)"
                                         title="聯絡客服處理封鎖問題">
-                                    <i class="fas fa-headset me-1"></i>聯絡客服
+                                    <i class="fas fa-headset"></i> 客服
                                 </button>
                             }
                         </div>
                     }
+
+                    <!-- 時間資訊（緊湊版） -->
+                    <div class="property-meta-compact mt-2">
+                        <small class="text-muted d-block">
+                            <i class="fas fa-calendar-plus me-1"></i>發佈日：@property.CreatedAtDisplay
+                        </small>
+                        @if (property.UpdatedAt.Date != property.CreatedAt.Date)
+                        {
+                            <small class="text-muted d-block">
+                                <i class="fas fa-clock me-1"></i>最後更新日：@property.UpdatedAtDisplay
+                            </small>
+                        }
+                    </div>
                 </div>
             </div>
         </div>
