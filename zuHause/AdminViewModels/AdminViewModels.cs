@@ -489,6 +489,7 @@ namespace zuHause.AdminViewModels
             Items = LoadPropertiesFromDatabase(context);
             TotalCount = Items.Count;
             PendingProperties = LoadPendingProperties(context);
+            Cities = LoadCitiesFromDatabase(context);
             
             BulkConfig = new BulkActionConfig
             {
@@ -500,6 +501,7 @@ namespace zuHause.AdminViewModels
         }
 
         public List<PropertyData> PendingProperties { get; set; } = new List<PropertyData>();
+        public List<City> Cities { get; set; } = new List<City>();
 
         private List<PropertyData> LoadPropertiesFromDatabase(ZuHauseContext context)
         {
@@ -591,6 +593,15 @@ namespace zuHause.AdminViewModels
                 .ToList();
 
             return pendingProperties;
+        }
+
+        private List<City> LoadCitiesFromDatabase(ZuHauseContext context)
+        {
+            return context.Cities
+                .Where(c => c.IsActive)
+                .OrderBy(c => c.DisplayOrder)
+                .ThenBy(c => c.CityName)
+                .ToList();
         }
 
         private string GetPropertyStatusDisplay(string statusCode, bool isPaid, DateTime? expireAt)
@@ -1331,9 +1342,9 @@ namespace zuHause.AdminViewModels
 
         public string StatusDisplay => Status switch
         {
-            "OPEN" => "處理中",
+            "PENDING" => "待處理",
+            "PROGRESS" => "處理中",
             "RESOLVED" => "已處理",
-            "CLOSED" => "已關閉",
             _ => "未知"
         };
 
@@ -1485,9 +1496,9 @@ namespace zuHause.AdminViewModels
         public string ComplaintIdDisplay => $"CMPL-{ComplaintId:0000}";
         public string StatusDisplay => Status switch
         {
-            "OPEN" => "處理中",
+            "PENDING" => "待處理",
+            "PROGRESS" => "處理中",
             "RESOLVED" => "已處理",
-            "CLOSED" => "已關閉",
             _ => "未知"
         };
         public string Summary => ComplaintContent.Length > 50 

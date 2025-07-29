@@ -314,10 +314,9 @@ function renderComplaintsTable(complaints) {
         const statusDisplay = complaint.statusDisplay || getStatusDisplay(status);
         
         // 狀態徽章樣式
-        const badgeClass = status === 'OPEN' ? 'bg-danger' : 
-                          status === 'RESOLVED' ? 'bg-success' : 
-                          status === 'CLOSED' ? 'bg-secondary' : 
-                          status === 'PENDING' ? 'bg-warning' : 'bg-dark';
+        const badgeClass = status === 'PENDING' ? 'bg-warning' : 
+                          status === 'PROGRESS' ? 'bg-info' : 
+                          status === 'RESOLVED' ? 'bg-success' : 'bg-dark';
         
         // 安全地處理日期格式
         let formattedDate = '無資料';
@@ -362,10 +361,9 @@ function renderComplaintsTable(complaints) {
  */
 function getStatusDisplay(status) {
     switch (status) {
-        case 'OPEN': return '處理中';
-        case 'RESOLVED': return '已處理';
-        case 'CLOSED': return '已關閉';
         case 'PENDING': return '待處理';
+        case 'PROGRESS': return '處理中';
+        case 'RESOLVED': return '已處理';
         default: return '未知';
     }
 }
@@ -483,17 +481,17 @@ function updateStatusSummary() {
     .then(data => {
         if (data.success && data.data) {
             const complaints = data.data;
-            const openCount = complaints.filter(c => c.Status === 'OPEN').length;
+            const pendingCount = complaints.filter(c => c.Status === 'PENDING').length;
+            const progressCount = complaints.filter(c => c.Status === 'PROGRESS').length;
             const resolvedCount = complaints.filter(c => c.Status === 'RESOLVED').length;
-            const closedCount = complaints.filter(c => c.Status === 'CLOSED').length;
             
-            const openCountElement = document.getElementById('openCount');
+            const pendingCountElement = document.getElementById('pendingCount');
+            const progressCountElement = document.getElementById('progressCount');
             const resolvedCountElement = document.getElementById('resolvedCount');
-            const closedCountElement = document.getElementById('closedCount');
             
-            if (openCountElement) openCountElement.textContent = openCount;
+            if (pendingCountElement) pendingCountElement.textContent = pendingCount;
+            if (progressCountElement) progressCountElement.textContent = progressCount;
             if (resolvedCountElement) resolvedCountElement.textContent = resolvedCount;
-            if (closedCountElement) closedCountElement.textContent = closedCount;
         }
     })
     .catch(error => {
@@ -507,26 +505,26 @@ function updateStatusSummary() {
 function updateStatusSummaryFromTable() {
     // 計算當前表格中顯示的各種狀態數量
     const rows = document.querySelectorAll('#complaintsTableBody tr');
-    let openCount = 0, resolvedCount = 0, closedCount = 0;
+    let pendingCount = 0, progressCount = 0, resolvedCount = 0;
     
     rows.forEach(row => {
         const statusBadge = row.querySelector('.badge');
         if (statusBadge) {
             const statusText = statusBadge.textContent.trim();
-            if (statusText === '處理中' || statusText === '待處理') openCount++;
+            if (statusText === '待處理') pendingCount++;
+            else if (statusText === '處理中') progressCount++;
             else if (statusText === '已處理') resolvedCount++;
-            else if (statusText === '已關閉') closedCount++;
         }
     });
     
     // 更新顯示
-    const openCountElement = document.getElementById('openCount');
+    const pendingCountElement = document.getElementById('pendingCount');
+    const progressCountElement = document.getElementById('progressCount');
     const resolvedCountElement = document.getElementById('resolvedCount');
-    const closedCountElement = document.getElementById('closedCount');
     
-    if (openCountElement) openCountElement.textContent = openCount;
+    if (pendingCountElement) pendingCountElement.textContent = pendingCount;
+    if (progressCountElement) progressCountElement.textContent = progressCount;
     if (resolvedCountElement) resolvedCountElement.textContent = resolvedCount;
-    if (closedCountElement) closedCountElement.textContent = closedCount;
 }
 
 /**
@@ -564,10 +562,9 @@ function updateComplaintRowInTable(complaintId, newStatus, updatedData) {
                 if (statusBadge) {
                     // 更新狀態文字和樣式
                     const statusDisplay = getStatusDisplay(newStatus);
-                    const badgeClass = newStatus === 'OPEN' ? 'bg-danger' : 
-                                     newStatus === 'RESOLVED' ? 'bg-success' : 
-                                     newStatus === 'CLOSED' ? 'bg-secondary' : 
-                                     newStatus === 'PENDING' ? 'bg-warning' : 'bg-dark';
+                    const badgeClass = newStatus === 'PENDING' ? 'bg-warning' : 
+                                     newStatus === 'PROGRESS' ? 'bg-info' : 
+                                     newStatus === 'RESOLVED' ? 'bg-success' : 'bg-dark';
                     
                     // 移除舊的樣式類別
                     statusBadge.className = `badge ${badgeClass}`;
@@ -650,10 +647,9 @@ function showComplaintDetails(complaintId) {
  */
 function getComplaintStatusDisplay(status) {
     switch (status) {
-        case 'OPEN': return '處理中';
-        case 'RESOLVED': return '已處理';
-        case 'CLOSED': return '已關閉';
         case 'PENDING': return '待處理';
+        case 'PROGRESS': return '處理中';
+        case 'RESOLVED': return '已處理';
         default: return '未知';
     }
 }
@@ -689,10 +685,9 @@ function renderComplaintDetails(complaint) {
     
     // 處理狀態樣式 - 兼容多種狀態值
     const currentStatus = complaint.Status || complaint.status || 'UNKNOWN';
-    const statusBadgeClass = currentStatus === 'OPEN' ? 'bg-danger' : 
-                           currentStatus === 'RESOLVED' ? 'bg-success' : 
-                           currentStatus === 'CLOSED' ? 'bg-secondary' : 
-                           currentStatus === 'PENDING' ? 'bg-warning' : 'bg-dark';
+    const statusBadgeClass = currentStatus === 'PENDING' ? 'bg-warning' : 
+                           currentStatus === 'PROGRESS' ? 'bg-info' : 
+                           currentStatus === 'RESOLVED' ? 'bg-success' : 'bg-dark';
     
     // 安全地處理日期格式 - 後端已經格式化過，直接使用
     const formatDate = (dateStr) => {
@@ -765,9 +760,8 @@ function renderComplaintDetails(complaint) {
                         <span class="badge ${statusBadgeClass} me-2">${safeComplaint.StatusDisplay}</span>
                         <select id="statusSelect" class="form-select form-select-sm d-inline-block" style="width: auto;" onchange="updateComplaintStatus(${safeComplaint.ComplaintId}, this.value)">
                             <option value="PENDING" ${safeComplaint.Status === 'PENDING' ? 'selected' : ''}>待處理</option>
-                            <option value="OPEN" ${safeComplaint.Status === 'OPEN' ? 'selected' : ''}>處理中</option>
+                            <option value="PROGRESS" ${safeComplaint.Status === 'PROGRESS' ? 'selected' : ''}>處理中</option>
                             <option value="RESOLVED" ${safeComplaint.Status === 'RESOLVED' ? 'selected' : ''}>已處理</option>
-                            <option value="CLOSED" ${safeComplaint.Status === 'CLOSED' ? 'selected' : ''}>已關閉</option>
                         </select>
                     </div>
                 </div>
