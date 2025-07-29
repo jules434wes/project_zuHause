@@ -118,19 +118,14 @@
                         <h5 class="mb-0">屋源照片</h5>
                     </div>
                     <div class="card-body">
-                        @* TODO: 照片上傳系統還沒實作，之後再來修改 *@
-                        @if (false && Model.Images.Any())
+                        @if (Model.Images.Any())
                         {
                             <div class="row g-3">
                                 @foreach (var image in Model.Images)
                                 {
                                     <div class="col-lg-3 col-md-4 col-sm-6">
-                                        <div class="border rounded position-relative">
-                                            <img src="@image.ImageUrl" alt="@image.CategoryDisplay" class="img-fluid rounded" style="height: 200px; width: 100%; object-fit: cover;">
-                                            <div class="position-absolute bottom-0 start-0 w-100 bg-dark bg-opacity-75 text-white p-2">
-                                                <p class="small mb-0">@image.CategoryDisplay</p>
-                                                <small class="text-muted">@image.SizeDisplay</small>
-                                            </div>
+                                        <div class="border rounded">
+                                            <img src="@image.ImageUrl" alt="房源照片" class="img-fluid rounded" style="height: 200px; width: 100%; object-fit: cover;">
                                         </div>
                                     </div>
                                 }
@@ -141,7 +136,7 @@
                         {
                             <div class="text-center py-4">
                                 <i class="bi bi-image fa-3x text-muted mb-3"></i>
-                                <p class="text-muted">照片上傳功能開發中，敬請期待</p>
+                                <p class="text-muted">等待房東上傳房源照片</p>
                             </div>
                         }
                     </div>
