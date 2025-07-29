@@ -43,8 +43,28 @@ namespace zuHause.Services
             ImageCategory category, 
             int entityId)
         {
+            return await MoveTempToPermanentAsync(tempSessionId, imageGuids, category, entityId, null);
+        }
+
+        /// <summary>
+        /// 將臨時區域的檔案移動到正式區域（包含圖片順序）
+        /// </summary>
+        public async Task<MigrationResult> MoveTempToPermanentAsync(
+            string tempSessionId, 
+            IEnumerable<Guid> imageGuids, 
+            ImageCategory category, 
+            int entityId,
+            IEnumerable<string>? imageOrder)
+        {
             _logger.LogInformation("開始檔案遷移: TempSession={TempSessionId}, Category={Category}, EntityId={EntityId}, ImageCount={ImageCount}",
                 tempSessionId, category, entityId, imageGuids.Count());
+
+            // 記錄圖片順序信息
+            if (imageOrder != null && imageOrder.Any())
+            {
+                _logger.LogInformation("收到圖片順序信息，共 {OrderCount} 項: {ImageOrder}", 
+                    imageOrder.Count(), string.Join(", ", imageOrder));
+            }
 
             try
             {
@@ -149,14 +169,8 @@ namespace zuHause.Services
                     }
                     else
                     {
-                        // Gallery 分類：準備遷移到 images 表
-                        await PrepareImageEntityCreationAsync(tempSessionId, imageGuids, entityId);
-                        
-                        // 準備房源縮圖更新：將排序為 1 的圖片設為 previewImageURL
-                        if (category == ImageCategory.Gallery)
-                        {
-                            await PreparePropertyPreviewImageUpdateAsync(entityId);
-                        }
+                        // Gallery 分類：準備遷移到 images 表（內部會自動處理 PreviewImageUrl 更新）
+                        await PrepareImageEntityCreationAsync(tempSessionId, imageGuids, entityId, imageOrder);
                     }
                 }
 
@@ -398,9 +412,9 @@ namespace zuHause.Services
         }
 
         /// <summary>
-        /// 準備圖片資料庫記錄創建：從 TempSession 獲取資訊並準備正式的 Image 記錄（不提交）
+        /// 準備圖片資料庫記錄創建：從 TempSession 獲取資訊並準備正式的 Image 記錄，並同時更新房源預覽圖
         /// </summary>
-        private async Task PrepareImageEntityCreationAsync(string tempSessionId, IEnumerable<Guid> imageGuids, int actualEntityId)
+        private async Task PrepareImageEntityCreationAsync(string tempSessionId, IEnumerable<Guid> imageGuids, int actualEntityId, IEnumerable<string>? imageOrder = null)
         {
             try
             {
@@ -452,18 +466,54 @@ namespace zuHause.Services
                 _context.Images.AddRange(newImages);
                 await _context.SaveChangesAsync(); // 立即保存以獲取 ImageId
                 
-                // 手動分配 DisplayOrder（簡化方式，避免複雜的 DisplayOrderManager 依賴）
-                _logger.LogInformation("開始為 {ImageCount} 張圖片手動分配 DisplayOrder", newImages.Count);
+                // 根據前端傳入的順序分配 DisplayOrder
+                _logger.LogInformation("開始為 {ImageCount} 張圖片分配 DisplayOrder", newImages.Count);
                 
-                for (int i = 0; i < newImages.Count; i++)
+                if (imageOrder != null && imageOrder.Any())
                 {
-                    newImages[i].DisplayOrder = i + 1;
-                    _logger.LogDebug("分配 DisplayOrder {Order} 給圖片 {ImageGuid}", i + 1, newImages[i].ImageGuid);
+                    _logger.LogInformation("使用前端傳入的圖片順序進行排序");
+                    
+                    // 將 imageOrder 轉換為 Guid 字典，便於查詢
+                    var orderMap = imageOrder
+                        .Select((guidStr, index) => new { GuidStr = guidStr, Order = index + 1 })
+                        .Where(x => Guid.TryParse(x.GuidStr, out _))
+                        .ToDictionary(x => Guid.Parse(x.GuidStr), x => x.Order);
+                    
+                    // 根據前端順序分配 DisplayOrder
+                    foreach (var image in newImages)
+                    {
+                        if (orderMap.TryGetValue(image.ImageGuid, out var order))
+                        {
+                            image.DisplayOrder = order;
+                            _logger.LogDebug("根據前端順序分配 DisplayOrder {Order} 給圖片 {ImageGuid}", order, image.ImageGuid);
+                        }
+                        else
+                        {
+                            // 如果在前端順序中找不到，分配到最後
+                            var maxOrder = orderMap.Values.DefaultIfEmpty(0).Max();
+                            image.DisplayOrder = maxOrder + 1;
+                            _logger.LogWarning("圖片 {ImageGuid} 不在前端順序中，分配到最後位置 {Order}", image.ImageGuid, image.DisplayOrder);
+                        }
+                    }
+                }
+                else
+                {
+                    _logger.LogInformation("未提供前端排序，使用預設順序（建立順序）");
+                    
+                    // 使用預設順序
+                    for (int i = 0; i < newImages.Count; i++)
+                    {
+                        newImages[i].DisplayOrder = i + 1;
+                        _logger.LogDebug("分配預設 DisplayOrder {Order} 給圖片 {ImageGuid}", i + 1, newImages[i].ImageGuid);
+                    }
                 }
                 
                 // 保存 DisplayOrder 更新
                 await _context.SaveChangesAsync();
                 _logger.LogInformation("DisplayOrder 分配完成，共分配 {Count} 個順序", newImages.Count);
+                
+                // 立即更新房源的 PreviewImageUrl（使用剛建立的第一張圖片）
+                await UpdatePropertyPreviewImageDirectly(actualEntityId, newImages);
                 
                 _logger.LogInformation("圖片資料庫記錄準備完成: 準備了 {CreatedCount} 個圖片記錄（待外部交易提交）", newImages.Count);
             }
@@ -471,6 +521,57 @@ namespace zuHause.Services
             {
                 _logger.LogError(ex, "創建圖片資料庫記錄時發生異常: tempSessionId={TempSessionId}, actualEntityId={ActualEntityId}",
                     tempSessionId, actualEntityId);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// 直接更新房源的預覽圖 URL（使用已知的圖片列表）
+        /// </summary>
+        private async Task UpdatePropertyPreviewImageDirectly(int propertyId, List<Image> newImages)
+        {
+            try
+            {
+                _logger.LogInformation("直接更新房源預覽圖: PropertyId={PropertyId}, 圖片數量={ImageCount}", 
+                    propertyId, newImages.Count);
+
+                // 查詢房源記錄
+                var property = await _context.Properties
+                    .FirstOrDefaultAsync(p => p.PropertyId == propertyId);
+
+                if (property == null)
+                {
+                    _logger.LogWarning("未找到房源記錄: PropertyId={PropertyId}", propertyId);
+                    return;
+                }
+
+                // 找到 DisplayOrder = 1 的主圖（第一張圖片）
+                var mainImage = newImages.FirstOrDefault(img => img.DisplayOrder == 1);
+                
+                if (mainImage != null)
+                {
+                    // 使用 GenerateImageUrl 生成完整的縮圖 URL
+                    var previewImageUrl = _urlGenerator.GenerateImageUrl(mainImage.Category, mainImage.EntityId, mainImage.ImageGuid, ImageSize.Medium);
+                    
+                    _logger.LogInformation("設定房源預覽圖: PropertyId={PropertyId}, ImageGuid={ImageGuid}, URL={PreviewUrl}",
+                        propertyId, mainImage.ImageGuid, previewImageUrl);
+
+                    property.PreviewImageUrl = previewImageUrl;
+                }
+                else
+                {
+                    _logger.LogInformation("未找到主圖，清空房源預覽圖: PropertyId={PropertyId}", propertyId);
+                    property.PreviewImageUrl = null;
+                }
+                
+                // 保存 PreviewImageUrl 變更到資料庫
+                await _context.SaveChangesAsync();
+                _logger.LogInformation("房源預覽圖已直接更新: PropertyId={PropertyId}, PreviewImageUrl={PreviewImageUrl}", 
+                    propertyId, property.PreviewImageUrl ?? "NULL");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "直接更新房源預覽圖失敗: PropertyId={PropertyId}", propertyId);
                 throw;
             }
         }

@@ -1,8 +1,12 @@
 ﻿@{
+	Layout = "_AuthLayout";// 使用自訂的登入頁面佈局
     ViewData["Title"] = "後台登入";
 }
 
 <div class="container mt-5" style="max-width: 400px;">
+    <div class="text-center mb-3">
+        <img src="/images/logo.png" class="img-fluid" style="max-width: 250px;">
+    </div>
     <h3 class="mb-4 text-center">🔐 後台登入</h3>
 
     @if (ViewBag.Error != null)
@@ -22,5 +26,9 @@
             <input type="password" name="password" class="form-control" value="admin001" required />
         </div>
         <button class="btn btn-primary w-100">登入</button>
+        <!-- 新增提示說明 -->
+        <p class="text-muted text-center mt-3" style="font-size: 0.9rem;">
+            如需申請帳號，請連絡上級管理人員。
+        </p>
     </form>
 </div>

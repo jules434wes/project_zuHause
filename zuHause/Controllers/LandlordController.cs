@@ -142,10 +142,16 @@ namespace zuHause.Controllers
                                           PublishedAt = p.PublishedAt,
                                           ExpireAt = p.ExpireAt,
                                           IsPaid = p.IsPaid,
+                                          ParkingAvailable = p.ParkingAvailable,
+                                          ManagementFeeIncluded = p.ManagementFeeIncluded,
+                                          ManagementFeeAmount = p.ManagementFeeAmount,
+                                          DepositAmount = p.DepositAmount,
+                                          DepositMonths = p.DepositMonths,
+                                          MinimumRentalMonths = p.MinimumRentalMonths,
                                           // 直接讀取資料庫中的 PreviewImageUrl，如果是相對路徑則轉為完整 URL
                                           ThumbnailUrl = !string.IsNullOrEmpty(p.PreviewImageUrl) && !p.PreviewImageUrl.StartsWith("http") 
                                               ? $"https://zuhauseimg.blob.core.windows.net/zuhaus-images/{p.PreviewImageUrl}" 
-                                              : p.PreviewImageUrl ?? "/images/property-placeholder.jpg",
+                                              : p.PreviewImageUrl ?? "/images/default-picture.png",
                                           ImageUrls = new List<string>(),
                                           // 統計資料稍後批量查詢
                                           ViewCount = 0,
@@ -170,7 +176,7 @@ namespace zuHause.Controllers
                 // 更新沒有 PreviewImageUrl 的房源的 ThumbnailUrl
                 foreach (var property in properties)
                 {
-                    if (property.ThumbnailUrl == "/images/property-placeholder.jpg" && 
+                    if (property.ThumbnailUrl == "/images/default-picture.png" && 
                         primaryImageDict.TryGetValue(property.PropertyId, out var storedFileName))
                     {
                         try

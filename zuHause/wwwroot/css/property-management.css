@@ -1,19 +1,176 @@
-/* 房源管理頁面樣式 - v1.2 */
+/* 房源管理頁面樣式 - v3.0 設計系統整合 */
 
-/* === 統計卡片 === */
+/* === CSS 設計變數系統 === */
+:root {
+    /* 基礎顏色系統（與參考設計一致） */
+    --pm-background: hsl(0, 0%, 100%);
+    --pm-foreground: hsl(0, 0%, 3.9%);
+    --pm-card: hsl(0, 0%, 100%);
+    --pm-card-foreground: hsl(0, 0%, 3.9%);
+    --pm-primary: hsl(0, 0%, 9%);
+    --pm-primary-foreground: hsl(0, 0%, 98%);
+    --pm-secondary: hsl(0, 0%, 96.1%);
+    --pm-secondary-foreground: hsl(0, 0%, 9%);
+    --pm-muted: hsl(0, 0%, 96.1%);
+    --pm-muted-foreground: hsl(0, 0%, 45.1%);
+    --pm-border: hsl(0, 0%, 89.8%);
+    --pm-accent: hsl(0, 0%, 96.1%);
+    --pm-accent-foreground: hsl(0, 0%, 9%);
+    --pm-radius: 0.75rem;
+    
+    /* 專案特定顏色 */
+    --pm-blue-primary: hsl(214, 88%, 27%);
+    --pm-blue-accent: hsl(214, 95%, 93%);
+    --pm-success: hsl(142, 71%, 45%);
+    --pm-warning: hsl(38, 92%, 50%);
+    --pm-destructive: hsl(0, 84%, 60%);
+}
+
+/* === 頁面 Header === */
+.property-management-header {
+    background: linear-gradient(135deg, var(--pm-secondary) 0%, var(--pm-background) 100%);
+    border-radius: var(--pm-radius);
+    padding: 2rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border: 1px solid var(--pm-border);
+}
+
+.page-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--pm-foreground);
+    margin-bottom: 0.5rem;
+}
+
+.page-subtitle {
+    font-size: 1.1rem;
+    font-weight: 400;
+    color: var(--pm-muted-foreground);
+}
+
+.header-actions .btn {
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+    border-radius: var(--pm-radius);
+    transition: all 0.3s ease;
+    border: 1px solid var(--pm-border);
+    background: var(--pm-background);
+    color: var(--pm-foreground);
+}
+
+.header-actions .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+    background: var(--pm-blue-primary);
+    color: var(--pm-primary-foreground);
+}
+
+/* === 統計概覽卡片 === */
+.stats-overview-card {
+    background: var(--pm-card);
+    border-radius: var(--pm-radius);
+    padding: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border: 1px solid var(--pm-border);
+    transition: all 0.3s ease;
+    height: 100%;
+}
+
+.stats-overview-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+    border-color: var(--pm-blue-primary);
+}
+
+.stats-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+    font-size: 1.5rem;
+}
+
+.stats-number {
+    font-size: 2.2rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+.stats-label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--pm-muted-foreground);
+    margin-bottom: 0;
+}
+
+/* === 統計卡片（舊版保留） === */
 .stats-card {
-    border: 1px solid #e9ecef;
-    border-radius: 12px;
+    border: 1px solid var(--pm-border);
+    border-radius: var(--pm-radius);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     transition: all 0.3s ease;
+    background: var(--pm-card);
 }
 
 .stats-card:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    border-color: var(--pm-blue-primary);
 }
 
-/* === 區塊標題 === */
+/* === 現代化區塊標題 === */
+.section-header-modern {
+    margin-bottom: 2rem;
+}
+
+.section-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: var(--pm-radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+    background: var(--pm-blue-accent);
+    color: var(--pm-blue-primary);
+}
+
+.section-title-modern {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--pm-foreground);
+    margin-bottom: 0.25rem;
+    padding-left: 2rem; /* 增加左側內距 */
+}
+
+.section-description-modern {
+    font-size: 0.95rem;
+    color: var(--pm-muted-foreground);
+    padding-left: 2rem; /* 與標題對齊 */
+}
+
+.property-cards-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    /* 讓卡片容器在預設情況佔滿寬度，但保持置中 */
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* ≥992px 時（Bootstrap lg 斷點），卡片容器僅佔中間三等分（60%） */
+@media (min-width: 992px) {
+    .property-cards-container {
+        width: 80%;
+    }
+}
+
+/* === 區塊標題（舊版保留） === */
 .section-header {
     border-bottom: 2px solid #e9ecef;
     padding-bottom: 1rem;
@@ -32,17 +189,18 @@
 
 /* === 房源管理卡片 === */
 .property-management-card {
-    border: 1px solid #e9ecef;
-    border-radius: 12px;
+    border: 1px solid var(--pm-border);
+    border-radius: var(--pm-radius);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     transition: all 0.3s ease;
     overflow: hidden;
+    background: var(--pm-card);
 }
 
 .property-management-card:hover {
     transform: translateY(-3px);
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
-    border-color: #1a7482;
+    border-color: var(--pm-blue-primary);
 }
 
 /* === 房源圖片 === */
@@ -53,16 +211,111 @@
     min-height: 200px;
     overflow: hidden;
     border-radius: 12px 0 0 12px;
+    display: flex;
+    align-items: stretch;
 }
 
 .property-image img {
     transition: transform 0.3s ease;
     width: 100%;
     height: 100%;
+    object-fit: cover;
+    object-position: center top;
+    display: block;
+    flex-shrink: 0;
 }
 
 .property-management-card:hover .property-image img {
     transform: scale(1.05);
+}
+
+/* === 通知系統樣式 === */
+.notification-summary {
+    background: linear-gradient(135deg, #f0f9ff 0%, #ffffff 100%);
+    border: 1px solid #e0f2fe;
+    border-radius: 12px;
+    padding: 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.08);
+    transition: all 0.3s ease;
+}
+
+.notification-summary:hover {
+    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.15);
+    transform: translateY(-1px);
+}
+
+.notification-content {
+    flex: 1;
+}
+
+.notification-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.notification-icon {
+    width: 32px;
+    height: 32px;
+    background: rgba(251, 191, 36, 0.1);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 0.75rem;
+    font-size: 1rem;
+}
+
+.notification-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.notification-items {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.notification-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.notification-badge {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    color: white;
+    flex-shrink: 0;
+}
+
+.notification-text {
+    font-size: 0.9rem;
+    color: #4b5563;
+    font-weight: 400;
+}
+
+.notification-action {
+    margin-left: 1rem;
+    flex-shrink: 0;
+}
+
+.notification-action .btn {
+    font-size: 0.85rem;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.2s ease;
 }
 
 /* === 狀態標籤 === */
@@ -96,15 +349,15 @@
 .property-price {
     font-size: 1.5rem;
     font-weight: 700;
-    color: #1a7482 !important;
+    color: var(--pm-blue-primary) !important;
 }
 
 /* === 房源詳細資訊標籤 === */
 .property-details .badge {
-    background-color: #f8f9fa !important;
-    color: #6c757d !important;
+    background-color: var(--pm-secondary) !important;
+    color: var(--pm-muted-foreground) !important;
     font-weight: 500;
-    border: 1px solid #e9ecef;
+    border: 1px solid var(--pm-border);
 }
 
 /* === 操作按鈕 === */
@@ -157,39 +410,323 @@
 
 /* === 緊湊房源卡片（Compact 模式） === */
 .property-card-compact {
-    border: 1px solid #e9ecef;
-    border-radius: 8px;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
-    transition: all 0.2s ease;
+    border: 1px solid var(--pm-border);
+    border-radius: var(--pm-radius);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    transition: all 0.3s ease;
+    background: var(--pm-card);
+    overflow: hidden;
+    min-height: 180px;
+}
+
+.property-card-compact .row {
+    min-height: 180px;
+    margin: 0;
+    height: 100%;
+}
+
+.property-card-compact .row > div {
+    padding: 0;
+}
+
+.property-card-compact .row > div:not(:first-child) {
+    padding: 0;
 }
 
 .property-card-compact:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+    border-color: var(--pm-blue-primary);
+}
+
+/* === 緊湊型圖片區域 === */
+.property-image-compact {
+    height: 100%;
+    min-height: 160px;
+    overflow: hidden;
+    border-radius: 0 0 0 var(--pm-radius); /* 只保留左下角圓角 */
+    position: relative;
+    display: flex;
+    align-items: stretch;
+}
+
+.property-image-compact img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center top;
+    transition: transform 0.3s ease;
+    display: block;
+    flex-shrink: 0;
+}
+
+.property-card-compact:hover .property-image-compact img {
+    transform: scale(1.05);
+}
+
+/* === 緊湊型徽章 === */
+.compact-badge {
+    font-size: 0.65rem;
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    font-weight: 500;
+}
+
+.action-indicator {
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+}
+
+.legacy-indicator .compact-badge {
+    font-size: 0.6rem;
+    padding: 0.15rem 0.3rem;
+}
+
+/* === 緊湊型卡片主體 === */
+.card-body-compact {
+    padding: 1rem;
+}
+
+.property-header {
+    margin-bottom: 0.75rem;
+}
+
+.property-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--pm-foreground);
+    margin-bottom: 0.25rem;
+    line-height: 1.3;
+}
+
+.property-address-compact {
+    font-size: 0.95rem;
+    color: #374151;
+    margin-bottom: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-weight: 500; /* 改為中等粗細 */
+}
+
+/* === 房源資訊區塊（基於 PropertyInfoSection） === */
+.property-info-section {
+    margin-bottom: 0.75rem;
+}
+
+.property-info-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.info-tag {
+    background: linear-gradient(135deg, var(--pm-secondary) 0%, var(--pm-muted) 100%);
+    color: var(--pm-secondary-foreground);
+    font-size: 0.85rem;
+    padding: 0.4rem 0.7rem;
+    border-radius: calc(var(--pm-radius) * 0.6);
+    border: 1px solid var(--pm-border);
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.info-tag:hover {
     transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    border-color: #1a7482;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
+    background: linear-gradient(135deg, var(--pm-muted) 0%, var(--pm-border) 100%);
+}
+
+.info-tag.paid {
+    background: linear-gradient(135deg, hsl(142, 76%, 90%) 0%, hsl(142, 76%, 85%) 100%);
+    color: var(--pm-success);
+    border-color: hsl(142, 76%, 85%);
+}
+
+.info-tag.published {
+    background: linear-gradient(135deg, var(--pm-blue-accent) 0%, hsl(214, 95%, 88%) 100%);
+    color: var(--pm-blue-primary);
+    border-color: hsl(214, 95%, 88%);
+}
+
+.info-tag i {
+    font-size: 0.75rem;
+    opacity: 0.8;
+}
+
+/* === 緊湊型詳細資訊（舊版保留） === */
+.property-details-compact {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-bottom: 0.75rem;
+}
+
+.detail-badge {
+    background: #f8fafc;
+    color: #475569;
+    font-size: 0.85rem;
+    padding: 0.3rem 0.6rem;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+}
+
+.detail-badge.paid {
+    background: #dcfce7;
+    color: #166534;
+    border-color: #bbf7d0;
+}
+
+.detail-badge i {
+    font-size: 0.65rem;
+}
+
+/* === 緊湊型統計 === */
+.property-stats-compact {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+}
+
+.stat-item {
+    font-size: 0.75rem;
+    color: #6b7280;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.stat-item i {
+    font-size: 0.7rem;
+    opacity: 0.8;
+}
+
+/* === 價格與操作面板 === */
+.property-actions-panel {
+    padding: 1rem;
+    border-left: 1px solid var(--pm-border);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.price-section {
+    border-bottom: 1px solid var(--pm-border);
+    padding-bottom: 0.75rem;
+}
+
+/* 價格字體顏色調整 */
+.property-price-compact {
+    font-size: 1.6rem;
+    font-weight: 900;
+    color: #1a7482;
+    margin-bottom: 0.25rem;
+}
+
+/* 到期日文字顏色 */
+.expire-date {
+    color: #e95d54;
+    font-size: 0.8rem;
+}
+
+/* === 緊湊型通知 === */
+.notification-compact {
+    background: hsl(48, 100%, 88%);
+    border: 1px solid var(--pm-warning);
+    border-radius: calc(var(--pm-radius) * 0.6);
+    padding: 0.75rem;
+}
+
+.notification-alert {
+    font-size: 0.8rem;
+    color: hsl(32, 95%, 44%);
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+}
+
+.notification-count {
+    font-weight: 600;
+}
+
+/* === 緊湊型操作按鈕 === */
+.card-actions-compact {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin-bottom: 0.75rem;
+}
+
+.card-actions-compact .btn {
+    font-size: 0.9rem;
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+    transition: all 0.2s ease;
+}
+
+.card-actions-compact .btn i {
+    font-size: 0.7rem;
+}
+
+.card-actions-compact .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* === 緊湊型時間資訊 === */
+.property-meta-compact {
+    font-size: 0.7rem;
+    border-top: 1px solid var(--pm-border);
+    padding-top: 0.5rem;
+    margin-top: auto;
+    color: var(--pm-muted-foreground);
+}
+
+.property-meta-compact small {
+    font-size: 0.65rem;
 }
 
 /* === 狀態分組樣式 === */
 .property-group-available {
-    border-left: 4px solid #28a745;
+    border-left: 4px solid var(--pm-success);
 }
 
 .property-group-pending {
-    border-left: 4px solid #ffc107;
+    border-left: 4px solid var(--pm-warning);
 }
 
 .property-group-unavailable {
-    border-left: 4px solid #6c757d;
+    border-left: 4px solid var(--pm-muted-foreground);
 }
 
 /* === 需要行動的房源特殊樣式 === */
 .property-requires-action {
-    background: linear-gradient(45deg, rgba(255, 193, 7, 0.1), rgba(255, 255, 255, 0.1));
-    border-color: #ffc107 !important;
+    /* 移除 background 和 border-color */
 }
 
 .property-requires-action:hover {
-    background: linear-gradient(45deg, rgba(255, 193, 7, 0.2), rgba(255, 255, 255, 0.1));
+    /* 移除 hover 狀態的 background */
 }
 
 /* === 過時狀態樣式 === */
@@ -199,13 +736,131 @@
         45deg,
         transparent,
         transparent 10px,
-        rgba(108, 117, 125, 0.1) 10px,
-        rgba(108, 117, 125, 0.1) 20px
+        hsla(0, 0%, 45.1%, 0.1) 10px,
+        hsla(0, 0%, 45.1%, 0.1) 20px
     );
 }
 
 /* === 響應式設計 === */
+@media (max-width: 992px) {
+    .property-management-header {
+        padding: 1.5rem;
+    }
+    
+    .page-title {
+        font-size: 2rem;
+    }
+    
+    .stats-overview-card {
+        margin-bottom: 1rem;
+    }
+    
+    .section-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
+    }
+    
+    .section-title-modern {
+        font-size: 1.3rem;
+    }
+}
+
 @media (max-width: 768px) {
+    .property-management-header {
+        padding: 1.25rem;
+    }
+    
+    .property-management-header .d-flex {
+        flex-direction: column;
+        align-items: stretch !important;
+        gap: 1rem;
+    }
+    
+    .header-actions {
+        text-align: center;
+    }
+    
+    .page-title {
+        font-size: 1.75rem;
+        text-align: center;
+    }
+    
+    .page-subtitle {
+        text-align: center;
+        font-size: 1rem;
+    }
+    
+    .stats-overview-card {
+        padding: 1.25rem;
+    }
+    
+    .stats-number {
+        font-size: 1.8rem;
+    }
+    
+    .section-header-modern .d-flex {
+        flex-direction: column;
+        text-align: center;
+        gap: 1rem;
+    }
+    
+    .section-icon {
+        align-self: center;
+    }
+    
+    .notification-summary {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: stretch;
+    }
+    
+    .notification-action {
+        margin-left: 0;
+        text-align: center;
+    }
+    
+    /* 緊湊型卡片響應式 */
+    .property-card-compact .row {
+        flex-direction: column;
+    }
+    
+    .property-image-compact {
+        height: 200px;
+        border-radius: 12px 12px 0 0;
+        display: flex;
+        align-items: stretch;
+    }
+    
+    .property-image-compact img {
+        object-position: center top;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .property-actions-panel {
+        border-left: none;
+        border-top: 1px solid var(--pm-border);
+        padding: 1rem;
+    }
+    
+    .card-actions-compact {
+        flex-direction: row;
+        gap: 0.5rem;
+    }
+    
+    .card-actions-compact .btn {
+        flex: 1;
+        font-size: 0.7rem;
+        padding: 0.35rem 0.5rem;
+    }
+    
+    .property-price-compact {
+        font-size: 1.1rem;
+    }
+    
+    /* 舊版卡片響應式 */
     .property-management-card .row > div:first-child {
         margin-bottom: 1rem;
     }
@@ -213,6 +868,15 @@
     .property-image {
         height: 180px;
         border-radius: 12px 12px 0 0;
+        display: flex;
+        align-items: stretch;
+    }
+    
+    .property-image img {
+        object-position: center top;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
     }
     
     .property-price {
@@ -240,6 +904,86 @@
 }
 
 @media (max-width: 576px) {
+    .property-management-header {
+        padding: 1rem;
+    }
+    
+    .page-title {
+        font-size: 1.5rem;
+    }
+    
+    .stats-overview-card {
+        padding: 1rem;
+    }
+    
+    /* 緊湊型卡片小屏幕優化 */
+    .property-card-compact {
+        margin-bottom: 1rem;
+    }
+    
+    .property-image-compact {
+        height: 160px;
+        display: flex;
+        align-items: stretch;
+    }
+    
+    .property-image-compact img {
+        object-position: center top;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .card-body-compact {
+        padding: 0.75rem;
+    }
+    
+    .property-title {
+        font-size: 1.1rem;
+    }
+    
+    .property-address-compact {
+        font-size: 0.85rem;
+    }
+    
+    .detail-badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+    
+    /* 響應式 info-tag 調整 */
+    .info-tag {
+        font-size: 0.75rem;
+        padding: 0.3rem 0.5rem;
+    }
+    
+    .property-actions-panel {
+        padding: 0.75rem;
+    }
+    
+    .property-price-compact {
+        font-size: 1.3rem;
+    }
+    
+    .card-actions-compact .btn {
+        font-size: 0.65rem;
+        padding: 0.3rem 0.4rem;
+    }
+    
+    .property-meta-compact {
+        font-size: 0.65rem;
+    }
+    
+    /* 通知區域小屏幕優化 */
+    .notification-compact {
+        padding: 0.5rem;
+    }
+    
+    .notification-alert {
+        font-size: 0.75rem;
+    }
+    
+    /* 舊版卡片小屏幕優化 */
     .stats-card .card-body {
         padding: 1rem 0.75rem;
     }
@@ -281,8 +1025,8 @@
 
 /* === 按鈕特殊效果 === */
 .btn-outline-primary:hover {
-    background-color: #1a7482;
-    border-color: #1a7482;
+    background-color: #2563eb;
+    border-color: #2563eb;
 }
 
 .btn-warning {
@@ -319,4 +1063,393 @@
 
 .property-section::-webkit-scrollbar-thumb:hover {
     background: #a8a8a8;
+}
+
+/* === 申請 / 預約詳情 Offcanvas === */
+#applicationDetailsPanel {
+    /* 讓 Offcanvas 寬度與設計稿一致 */
+    --bs-offcanvas-width: min(100vw, 640px);
+}
+
+#applicationDetailsPanel .offcanvas-header {
+    position: sticky;
+    top: 0;
+    z-index: 5; /* 使 header 於卷軸時仍保持在最上層 */
+    background-color: #fff; /* 與 body 同色 */
+    border-bottom: 1px solid #dee2e6;
+    padding: 1.5rem;
+}
+
+#applicationDetailsPanel .offcanvas-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+}
+
+#applicationDetailsPanel .offcanvas-body {
+    padding: 1.5rem;
+    overflow-y: auto;
+}
+
+#applicationDetailsPanel h4 {
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+#applicationDetailsPanel h5 {
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+/* 每個 section 之間留白 */
+#applicationDetailsPanel .application-section + .application-section {
+    margin-top: 2rem;
+}
+
+/* 列表項目的統一樣式 */
+.application-details-item {
+    border: 1px solid #e9ecef;
+    border-radius: 0.5rem;
+    padding: 0.75rem 1rem;
+}
+
+.application-details-item + .application-details-item {
+    margin-top: 0.5rem;
+}
+
+/* 在待處理狀態下使用淡紅底，符合 Figma 樣式 */
+.application-details-item.pending {
+    background-color: rgba(220, 53, 69, 0.05); /* bootstrap danger */
+    border-color: rgba(220, 53, 69, 0.4);
+}
+
+/* badge 小尺寸優化 */
+.application-details-item .badge {
+    font-size: 0.65rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 9999px;
+    font-weight: 600;
+}
+
+/* 行動按鈕尺寸微調 */
+.application-details-item .btn {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.5rem;
+}
+
+/* 移除 bootstrap outline 時的 focus 藍框（與設計稿一致） */
+.btn:focus {
+    box-shadow: none !important;
+}
+
+/* icon 與文字對齊 */
+.application-details-item .btn i,
+#applicationDetailsPanel h4 i {
+    line-height: 1;
+}
+
+/* 狀態徽章放大 */
+.status-badge-pill {
+    display: inline-flex;
+    align-items: center;
+    font-size: 1rem;
+    padding: 0.45rem 1rem;
+    border-radius: 9999px; /* 圓角膠囊 */
+    font-weight: 600;
+    line-height: 1;
+}
+
+/* === 統一狀態徽章：淺底深字風格 === */
+.status-badge-pill.bg-success {
+    background-color: #dcfce7 !important; /* green-100 */
+    color: #166534 !important;        /* green-800 */
+}
+.status-badge-pill.bg-info,
+.status-badge-pill.bg-danger {
+    background-color: #fef2f2 !important; /* red-50 */
+    color: #991b1b !important;            /* red-800 */
+}
+.status-badge-pill.bg-warning {
+    background-color: #fef3c7 !important; /* yellow-100 */
+    color: #92400e !important;           /* yellow-800 */
+}
+.status-badge-pill.bg-primary {
+    background-color: #fed7aa !important; /* orange-100 */
+    color: #9a3412 !important;           /* orange-800 */
+}
+.status-badge-pill.bg-dark {
+    background-color: #22c55e !important; /* green-600 */
+    color: #ffffff !important;
+}
+.status-badge-pill.bg-secondary {
+    background-color: #4b5563 !important; /* gray-600 */
+    color: #ffffff !important;
+}
+
+/* 確保 row 使用 align-items: stretch，即使原始標記帶有 .align-items-center */
+.property-card-compact .row.align-items-center {
+    align-items: stretch !important;
+}
+
+/* 圖片容器撐滿高度 */
+.property-image-compact {
+    flex: 1 0 auto;
+}
+
+/* === Override: 768px 以上橫向卡片，圖片高度隨卡片撐滿 === */
+@media (min-width: 768px) {
+    .property-image-compact {
+        height: 100% !important; /* 覆寫先前斷點固定高度 */
+        min-height: 160px; /* 保留最小高度避免過小 */
+    }
+
+    .property-image-compact img {
+        height: 100% !important;
+    }
+}
+
+/* === Property Status Alert Bars (依設計系統) === */
+.property-status-alert {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border-bottom: 1px solid var(--pm-border);
+    border-radius: 0;
+}
+.property-status-alert i {
+    margin-right: 0.5rem;
+}
+.property-status-alert.status-alert-under-review {
+    background-color: #fef3c7; /* yellow-100 */
+    border-bottom-color: #fde68a; /* yellow-200 */
+    color: #92400e;
+}
+.property-status-alert.status-alert-payment,
+.property-status-alert.status-alert-review-failed {
+    background-color: #fee2e2; /* red-100 */
+    border-bottom-color: #fecaca; /* red-200 */
+    color: #991b1b;
+}
+.property-status-alert.status-alert-contract-issued,
+.property-status-alert.status-alert-lease-renewing {
+    background-color: #fff7ed; /* orange-50 */
+    border-bottom-color: #fdba74; /* orange-200 */
+    color: #9a3412;
+}
+.property-status-alert.status-alert-rented {
+    background-color: #dcfce7; /* green-100 */
+    border-bottom-color: #bbf7d0; /* green-200 */
+    color: #166534;
+}
+.property-status-alert.status-alert-invalid {
+    background-color: #f3f4f6; /* gray-100 */
+    border-bottom-color: #d1d5db; /* gray-300 */
+    color: #4b5563;
+}
+.property-status-alert.status-alert-secondary {
+    background-color: #ffffff;
+    border-bottom: none;
+    color: var(--pm-muted-foreground);
+}
+
+/* === 語義化色彩類別 (Design Tokens) === */
+.bg-primary-soft { background: var(--pm-blue-accent); }
+.bg-secondary-soft { background: var(--pm-secondary); }
+.text-primary { color: var(--pm-blue-primary) !important; }
+.text-secondary { color: var(--pm-muted-foreground) !important; }
+
+.btn.interactive-primary {
+    background: linear-gradient(145deg, #66c0a4, #5ab393) !important;
+    color: var(--pm-primary-foreground) !important;
+    transition: all 0.3s ease !important;
+    border: none !important;
+    box-shadow: 0 4px 15px rgba(102, 192, 164, 0.4) !important;
+}
+
+.btn.interactive-primary:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 20px rgba(102, 192, 164, 0.6) !important;
+    background: linear-gradient(145deg, #76d0b4, #6ac3a3) !important;
+}
+
+.interactive-secondary {
+    background: var(--pm-muted);
+    color: var(--pm-muted-foreground);
+    transition: background 0.3s ease;
+}
+.interactive-secondary:hover {
+    background: var(--pm-secondary);
+}
+
+/* === Remove grid lines for specific pending and action-required cards === */
+.property-group-pending,
+.property-status-pending_payment,
+.property-requires-action {
+    border: none !important;
+    box-shadow: none !important;
+}
+
+.property-group-pending .property-actions-panel,
+.property-status-pending_payment .property-actions-panel,
+.property-requires-action .property-actions-panel {
+    border-left: none !important;
+}
+
+/* === Restore outer border and shadow for pending and action-required cards === */
+.property-card-compact.property-group-pending,
+.property-card-compact.property-status-pending_payment,
+.property-card-compact.property-requires-action {
+    border: 1px solid var(--pm-border) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* === Property Card Background by Status === */
+.property-card-compact.property-status-pending,
+.property-card-compact.property-status-pending_renewal {
+    background-color: #fffbeb; /* yellow-50 */
+    border: 1px solid #fbbf24; /* yellow-400 */
+}
+
+.property-card-compact.property-status-pending_payment,
+.property-card-compact.property-status-reject_revise,
+.property-card-compact.property-status-rejected {
+    background-color: #fef2f2; /* red-50 */
+    border: 1px solid #f87171; /* red-400 */
+}
+
+.property-card-compact.property-status-listed {
+    background-color: #ffffff;
+    border: 1px solid var(--pm-border);
+}
+
+.property-card-compact.property-status-contract_issued,
+.property-card-compact.property-status-lease_renewing {
+    background-color: #fff7ed; /* orange-50 */
+    border: 1px solid #fb923c; /* orange-400 */
+}
+
+.property-card-compact.property-status-already_rented {
+    background-color: #f0fdf4; /* green-50 */
+    border: 1px solid #4ade80; /* green-400 */
+}
+
+.property-card-compact.property-status-invalid {
+    background-color: #f9fafb; /* gray-50 */
+    border: 1px solid #9ca3af; /* gray-400 */
+}
+
+/* Invalid card image effect */
+.property-card-compact.property-status-invalid .property-image-compact img {
+    opacity: 0.5;
+    filter: grayscale(100%);
+}
+
+/* === status-badge-pill Spec Override === */
+.status-badge-pill.bg-success {
+    background-color: #dcfce7 !important; /* green-100 */
+    color: #166534 !important;        /* green-800 */
+}
+.status-badge-pill.bg-warning {
+    background-color: #fef3c7 !important; /* yellow-100 */
+    color: #92400e !important;           /* yellow-800 */
+}
+.status-badge-pill.bg-info,
+.status-badge-pill.bg-danger {
+    background-color: #fef2f2 !important; /* red-50 */
+    color: #991b1b !important;            /* red-800 */
+}
+.status-badge-pill.bg-primary {
+    background-color: #fed7aa !important; /* orange-100 */
+    color: #9a3412 !important;           /* orange-800 */
+}
+.status-badge-pill.bg-dark {
+    background-color: #22c55e !important; /* green-600 */
+    color: #ffffff !important;
+}
+.status-badge-pill.bg-secondary {
+    background-color: #4b5563 !important; /* gray-600 */
+    color: #ffffff !important;
+}
+
+/* === Card Hover Variant Overrides === */
+.property-card-compact.property-status-pending:hover,
+.property-card-compact.property-status-pending_renewal:hover {
+    border-color: #fde68a !important; /* yellow-200 */
+}
+.property-card-compact.property-status-pending_payment:hover,
+.property-card-compact.property-status-reject_revise:hover,
+.property-card-compact.property-status-rejected:hover {
+    border-color: #f87171 !important; /* red-400 */
+}
+.property-card-compact.property-status-contract_issued:hover,
+.property-card-compact.property-status-lease_renewing:hover {
+    border-color: #fb923c !important; /* orange-400 */
+}
+.property-card-compact.property-status-listed:hover {
+    border-color: var(--pm-border) !important;
+}
+.property-card-compact.property-status-already_rented:hover {
+    border-color: #4ade80 !important; /* green-400 */
+}
+.property-card-compact.property-status-invalid:hover {
+    border-color: #9ca3af !important; /* gray-400 */
+}
+
+/* === Special button for supplementing data === */
+.btn-supplement-data {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #ffffff;
+    background-image: linear-gradient(to right, #f97316, #ef4444);
+    border: none;
+    border-radius: var(--pm-radius);
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    transition: all 0.2s ease-in-out;
+    width: 100%;
+}
+
+.btn-supplement-data:hover {
+    transform: scale(1.05);
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    background-image: linear-gradient(to right, #ea580c, #dc2626);
+}
+
+.btn-supplement-data i {
+    font-size: 1rem;
+}
+
+/* === Special button for payment === */
+.btn-payment {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1rem;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #ffffff;
+    background-image: linear-gradient(to right, var(--pm-blue-primary), #3b82f6);
+    border: none;
+    border-radius: var(--pm-radius);
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    transition: all 0.2s ease-in-out;
+    width: 100%;
+    text-align: center;
+}
+
+.btn-payment:hover {
+    transform: scale(1.05);
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    background-image: linear-gradient(to right, #1d4ed8, var(--pm-blue-primary));
+}
+
+.btn-payment i {
+    font-size: 1rem;
 }

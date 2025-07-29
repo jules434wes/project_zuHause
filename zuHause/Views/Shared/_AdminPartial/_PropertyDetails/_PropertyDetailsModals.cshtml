@@ -176,6 +176,45 @@
     </div>
 </div>
 
+<!-- 照片放大檢視 Modal -->
+<div class="modal fade" id="photoEnlargeModal" tabindex="-1" aria-labelledby="photoEnlargeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="photoEnlargeModalLabel">
+                    <i class="bi bi-image me-2"></i>房源照片檢視
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div class="position-relative">
+                    <img id="enlargedPhoto" src="" alt="房源照片" class="img-fluid w-100" style="max-height: 80vh; object-fit: contain;">
+                    
+                    <!-- 照片導航按鈕 -->
+                    <button class="btn btn-dark position-absolute top-50 start-0 translate-middle-y ms-3" 
+                            id="prevPhotoBtn" onclick="navigatePhoto(-1)" style="opacity: 0.7;">
+                        <i class="bi bi-chevron-left"></i>
+                    </button>
+                    <button class="btn btn-dark position-absolute top-50 end-0 translate-middle-y me-3" 
+                            id="nextPhotoBtn" onclick="navigatePhoto(1)" style="opacity: 0.7;">
+                        <i class="bi bi-chevron-right"></i>
+                    </button>
+                    
+                    <!-- 照片計數器 -->
+                    <div class="position-absolute bottom-0 start-50 translate-middle-x mb-3">
+                        <span class="badge bg-dark" id="photoCounter">1 / 1</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x me-1"></i>關閉
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Double Check 確認Modal -->
 <div class="modal fade" id="doubleCheckModal" tabindex="-1" aria-labelledby="doubleCheckModalLabel" aria-hidden="true">
     <div class="modal-dialog">

@@ -21,6 +21,7 @@ namespace zuHause.Services
         private readonly IBlobStorageService _blobStorageService;
         private readonly ITempSessionService _tempSessionService;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IImageQueryService _imageQueryService;
 
         // 上傳限制常數
         private const int MaxFileSize = 10 * 1024 * 1024; // 10MB
@@ -36,7 +37,8 @@ namespace zuHause.Services
             ILogger<ImageUploadService> logger,
             IBlobStorageService blobStorageService,
             ITempSessionService tempSessionService,
-            IHttpContextAccessor httpContextAccessor)
+            IHttpContextAccessor httpContextAccessor,
+            IImageQueryService imageQueryService)
         {
             _context = context;
             _imageProcessor = imageProcessor;
@@ -46,6 +48,7 @@ namespace zuHause.Services
             _blobStorageService = blobStorageService;
             _tempSessionService = tempSessionService;
             _httpContextAccessor = httpContextAccessor;
+            _imageQueryService = imageQueryService;
         }
 
         /// <summary>
@@ -231,6 +234,12 @@ namespace zuHause.Services
                     return false;
                 }
 
+                // 記錄是否為主圖
+                bool wasMainImage = image.DisplayOrder == 1 && 
+                                   image.EntityType == EntityType.Property && 
+                                   image.Category == ImageCategory.Gallery;
+                int propertyId = image.EntityId;
+
                 if (hardDelete)
                 {
                     _context.Images.Remove(image);
@@ -244,6 +253,12 @@ namespace zuHause.Services
                 
                 // 移除後調整 DisplayOrder
                 var removeResult = await _displayOrderManager.RemoveImageAndAdjustOrdersAsync(imageId);
+                
+                // 如果刪除的是房源主圖，更新 Property.PreviewImageUrl
+                if (wasMainImage)
+                {
+                    await UpdatePropertyPreviewImageAsync(propertyId);
+                }
                 
                 _logger.LogInformation("成功刪除圖片: {ImageId} (硬刪除: {HardDelete})", imageId, hardDelete);
                 return true;
@@ -329,6 +344,13 @@ namespace zuHause.Services
                 if (moveResult.IsSuccess)
                 {
                     _logger.LogInformation("成功設定主圖: {ImageId}", imageId);
+                    
+                    // 如果是房源圖片，自動更新 Property.PreviewImageUrl
+                    if (image.EntityType == EntityType.Property)
+                    {
+                        await UpdatePropertyPreviewImageAsync(image.EntityId);
+                    }
+                    
                     return true;
                 }
                 else
@@ -396,6 +418,12 @@ namespace zuHause.Services
                         await _context.SaveChangesAsync();
                         await transaction.CommitAsync();
                         
+                        // 如果是房源圖片重新排序，更新 Property.PreviewImageUrl
+                        if (entityType == EntityType.Property)
+                        {
+                            await UpdatePropertyPreviewImageAsync(entityId);
+                        }
+                        
                         _logger.LogInformation("成功重新排序 {Count} 張圖片: {EntityType} ID: {EntityId} (重試次數: {RetryCount})", 
                             imageIds.Count, entityType, entityId, retryCount);
                         return true;
@@ -456,6 +484,56 @@ namespace zuHause.Services
             {
                 _logger.LogError(ex, "驗證上傳限制失敗: {EntityType} ID: {EntityId}", entityType, entityId);
                 return (false, "系統錯誤");
+            }
+        }
+
+        /// <summary>
+        /// 更新房源的預覽圖 URL
+        /// </summary>
+        private async Task UpdatePropertyPreviewImageAsync(int propertyId)
+        {
+            try
+            {
+                var property = await _context.Properties.FindAsync(propertyId);
+                if (property == null)
+                {
+                    _logger.LogWarning("嘗試更新不存在房源的預覽圖: PropertyId={PropertyId}", propertyId);
+                    return;
+                }
+
+                // 查詢排序為 1 的房源圖片（主圖）
+                var mainImage = await _context.Images
+                    .Where(img => img.EntityType == EntityType.Property &&
+                                  img.EntityId == propertyId &&
+                                  img.Category == ImageCategory.Gallery &&
+                                  img.DisplayOrder == 1)
+                    .FirstOrDefaultAsync();
+
+                if (mainImage != null)
+                {
+                    // 生成新的預覽圖 URL
+                    var previewImageUrl = _imageQueryService.GenerateImageUrl(mainImage.StoredFileName, ImageSize.Medium);
+                    
+                    _logger.LogInformation("更新房源預覽圖: PropertyId={PropertyId}, ImageId={ImageId}, URL={PreviewUrl}",
+                        propertyId, mainImage.ImageId, previewImageUrl);
+
+                    property.PreviewImageUrl = previewImageUrl;
+                }
+                else
+                {
+                    _logger.LogInformation("未找到主圖，清空房源預覽圖: PropertyId={PropertyId}", propertyId);
+                    property.PreviewImageUrl = null;
+                }
+
+                // 保存變更
+                await _context.SaveChangesAsync();
+                _logger.LogInformation("房源預覽圖已更新: PropertyId={PropertyId}, PreviewImageUrl={PreviewImageUrl}", 
+                    propertyId, property.PreviewImageUrl ?? "NULL");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "更新房源預覽圖失敗: PropertyId={PropertyId}", propertyId);
+                throw;
             }
         }
 

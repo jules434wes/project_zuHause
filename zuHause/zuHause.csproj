@@ -7,10 +7,22 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="NewFolder1\**" />
+    <Compile Remove="NewFolder\**" />
+    <Content Remove="NewFolder1\**" />
+    <Content Remove="NewFolder\**" />
+    <EmbeddedResource Remove="NewFolder1\**" />
+    <EmbeddedResource Remove="NewFolder\**" />
+    <None Remove="NewFolder1\**" />
+    <None Remove="NewFolder\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Remove="Services\TenantServices\IDataAccessService.cs" />
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="wwwroot\images\PropertyImages\" />
     <Folder Include="wwwroot\uploads\contracts\" />
     <Folder Include="wwwroot\uploads\signatures\" />
     <Folder Include="wwwroot\uploads\userPhoto\" />

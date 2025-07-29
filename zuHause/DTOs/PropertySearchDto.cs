@@ -488,6 +488,13 @@ namespace zuHause.DTOs
         [JsonPropertyName("tempSessionId")]
         public string? TempSessionId { get; set; }
 
+        /// <summary>
+        /// 圖片順序（前端拖動排序後的 ImageGuid 順序）
+        /// 用於控制圖片在資料庫中的 DisplayOrder
+        /// </summary>
+        [JsonPropertyName("imageOrder")]
+        public List<string>? ImageOrder { get; set; }
+
         // === 前端檔案上傳支援（分離圖片和PDF） ===
 
         /// <summary>

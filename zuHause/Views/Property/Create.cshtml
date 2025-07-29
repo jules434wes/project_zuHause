@@ -663,8 +663,8 @@
         /* 側邊欄步驟導航 */
         .sidebar-nav {
             position: sticky;
-            top: 20px;
-            max-height: calc(100vh - 40px);
+            top: var(--nav-offset, 96px); /* 動態偏移，預設 96px */
+            max-height: calc(100vh - var(--nav-offset, 96px) - 20px);
             overflow-y: auto;
         }
         
@@ -1541,7 +1541,7 @@
                         <button type="button" id="cancelButton" class="btn btn-cancel">
                             <i class="fas fa-times me-2"></i>取消發佈
                         </button>
-                        <button type="submit" id="submitButton" class="btn btn-publish btn-lg">
+                        <button type="submit" id="submitButton" class="btn btn-publish btn-lg" disabled>
                             <i class="fas fa-paper-plane me-2"></i>@(ViewBag.SubmitText ?? "立即發佈")
                         </button>
                     </div>
@@ -1691,6 +1691,16 @@
     <!-- 自定義 JavaScript -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // 設定側邊欄與導航列間距 (依照 header 高度動態計算)
+            function updateSidebarOffset() {
+                const header = document.querySelector('header');
+                const offset = (header ? header.offsetHeight : 76) + 20; // 導航列高度 + 20px 安全距
+                document.documentElement.style.setProperty('--nav-offset', offset + 'px');
+            }
+
+            updateSidebarOffset();
+            window.addEventListener('resize', updateSidebarOffset);
+
             // 初始化表單暫存管理器 - 使用 ID 選擇器
             const formSelector = '#propertyCreateForm';
             const formElement = document.querySelector(formSelector);
@@ -2332,7 +2342,7 @@
                         const cardClass = isExisting ? 'existing-image' : 'new-image';
                         
                         // 優先使用本地預覽 URL，然後是 API 回傳的 URL
-                        const imageUrl = image.localPreviewUrl || image.tempUrl || image.PreviewUrl || image.blobUrl || '/images/property-placeholder.jpg';
+                        const imageUrl = image.localPreviewUrl || image.tempUrl || image.PreviewUrl || image.blobUrl || '/images/default-picture.png';
                         const fileName = image.originalFileName || image.FileName || '未知檔案';
                         
                         previewCard.innerHTML = `
@@ -2899,7 +2909,12 @@
                     
                     // 使用統一的表單驗證邏輯
                     if (validateForm(true)) {
-                        console.log('✅ 最終驗證通過，提交表單');
+                        console.log('✅ 最終驗證通過，準備添加圖片順序資料');
+                        
+                        // 添加圖片順序資料到表單
+                        addImageOrderDataToForm(form);
+                        
+                        console.log('✅ 圖片順序資料已添加，提交表單');
                         form.submit();
                     } else {
                         console.warn('❌ 最終驗證失敗，請檢查表單');
@@ -3151,6 +3166,34 @@
         }
         
         /**
+         * 添加圖片順序資料到表單
+         */
+        function addImageOrderDataToForm(form) {
+            try {
+                // 移除任何現有的圖片順序欄位
+                const existingOrderFields = form.querySelectorAll('input[name^="ImageOrder"]');
+                existingOrderFields.forEach(field => field.remove());
+                
+                console.log('🔄 準備添加圖片順序資料，當前圖片順序:');
+                
+                // 根據 UploadManager.uploadedImages 的順序添加隱藏欄位
+                UploadManager.uploadedImages.forEach((image, index) => {
+                    const orderInput = document.createElement('input');
+                    orderInput.type = 'hidden';
+                    orderInput.name = `ImageOrder[${index}]`;
+                    orderInput.value = image.imageGuid;
+                    form.appendChild(orderInput);
+                    
+                    console.log(`  順序 ${index + 1}: ${image.imageGuid} (${image.fileName})`);
+                });
+                
+                console.log('✅ 圖片順序資料已添加到表單');
+            } catch (error) {
+                console.error('❌ 添加圖片順序資料時發生錯誤:', error);
+            }
+        }
+        
+        /**
          * 更新提交按鈕狀態（靜默檢查，不顯示錯誤）
          */
         function updateSubmitButtonState() {
@@ -3159,8 +3202,10 @@
             
             if (isFormValid) {
                 submitButton.classList.add('active');
+                submitButton.disabled = false; // 啟用按鈕
             } else {
                 submitButton.classList.remove('active');
+                submitButton.disabled = true; // 禁用按鈕
             }
         }
         
