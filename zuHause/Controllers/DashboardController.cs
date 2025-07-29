@@ -2203,12 +2203,70 @@ namespace zuHause.Controllers
                     Count = yearRaw.FirstOrDefault(x => x.Month == d.Month && x.Year == d.Year)?.Count ?? 0
                 })
                 .ToList();
+            var applicationRaw = await _context.RentalApplications
+            .Where(a => a.CreatedAt >= last5Days.First() && a.IsActive == true)
+            .GroupBy(a => new { a.CreatedAt.Date, a.ApplicationType })
+            .Select(g => new
+            {
+                Date = g.Key.Date,
+                Type = g.Key.ApplicationType, // "RENTAL" / "HOUSE_VIEWING"
+                Count = g.Count()
+            })
+            .ToListAsync();
+
+            var applicationStats = last5Days.Select(d => new
+             {
+               Date = d,
+               RentalCount = applicationRaw.FirstOrDefault(x => x.Date == d && x.Type == "RENTAL")?.Count ?? 0,
+               ViewingCount = applicationRaw.FirstOrDefault(x => x.Date == d && x.Type == "HOUSE_VIEWING")?.Count ?? 0
+             }).ToList();
+
+            var applicationYearRaw = await _context.RentalApplications
+                .Where(a => a.CreatedAt >= startOfYear && a.IsActive == true)
+                .GroupBy(a => new { a.CreatedAt.Year, a.CreatedAt.Month, a.ApplicationType })
+                .Select(g => new
+                {
+                    Year = g.Key.Year,
+                    Month = g.Key.Month,
+                    Type = g.Key.ApplicationType,
+                    Count = g.Count()
+                })
+                .ToListAsync();
+            //今年每月申請趨勢
+            var applicationYear = months.Select(d => new
+            {
+                Month = d.ToString("yyyy-MM"),
+                RentalCount = applicationYearRaw.FirstOrDefault(x => x.Year == d.Year && x.Month == d.Month && x.Type == "RENTAL")?.Count ?? 0,
+                ViewingCount = applicationYearRaw.FirstOrDefault(x => x.Year == d.Year && x.Month == d.Month && x.Type == "HOUSE_VIEWING")?.Count ?? 0
+            }).ToList();
+            //今月每日申請趨勢
+            var applicationMonthRaw = await _context.RentalApplications
+                .Where(a => a.CreatedAt >= startOfMonth && a.IsActive == true)
+                .GroupBy(a => new { a.CreatedAt.Date, a.ApplicationType })
+                .Select(g => new
+                {
+                    Date = g.Key.Date,
+                    Type = g.Key.ApplicationType,
+                    Count = g.Count()
+                })
+                .ToListAsync();
+
+            var applicationMonth = daysInMonth.Select(d => new
+            {
+                Date = d,
+                RentalCount = applicationMonthRaw.FirstOrDefault(x => x.Date == d && x.Type == "RENTAL")?.Count ?? 0,
+                ViewingCount = applicationMonthRaw.FirstOrDefault(x => x.Date == d && x.Type == "HOUSE_VIEWING")?.Count ?? 0
+            }).ToList();
+
 
             return Json(new
             {
                 dau = dau,
                 month = month,
-                year = year
+                year = year,
+                application = applicationStats,
+                applicationMonth = applicationMonth,
+                applicationYear = applicationYear
             });
         }
 
@@ -2292,31 +2350,82 @@ namespace zuHause.Controllers
             int m = month ?? now.Month;
             var startOfMonth = new DateTime(y, m, 1);
             var endOfMonth = startOfMonth.AddMonths(1);
-            // 成交單數：合約已簽署，且合約成立於該月
+
             int completedCount = await _context.Contracts
                 .CountAsync(c => c.Status == "SIGNED" && c.CreatedAt >= startOfMonth && c.CreatedAt < endOfMonth);
-            // 已驗證未付款：該月上架且未付款
+
             int unpaidCount = await _context.Properties
-                .CountAsync(c =>
-                    c.IsPaid == false &&
-                    c.DeletedAt == null &&
-                    c.PublishedAt.HasValue &&
-                    c.PublishedAt.Value >= startOfMonth &&
-                    c.PublishedAt.Value < endOfMonth
-                );
-            // 詐欺交易警示：該月成立的檢舉且判定成立
-            int fraudCount = await _context.PropertyComplaints
-                .CountAsync(c => c.StatusCode == "CONFIRMED" && c.CreatedAt >= startOfMonth && c.CreatedAt < endOfMonth);
-            // 可疑訂單：該月成立的檢舉但未確認成立
-            int suspiciousCount = await _context.PropertyComplaints
-                .CountAsync(c => c.StatusCode == "PENDING" && c.CreatedAt >= startOfMonth && c.CreatedAt < endOfMonth);
+                        .CountAsync(c =>
+                            c.StatusCode == "PENDING_PAYMENT" &&
+                            c.DeletedAt == null &&
+                            c.CreatedAt >= startOfMonth &&
+                            c.CreatedAt < endOfMonth
+                        );
+
+            var complaints = await _context.PropertyComplaints
+                .Where(c => c.CreatedAt >= startOfMonth && c.CreatedAt < endOfMonth)
+                .GroupBy(c => c.StatusCode)
+                .Select(g => new { Status = g.Key, Count = g.Count() })
+                .ToListAsync();
+
+            int resolved = complaints.FirstOrDefault(c => c.Status == "RESOLVED")?.Count ?? 0;
+            int progress = complaints.FirstOrDefault(c => c.Status == "PROGRESS")?.Count ?? 0;
+            int pending = complaints.FirstOrDefault(c => c.Status == "PENDING")?.Count ?? 0;
+
             return Json(new[]
             {
-        new { type = "✅ 租屋成交單數", count = completedCount, note = "已完成付款並確認租約" },
-        new { type = "💳 已驗證未付款單數", count = unpaidCount, note = "尚未完成金流，等待付款" },
-        new { type = "🔎 詐欺交易警示", count = fraudCount, note = "房東OR租客訂單檢舉成立" },
-        new { type = "❓ 可疑訂單", count = suspiciousCount, note = "房東OR租客對訂單提交檢舉" }
-    });
+                new { type = "✅ 租屋成交單數", count = completedCount, note = "已完成付款並確認租約" },
+                new { type = "💳 已驗證未付款單數", count = unpaidCount, note = "尚未完成金流，等待付款" },
+                new { type = "🟢 已處理檢舉", count = resolved, note = "檢舉已完成並結案" },
+                new { type = "🟡 處理中檢舉", count = progress, note = "檢舉正在處理中" },
+                new { type = "🔴 待處理檢舉", count = pending, note = "尚未處理的檢舉案件" }
+            });
+        }
+
+        [HttpGet("property-status-stats")]
+        public async Task<IActionResult> GetPropertyStatusStats(int? year = null, int? month = null)
+        {
+            var now = DateTime.Now;
+            int y = year ?? now.Year;
+            int m = month ?? now.Month;
+            var startOfMonth = new DateTime(y, m, 1);
+            var endOfMonth = startOfMonth.AddMonths(1);
+
+            // 對照表：statusCode => (label, note)
+            var statusMap = new Dictionary<string, (string label, string note)> {
+        { "PENDING", ("審核中", "房源建立事件") },
+        { "PENDING_PAYMENT", ("待付款", "房源審核通過事件") },
+        { "REJECT_REVISE", ("審核未通過(待補件)", "房源審核須補件事件") },
+        { "REJECTED", ("審核未通過", "房源審核不通過事件") },
+        { "LISTED", ("上架中", "刊登費繳清並上架事件") },
+        { "CONTRACT_ISSUED", ("已發出合約", "送出合約簽署事件") },
+        { "PENDING_RENEWAL", ("待續約", "續約事件(租約到期前一個月)") },
+        { "LEASE_EXPIRED_RENEWING", ("續約(房客申請中)", "重新送出合約事件") },
+        { "IDLE", ("閒置中", "重新刊登事件") },
+        { "ALREADY_RENTED", ("出租中", "房源成功出租事件") },
+        { "INVALID", ("房源已下架", "無效房源事件") }
+    };
+
+            // 篩選資料
+            var data = await _context.Properties
+                .Where(p => p.CreatedAt >= startOfMonth && p.CreatedAt < endOfMonth)
+                .GroupBy(p => p.StatusCode)
+                .Select(g => new { StatusCode = g.Key, Count = g.Count() })
+                .ToListAsync();
+
+            // 整理成完整表格（包含未出現的也顯示）
+            var result = statusMap.Select(kvp =>
+            {
+                var match = data.FirstOrDefault(d => d.StatusCode == kvp.Key);
+                return new
+                {
+                    type = kvp.Value.label,
+                    count = match?.Count ?? 0,
+                    note = kvp.Value.note
+                };
+            }).ToList();
+
+            return Json(result);
         }
 
 

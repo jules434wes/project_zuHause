@@ -1,7 +1,7 @@
 ﻿     
 (() => {
     let chartPayInstance = null;
-    let chartTrendInstance = null;
+   
     let chartMonthlyPayInstance = null;
 
     function showLoading(id, show) {
@@ -81,6 +81,32 @@
             showLoading('chartPayLoading', false);
         }
     }
+    async function renderPropertyStatusStats(year, month) {
+        showLoading('propertyStatusStatsLoading', true);
+        try {
+            const res = await fetch(`/Dashboard/property-status-stats?year=${year}&month=${month}`);
+            if (!res.ok) throw new Error("載入失敗");
+
+            const stats = await res.json();
+            const container = document.getElementById("propertyStatusStatsTable");
+
+            let html = `<table class="table table-bordered text-center">
+                      <thead><tr><th>類型</th><th>數量</th><th>備註</th></tr></thead><tbody>`;
+
+            for (const row of stats) {
+                html += `<tr><td>${row.type}</td><td>${row.count}</td><td>${row.note}</td></tr>`;
+            }
+
+            html += "</tbody></table>";
+            container.innerHTML = html;
+        } catch (err) {
+            document.getElementById("propertyStatusStatsTable").innerHTML = "<p class='text-danger'>載入失敗</p>";
+            console.error("🏠 房源狀態統計載入失敗", err);
+        } finally {
+            showLoading('propertyStatusStatsLoading', false);
+        }
+    }
+
     function initYearMonthSelector() {
         const now = new Date();
         const yearSel = document.getElementById('selectYear');
@@ -187,52 +213,16 @@
         }
     }
 
-    async function loadTrendChart(year, month) {
-        showLoading('chartTrendLoading', true);
-        try {
-            // 這裡假設你有一個API可以查詢近五日或本月每日收入趨勢，這裡暫時用 listing-fee-stats trend
-            const res = await fetch(`/Dashboard/listing-fee-stats?year=${year}&month=${month}`);
-            const data = await res.json();
-            const labels = data.trend.map(x => x.date);
-            const paid = data.trend.map(x => x.paid);
-            const due = data.trend.map(x => x.due);
-            const ctx = document.getElementById('chartTrend');
-            if (!ctx) return;
-            if (!chartTrendInstance) {
-                chartTrendInstance = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels,
-                        datasets: [
-                            { label: "實收金額", data: paid, borderColor: "#1cc88a", fill: false },
-                            { label: "應收金額", data: due, borderColor: "#f6c23e", fill: false }
-                        ]
-                    },
-                    options: {
-                        plugins: { title: { display: true, text: "上架費收入走勢" } }
-                    }
-                });
-            } else {
-                chartTrendInstance.data.labels = labels;
-                chartTrendInstance.data.datasets[0].data = paid;
-                chartTrendInstance.data.datasets[1].data = due;
-                chartTrendInstance.update();
-            }
-        } catch (err) {
-            console.error("上架費收入走勢載入失敗", err);
-        } finally {
-            showLoading('chartTrendLoading', false);
-        }
-    }
-
+   
     function reloadAllStats() {
         const year = document.getElementById('selectYear').value;
         const month = document.getElementById('selectMonth').value;
         loadListingFeeStats(year, month);
         loadMonthlyListingFeeTrend(year, month);
         renderOrderStats(year, month);
+        renderPropertyStatusStats(year, month);
         // 更新表格標題
-        document.getElementById('orderStatsTitle').textContent = `${year}年${month}月訂單概況`;
+        document.getElementById('orderStatsTitle').textContent = `${year}年${month}月房源概況`;
         document.getElementById('chartMonthlyPayTitle').textContent = `${year}年${month}月每日上架費收款走勢`;
     }
 
@@ -241,5 +231,5 @@
     initYearMonthSelector();
     const now = new Date();
     reloadAllStats();
-    loadTrendChart(now.getFullYear(), now.getMonth() + 1);
+    
     })();
