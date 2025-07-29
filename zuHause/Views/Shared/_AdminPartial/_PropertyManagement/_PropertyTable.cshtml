@@ -9,7 +9,156 @@
     var tableTitle = ViewData["TableTitle"] as string ?? "屋源列表";
     var paginationLabel = ViewData["PaginationLabel"] as string ?? "屋源分頁";
     
-    var propertiesToShow = tableType == "pending" ? Model.PendingProperties : Model.Items;
+    var allProperties = tableType == "pending" ? Model.PendingProperties : Model.Items;
+    
+    // 篩選邏輯 - 從全部資料中篩選
+    var filteredProperties = allProperties.AsEnumerable();
+    
+    // 關鍵字搜尋
+    var searchKeyword = Context.Request.Query["search"].ToString().Trim();
+    var searchField = Context.Request.Query["searchField"].ToString();
+    if (!string.IsNullOrEmpty(searchKeyword))
+    {
+        switch (searchField)
+        {
+            case "propertyID":
+                filteredProperties = filteredProperties.Where(p => p.PropertyID.ToString().Contains(searchKeyword, StringComparison.OrdinalIgnoreCase));
+                break;
+            case "propertyTitle":
+                filteredProperties = filteredProperties.Where(p => p.PropertyTitle != null && p.PropertyTitle.Contains(searchKeyword, StringComparison.OrdinalIgnoreCase));
+                break;
+            case "propertyAddress":
+                filteredProperties = filteredProperties.Where(p => p.Address != null && p.Address.Contains(searchKeyword, StringComparison.OrdinalIgnoreCase));
+                break;
+            case "landlordName":
+                filteredProperties = filteredProperties.Where(p => p.LandlordName != null && p.LandlordName.Contains(searchKeyword, StringComparison.OrdinalIgnoreCase));
+                break;
+            default:
+                // 搜尋全部欄位
+                filteredProperties = filteredProperties.Where(p => 
+                    p.PropertyID.ToString().Contains(searchKeyword, StringComparison.OrdinalIgnoreCase) ||
+                    (p.PropertyTitle != null && p.PropertyTitle.Contains(searchKeyword, StringComparison.OrdinalIgnoreCase)) ||
+                    (p.Address != null && p.Address.Contains(searchKeyword, StringComparison.OrdinalIgnoreCase)) ||
+                    (p.LandlordName != null && p.LandlordName.Contains(searchKeyword, StringComparison.OrdinalIgnoreCase)));
+                break;
+        }
+    }
+    
+    // 屋源狀態篩選
+    var propertyStatus = Context.Request.Query["propertyStatus"].ToString();
+    if (!string.IsNullOrEmpty(propertyStatus))
+    {
+        switch (propertyStatus)
+        {
+            case "pending":
+                // 審核中：PENDING
+                filteredProperties = filteredProperties.Where(p => p.Status == "審核中");
+                break;
+            case "approved":
+                // 審核通過：除了審核中和需重新審核之外的其他狀態
+                filteredProperties = filteredProperties.Where(p => p.Status != "審核中" && p.Status != "需重新審核");
+                break;
+            case "rejected":
+                // 需重新審核：REJECT_REVISE、REJECTED、BANNED對應的狀態
+                filteredProperties = filteredProperties.Where(p => p.Status == "需重新審核");
+                break;
+        }
+    }
+    
+    // 付費狀態篩選
+    var paymentStatus = Context.Request.Query["paymentStatus"].ToString();
+    if (!string.IsNullOrEmpty(paymentStatus))
+    {
+        switch (paymentStatus)
+        {
+            case "active":
+                filteredProperties = filteredProperties.Where(p => p.PaymentStatus == "已付費");
+                break;
+            case "pending":
+                filteredProperties = filteredProperties.Where(p => p.PaymentStatus == "未付費" || p.PaymentStatus == "待付款");
+                break;
+        }
+    }
+    
+    // 文件上傳狀態篩選 (僅針對審核中分頁)
+    var documentUploadStatus = Context.Request.Query["documentUploadStatus"].ToString();
+    if (!string.IsNullOrEmpty(documentUploadStatus) && tableType == "pending")
+    {
+        switch (documentUploadStatus)
+        {
+            case "uploaded":
+                filteredProperties = filteredProperties.Where(p => p.HasDocumentUpload == true);
+                break;
+            case "not_uploaded":
+                filteredProperties = filteredProperties.Where(p => p.HasDocumentUpload == false);
+                break;
+        }
+    }
+    
+    // 城市篩選
+    var cityID = Context.Request.Query["cityID"].ToString();
+    if (!string.IsNullOrEmpty(cityID) && int.TryParse(cityID, out int cityIdInt))
+    {
+        // 使用城市ID進行篩選，假設PropertyData有CityId屬性或從Address中判斷
+        // 由於PropertyData目前只有Address字串，我們需要從Model中獲取城市名稱來比較
+        if (Model is zuHause.AdminViewModels.AdminPropertyListViewModel propertyModel)
+        {
+            var selectedCity = propertyModel.Cities.FirstOrDefault(c => c.CityId == cityIdInt);
+            if (selectedCity != null)
+            {
+                filteredProperties = filteredProperties.Where(p => p.Address != null && p.Address.Contains(selectedCity.CityName));
+            }
+        }
+    }
+    
+    // 租金範圍篩選
+    var rentMinStr = Context.Request.Query["rentMin"].ToString();
+    var rentMaxStr = Context.Request.Query["rentMax"].ToString();
+    if (int.TryParse(rentMinStr, out int rentMin))
+    {
+        filteredProperties = filteredProperties.Where(p => p.RentPrice >= rentMin);
+    }
+    if (int.TryParse(rentMaxStr, out int rentMax))
+    {
+        filteredProperties = filteredProperties.Where(p => p.RentPrice <= rentMax);
+    }
+    
+    // 日期範圍篩選
+    var publishDateStartStr = Context.Request.Query["publishDateStart"].ToString();
+    var publishDateEndStr = Context.Request.Query["publishDateEnd"].ToString();
+    if (DateTime.TryParse(publishDateStartStr, out DateTime publishDateStart))
+    {
+        filteredProperties = filteredProperties.Where(p => DateTime.TryParse(p.SubmissionDate, out DateTime subDate) && subDate >= publishDateStart);
+    }
+    if (DateTime.TryParse(publishDateEndStr, out DateTime publishDateEnd))
+    {
+        filteredProperties = filteredProperties.Where(p => DateTime.TryParse(p.SubmissionDate, out DateTime subDate) && subDate <= publishDateEnd.AddDays(1));
+    }
+    
+    var applyDateStartStr = Context.Request.Query["applyDateStart"].ToString();
+    var applyDateEndStr = Context.Request.Query["applyDateEnd"].ToString();
+    if (DateTime.TryParse(applyDateStartStr, out DateTime applyDateStart))
+    {
+        filteredProperties = filteredProperties.Where(p => DateTime.TryParse(p.SubmissionDate, out DateTime subDate) && subDate >= applyDateStart);
+    }
+    if (DateTime.TryParse(applyDateEndStr, out DateTime applyDateEnd))
+    {
+        filteredProperties = filteredProperties.Where(p => DateTime.TryParse(p.SubmissionDate, out DateTime subDate) && subDate <= applyDateEnd.AddDays(1));
+    }
+    
+    var updateDateStartStr = Context.Request.Query["updateDateStart"].ToString();
+    var updateDateEndStr = Context.Request.Query["updateDateEnd"].ToString();
+    if (DateTime.TryParse(updateDateStartStr, out DateTime updateDateStart))
+    {
+        filteredProperties = filteredProperties.Where(p => DateTime.TryParse(p.UpdatedDate, out DateTime updDate) && updDate >= updateDateStart);
+    }
+    if (DateTime.TryParse(updateDateEndStr, out DateTime updateDateEnd))
+    {
+        filteredProperties = filteredProperties.Where(p => DateTime.TryParse(p.UpdatedDate, out DateTime updDate) && updDate <= updateDateEnd.AddDays(1));
+    }
+    
+    // 轉換為列表並計算總數
+    var propertiesToShow = filteredProperties.ToList();
     
     // 分頁設定
     int pageSize = 15;
@@ -20,12 +169,12 @@
         int.TryParse(Context.Request.Query[pageParamName], out currentPage);
         if (currentPage < 1) currentPage = 1;
     }
-    int totalItems = propertiesToShow.Count();
+    int totalItems = propertiesToShow.Count;
     int totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
     if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
     
     // 當前頁面要顯示的資料
-    var pagedProperties = propertiesToShow.Skip((currentPage - 1) * pageSize).Take(pageSize);
+    var pagedProperties = propertiesToShow.Skip((currentPage - 1) * pageSize).Take(pageSize).ToList();
 }
 
 <div class="card mt-3">
