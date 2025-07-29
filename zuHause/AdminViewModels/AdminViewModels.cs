@@ -1331,9 +1331,9 @@ namespace zuHause.AdminViewModels
 
         public string StatusDisplay => Status switch
         {
-            "OPEN" => "處理中",
+            "PENDING" => "待處理",
+            "PROGRESS" => "處理中",
             "RESOLVED" => "已處理",
-            "CLOSED" => "已關閉",
             _ => "未知"
         };
 
@@ -1485,9 +1485,9 @@ namespace zuHause.AdminViewModels
         public string ComplaintIdDisplay => $"CMPL-{ComplaintId:0000}";
         public string StatusDisplay => Status switch
         {
-            "OPEN" => "處理中",
+            "PENDING" => "待處理",
+            "PROGRESS" => "處理中",
             "RESOLVED" => "已處理",
-            "CLOSED" => "已關閉",
             _ => "未知"
         };
         public string Summary => ComplaintContent.Length > 50 
