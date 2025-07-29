@@ -587,3 +587,80 @@ function showToast(message, type = 'info') {
         toastElement.remove();
     });
 }
+
+// 照片模態視窗相關功能
+let currentPhotoIndex = 0;
+let photoUrls = [];
+
+// 全域函數 - 開啟照片放大Modal
+function openPhotoModal(photoIndex) {
+    // 收集所有照片URL
+    const photoImages = document.querySelectorAll('[data-image-url]');
+    photoUrls = Array.from(photoImages).map(img => img.getAttribute('data-image-url'));
+    
+    if (photoUrls.length === 0) {
+        showErrorMessage('未找到照片');
+        return;
+    }
+    
+    currentPhotoIndex = photoIndex || 0;
+    showPhoto(currentPhotoIndex);
+    
+    const photoModal = new bootstrap.Modal(document.getElementById('photoEnlargeModal'));
+    photoModal.show();
+}
+
+// 顯示指定索引的照片
+function showPhoto(index) {
+    if (index < 0 || index >= photoUrls.length) {
+        return;
+    }
+    
+    const enlargedPhoto = document.getElementById('enlargedPhoto');
+    const photoCounter = document.getElementById('photoCounter');
+    const prevBtn = document.getElementById('prevPhotoBtn');
+    const nextBtn = document.getElementById('nextPhotoBtn');
+    
+    // 更新照片
+    enlargedPhoto.src = photoUrls[index];
+    
+    // 更新計數器
+    photoCounter.textContent = `${index + 1} / ${photoUrls.length}`;
+    
+    // 更新按鈕狀態
+    prevBtn.style.display = index === 0 ? 'none' : 'block';
+    nextBtn.style.display = index === photoUrls.length - 1 ? 'none' : 'block';
+    
+    currentPhotoIndex = index;
+}
+
+// 全域函數 - 照片導航
+function navigatePhoto(direction) {
+    const newIndex = currentPhotoIndex + direction;
+    if (newIndex >= 0 && newIndex < photoUrls.length) {
+        showPhoto(newIndex);
+    }
+}
+
+// 鍵盤快捷鍵支援
+document.addEventListener('keydown', function(e) {
+    const photoModal = document.getElementById('photoEnlargeModal');
+    const modalInstance = bootstrap.Modal.getInstance(photoModal);
+    
+    if (modalInstance && modalInstance._isShown) {
+        switch(e.key) {
+            case 'ArrowLeft':
+                e.preventDefault();
+                navigatePhoto(-1);
+                break;
+            case 'ArrowRight':
+                e.preventDefault();
+                navigatePhoto(1);
+                break;
+            case 'Escape':
+                e.preventDefault();
+                modalInstance.hide();
+                break;
+        }
+    }
+});
