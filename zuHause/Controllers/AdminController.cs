@@ -1738,6 +1738,7 @@ namespace zuHause.Controllers
                 {
                     ApprovalId = approval.ApprovalId,
                     ActionType = "APPROVED",
+                    ActionCategory = "APPROVAL_ACTION",
                     ActionBy = currentAdminId,
                     ActionNote = $"身分驗證審核通過，身分證字號：{nationalIdNo}",
                     SnapshotJson = System.Text.Json.JsonSerializer.Serialize(new
@@ -1825,7 +1826,8 @@ namespace zuHause.Controllers
                 var approvalItem = new ApprovalItem
                 {
                     ApprovalId = approval.ApprovalId,
-                    ActionType = "REJECT_FINAL",
+                    ActionType = "REJECTED",
+                    ActionCategory = "APPROVAL_ACTION",
                     ActionBy = currentAdminId,
                     ActionNote = $"身分驗證審核拒絕：{rejectReason}",
                     SnapshotJson = System.Text.Json.JsonSerializer.Serialize(new
@@ -1930,6 +1932,7 @@ namespace zuHause.Controllers
                     ApprovalId = approval.ApprovalId,
                     ActionBy = currentAdminId,
                     ActionType = "APPROVED",
+                    ActionCategory = "APPROVAL_ACTION",
                     ActionNote = "管理員審核通過",
                     SnapshotJson = System.Text.Json.JsonSerializer.Serialize(new
                     {
@@ -2020,7 +2023,7 @@ namespace zuHause.Controllers
                 }
 
                 // 更新審核狀態
-                approval.StatusCode = "REJECT_FINAL";
+                approval.StatusCode = "REJECTED";
                 approval.CurrentApproverId = currentAdminId;
                 approval.UpdatedAt = DateTime.Now;
 
@@ -2033,7 +2036,8 @@ namespace zuHause.Controllers
                 {
                     ApprovalId = approval.ApprovalId,
                     ActionBy = currentAdminId,
-                    ActionType = "REJECT_FINAL",
+                    ActionType = "REJECTED",
+                    ActionCategory = "APPROVAL_ACTION", // 加入必要的 ActionCategory
                     ActionNote = rejectionReason,
                     SnapshotJson = System.Text.Json.JsonSerializer.Serialize(new
                     {
@@ -2059,7 +2063,7 @@ namespace zuHause.Controllers
                     {
                         PropertyId = propertyId,
                         Title = property.Title,
-                        ApprovalStatus = "REJECT_FINAL",
+                        ApprovalStatus = "REJECTED",
                         PropertyStatus = "REJECTED", // 已直接設定
                         RejectionReason = rejectionReason,
                         RejectedBy = currentAdminId,
@@ -2069,11 +2073,22 @@ namespace zuHause.Controllers
             }
             catch (Exception ex)
             {
+                // 記錄詳細錯誤信息
+                System.Diagnostics.Debug.WriteLine($"RejectProperty Exception: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Inner Exception: {ex.InnerException?.Message}");
+                System.Diagnostics.Debug.WriteLine($"Stack Trace: {ex.StackTrace}");
+                
                 return Json(new
                 {
                     success = false,
                     message = "駁回房源時發生錯誤",
-                    error = ex.Message
+                    error = ex.Message,
+                    innerError = ex.InnerException?.Message,
+                    details = new {
+                        propertyId = propertyId,
+                        adminId = GetCurrentAdminId(),
+                        rejectionReason = rejectionReason
+                    }
                 });
             }
         }
@@ -2131,6 +2146,7 @@ namespace zuHause.Controllers
                         ApprovalId = approval.ApprovalId,
                         ActionBy = currentAdminId,
                         ActionType = "MARK_AS_PAID",
+                        ActionCategory = "APPROVAL_ACTION",
                         ActionNote = $"管理員手動標記已付款{(string.IsNullOrWhiteSpace(paymentNote) ? "" : $"：{paymentNote}")}",
                         SnapshotJson = System.Text.Json.JsonSerializer.Serialize(new
                         {
@@ -2230,6 +2246,7 @@ namespace zuHause.Controllers
                         ApprovalId = approval.ApprovalId,
                         ActionBy = currentAdminId,
                         ActionType = "FORCE_BANNED",
+                        ActionCategory = "APPROVAL_ACTION",
                         ActionNote = removeReason,
                         SnapshotJson = System.Text.Json.JsonSerializer.Serialize(new
                         {
@@ -2311,6 +2328,7 @@ namespace zuHause.Controllers
                 ApprovalId = approval.ApprovalId,
                 ActionBy = null, // 房東提交，非管理員操作
                 ActionType = "SUBMIT",
+                ActionCategory = "APPROVAL_ACTION",
                 ActionNote = "房東提交房源申請（補建審核記錄）",
                 SnapshotJson = System.Text.Json.JsonSerializer.Serialize(new
                 {

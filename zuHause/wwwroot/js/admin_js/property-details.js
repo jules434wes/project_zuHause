@@ -270,10 +270,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     location.reload();
                 }, 1500);
             } else {
+                console.error('API 返回失敗:', response);
                 throw new Error(response.message || '操作失敗');
             }
         } catch (error) {
             console.error('執行操作時發生錯誤:', error);
+            console.error('錯誤詳情:', {
+                action: currentAction,
+                propertyId: currentPropertyId,
+                error: error.message,
+                stack: error.stack
+            });
             showErrorMessage('操作失敗：' + error.message);
         } finally {
             hideFinalConfirmLoading();
@@ -399,6 +406,17 @@ async function executeApproveProperty() {
 async function executeRejectProperty() {
     const rejectionReason = document.getElementById('rejectionReason').value.trim();
     
+    // 驗證必要參數
+    if (!currentPropertyId) {
+        throw new Error('房源ID未設定');
+    }
+    
+    if (!rejectionReason) {
+        throw new Error('請填寫駁回原因');
+    }
+    
+    console.log('執行駁回申請 - propertyId:', currentPropertyId, 'reason:', rejectionReason);
+    
     const formData = new FormData();
     formData.append('propertyId', currentPropertyId);
     formData.append('rejectionReason', rejectionReason);
@@ -411,7 +429,14 @@ async function executeRejectProperty() {
         }
     });
     
-    return await response.json();
+    if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    const result = await response.json();
+    console.log('駁回申請 API 回應:', result);
+    
+    return result;
 }
 
 // 執行標記已付款

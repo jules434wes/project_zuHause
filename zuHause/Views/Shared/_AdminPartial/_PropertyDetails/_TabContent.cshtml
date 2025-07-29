@@ -97,9 +97,9 @@
                                   string.Equals(Model.Data?.ApprovalStatus?.Trim(), "待付款", StringComparison.Ordinal)) ||
                                  (Model.Data?.StatusCode == "PENDING_PAYMENT"))
                             {
-                                <button class="btn btn-primary" onclick="openMarkAsPaidModal()">
+                                @* <button class="btn btn-primary" onclick="openMarkAsPaidModal()">
                                     <i class="bi bi-credit-card me-1"></i>手動標記已付款
-                                </button>
+                                </button> *@
                             }
                         </div>
                     </div>
