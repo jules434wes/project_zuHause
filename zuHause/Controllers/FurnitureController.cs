@@ -937,7 +937,9 @@ namespace zuHause.Controllers
                         .Select(e => e.EventType)
                         .FirstOrDefault() ?? "PENDING"
                 })
-                .Where(x => x.CurrentStage != "RETURNED") // ✅ 排除已完成訂單
+               .Where(x => x.CurrentStage != "RETURNED" &&
+                    x.Status != "DELIVERED" &&
+                    x.Status != "RETURNED") // ✅ 排除已完成訂單
                 .OrderByDescending(x => x.CreatedAt)
                 .ToList();
 
