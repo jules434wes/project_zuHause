@@ -356,7 +356,7 @@ async function performSearch() {
                             </div>
                         </div>
                         <div class="d-flex flex-column align-items-end ms-auto">
-                           <span class="favorite-icon bi ${isFavorited ? 'bi-heart-fill' : 'bi-heart'}" data-property-id="${propertyId}"></span>
+                           <span data-property-id="${propertyId}"></span>
                             <div class="price">NT$ ${monthlyRent !== undefined && monthlyRent !== null ? monthlyRent.toLocaleString() : '價格面議'}</div>
                             <div class="last-updated">發布於: ${formattedDate}</div>
                         </div>
