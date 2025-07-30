@@ -426,7 +426,7 @@
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             const data = await response.json();
-            console.log("房源資訊", data.properties)
+            //console.log("房源資訊", data.properties)
             return data.properties || []; // 假設 API 返回的數據中有 properties 陣列
         } catch (error) {
             //console.error('Error fetching properties from API:', error);
@@ -602,7 +602,7 @@
             });
 
         }
-        console.log(`最終準備渲染的房源數量 (去重後): ${finalProperties.length}`); // <-- 添加這行
+        //console.log(`最終準備渲染的房源數量 (去重後): ${finalProperties.length}`); 
 
         // 渲染最終的房源列表 (取前 8 個)
         renderYouMayLikeSection(finalProperties.slice(0, 8));
