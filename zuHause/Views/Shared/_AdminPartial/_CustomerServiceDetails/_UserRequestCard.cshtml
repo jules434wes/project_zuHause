@@ -1,10 +1,4 @@
-@{
-    var ticketData = new {
-        Subject = "關於房源 #P12345 的租金問題",
-        Content = "你好，我對房源 #P12345 很感興趣，但網站上標示的租金為每月 $35,000，而我在其他地方看到似乎是 $32,000。請問哪一個才是正確的？另外，請問租金是否包含管理費和網路費用？期待您的回覆，謝謝。",
-        CreatedAt = "2024-07-13 10:30"
-    };
-}
+@model AdminCustomerServiceDetailsViewModel
 
 <!-- 使用者需求內容卡片 -->
 <div class="card mb-4">
@@ -12,8 +6,8 @@
         使用者需求內容
     </div>
     <div class="card-body">
-        <p><strong>主旨：</strong> @ticketData.Subject</p>
-        <p>@ticketData.Content</p>
-        <small class="text-muted">發送時間: @ticketData.CreatedAt</small>
+        <p><strong>主旨：</strong> @Model.Subject</p>
+        <div style="white-space: pre-wrap;">@Model.TicketContent</div>
+        <small class="text-muted">發送時間: @Model.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")</small>
     </div>
 </div>
