@@ -71,7 +71,7 @@
 								<button class="btn btn-info" onclick="openPropertyProofModal()">
 									<i class="bi bi-file-earmark-pdf me-1"></i>檢視產權證明
 								</button>
-								<a href="@(Model.Data.PropertyProofUrl)" class="btn btn-outline-info" target="_blank">
+								<a href="@(!string.IsNullOrEmpty(Model.Data.PropertyProofUrl) && Model.Data.PropertyProofUrl.StartsWith("http") ? Model.Data.PropertyProofUrl : $"https://zuhauseimg.blob.core.windows.net/zuhaus-images/{Model.Data.PropertyProofUrl}")" class="btn btn-outline-info" target="_blank">
 									<i class="bi bi-download me-1"></i>下載產權證明
 								</a>
 							}
