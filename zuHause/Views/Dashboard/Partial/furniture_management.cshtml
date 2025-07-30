@@ -47,6 +47,7 @@
                                     <p class="mb-1 furniture-name">名稱: @item.Name</p>
                                     <p class="mb-1">狀態: @item.Status</p>
                                     <p class="mb-1">總上架庫存: @item.TotalQuantity</p>
+                                    <p class="mb-1">已出租: @item.RentedCount</p>
                                     <p class="mb-1">
                                         可用庫存: @item.Stock @if (item.Stock < item.SafetyStock)
                                         {<span class="text-danger ms-2">
@@ -54,7 +55,6 @@
                                         </span>}
                                     </p>
                                     <p class="mb-1">安全庫存: @item.SafetyStock</p>
-                                    <p class="mb-1">以出租: @item.RentedCount</p>
                                     <p class="mb-1 furniture-desc" title="@item.Description">
                                         介紹: @(item.Description?.Length > 30 ? item.Description.Substring(0, 30) + "..." : item.Description)
                                     </p>
