@@ -2,440 +2,447 @@
 
 <!-- 內容顯示區 -->
 <div class="tab-content pt-3" id="propertyDetailsTabsContent">
-    <!-- 主要資訊頁籤 -->
-    <div class="tab-pane fade show active" id="main-info" role="tabpanel" aria-labelledby="main-info-tab">
-        <div class="row">
-            <div class="col-lg-8">
-                <!-- 屋源詳細資料卡片 -->
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h5 class="mb-0">屋源詳細資料</h5>
-                    </div>
-                    <div class="card-body">
-                        <dl class="row key-value-list">
-                            <dt class="col-sm-3">地址</dt>
-                            <dd class="col-sm-9">@(Model.Data?.Address ?? "-")</dd>
-                            <dt class="col-sm-3">租金與押金</dt>
-                            <dd class="col-sm-9">NT$ @((Model.Data?.MonthlyRent ?? 0).ToString("N0")) / 月，押金 NT$ @((Model.Data?.DepositAmount ?? 0).ToString("N0")) (@(Model.Data?.DepositMonths ?? 0)個月)</dd>
-                            <dt class="col-sm-3">格局與坪數</dt>
-                            <dd class="col-sm-9">@(Model.Data?.Layout ?? "-")，@(Model.Data?.Area ?? 0) 坪</dd>
-                            <dt class="col-sm-3">樓層</dt>
-                            <dd class="col-sm-9">@(Model.Data?.FloorDisplay ?? "-") / 總樓層 @(Model.Data?.TotalFloorsDisplay ?? "-")</dd>
-                            <dt class="col-sm-3">最短租期</dt>
-                            <dd class="col-sm-9">@(Model.Data?.MinimumRentalMonths ?? 0) 個月</dd>
-                            <dt class="col-sm-3">詳細描述</dt>
-                            <dd class="col-sm-9">@(Model.Data?.Description ?? "-")</dd>
-                            <dt class="col-sm-3">特殊守則</dt>
-                            <dd class="col-sm-9">@(Model.Data?.SpecialRules ?? "-")</dd>
-                        </dl>
-                    </div>
-                </div>
+	<!-- 主要資訊頁籤 -->
+	<div class="tab-pane fade show active" id="main-info" role="tabpanel" aria-labelledby="main-info-tab">
+		<div class="row">
+			<div class="col-lg-8">
+				<!-- 屋源詳細資料卡片 -->
+				<div class="card mb-4">
+					<div class="card-header">
+						<h5 class="mb-0">屋源詳細資料</h5>
+					</div>
+					<div class="card-body">
+						<dl class="row key-value-list">
+							<dt class="col-sm-3">地址</dt>
+							<dd class="col-sm-9">@(Model.Data?.Address ?? "-")</dd>
+							<dt class="col-sm-3">租金與押金</dt>
+							<dd class="col-sm-9">NT$ @((Model.Data?.MonthlyRent ?? 0).ToString("N0")) / 月，押金 NT$ @((Model.Data?.DepositAmount ?? 0).ToString("N0")) (@(Model.Data?.DepositMonths ?? 0)個月)</dd>
+							<dt class="col-sm-3">格局與坪數</dt>
+							<dd class="col-sm-9">@(Model.Data?.Layout ?? "-")，@(Model.Data?.Area ?? 0) 坪</dd>
+							<dt class="col-sm-3">樓層</dt>
+							<dd class="col-sm-9">@(Model.Data?.FloorDisplay ?? "-") / 總樓層 @(Model.Data?.TotalFloorsDisplay ?? "-")</dd>
+							<dt class="col-sm-3">最短租期</dt>
+							<dd class="col-sm-9">@(Model.Data?.MinimumRentalMonths ?? 0) 個月</dd>
+							<dt class="col-sm-3">詳細描述</dt>
+							<dd class="col-sm-9">@(Model.Data?.Description ?? "-")</dd>
+							<dt class="col-sm-3">特殊守則</dt>
+							<dd class="col-sm-9">@(Model.Data?.SpecialRules ?? "-")</dd>
+						</dl>
+					</div>
+				</div>
 
-                <!-- 刊登資訊卡片 -->
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h5 class="mb-0">刊登資訊</h5>
-                    </div>
-                    <div class="card-body">
-                        <dl class="row key-value-list mb-0">
-                            <dt class="col-sm-3">刊登方案</dt>
-                            <dd class="col-sm-9">@(Model.Data?.ListingPlan?.PlanName ?? "-")</dd>
-                            <dt class="col-sm-3">刊登費用</dt>
-                            <dd class="col-sm-9">NT$ @((Model.Data?.ListingPlan?.CalculatedFee ?? 0).ToString("N0"))</dd>
-                            <dt class="col-sm-3">刊登天數</dt>
-                            <dd class="col-sm-9">@(Model.Data?.ListingPlan?.ListingDays ?? 0) 天</dd>
-                            <dt class="col-sm-3">上架日期</dt>
-                            <dd class="col-sm-9">@(Model.Data?.PublishedAt?.ToString("yyyy-MM-dd HH:mm:ss") ?? "-")</dd>
-                            <dt class="col-sm-3">到期日期</dt>
-                            <dd class="col-sm-9">@(Model.Data?.ExpireAt?.ToString("yyyy-MM-dd HH:mm:ss") ?? "-")</dd>
-                        </dl>
-                    </div>
-                </div>
-            </div>
+				<!-- 刊登資訊卡片 -->
+				<div class="card mb-4">
+					<div class="card-header">
+						<h5 class="mb-0">刊登資訊</h5>
+					</div>
+					<div class="card-body">
+						<dl class="row key-value-list mb-0">
+							<dt class="col-sm-3">刊登方案</dt>
+							<dd class="col-sm-9">@(Model.Data?.ListingPlan?.PlanName ?? "-")</dd>
+							<dt class="col-sm-3">刊登費用</dt>
+							<dd class="col-sm-9">NT$ @((Model.Data?.ListingPlan?.CalculatedFee ?? 0).ToString("N0"))</dd>
+							<dt class="col-sm-3">刊登天數</dt>
+							<dd class="col-sm-9">@(Model.Data?.ListingPlan?.ListingDays ?? 0) 天</dd>
+							<dt class="col-sm-3">上架日期</dt>
+							<dd class="col-sm-9">@(Model.Data?.PublishedAt?.ToString("yyyy-MM-dd HH:mm:ss") ?? "-")</dd>
+							<dt class="col-sm-3">到期日期</dt>
+							<dd class="col-sm-9">@(Model.Data?.ExpireAt?.ToString("yyyy-MM-dd HH:mm:ss") ?? "-")</dd>
+						</dl>
+					</div>
+				</div>
+			</div>
 
-            <div class="col-lg-4">
-                <!-- 審核與狀態管理卡片 -->
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h5 class="mb-0">審核與狀態管理</h5>
-                    </div>
-                    <div class="card-body">
-                        <p><strong>審核狀態:</strong> <span class="fw-bold">@(Model.Data?.ApprovalStatus ?? "-")</span></p>
-                        <p><strong>付款狀態:</strong> <span class="fw-bold">@(Model.Data?.PaymentStatus ?? "-")</span></p>
-                        
-                        <hr>
-                        
-                        <div class="d-grid gap-2">
-                            @if (Model.Data?.HasPropertyProof == true)
-                            {
-                                <button class="btn btn-info" onclick="openPropertyProofModal()">
-                                    <i class="bi bi-file-earmark-pdf me-1"></i>檢視產權證明
-                                </button>
-                                <a href="@(Model.Data.PropertyProofUrl)" class="btn btn-outline-info" target="_blank">
-                                    <i class="bi bi-download me-1"></i>下載產權證明
-                                </a>
-                            }
-                            else
-                            {
-                                <button class="btn btn-outline-secondary" disabled>
-                                    <i class="bi bi-file-earmark-x me-1"></i>無產權證明
-                                </button>
-                            }
-                            
-                            @if (string.Equals(Model.Data?.ApprovalStatus?.Trim(), "審核中", StringComparison.Ordinal) || 
-                                 Model.Data?.StatusCode == "PENDING")
-                            {
-                                <button class="btn btn-success" onclick="openApproveModal()">
-                                    <i class="bi bi-check2-circle me-1"></i>通過審核
-                                </button>
-                                <button class="btn btn-danger" onclick="openRejectModal()">
-                                    <i class="bi bi-x-lg me-1"></i>駁回申請
-                                </button>
-                            }
-                            
-                            @if ((string.Equals(Model.Data?.PaymentStatus?.Trim(), "未付費", StringComparison.Ordinal) && 
-                                  string.Equals(Model.Data?.ApprovalStatus?.Trim(), "待付款", StringComparison.Ordinal)) ||
-                                 (Model.Data?.StatusCode == "PENDING_PAYMENT"))
-                            {
-                                <button class="btn btn-primary" onclick="openMarkAsPaidModal()">
+			<div class="col-lg-4">
+				<!-- 審核與狀態管理卡片 -->
+				<div class="card mb-4">
+					<div class="card-header">
+						<h5 class="mb-0">審核與狀態管理</h5>
+					</div>
+					<div class="card-body">
+						<p><strong>審核狀態:</strong> <span class="fw-bold">@(Model.Data?.ApprovalStatus ?? "-")</span></p>
+						<p><strong>付款狀態:</strong> <span class="fw-bold">@(Model.Data?.PaymentStatus ?? "-")</span></p>
+
+						<hr>
+
+						<div class="d-grid gap-2">
+							@if (Model.Data?.HasPropertyProof == true)
+							{
+								<button class="btn btn-info" onclick="openPropertyProofModal()">
+									<i class="bi bi-file-earmark-pdf me-1"></i>檢視產權證明
+								</button>
+								<a href="@(Model.Data.PropertyProofUrl)" class="btn btn-outline-info" target="_blank">
+									<i class="bi bi-download me-1"></i>下載產權證明
+								</a>
+							}
+							else
+							{
+								<button class="btn btn-outline-secondary" disabled>
+									<i class="bi bi-file-earmark-x me-1"></i>無產權證明
+								</button>
+							}
+
+							@if (string.Equals(Model.Data?.ApprovalStatus?.Trim(), "審核中", StringComparison.Ordinal) ||
+														Model.Data?.StatusCode == "PENDING")
+							{
+								<button class="btn btn-success" onclick="openApproveModal()">
+									<i class="bi bi-check2-circle me-1"></i>通過審核
+								</button>
+								<button class="btn btn-danger" onclick="openRejectModal()">
+									<i class="bi bi-x-lg me-1"></i>駁回申請
+								</button>
+							}
+
+							@if ((string.Equals(Model.Data?.PaymentStatus?.Trim(), "未付費", StringComparison.Ordinal) &&
+														string.Equals(Model.Data?.ApprovalStatus?.Trim(), "待付款", StringComparison.Ordinal)) ||
+														(Model.Data?.StatusCode == "PENDING_PAYMENT"))
+							{
+								@* <button class="btn btn-primary" onclick="openMarkAsPaidModal()">
                                     <i class="bi bi-credit-card me-1"></i>手動標記已付款
-                                </button>
-                            }
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+                                </button> *@
+							}
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
 
-    <!-- 照片與設備頁籤 -->
-    <div class="tab-pane fade" id="media-equipment" role="tabpanel" aria-labelledby="media-equipment-tab">
-        <div class="row">
-            <div class="col-12">
-                <!-- 屋源照片卡片 -->
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h5 class="mb-0">屋源照片</h5>
-                    </div>
-                    <div class="card-body">
-                        @* TODO: 照片上傳系統還沒實作，之後再來修改 *@
-                        @if (false && Model.Images.Any())
-                        {
-                            <div class="row g-3">
-                                @foreach (var image in Model.Images)
-                                {
-                                    <div class="col-lg-3 col-md-4 col-sm-6">
-                                        <div class="border rounded position-relative">
-                                            <img src="@image.ImageUrl" alt="@image.CategoryDisplay" class="img-fluid rounded" style="height: 200px; width: 100%; object-fit: cover;">
-                                            <div class="position-absolute bottom-0 start-0 w-100 bg-dark bg-opacity-75 text-white p-2">
-                                                <p class="small mb-0">@image.CategoryDisplay</p>
-                                                <small class="text-muted">@image.SizeDisplay</small>
-                                            </div>
-                                        </div>
-                                    </div>
-                                }
-                            </div>
-                            <p class="small text-muted mt-3">共 @Model.Images.Count 張照片</p>
-                        }
-                        else
-                        {
-                            <div class="text-center py-4">
-                                <i class="bi bi-image fa-3x text-muted mb-3"></i>
-                                <p class="text-muted">照片上傳功能開發中，敬請期待</p>
-                            </div>
-                        }
-                    </div>
-                </div>
+	<!-- 照片與設備頁籤 -->
+	<div class="tab-pane fade" id="media-equipment" role="tabpanel" aria-labelledby="media-equipment-tab">
+		<div class="row">
+			<div class="col-12">
+				<!-- 屋源照片卡片 -->
+				<div class="card mb-4">
+					<div class="card-header">
+						<h5 class="mb-0">屋源照片</h5>
+					</div>
+					<div class="card-body">
+						@if (Model.Images.Any())
+						{
+							<div class="row g-3">
+								@{
+									int imageIndex = 0;
+								}
+								@foreach (var image in Model.Images)
+								{
+									<div class="col-lg-3 col-md-4 col-sm-6">
+										<div class="border rounded position-relative photo-thumbnail" style="cursor: pointer;">
+											<img src="@image.ImageUrl"
+												 alt="房源照片"
+												 class="img-fluid rounded"
+												 style="height: 200px; width: 100%; object-fit: cover;"
+												 onclick="openPhotoModal(@imageIndex)"
+												 data-image-url="@image.ImageUrl">
+											<div class="position-absolute top-0 end-0 m-2">
+												<span class="badge bg-dark">點擊放大</span>
+											</div>
+										</div>
+									</div>
+									imageIndex++;
+								}
+							</div>
+							<p class="small text-muted mt-3">共 @Model.Images.Count 張照片</p>
+						}
+						else
+						{
+							<div class="text-center py-4">
+								<i class="bi bi-image fa-3x text-muted mb-3"></i>
+								<p class="text-muted">等待房東上傳房源照片</p>
+							</div>
+						}
+					</div>
+				</div>
 
-                <!-- 設備與費用卡片 -->
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h5 class="mb-0">設備與費用</h5>
-                    </div>
-                    <div class="card-body">
-                        <h6>設備清單</h6>
-                        @if (Model.Equipment.Any())
-                        {
-                            <p>
-                                @foreach (var equipment in Model.Equipment)
-                                {
-                                    <span class="badge text-bg-light border fs-6 me-1">
-                                        @equipment.CategoryName
-                                        @if (equipment.Quantity > 1)
-                                        {
-                                            <span class="text-muted">(@equipment.Quantity)</span>
-                                        }
-                                    </span>
-                                }
-                            </p>
-                        }
-                        else
-                        {
-                            <p class="text-muted">未提供設備資訊</p>
-                        }
-                        
-                        <hr>
-                        
-                        <h6>費用說明</h6>
-                        <dl class="row key-value-list">
-                            <dt class="col-sm-3">水費</dt>
-                            <dd class="col-sm-9">
-                                @(Model.Data?.WaterFeeType == "CUSTOM" ? 
-                                  $"固定費用 NT$ {Model.Data?.CustomWaterFee?.ToString("N0") ?? "0"}" : 
-                                  "依台水帳單")
-                            </dd>
-                            <dt class="col-sm-3">電費</dt>
-                            <dd class="col-sm-9">
-                                @(Model.Data?.ElectricityFeeType == "CUSTOM" ? 
-                                  $"固定費用 NT$ {Model.Data?.CustomElectricityFee?.ToString("N0") ?? "0"}" : 
-                                  "依台電帳單")
-                            </dd>
-                            <dt class="col-sm-3">管理費</dt>
-                            <dd class="col-sm-9">
-                                @if (Model.Data?.ManagementFeeIncluded == true)
-                                {
-                                    <span>包含在租金內</span>
-                                }
-                                else if (Model.Data?.ManagementFeeAmount.HasValue == true)
-                                {
-                                    <span>NT$ @Model.Data.ManagementFeeAmount.Value.ToString("N0") / 月</span>
-                                }
-                                else
-                                {
-                                    <span>無</span>
-                                }
-                            </dd>
-                            <dt class="col-sm-3">停車費</dt>
-                            <dd class="col-sm-9">
-                                @if (Model.Data?.ParkingAvailable == true)
-                                {
-                                    if (Model.Data?.ParkingFeeRequired == true && Model.Data?.ParkingFeeAmount.HasValue == true)
-                                    {
-                                        <span>NT$ @Model.Data.ParkingFeeAmount.Value.ToString("N0") / 月</span>
-                                    }
-                                    else
-                                    {
-                                        <span>免費</span>
-                                    }
-                                }
-                                else
-                                {
-                                    <span>無停車位</span>
-                                }
-                            </dd>
-                            <dt class="col-sm-3">清潔費</dt>
-                            <dd class="col-sm-9">
-                                @if (Model.Data?.CleaningFeeRequired == true && Model.Data?.CleaningFeeAmount.HasValue == true)
-                                {
-                                    <span>NT$ @Model.Data.CleaningFeeAmount.Value.ToString("N0")</span>
-                                }
-                                else
-                                {
-                                    <span>無</span>
-                                }
-                            </dd>
-                        </dl>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+				<!-- 設備與費用卡片 -->
+				<div class="card mb-4">
+					<div class="card-header">
+						<h5 class="mb-0">設備與費用</h5>
+					</div>
+					<div class="card-body">
+						<h6>設備清單</h6>
+						@if (Model.Equipment.Any())
+						{
+							<p>
+								@foreach (var equipment in Model.Equipment)
+								{
+									<span class="badge text-bg-light border fs-6 me-1">
+										@equipment.CategoryName
+										@if (equipment.Quantity > 1)
+										{
+											<span class="text-muted">(@equipment.Quantity)</span>
+										}
+									</span>
+								}
+							</p>
+						}
+						else
+						{
+							<p class="text-muted">未提供設備資訊</p>
+						}
 
-    <!-- 歷史租約頁籤 -->
-    <div class="tab-pane fade" id="lease-history" role="tabpanel" aria-labelledby="lease-history-tab">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">歷史租約記錄</h5>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-striped table-hover">
-                        <thead class="table-dark">
-                            <tr>
-                                <th>合約ID</th>
-                                <th>租客姓名</th>
-                                <th class="sortable" data-sort="rentPeriod">
-                                    租期 
-                                    <i class="bi bi-sort-up-alt sort-icon" data-direction="none"></i>
-                                </th>
-                                <th>合約狀態</th>
-                                <th>操作</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @if (Model.RentalHistory.Any())
-                            {
-                                @foreach (var rental in Model.RentalHistory)
-                                {
-                                    <tr>
-                                        <td>C@(rental.ContractId.ToString("000"))</td>
-                                        <td><a href="/Admin/admin_userDetails/@rental.TenantId" class="text-decoration-none">@rental.TenantName</a></td>
-                                        <td>@rental.RentalPeriod</td>
-                                        <td>
-                                            @{
-                                                string statusBadgeClass;
-                                                switch (rental.Status)
-                                                {
-                                                    case "ACTIVE":
-                                                        statusBadgeClass = "bg-success";
-                                                        break;
-                                                    case "COMPLETED":
-                                                        statusBadgeClass = "bg-secondary";
-                                                        break;
-                                                    case "TERMINATED":
-                                                        statusBadgeClass = "bg-warning";
-                                                        break;
-                                                    default:
-                                                        statusBadgeClass = "bg-dark";
-                                                        break;
-                                                }
-                                            }
-                                            <span class="badge @statusBadgeClass">@rental.StatusDisplay</span>
-                                        </td>
-                                        <td>
-                                            <button class="btn btn-sm btn-outline-primary" onclick="viewContractDetails(@rental.ContractId)">
-                                                <i class="bi bi-eye me-1"></i>查看詳情
-                                            </button>
-                                        </td>
-                                    </tr>
-                                }
-                            }
-                            else
-                            {
-                                <tr>
-                                    <td colspan="5" class="text-center text-muted py-4">
-                                        <i class="bi bi-inbox me-2"></i>尚無租約記錄
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
+						<hr>
 
-    <!-- 收到的檢舉頁籤 -->
-    <div class="tab-pane fade" id="complaints" role="tabpanel" aria-labelledby="complaints-tab">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">收到的檢舉記錄</h5>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-striped table-hover">
-                        <thead class="table-dark">
-                            <tr>
-                                <th>投訴單號</th>
-                                <th>投訴人</th>
-                                <th>投訴內容摘要</th>
-                                <th class="sortable" data-sort="complaintDate">
-                                    投訴時間 
-                                    <i class="bi bi-sort-down sort-icon active" data-direction="desc"></i>
-                                </th>
-                                <th>處理狀態</th>
-                                <th>操作</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @if (Model.Complaints.Any())
-                            {
-                                @foreach (var complaint in Model.Complaints)
-                                {
-                                    <tr>
-                                        <td>CMPL-@complaint.ComplaintId.ToString("0000")</td>
-                                        <td><a href="/Admin/admin_userDetails/@complaint.ComplainantId" class="text-decoration-none">@complaint.ComplainantName</a></td>
-                                        <td>@complaint.Summary</td>
-                                        <td>@complaint.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")</td>
-                                        <td>
-                                            @{
-                                                string complaintBadgeClass;
-                                                switch (complaint.Status)
-                                                {
-                                                    case "OPEN":
-                                                        complaintBadgeClass = "bg-warning";
-                                                        break;
-                                                    case "RESOLVED":
-                                                        complaintBadgeClass = "bg-success";
-                                                        break;
-                                                    case "CLOSED":
-                                                        complaintBadgeClass = "bg-secondary";
-                                                        break;
-                                                    default:
-                                                        complaintBadgeClass = "bg-dark";
-                                                        break;
-                                                }
-                                            }
-                                            <span class="badge @complaintBadgeClass">@complaint.StatusDisplay</span>
-                                        </td>
-                                        <td>
-                                            <button class="btn btn-sm btn-outline-primary" onclick="handleComplaint(@complaint.ComplaintId)">
-                                                <i class="bi bi-arrow-right me-1"></i>前往處理
-                                            </button>
-                                        </td>
-                                    </tr>
-                                }
-                            }
-                            else
-                            {
-                                <tr>
-                                    <td colspan="6" class="text-center text-muted py-4">
-                                        <i class="bi bi-shield-check me-2"></i>無檢舉記錄
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
+						<h6>費用說明</h6>
+						<dl class="row key-value-list">
+							<dt class="col-sm-3">水費</dt>
+							<dd class="col-sm-9">
+								@(Model.Data?.WaterFeeType == "CUSTOM" ?
+																$"固定費用 NT$ {Model.Data?.CustomWaterFee?.ToString("N0") ?? "0"}" :
+																"依台水帳單")
+																	</dd>
+																	<dt class="col-sm-3">電費</dt>
+																	<dd class="col-sm-9">
+								@(Model.Data?.ElectricityFeeType == "CUSTOM" ?
+																$"固定費用 NT$ {Model.Data?.CustomElectricityFee?.ToString("N0") ?? "0"}" :
+																"依台電帳單")
+							</dd>
+							<dt class="col-sm-3">管理費</dt>
+							<dd class="col-sm-9">
+								@if (Model.Data?.ManagementFeeIncluded == true)
+								{
+									<span>包含在租金內</span>
+								}
+								else if (Model.Data?.ManagementFeeAmount.HasValue == true)
+								{
+									<span>NT$ @Model.Data.ManagementFeeAmount.Value.ToString("N0") / 月</span>
+								}
+								else
+								{
+									<span>無</span>
+								}
+							</dd>
+							<dt class="col-sm-3">停車費</dt>
+							<dd class="col-sm-9">
+								@if (Model.Data?.ParkingAvailable == true)
+								{
+									if (Model.Data?.ParkingFeeRequired == true && Model.Data?.ParkingFeeAmount.HasValue == true)
+									{
+										<span>NT$ @Model.Data.ParkingFeeAmount.Value.ToString("N0") / 月</span>
+									}
+									else
+									{
+										<span>免費</span>
+									}
+								}
+								else
+								{
+									<span>無停車位</span>
+								}
+							</dd>
+							<dt class="col-sm-3">清潔費</dt>
+							<dd class="col-sm-9">
+								@if (Model.Data?.CleaningFeeRequired == true && Model.Data?.CleaningFeeAmount.HasValue == true)
+								{
+									<span>NT$ @Model.Data.CleaningFeeAmount.Value.ToString("N0")</span>
+								}
+								else
+								{
+									<span>無</span>
+								}
+							</dd>
+						</dl>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
 
-    <!-- 審核記錄頁籤 -->
-    <div class="tab-pane fade" id="approval-history" role="tabpanel" aria-labelledby="approval-history-tab">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">審核歷史記錄</h5>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-striped table-hover">
-                        <thead class="table-dark">
-                            <tr>
-                                <th class="sortable" data-sort="operationTime">
-                                    操作時間 
-                                    <i class="bi bi-sort-down sort-icon active" data-direction="desc"></i>
-                                </th>
-                                <th>操作類型</th>
-                                <th>操作管理員</th>
-                                <th>備註/原因</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @if (Model.ApprovalHistory.Any())
-                            {
-                                @foreach (var history in Model.ApprovalHistory)
-                                {
-                                    <tr>
-                                        <td>@history.OperationTime.ToString("yyyy-MM-dd HH:mm:ss")</td>
-                                        <td><span class="badge @history.BadgeClass">@history.ActionTypeDisplay</span></td>
-                                        <td>@history.AdminName</td>
-                                        <td>@(string.IsNullOrEmpty(history.ActionNote) ? "-" : history.ActionNote)</td>
-                                    </tr>
-                                }
-                            }
-                            else
-                            {
-                                <tr>
-                                    <td colspan="4" class="text-center text-muted py-4">
-                                        <i class="bi bi-clock-history me-2"></i>尚無審核記錄
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
+	<!-- 歷史租約頁籤 -->
+	<div class="tab-pane fade" id="lease-history" role="tabpanel" aria-labelledby="lease-history-tab">
+		<div class="card">
+			<div class="card-header">
+				<h5 class="mb-0">歷史租約記錄</h5>
+			</div>
+			<div class="card-body">
+				<div class="table-responsive">
+					<table class="table table-striped table-hover">
+						<thead class="table-dark">
+							<tr>
+								<th>合約ID</th>
+								<th>租客姓名</th>
+								<th class="sortable" data-sort="rentPeriod">
+									租期
+									<i class="bi bi-sort-up-alt sort-icon" data-direction="none"></i>
+								</th>
+								@* <th>合約狀態</th> *@
+								<th>操作</th>
+							</tr>
+						</thead>
+						<tbody>
+							@if (Model.RentalHistory.Any())
+							{
+								@foreach (var rental in Model.RentalHistory)
+								{
+									<tr>
+										<td>C@(rental.ContractId.ToString("000"))</td>
+										<td><a href="/Admin/admin_userDetails/@rental.TenantId" class="text-decoration-none">@rental.TenantName</a></td>
+										<td>@rental.RentalPeriod</td>
+										@* <td>
+											@{
+												string statusBadgeClass;
+												switch (rental.Status)
+												{
+													case "ACTIVE":
+														statusBadgeClass = "bg-success";
+														break;
+													case "COMPLETED":
+														statusBadgeClass = "bg-secondary";
+														break;
+													case "TERMINATED":
+														statusBadgeClass = "bg-warning";
+														break;
+													default:
+														statusBadgeClass = "bg-dark";
+														break;
+												}
+											}
+											<span class="badge @statusBadgeClass">@rental.StatusDisplay</span>
+										</td> *@
+										<td>
+											<button class="btn btn-sm btn-outline-primary" onclick="viewContractDetails(@rental.ContractId)">
+												<i class="bi bi-eye me-1"></i>查看詳情
+											</button>
+										</td>
+									</tr>
+								}
+							}
+							else
+							{
+								<tr>
+									<td colspan="5" class="text-center text-muted py-4">
+										<i class="bi bi-inbox me-2"></i>尚無租約記錄
+									</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- 收到的檢舉頁籤 -->
+	<div class="tab-pane fade" id="complaints" role="tabpanel" aria-labelledby="complaints-tab">
+		<div class="card">
+			<div class="card-header">
+				<h5 class="mb-0">收到的檢舉記錄</h5>
+			</div>
+			<div class="card-body">
+				<div class="table-responsive">
+					<table class="table table-striped table-hover">
+						<thead class="table-dark">
+							<tr>
+								<th>投訴單號</th>
+								<th>投訴人</th>
+								<th width="50%">投訴內容摘要</th>
+								<th class="sortable" data-sort="complaintDate">
+									投訴時間
+									<i class="bi bi-sort-down sort-icon active" data-direction="desc"></i>
+								</th>
+								<th>處理狀態</th>
+								<th>操作</th>
+							</tr>
+						</thead>
+						<tbody>
+							@if (Model.Complaints.Any())
+							{
+								@foreach (var complaint in Model.Complaints)
+								{
+									<tr>
+										<td>CMPL-@complaint.ComplaintId.ToString("0000")</td>
+										<td><a href="/Admin/admin_userDetails/@complaint.ComplainantId" class="text-decoration-none">@complaint.ComplainantName</a></td>
+										<td>@complaint.Summary</td>
+										<td>@complaint.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")</td>
+										<td>
+											@{
+												string complaintBadgeClass;
+												switch (complaint.Status)
+												{
+													case "OPEN":
+														complaintBadgeClass = "bg-warning";
+														break;
+													case "RESOLVED":
+														complaintBadgeClass = "bg-success";
+														break;
+													case "CLOSED":
+														complaintBadgeClass = "bg-secondary";
+														break;
+													default:
+														complaintBadgeClass = "bg-dark";
+														break;
+												}
+											}
+											<span class="badge @complaintBadgeClass">@complaint.StatusDisplay</span>
+										</td>
+										<td>
+											<a href="/Admin/admin_propertyComplaints" class="btn btn-sm btn-outline-primary" target="_blank">
+												前往處理
+											</a>
+										</td>
+									</tr>
+								}
+							}
+							else
+							{
+								<tr>
+									<td colspan="6" class="text-center text-muted py-4">
+										<i class="bi bi-shield-check me-2"></i>無檢舉記錄
+									</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- 審核記錄頁籤 -->
+	@* <div class="tab-pane fade" id="approval-history" role="tabpanel" aria-labelledby="approval-history-tab">
+		<div class="card">
+			<div class="card-header">
+				<h5 class="mb-0">審核歷史記錄</h5>
+			</div>
+			<div class="card-body">
+				<div class="table-responsive">
+					<table class="table table-striped table-hover">
+						<thead class="table-dark">
+							<tr>
+								<th class="sortable" data-sort="operationTime">
+									操作時間
+									<i class="bi bi-sort-down sort-icon active" data-direction="desc"></i>
+								</th>
+								<th>操作類型</th>
+								<th>操作管理員</th>
+								<th>備註/原因</th>
+							</tr>
+						</thead>
+						<tbody>
+							@if (Model.ApprovalHistory.Any())
+							{
+								@foreach (var history in Model.ApprovalHistory)
+								{
+									<tr>
+										<td>@history.OperationTime.ToString("yyyy-MM-dd HH:mm:ss")</td>
+										<td><span class="badge @history.BadgeClass">@history.ActionTypeDisplay</span></td>
+										<td>@history.AdminName</td>
+										<td>@(string.IsNullOrEmpty(history.ActionNote) ? "-" : history.ActionNote)</td>
+									</tr>
+								}
+							}
+							else
+							{
+								<tr>
+									<td colspan="4" class="text-center text-muted py-4">
+										<i class="bi bi-clock-history me-2"></i>尚無審核記錄
+									</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</div>
+	</div> *@
 </div>

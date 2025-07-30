@@ -34,6 +34,12 @@
 
         public string? ApplicantBathText => ApplicantBath?.ToString("yyyy-MM-dd");
 
+        /// <summary>
+        /// 圖片位址
+        /// </summary>
+        public string? imgPath { get; set; }
+
+
         public string DurationText
         {
             get

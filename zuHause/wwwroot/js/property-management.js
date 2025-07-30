@@ -18,6 +18,9 @@ function initPropertyManagement() {
     
     // 初始化統計卡片動畫
     initStatsAnimation();
+
+    // 初始化申請 / 預約通知互動
+    initApplicationNotifications();
 }
 
 /**
@@ -218,7 +221,7 @@ function initStatsAnimation() {
  * 圖片載入錯誤處理
  */
 function handleImageError(img) {
-    img.src = '/images/property-placeholder.jpg';
+    img.src = '/images/default-picture.png';
     img.onerror = null; // 防止無限循環
 }
 
@@ -299,7 +302,7 @@ window.addEventListener('load', function() {
     
     // 預載入常用圖示
     const iconPreload = [
-        '/images/property-placeholder.jpg'
+        '/images/default-picture.png'
     ];
     
     iconPreload.forEach(src => {
@@ -308,7 +311,161 @@ window.addEventListener('load', function() {
     });
 });
 
-// 導出函數供全域使用
+/**
+ * 初始化申請與預約通知互動
+ */
+function initApplicationNotifications() {
+    // 綁定「查看詳情」按鈕
+    document.querySelectorAll('.show-application-detail').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const propertyId = parseInt(btn.dataset.propertyId);
+            populateApplicationOffcanvas(propertyId, btn.closest('.application-summary').dataset.propertyAddress || '');
+            const oc = bootstrap.Offcanvas.getOrCreateInstance(document.getElementById('applicationDetailsPanel'));
+            oc.show();
+        });
+    });
+}
+
+/*********************** 示範資料 ***********************/
+const demoRentalApplications = [
+    { id: 1, propertyId: 1, applicantName: '張**', applicationDate: '2024/1/18 11:20', status: '申請中' },
+    { id: 2, propertyId: 1, applicantName: '劉**', applicationDate: '2024/1/17 15:30', status: '申請中' },
+    { id: 3, propertyId: 4, applicantName: '黃**', applicationDate: '2024/1/10 09:45', status: '已發出合約' },
+    { id: 6, propertyId: 5, applicantName: '馬**', applicationDate: '2024/1/16 13:45', status: '申請中' },
+    { id: 7, propertyId: 5, applicantName: '朱**', applicationDate: '2024/1/15 09:20', status: '已拒絕' },
+    { id: 8, propertyId: 6, applicantName: '許**', applicationDate: '2024/1/19 10:30', status: '申請中' },
+    { id: 9, propertyId: 7, applicantName: '趙**', applicationDate: '2024/1/16 14:20', status: '已發出合約' }
+];
+
+const demoViewingAppointments = [
+    { id: 1, propertyId: 1, applicantName: '王**', requestDate: '2024/1/15 14:30', appointmentDate: '2024/1/20', appointmentTime: '14:00', status: '待處理' },
+    { id: 2, propertyId: 1, applicantName: '李**', requestDate: '2024/1/16 09:15', appointmentDate: '2024/1/21', appointmentTime: '10:00', status: '待處理' },
+    { id: 5, propertyId: 5, applicantName: '林**', requestDate: '2024/1/17 09:30', appointmentDate: '2024/1/22', appointmentTime: '14:00', status: '待處理' },
+    { id: 6, propertyId: 5, applicantName: '張**', requestDate: '2024/1/15 16:20', appointmentDate: '2024/1/20', appointmentTime: '10:00', status: '已接受' }
+];
+
+/*********************** Helper ***********************/
+function getApplicationBadgeClass(status) {
+    switch (status) {
+        case '申請中': return 'bg-primary text-white';
+        case '已發出合約': return 'bg-success text-white';
+        case '已拒絕': return 'bg-danger text-white';
+        default: return 'bg-secondary text-white';
+    }
+}
+
+function getViewingBadgeClass(status) {
+    switch (status) {
+        case '待處理': return 'bg-warning text-dark';
+        case '已接受': return 'bg-success text-white';
+        case '已拒絕': return 'bg-danger text-white';
+        default: return 'bg-secondary text-white';
+    }
+}
+
+/*********************** 詳情面板產生 ***********************/
+function populateApplicationOffcanvas(propertyId, address) {
+    // 設定標題地址
+    document.getElementById('applicationDetailsAddress').textContent = address;
+
+    // 過濾資料
+    const applications = demoRentalApplications.filter(a => a.propertyId === propertyId);
+    const appointments = demoViewingAppointments.filter(a => a.propertyId === propertyId);
+
+    // 區分待處理 / 已處理
+    const pendingApps = applications.filter(a => a.status === '申請中');
+    const processedApps = applications.filter(a => a.status !== '申請中');
+
+    const pendingViews = appointments.filter(a => a.status === '待處理');
+    const processedViews = appointments.filter(a => a.status !== '待處理');
+
+    let html = '';
+
+    // 租屋申請
+    if (applications.length > 0) {
+        html += `<h4 class="fw-semibold text-dark mb-4 d-flex align-items-center application-section"><i class="fas fa-file-alt me-2"></i>租屋申請 (${applications.length})</h4>`;
+        if (pendingApps.length > 0) {
+            html += `<h5 class="text-sm fw-medium text-danger mb-3">待處理 (${pendingApps.length})</h5>`;
+            html += buildApplicationList(pendingApps, true);
+        }
+        if (processedApps.length > 0) {
+            html += `<h5 class="text-sm fw-medium text-muted mb-3 mt-4">已處理 (${processedApps.length})</h5>`;
+            html += buildApplicationList(processedApps, false);
+        }
+    }
+
+    // 預約看房
+    if (appointments.length > 0) {
+        html += `<h4 class="fw-semibold text-dark mb-4 mt-5 d-flex align-items-center application-section"><i class="fas fa-calendar-alt me-2"></i>預約看房 (${appointments.length})</h4>`;
+        if (pendingViews.length > 0) {
+            html += `<h5 class="text-sm fw-medium text-danger mb-3">待處理 (${pendingViews.length})</h5>`;
+            html += buildViewingList(pendingViews, true);
+        }
+        if (processedViews.length > 0) {
+            html += `<h5 class="text-sm fw-medium text-muted mb-3 mt-4">已處理 (${processedViews.length})</h5>`;
+            html += buildViewingList(processedViews, false);
+        }
+    }
+
+    if (applications.length === 0 && appointments.length === 0) {
+        html = '<p class="text-center text-muted">此房源目前沒有任何申請或預約。</p>';
+    }
+
+    document.getElementById('applicationDetailsBody').innerHTML = html;
+}
+
+function buildApplicationList(list, isPending) {
+    return list.map(app => {
+        return `
+            <div class="p-3 mb-2 rounded border application-details-item ${isPending ? 'pending' : ''} ${isPending ? 'bg-danger bg-opacity-10 border-danger' : 'bg-light'}">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="fw-medium small">${app.applicantName}</span>
+                        <span class="badge ${getApplicationBadgeClass(app.status)} small">${app.status}</span>
+                    </div>
+                    <button class="btn btn-outline-secondary btn-sm small">查看詳情</button>
+                </div>
+                <div class="text-muted small mt-1">申請時間：${app.applicationDate}</div>
+            </div>`;
+    }).join('');
+}
+
+function buildViewingList(list, isPending) {
+    return list.map(v => {
+        const actionButtons = isPending ? `
+            <div class="d-flex gap-1 ms-4">
+                <button class="btn btn-success btn-sm small" onclick="handleViewingAction(${v.id}, '接受')"><i class="fas fa-check-circle me-1"></i>接受</button>
+                <button class="btn btn-outline-secondary btn-sm small" onclick="handleViewingAction(${v.id}, '更改')"><i class="fas fa-clock me-1"></i>更改</button>
+                <button class="btn btn-outline-danger btn-sm small" onclick="handleViewingAction(${v.id}, '拒絕')"><i class="fas fa-times-circle me-1"></i>拒絕</button>
+            </div>` : '';
+
+        return `
+            <div class="p-3 mb-2 rounded border application-details-item ${isPending ? 'pending' : ''} ${isPending ? 'bg-danger bg-opacity-10 border-danger' : 'bg-light'}">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="fw-medium small">${v.applicantName}</span>
+                        <span class="badge ${getViewingBadgeClass(v.status)} small">${v.status}</span>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="text-muted small">
+                        <div class="text-primary fw-medium">預約看房時間：${v.appointmentDate} ${v.appointmentTime}</div>
+                        <div>申請時間：${v.requestDate}</div>
+                    </div>
+                    ${actionButtons}
+                </div>
+            </div>`;
+    }).join('');
+}
+
+/*********************** Demo Handle ***********************/
+function handleViewingAction(appointmentId, action) {
+    console.log(`預約 ${appointmentId} - ${action}`);
+    alert(`${action} 操作已觸發 (Demo)`);
+}
+
+// 暴露函式供HTML inline 呼叫
+window.handleViewingAction = handleViewingAction;
 window.confirmTakeDown = confirmTakeDown;
 window.contactCustomerService = contactCustomerService;
 window.copyPropertyLink = copyPropertyLink;

@@ -570,3 +570,50 @@
     width: 1rem;
     font-size: 0.875rem;
 }
+
+/* ========================== */
+/* 房源照片縮圖樣式            */
+/* ========================== */
+
+.photo-thumbnail {
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.photo-thumbnail:hover {
+    transform: scale(1.02);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+}
+
+.photo-thumbnail:hover .badge {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+.photo-thumbnail .badge {
+    opacity: 0.7;
+    transition: all 0.3s ease;
+    font-size: 0.7rem;
+}
+
+.photo-thumbnail img {
+    transition: all 0.3s ease;
+}
+
+.photo-thumbnail:hover img {
+    filter: brightness(1.1);
+}
+
+/* 照片放大模態視窗樣式 */
+#photoEnlargeModal .modal-body {
+    background-color: #000;
+}
+
+#photoEnlargeModal .btn {
+    transition: all 0.3s ease;
+}
+
+#photoEnlargeModal .btn:hover {
+    opacity: 1 !important;
+    transform: scale(1.1);
+}

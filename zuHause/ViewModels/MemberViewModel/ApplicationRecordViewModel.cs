@@ -13,6 +13,11 @@
         public decimal MonthlyRent { get; set; } // 房源租金
         public int? ContractId { get; set; } // 合約ID，如果走到簽約流程了就會有
 
+        /// <summary>
+        /// 圖片位址
+        /// </summary>
+        public string? imgPath { get; set; }
+
         public DateTime? ScheduleTime { get; set; }
         public DateOnly? RentalStartDate { get; set; }
         public DateOnly? RentalEndDate { get; set; }

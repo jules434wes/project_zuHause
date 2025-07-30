@@ -53,7 +53,10 @@ namespace zuHause.ViewModels.MemberViewModel
         [Display(Name = "若提前解約，需另行給付甲方相當於：")]
         public int? PenaltyAmount { get; set; } // 違約金金額
 
-
+        /// <summary>
+        /// 圖片位址
+        /// </summary>
+        public string? imgPath {  get; set; }
 
         [Required(ErrorMessage = "請選擇合約範本")]
         [Display(Name = "合約範本")]
@@ -69,13 +72,16 @@ namespace zuHause.ViewModels.MemberViewModel
         public List<IFormFile> UploadFiles { get; set; } = new();
 
         // --- 簽名檔案（單筆）---
-        public IFormFile? SignatureFile { get; set; }
+        //public IFormFile? SignatureFile { get; set; }
 
         // --- 簽名方式（手寫/上傳）---
         public string? SignMethod { get; set; }
 
         // --- 簽署角色（房東 or 房客）---
         public string? SignerRole { get; set; }
+
+
+        public string? SignatureDataUrl { get; set; }
     }
     public class FurnitureItem
     {

@@ -119,6 +119,36 @@ namespace zuHause.DTOs
         /// </summary>
         public bool IsPaid { get; set; }
 
+        /// <summary>
+        /// 是否有停車位
+        /// </summary>
+        public bool ParkingAvailable { get; set; }
+
+        /// <summary>
+        /// 管理費是否包含在租金中
+        /// </summary>
+        public bool ManagementFeeIncluded { get; set; }
+
+        /// <summary>
+        /// 管理費金額
+        /// </summary>
+        public decimal? ManagementFeeAmount { get; set; }
+
+        /// <summary>
+        /// 押金金額
+        /// </summary>
+        public decimal DepositAmount { get; set; }
+
+        /// <summary>
+        /// 押金月數
+        /// </summary>
+        public int DepositMonths { get; set; }
+
+        /// <summary>
+        /// 最短租期(月)
+        /// </summary>
+        public int MinimumRentalMonths { get; set; }
+
         // === 統計資訊 ===
 
         /// <summary>
@@ -222,6 +252,30 @@ namespace zuHause.DTOs
         /// 是否為過時狀態（如DRAFT） - 當前版本中移除DRAFT狀態，保留此屬性用於向後相容
         /// </summary>
         public bool IsLegacyStatus => false; // 移除DRAFT狀態後，目前無過時狀態
+
+        /// <summary>
+        /// 停車位顯示
+        /// </summary>
+        public string ParkingDisplay => ParkingAvailable ? "有停車位" : "無停車位";
+
+        /// <summary>
+        /// 押金顯示
+        /// </summary>
+        public string DepositDisplay => $"{DepositMonths}個月押金 (NT$ {DepositAmount:N0})";
+
+        /// <summary>
+        /// 管理費顯示
+        /// </summary>
+        public string ManagementFeeDisplay => ManagementFeeIncluded 
+            ? "管理費含在租金內" 
+            : ManagementFeeAmount.HasValue 
+                ? $"管理費 NT$ {ManagementFeeAmount:N0}" 
+                : "無管理費";
+
+        /// <summary>
+        /// 最短租期顯示
+        /// </summary>
+        public string MinimumRentalDisplay => $"最短 {MinimumRentalMonths} 個月";
     }
 
     /// <summary>

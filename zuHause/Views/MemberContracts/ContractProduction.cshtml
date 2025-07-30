@@ -66,7 +66,7 @@
                                         <h6 class="col-12 m-0 me-2">
                                             <div class="row m-0">
                                                 <div class="col-3">租金：</div>
-                                                <div class="col">NT$@Model.MonthlyRent.ToString("0") 元 / 月</div>
+                                                <div class="col">NT$@Model.MonthlyRent.ToString("N0") 元 / 月</div>
                                             </div>
                                         </h6>
                                         <h6 class="col-12 m-0 me-2">
@@ -205,7 +205,7 @@
                                 </div>
                                 <div class="col-3 m-0">
                                     <div class="image-area">
-                                        <img src="~/images/apartment.jpg" alt="">
+                                        <img src="@Model.imgPath" alt="">
                                     </div>
                                 </div>
                             </div>
@@ -287,7 +287,7 @@
                                     <div class="row m-0 align-items-start note-item w-100">
                                         <h6 class="col-auto mb-0 px-0 py-2">備註：</h6>
                                         <div class="col-9 gap-2 p-0 d-flex">
-                                            <div class="row align-items-start w-100 gx-2">
+                                            <div class="row align-items-start w-100 gx-2 gap-2">
                                                 <div class="col p-0">
                                                     <textarea class="form-control w-100" placeholder="限100字內"
                                                               style="resize: none; height: 4rem;"></textarea>
@@ -380,7 +380,9 @@
                                     canva
                                 </div> *@
 
-                                <div class="col-12" data-sign-block="upload-signature">
+
+
+                                @* <div class="col-12" data-sign-block="upload-signature">
                                     <div class="row m-0 align-items-start signature-upload-area">
                                         <h6 class="col-auto mb-0 px-0 py-2">上傳簽名檔：</h6>
                                         <div class="col-auto gap-2 py-0">
@@ -394,7 +396,17 @@
                                             </div>
                                         </div>
                                     </div>
+                                </div> *@
+
+
+                                <div class="col-12 mt-3">
+                                    <canvas id="signatureCanvas" width="400" height="200" style="border: 1px solid #000;"></canvas>
+                                    <div class="mt-2">
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="clearSignature()">清除簽名</button>
+                                    </div>
+                                    <input type="hidden" name="SignatureDataUrl" id="SignatureDataUrl" />
                                 </div>
+
 
                                 <!-- <div class="col-12 d-none" data-sign-block="phone-signature-area">
                                   使用手機掃描QR Code進行電子簽名
@@ -446,6 +458,7 @@
 
 @section Scripts{
     @* <script src="~/js/switchSignatureMode.js"></script> *@
+    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.6/dist/signature_pad.umd.min.js"></script>
     <script src="~/js/selectDistrict.js"></script>
     <script src="~/js/applyRentalInput.js"></script>
     <script src="~/js/applyRentalNote.js"></script>

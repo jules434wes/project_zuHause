@@ -1,6 +1,7 @@
 ﻿@using zuHause.ViewModels.MemberViewModel
 @model List<ApplicationRecordViewModel>
 @{
+    ViewData["Title"] = "申請紀錄管理";
     ViewData["activePage"] = "MemberApplications";
 }
 
@@ -41,9 +42,9 @@
                     @await Component.InvokeAsync("MemberApplicationCard",new MemberApplicationCardInputViewModel
                     {
                         Record = item,
-                                StatusCodeDict = ViewBag.ApplicationStatusOptions as Dictionary<string, string> ?? new()
-                                })
-                                }
+                        StatusCodeDict = ViewBag.ApplicationStatusOptions as Dictionary<string, string> ?? new()
+                    })
+                }
             </div>
 
         </div>
@@ -52,8 +53,8 @@
 </div>
 
 @section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.6/dist/signature_pad.umd.min.js"></script>
     <script src="~/js/changeMemberContractCard.js"></script>
-    <script src="~/js/signatureVerify.js"></script>
     <script src="~/js/signatureValidation.js"></script>
 
 }

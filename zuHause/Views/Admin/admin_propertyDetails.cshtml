@@ -19,7 +19,7 @@
 <script src="~/js/admin_js/property-details.js"></script>
 <script>
 	// 設定當前房源ID和PDF URL
-	var currentPropertyId = '@(Model.Data?.PropertyId ?? "")';
+	var currentPropertyId = '@(Model.Data?.PropertyId?.ToString() ?? "0")';
 	var currentPropertyProofUrl = '@(Model.Data?.PropertyProofUrl ?? "")';
 	
 	// 將PDF URL設為全域變數供JavaScript使用
@@ -27,8 +27,10 @@
 	
 	// 頁面載入完成後設定
 	document.addEventListener('DOMContentLoaded', function() {
-		if (currentPropertyId) {
-			setCurrentPropertyId(currentPropertyId);
+		if (currentPropertyId && currentPropertyId !== '0') {
+			setCurrentPropertyId(parseInt(currentPropertyId, 10));
+		} else {
+			console.error('無效的房源ID:', currentPropertyId);
 		}
 	});
 </script>

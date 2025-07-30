@@ -4,12 +4,14 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using System.Security.Claims;
 using System.Text.Json;
+using System.Text.RegularExpressions;
+using zuHause.DTOs;
 using zuHause.Models;
 using zuHause.Services;
 using zuHause.ViewModels.MemberViewModel;
-using zuHause.DTOs;
 
 namespace zuHause.Controllers
 {
@@ -19,12 +21,15 @@ namespace zuHause.Controllers
         public readonly ZuHauseContext _context;
         private readonly IConverter _converter;
         public readonly ApplicationService _applicationService;
-        public MemberContractsController(ZuHauseContext context, IConverter converter, ApplicationService applicationService)
+        public readonly ImageResolverService _imageResolverService;
+        public readonly NotificationService _notificationService;
+        public MemberContractsController(ZuHauseContext context, IConverter converter, ApplicationService applicationService, ImageResolverService imageResolverService, NotificationService notificationService)
         {
             _context = context;
             _converter = converter;
             _applicationService = applicationService;
-
+            _imageResolverService = imageResolverService;
+            _notificationService = notificationService;
         }
         public async Task<IActionResult> Index()
         {
@@ -44,6 +49,10 @@ namespace zuHause.Controllers
 
 
 
+
+
+
+
             if (role == "1") // 房客
             {
 
@@ -55,41 +64,42 @@ namespace zuHause.Controllers
                         r => r.ApplicationId,
                         c => c.RentalApplicationId,
                         (r, c) => new { r, c })
-                    .Join(_context.FurnitureOrders,
-                        rc => rc.r.PropertyId,
-                        f => f.PropertyId,
-                        (rc, f) => new { rc, f })
                     .Join(_context.Properties,
-                        rcf => rcf.rc.r.PropertyId,
+                        rc => rc.r.PropertyId,
                         p => p.PropertyId,
-                        (rcf, p) => new { rcf, p })
+                        (rc, p) => new { rc, p })
                     .Join(_context.Members,
-                        rcfp => rcfp.rcf.rc.r.MemberId,
+                        rcp => rcp.rc.r.MemberId,
                         m => m.MemberId,
-                        (rcfp, m) => new ContractsViewModel
+                        (rcp, m) => new ContractsViewModel
                         {
-                            ApplicationId = rcfp.rcf.rc.r.ApplicationId,
-                            ApplicationType = rcfp.rcf.rc.r.ApplicationType,
-                            MemberId = rcfp.rcf.rc.r.MemberId,
-                            PropertyId = rcfp.rcf.rc.r.PropertyId,
-                            CurrentStatus = rcfp.rcf.rc.r.CurrentStatus,
-                            ContractId = rcfp.rcf.rc.c.ContractId,
-                            StartDate = rcfp.rcf.rc.c.StartDate,
-                            EndDate = rcfp.rcf.rc.c.EndDate,
-                            Status = rcfp.rcf.rc.c.Status,
-                            CustomName = rcfp.rcf.rc.c.CustomName,
-                            HaveFurniture = rcfp.rcf.f.FurnitureOrderId,
-                            LandlordMemberId = rcfp.p.LandlordMemberId,
-                            PublishedAt = rcfp.p.PublishedAt,
-                            Title = rcfp.p.Title,
-                            AddressLine = rcfp.p.AddressLine,
-                            MonthlyRent = rcfp.p.MonthlyRent,
-                            PreviewImageUrl = rcfp.p.PreviewImageUrl,
-                            StatusDisplayName = GetStatusDisplayName(rcfp.rcf.rc.c.Status, codeDict),
+                            ApplicationId = rcp.rc.r.ApplicationId,
+                            ApplicationType = rcp.rc.r.ApplicationType,
+                            MemberId = rcp.rc.r.MemberId,
+                            PropertyId = rcp.rc.r.PropertyId,
+                            CurrentStatus = rcp.rc.r.CurrentStatus,
+                            ContractId = rcp.rc.c.ContractId,
+                            StartDate = rcp.rc.c.StartDate,
+                            EndDate = rcp.rc.c.EndDate,
+                            Status = rcp.rc.c.Status,
+                            CustomName = rcp.rc.c.CustomName,
+                            HaveFurniture = _context.FurnitureOrders
+                                .Any(f => f.PropertyId == rcp.rc.r.PropertyId) ? "是" : null,
+
+                            LandlordMemberId = rcp.p.LandlordMemberId,
+                            PublishedAt = rcp.p.PublishedAt,
+                            Title = rcp.p.Title,
+                            AddressLine = rcp.p.AddressLine,
+                            MonthlyRent = rcp.p.MonthlyRent,
+                            PreviewImageUrl = rcp.p.PreviewImageUrl,
+                            StatusDisplayName = GetStatusDisplayName(rcp.rc.c.Status, codeDict),
                             ApplicantName = m.MemberName,
                             ApplicantBath = m.BirthDate,
-                        }).OrderByDescending(x=>x.ContractId)
+                        })
+                    .OrderByDescending(x => x.ContractId)
                     .ToListAsync();
+
+
             }
             else if (role == "2") // 房東
             {
@@ -152,6 +162,12 @@ namespace zuHause.Controllers
                 contractsLog = contractsLog
                     .Where(c => c.Status == filterStatus)
                     .ToList();
+            }
+
+            foreach(ContractsViewModel item in contractsLog)
+            {
+                string ImgUrl = await _imageResolverService.GetImageUrl(item.PropertyId, "Property", "Gallery", "medium");
+                item.imgPath = ImgUrl;
             }
 
 
@@ -220,6 +236,8 @@ namespace zuHause.Controllers
             if (application == null)
                 return NotFound();
 
+            string ImgUrl = await _imageResolverService.GetImageUrl(application.PropertyId, "Property", "Gallery", "medium");
+
             var vm = new ContractFormViewModel
             {
                 SelectedTemplateId = latestTemplate!.ContractTemplateId,
@@ -235,6 +253,7 @@ namespace zuHause.Controllers
                 RentalStartDate = application.RentalStartDate,
                 RentalEndDate = application.RentalEndDate,
                 CityOptions = cities,
+                imgPath = ImgUrl,
             };
 
             return View(vm);
@@ -245,6 +264,10 @@ namespace zuHause.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ContractProduction(ContractFormViewModel model)
         {
+
+
+
+
             if (!ModelState.IsValid)
             {
                 // 若驗證失敗，回傳城市選單重新載入 View
@@ -255,6 +278,19 @@ namespace zuHause.Controllers
                 model.CityOptions = await _context.Cities
                     .Select(c => new SelectListItem { Value = c.CityId.ToString(), Text = c.CityName })
                     .ToListAsync();
+
+
+                foreach (var entry in ModelState)
+                {
+                    if (entry.Value?.Errors.Count > 0)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"欄位 {entry.Key} 有錯誤：");
+                        foreach (var error in entry.Value.Errors)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"- {error.ErrorMessage}");
+                        }
+                    }
+                }
 
                 return View(model);
             }
@@ -365,17 +401,15 @@ namespace zuHause.Controllers
             }
 
             // 儲存簽名檔案（UserUpload）
-            if (model.SignatureFile != null)
+
+            if (!string.IsNullOrEmpty(model.SignatureDataUrl))
             {
-                var file = model.SignatureFile;
-                string storedFileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
+                var base64Data = Regex.Match(model.SignatureDataUrl, @"data:image/(?<type>.+?);base64,(?<data>.+)").Groups["data"].Value;
+                var imageBytes = Convert.FromBase64String(base64Data);
+
+                string storedFileName = $"{Guid.NewGuid()}.png";
                 string filePath = Path.Combine("wwwroot/uploads/signatures", storedFileName);
-                using (var stream = new FileStream(filePath, FileMode.Create))
-                {
-                    await file.CopyToAsync(stream);
-                }
-
-
+                await System.IO.File.WriteAllBytesAsync(filePath, imageBytes);
 
                 var upload = new UserUpload
                 {
@@ -383,12 +417,12 @@ namespace zuHause.Controllers
                     ModuleCode = "CONTRACT",
                     SourceEntityId = contractId,
                     UploadTypeCode = "LANDLORD_SIGNATURE",
-                    OriginalFileName = file.FileName,
+                    OriginalFileName = "signature.png",
                     StoredFileName = storedFileName,
-                    FileExt = Path.GetExtension(file.FileName),
-                    MimeType = file.ContentType,
+                    FileExt = ".png",
+                    MimeType = "image/png",
                     FilePath = $"/uploads/signatures/{storedFileName}",
-                    FileSize = file.Length,
+                    FileSize = imageBytes.Length,
                     UploadedAt = now,
                     CreatedAt = now,
                     UpdatedAt = now,
@@ -398,20 +432,18 @@ namespace zuHause.Controllers
                 _context.UserUploads.Add(upload);
                 await _context.SaveChangesAsync();
 
-                // 新增對應的 ContractSignature 資料
                 var contractSignature = new ContractSignature
                 {
                     ContractId = contractId,
                     SignerId = memberId,
-                    SignerRole = "LANDLORD", // 或 "TENANT"，你可以根據實際使用者判斷
-                    SignMethod = "UPLOAD",
+                    SignerRole = "LANDLORD",
+                    SignMethod = "CANVAS",
                     SignatureFileUrl = upload.FilePath,
                     UploadId = upload.UploadId,
                     SignedAt = now
                 };
 
                 _context.ContractSignatures.Add(contractSignature);
-
             }
 
 
@@ -421,79 +453,66 @@ namespace zuHause.Controllers
             return RedirectToAction("Preview", new { contractId = contractId });
         }
 
-
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateTenantSign(TenantSignViewModel model)
         {
-
-            System.Diagnostics.Debug.WriteLine($"==========={model.RentalApplicationId}=================");
-            System.Diagnostics.Debug.WriteLine($"==========={model.ContractId}=================");
-
-            if (!ModelState.IsValid)
+            if (!ModelState.IsValid || string.IsNullOrEmpty(model.SignatureDataUrl))
             {
-                return Content("上傳失敗，請檢查檔案或申請");
+                return Content("簽名失敗，請重新確認是否有簽名！");
             }
 
             var memberId = int.Parse(User.FindFirst("UserId")!.Value);
             var now = DateTime.Now;
 
-            // 儲存簽名檔案（UserUpload）
-            if (model.SignatureFile != null)
+            // 將 base64 圖片儲存
+            var base64Data = Regex.Match(model.SignatureDataUrl, @"data:image/(?<type>.+?);base64,(?<data>.+)").Groups["data"].Value;
+            var imageBytes = Convert.FromBase64String(base64Data);
+
+            string storedFileName = $"{Guid.NewGuid()}.png";
+            string filePath = Path.Combine("wwwroot/uploads/signatures", storedFileName);
+            await System.IO.File.WriteAllBytesAsync(filePath, imageBytes);
+
+            var upload = new UserUpload
             {
-                var file = model.SignatureFile;
-                string storedFileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
-                string filePath = Path.Combine("wwwroot/uploads/signatures", storedFileName);
-                using (var stream = new FileStream(filePath, FileMode.Create))
-                {
-                    await file.CopyToAsync(stream);
-                }
+                MemberId = memberId,
+                ModuleCode = "CONTRACT",
+                SourceEntityId = model.ContractId,
+                UploadTypeCode = "TENANT_SIGNATURE",
+                OriginalFileName = "signature.png",
+                StoredFileName = storedFileName,
+                FileExt = ".png",
+                MimeType = "image/png",
+                FilePath = $"/uploads/signatures/{storedFileName}",
+                FileSize = imageBytes.Length,
+                UploadedAt = now,
+                CreatedAt = now,
+                UpdatedAt = now,
+                IsActive = true
+            };
 
-
-
-                var upload = new UserUpload
-                {
-                    MemberId = memberId,
-                    ModuleCode = "CONTRACT",
-                    SourceEntityId = model.ContractId,
-                    UploadTypeCode = "TENANT_SIGNATURE",
-                    OriginalFileName = file.FileName,
-                    StoredFileName = storedFileName,
-                    FileExt = Path.GetExtension(file.FileName),
-                    MimeType = file.ContentType,
-                    FilePath = $"/uploads/signatures/{storedFileName}",
-                    FileSize = file.Length,
-                    UploadedAt = now,
-                    CreatedAt = now,
-                    UpdatedAt = now,
-                    IsActive = true
-                };
-
-                _context.UserUploads.Add(upload);
-                await _context.SaveChangesAsync();
-
-                // 新增對應的 ContractSignature 資料
-                var contractSignature = new ContractSignature
-                {
-                    ContractId = model.ContractId,
-                    SignerId = memberId,
-                    SignerRole = "TENANT", 
-                    SignMethod = "UPLOAD",
-                    SignatureFileUrl = upload.FilePath,
-                    UploadId = upload.UploadId,
-                    SignedAt = now
-                };
-
-                _context.ContractSignatures.Add(contractSignature);
-
-            }
-
+            _context.UserUploads.Add(upload);
             await _context.SaveChangesAsync();
-            await _applicationService.UpdateApplicationStatusAsync(model.RentalApplicationId!.Value, "WAIT_TENANT_AGREE");
 
+            var contractSignature = new ContractSignature
+            {
+                ContractId = model.ContractId,
+                SignerId = memberId,
+                SignerRole = "TENANT",
+                SignMethod = "CANVAS",
+                SignatureFileUrl = upload.FilePath,
+                UploadId = upload.UploadId,
+                SignedAt = now
+            };
+
+            _context.ContractSignatures.Add(contractSignature);
+            await _context.SaveChangesAsync();
+
+            await _applicationService.UpdateApplicationStatusAsync(model.RentalApplicationId!.Value, "WAIT_TENANT_AGREE");
 
             return RedirectToAction("Preview", "MemberContracts", new { contractId = model.ContractId });
         }
+
 
 
         [HttpPost]
@@ -503,7 +522,7 @@ namespace zuHause.Controllers
             string contractName = data.ContractName!;
             System.Diagnostics.Debug.WriteLine($"===={contractId}===");
             System.Diagnostics.Debug.WriteLine($"===={contractName}===");
-            Contract? result = await _context.Contracts.Where(c => c.ContractId == contractId).FirstOrDefaultAsync();
+            Contract result = await _context.Contracts.Where(c => c.ContractId == contractId).FirstOrDefaultAsync();
             if (result == null) return BadRequest("請確認合約編號");
             result.CustomName = contractName;
             _context.Update(result);
@@ -529,9 +548,13 @@ namespace zuHause.Controllers
             var userId = int.Parse(User.FindFirst("UserId")!.Value);
             string userRole = User.FindFirst(ClaimTypes.Role)?.Value ?? "";
 
-            string? actionType = null;
+            string? actionType = "PIKA";
 
 
+            System.Diagnostics.Debug.WriteLine($"➡️ User身分: {userRole}");
+            System.Diagnostics.Debug.WriteLine($"➡️ UserId: {userId}");
+            System.Diagnostics.Debug.WriteLine($"➡️ 合約申請者ID: {contract.RentalApplication!.MemberId}");
+            System.Diagnostics.Debug.WriteLine($"➡️ 合約申請狀態: {contract.RentalApplication.CurrentStatus}");
             //擬定合約
             if (userRole == "2" && contract.RentalApplication!.Property.LandlordMemberId == userId &&
                 contract.RentalApplication.CurrentStatus == "WAITING_CONTRACT")
@@ -867,6 +890,18 @@ namespace zuHause.Controllers
                 _context.Update(contract);
                 await _context.SaveChangesAsync();
 
+                var (success, message) = await _notificationService.CreateUserNotificationAsync
+                    (
+                    receiverId: contract!.RentalApplication!.MemberId,
+                    typeCode: "CONTRACT_CONTRACTED",
+                    title: $"您申請的【{contract!.RentalApplication!.Property.Title}】租賃合約完成！",
+                    content:
+                        $"親愛的會員您好，\n您申請的【{contract!.RentalApplication!.Property.Title}】租賃合約完成！可至合約管理下載合約！",
+                    ModuleCode: "Contract",
+                    sourceEntityId: contract.ContractId // 合約編號
+                    );
+
+
                 return RedirectToAction("Index", "MemberContracts");
             }
             else
@@ -875,6 +910,14 @@ namespace zuHause.Controllers
             }
 
         }
+
+        public async Task<string> GetPropertyImageUrl(int propertyId)
+        {
+           string ImgUrl =  await _imageResolverService.GetImageUrl(propertyId, "Property", "Gallery", "medium");
+
+            return ImgUrl;
+        }
+
     }
     public class ContractNameDto
     {
