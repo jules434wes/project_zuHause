@@ -135,6 +135,73 @@
 				</div>
 			</div>
 		</div>
+
+		<div class="card mt-3">
+			<div class="card-header">
+				<h5 class="mb-0">歷史傢俱訂單</h5>
+			</div>
+			<div class="card-body">
+				<div class="table-responsive">
+					<table class="table table-striped table-hover">
+						<thead class="table-dark">
+							<tr>
+								<th>訂單ID</th>
+								<th>訂單總金額</th>
+								<th>訂單狀態</th>
+								<th>付款狀態</th>
+								<th class="sortable" data-sort="orderDate">
+									下單時間
+									<i class="bi bi-sort-down sort-icon active" data-direction="desc"></i>
+								</th>
+							</tr>
+						</thead>
+						<tbody>
+							@if (memberData.FurnitureOrders != null && memberData.FurnitureOrders.Any())
+							{
+								@foreach (var order in memberData.FurnitureOrders)
+								{
+									<tr>
+										<td><a href="@order.OrderUrl" target="_blank" class="text-decoration-none">@order.OrderId</a></td>
+										<td>NT$ @order.TotalAmount.ToString("N0")</td>
+										<td>
+											@if (order.OrderStatus == "準備中")
+											{
+												<span class="badge bg-primary">@order.OrderStatus</span>
+											}
+											else if (order.OrderStatus == "已完成")
+											{
+												<span class="badge bg-success">@order.OrderStatus</span>
+											}
+											else
+											{
+												<span class="badge bg-secondary">@order.OrderStatus</span>
+											}
+										</td>
+										<td>
+											@if (order.PaymentStatus == "已付款")
+											{
+												<span class="badge bg-success">@order.PaymentStatus</span>
+											}
+											else
+											{
+												<span class="badge bg-warning">@order.PaymentStatus</span>
+											}
+										</td>
+										<td>@order.OrderDate.ToString("yyyy-MM-dd HH:mm:ss")</td>
+									</tr>
+								}
+							}
+							else
+							{
+								<tr>
+									<td colspan="5" class="text-center text-muted">尚無訂單記錄</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</div>
 	</div>
 
 	<!-- 房東活動頁籤 -->
@@ -252,75 +319,6 @@
 		</div>
 	}
 
-	<!-- 訂單記錄頁籤 -->
-	<div class="tab-pane fade" id="order-history" role="tabpanel" aria-labelledby="order-history-tab">
-		<div class="card mt-3">
-			<div class="card-header">
-				<h5 class="mb-0">歷史傢俱訂單</h5>
-			</div>
-			<div class="card-body">
-				<div class="table-responsive">
-					<table class="table table-striped table-hover">
-						<thead class="table-dark">
-							<tr>
-								<th>訂單ID</th>
-								<th>訂單總金額</th>
-								<th>訂單狀態</th>
-								<th>付款狀態</th>
-								<th class="sortable" data-sort="orderDate">
-									下單時間
-									<i class="bi bi-sort-down sort-icon active" data-direction="desc"></i>
-								</th>
-							</tr>
-						</thead>
-						<tbody>
-							@if (memberData.FurnitureOrders != null && memberData.FurnitureOrders.Any())
-							{
-								@foreach (var order in memberData.FurnitureOrders)
-								{
-									<tr>
-										<td><a href="@order.OrderUrl" target="_blank" class="text-decoration-none">@order.OrderId</a></td>
-										<td>NT$ @order.TotalAmount.ToString("N0")</td>
-										<td>
-											@if (order.OrderStatus == "準備中")
-											{
-												<span class="badge bg-primary">@order.OrderStatus</span>
-											}
-											else if (order.OrderStatus == "已完成")
-											{
-												<span class="badge bg-success">@order.OrderStatus</span>
-											}
-											else
-											{
-												<span class="badge bg-secondary">@order.OrderStatus</span>
-											}
-										</td>
-										<td>
-											@if (order.PaymentStatus == "已付款")
-											{
-												<span class="badge bg-success">@order.PaymentStatus</span>
-											}
-											else
-											{
-												<span class="badge bg-warning">@order.PaymentStatus</span>
-											}
-										</td>
-										<td>@order.OrderDate.ToString("yyyy-MM-dd HH:mm:ss")</td>
-									</tr>
-								}
-							}
-							else
-							{
-								<tr>
-									<td colspan="5" class="text-center text-muted">尚無訂單記錄</td>
-								</tr>
-							}
-						</tbody>
-					</table>
-				</div>
-			</div>
-		</div>
-	</div>
 
 	<!-- 溝通與支援頁籤 -->
 	<div class="tab-pane fade" id="support-history" role="tabpanel" aria-labelledby="support-history-tab">

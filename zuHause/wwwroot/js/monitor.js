@@ -1,7 +1,7 @@
 ﻿(() => {
     window.loadHotRankings = async function () {
         try {
-            const res = await fetch("/Dashboard/dashboard/hot-rankings");
+            const res = await fetch("/Dashboard/hot-rankings");
             const data = await res.json();
 
             const furnitureList = document.getElementById("furnitureRankings");

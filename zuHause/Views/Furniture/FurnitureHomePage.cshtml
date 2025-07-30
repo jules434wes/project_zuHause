@@ -23,31 +23,23 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <style>
-    /* ⬇️ 主容器避免被導覽列壓住（navbar 高度約 77px） */
     .bg-furniture-wrapper {
         min-height: 100vh;
         margin-top: 80px;
     }
 
-    /* ⬇️ 小螢幕下讓分類與商品區塊上下排列 */
-    @@media (max-width: 768px) {
-        .bg-furniture-wrapper .row {
-            flex-direction: column;
-        }
+   . bg-furniture-wrapper .col-md-2,
+   .bg-furniture-wrapper .col-md-10 {
+       width: 100%;
+       max-width: 100%;
+        flex: 0 0 100%;
+   }
 
-        .bg-furniture-wrapper .col-md-2,
-        .bg-furniture-wrapper .col-md-10 {
-            width: 100%;
-            max-width: 100%;
-            flex: 0 0 100%;
-        }
+    .bg-furniture-wrapper .col-md-2 {
+         margin-bottom: 1.5rem;
+     }
+   
 
-        .bg-furniture-wrapper .col-md-2 {
-            margin-bottom: 1.5rem;
-        }
-    }
-
-    /* ⬇️ 顏色與排版樣式 */
     .bg-furniture-wrapper h5,
     .bg-furniture-wrapper h6,
     .bg-furniture-wrapper ul,
@@ -85,17 +77,60 @@
     .carousel-indicators .active {
         background-color: #28a745;
     }
+
+    .carousel-control-prev.disabled,
+    .carousel-control-next.disabled {
+        opacity: 0.3;
+        pointer-events: none;
+    }
+
+    #allProductCarousel .carousel-item {
+    min-height: 600px; /* 視你的商品高度可微調 */
+    position: relative;
+}
+    .carousel-control-prev,
+    .carousel-control-next {
+        width: 60px;
+        height: 60px;
+        top: 40%;
+        background-color: rgba(0, 0, 0, 0.4); /* 深色半透明背景 */
+        border-radius: 50%;
+        transition: background-color 0.3s ease;
+    }
+
+    .carousel-control-prev:hover,
+    .carousel-control-next:hover {
+        background-color: rgba(0, 0, 0, 0.6); /* hover 更明顯 */
+    }
+
+    .carousel-control-prev-icon,
+    .carousel-control-next-icon {
+        width: 20px;
+        height: 20px;
+        filter: invert(1); /* 將白色箭頭轉深色背景仍可見 */
+    }
+
+    .card {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+   main.container-fluid {
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+    }
+
 </style>
 
-<!-- ✅ 頁面內容開始 -->
-<div class="bg-furniture-wrapper py-5">
+<!-- ✅ 主畫面內容區 -->
+<div class="bg-furniture-wrapper">
     <div class="container-fluid px-0">
         <div class="row gx-0">
-            <!-- ⬅️ 左側分類欄 -->
+            <!-- ⬅️ 左側分類區塊 -->
             <div class="col-md-2 px-4">
-                <h5>商品分類</h5>
+                <h3>商品分類</h3>
                 @Html.Partial("_FurnitureCategoryList", categories)
-
                 <hr />
                 <h6>租借須知</h6>
                 <ul>
@@ -105,10 +140,10 @@
                 </ul>
             </div>
 
-            <!-- ➡️ 右側主要內容 -->
+            <!-- ➡️ 右側主要內容區塊 -->
             <div class="col-md-10">
 
-                <!-- ✅ 輪播圖 -->
+                <!-- ✅ 輪播圖 Carousel -->
                 @if (carouselImages != null && carouselImages.Any())
                 {
                     <div id="furnitureCarousel" class="carousel slide mb-4" data-bs-ride="carousel">
@@ -122,32 +157,29 @@
                         </div>
                         <button class="carousel-control-prev" type="button" data-bs-target="#furnitureCarousel" data-bs-slide="prev">
                             <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                            <span class="visually-hidden">Previous</span>
+                            <span class="visually-hidden">上一張</span>
                         </button>
                         <button class="carousel-control-next" type="button" data-bs-target="#furnitureCarousel" data-bs-slide="next">
                             <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                            <span class="visually-hidden">Next</span>
+                            <span class="visually-hidden">下一張</span>
                         </button>
                     </div>
                 }
 
-                <!-- ✅ 熱門商品 -->
-                <h5 class="text-white">熱門商品</h5>
+                <!-- ✅ 熱門商品清單 -->
+                <h3 class="text-white">熱門商品</h3>
                 @if (hotProducts != null && hotProducts.Any())
                 {
                     <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-3">
                         @foreach (var product in hotProducts)
                         {
                             <div class="col">
-                                <a href="@Url.Action("ProductPurchasePage", "Furniture", new { id = product.FurnitureProductId })" class="card-link-wrapper text-decoration-none text-dark">
+                                <a href="@Url.Action("ProductPurchasePage", "Furniture", new { id = product.FurnitureProductId })" class="text-decoration-none text-dark">
                                     <div class="card h-100 shadow-sm position-relative">
-
-                                        @* 特價標籤條件顯示 *@
                                         @if (discountProductIds.Contains(product.FurnitureProductId))
                                         {
                                             <div class="badge-discount">特價中</div>
                                         }
-
                                         <img src="@product.ImageUrl" class="card-img-top w-100" alt="@product.ProductName" style="height: 250px; object-fit: cover;">
                                         <div class="card-body d-flex flex-column justify-content-between">
                                             <h6 class="card-title text-center text-dark">@product.ProductName</h6>
@@ -165,46 +197,9 @@
                         }
                     </div>
                 }
-                else
-                {
-                    <p class="text-white">目前沒有熱門商品。</p>
-                }
-
-                <!-- ✅ 特惠商品 -->
-                <h5 class="text-white mt-5">特惠商品</h5>
-                @if (ViewBag.discountProducts is List<zuHause.Models.FurnitureProduct> discountProducts && discountProducts.Any())
-                {
-                    <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-3">
-                        @foreach (var product in discountProducts)
-                        {
-                            <div class="col">
-                                <a href="@Url.Action("ProductPurchasePage", "Furniture", new { id = product.FurnitureProductId })" class="card-link-wrapper text-decoration-none text-dark">
-                                    <div class="card h-100 shadow-sm position-relative">
-                                        <div class="badge-discount">特價中</div>
-                                        <img src="@product.ImageUrl" class="card-img-top w-100" alt="@product.ProductName" style="height: 250px; object-fit: cover;">
-                                        <div class="card-body d-flex flex-column justify-content-between">
-                                            <h6 class="card-title text-center text-dark">@product.ProductName</h6>
-                                            <div class="text-center mt-2">
-                                                <p class="text-danger mb-1">租金: NT$@product.DailyRental.ToString("N0") /天</p>
-                                                <p class="text-muted small mb-2">原價: NT$@product.ListPrice.ToString("N0")</p>
-                                                <a href="@Url.Action("ProductPurchasePage", "Furniture", new { id = product.FurnitureProductId })" class="btn btn-success btn-sm w-100 mt-auto">
-                                                    查看商品詳情
-                                                </a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </a>
-                            </div>
-                        }
-                    </div>
-                }
-                else
-                {
-                    <p class="text-white">目前沒有特惠商品。</p>
-                }
-
-                <!-- ✅ 所有商品（分頁輪播） -->
-                <h5 class="text-white mt-5">所有商品</h5>
+                <br>
+                <!-- ✅ 所有商品輪播區 -->
+                <h3 class="text-white">所有商品</h3>
                 @{
                     var allProducts = ViewBag.allProducts as List<zuHause.Models.FurnitureProduct> ?? new List<zuHause.Models.FurnitureProduct>();
                     int pageSize = 8;
@@ -223,7 +218,7 @@
                                         @foreach (var product in itemsForPage)
                                         {
                                             <div class="col">
-                                                <a href="@Url.Action("ProductPurchasePage", "Furniture", new { id = product.FurnitureProductId })" class="card-link-wrapper text-decoration-none text-dark">
+                                                <a href="@Url.Action("ProductPurchasePage", "Furniture", new { id = product.FurnitureProductId })" class="text-decoration-none text-dark">
                                                     <div class="card h-100 shadow-sm position-relative">
                                                         <img src="@product.ImageUrl" class="card-img-top w-100" alt="@product.ProductName" style="height: 250px; object-fit: cover;">
                                                         <div class="card-body d-flex flex-column justify-content-between">
@@ -245,7 +240,7 @@
                             }
                         </div>
 
-                        <!-- 輪播控制按鈕 -->
+                        <!-- ⬅️ 右左按鈕 -->
                         <button class="carousel-control-prev" type="button" data-bs-target="#allProductCarousel" data-bs-slide="prev">
                             <span class="carousel-control-prev-icon" aria-hidden="true"></span>
                             <span class="visually-hidden">上一頁</span>
@@ -256,7 +251,7 @@
                         </button>
                     </div>
 
-                    <!-- 分頁指示點 -->
+                    <!-- ⭕ 分頁點點指示器 -->
                     <div class="carousel-indicators mt-3 justify-content-center" style="position: static;">
                         @for (int i = 0; i < totalPages; i++)
                         {
@@ -270,10 +265,6 @@
                         }
                     </div>
                 }
-                else
-                {
-                    <p class="text-white">目前沒有商品。</p>
-                }
             </div>
         </div>
     </div>
@@ -281,14 +272,15 @@
 
 @section Scripts {
     <script>
-        // 分頁輪播與指示點同步
         const carousel = document.querySelector('#allProductCarousel');
         const indicators = document.querySelectorAll('[data-bs-target="#allProductCarousel"]');
+        const prevBtn = carousel.querySelector('.carousel-control-prev');
+        const nextBtn = carousel.querySelector('.carousel-control-next');
+        const totalSlides = indicators.length;
 
-        carousel.addEventListener('slid.bs.carousel', function (e) {
-            const newIndex = e.to;
+        function updateControls(activeIndex) {
             indicators.forEach((btn, i) => {
-                if (i === newIndex) {
+                if (i === activeIndex) {
                     btn.classList.add('active');
                     btn.setAttribute('aria-current', 'true');
                 } else {
@@ -296,6 +288,28 @@
                     btn.removeAttribute('aria-current');
                 }
             });
+            prevBtn.classList.toggle('disabled', activeIndex === 0);
+            nextBtn.classList.toggle('disabled', activeIndex === totalSlides - 1);
+        }
+
+        // 初始載入畫面時設定正確狀態
+        document.addEventListener('DOMContentLoaded', function () {
+            const activeIndex = carousel.querySelector('.carousel-item.active') ?
+                Array.from(carousel.querySelectorAll('.carousel-item')).indexOf(carousel.querySelector('.carousel-item.active')) : 0;
+            updateControls(activeIndex);
+        });
+
+        // 點擊下方圓點時更新狀態
+        indicators.forEach((btn, i) => {
+            btn.addEventListener('click', function () {
+                updateControls(i);
+            });
+        });
+
+        // 當輪播移動後自動更新圓點與箭頭狀態
+        carousel.addEventListener('slid.bs.carousel', function (e) {
+            const newIndex = Array.from(carousel.querySelectorAll('.carousel-item')).indexOf(e.relatedTarget);
+            updateControls(newIndex);
         });
     </script>
 }
