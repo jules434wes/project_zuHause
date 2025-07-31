@@ -1,32 +1,37 @@
-﻿<footer class="bg-dark text-white py-4 footer">
-	<div class="container">
-		<div class="row align-items-center">
-			<div class="col-md-4 text-center mb-3 mb-md-0">
-				<a href="/" class="text-white text-decoration-none">
-					<img src="~/images/zuHause_logo.png" alt="zuHause Logo">
-				</a>
-			</div>
-			<div class="col-md-4 text-center mb-3 mb-md-0">
+﻿<footer style="background: linear-gradient(to right, #A8E6CF, #DCFFFB); color: #1c1e22; padding: 30px 0;">
+	<div class="container d-flex justify-content-between align-items-center flex-wrap">
+
+		<div class="d-flex align-items-center">
+			<img src="~/images/logo.png" alt="zuHause Logo" style="height: 80px; margin-right: 20px;">
+			<div>
 				<p class="mt-2" style="color: white;">熊好租股份有限公司</p>
 				<p style="color: white;">台中市南屯區公益路二段51號</p>
 			</div>
-			<div class="col-md-4 text-center">
-				<ul class="list-inline">
-					<li class="list-inline-item"><a href="#" class="text-white text-decoration-none">服務條款</a></li>
-					<li class="list-inline-item">|</li>
-					<li class="list-inline-item"><a href="#" class="text-white text-decoration-none">免責聲明</a></li>
-					<li class="list-inline-item">|</li>
-					<li class="list-inline-item"><a href="#" class="text-white text-decoration-none">隱私權說明</a></li>
-				</ul>
-				<div class="social-icons mb-3">
-					<a href="#" class="text-white mx-2"><i class="bi bi-facebook bi-lg"></i></a>
-					<a href="#" class="text-white mx-2"><i class="bi bi-twitter bi-lg"></i></a>
-					<a href="#" class="text-white mx-2"><i class="bi bi-youtube bi-lg"></i></a>
-					<a href="#" class="text-white mx-2"><i class="bi bi-envelope bi-lg"></i></a>
-					<a href="#" class="text-white mx-2"><i class="bi bi-instagram bi-lg"></i></a>
-				</div>
-				<p class="text-muted small">Copyright © @DateTime.Now.Year 熊好租. All rights reserved.</p>
+		</div>
+
+		<div class="text-end mt-3 mt-md-0">
+			<ul class="list-inline">
+				<li class="list-inline-item">
+					<a asp-controller="Announcement" asp-action="Announcement" asp-route-section="announcements" class="text-white text-decoration-none">最新公告</a>
+				</li>
+				<li class="list-inline-item">
+					<a asp-controller="Announcement" asp-action="Announcement" asp-route-section="terms" class="text-white text-decoration-none">服務條款</a>
+				</li>
+				<li class="list-inline-item">
+					<a asp-controller="Announcement" asp-action="Announcement" asp-route-section="disclaimer" class="text-white text-decoration-none">免責聲明</a>
+				</li>
+				<li class="list-inline-item">
+					<a asp-controller="Announcement" asp-action="Announcement" asp-route-section="privacy" class="text-white text-decoration-none">隱私權說明</a>
+				</li>
+			</ul>
+			<div class="social-icons mb-3">
+				<a href="#" class="text-white mx-2"><i class="bi bi-facebook bi-lg"></i></a>
+				<a href="#" class="text-white mx-2"><i class="bi bi-twitter bi-lg"></i></a>
+				<a href="#" class="text-white mx-2"><i class="bi bi-youtube bi-lg"></i></a>
+				<a href="#" class="text-white mx-2"><i class="bi bi-envelope bi-lg"></i></a>
+				<a href="#" class="text-white mx-2"><i class="bi bi-instagram bi-lg"></i></a>
 			</div>
+			<p class="text-white text-decoration-none">Copyright © @DateTime.Now.Year 熊好租. All rights reserved.</p>
 		</div>
 	</div>
 </footer>

@@ -3,7 +3,7 @@
 <div class="w-100">
     <button type="button" class="btn btn-aqua py-0 w-100" data-bs-toggle="modal"
             data-bs-target="#landlordViewRentalApplication@(Model.RentalApplicationId)">
-        (房客)簽署合約
+        簽署合約
     </button>
 </div>
 
@@ -36,7 +36,7 @@
                                 <h6 class="col-auto mb-0 px-0 py-2">上傳簽名檔：</h6>
                                 <div class="col-auto gap-2 py-0">
                                     <div class="align-items-center">
-                                        <label for="SignatureFile@(Model.RentalApplicationId)" name="SignatureFile" class="col-auto border border-1 px-2 py-1" role="button">選擇檔案</label>
+                                        @* <label for="SignatureFile@(Model.RentalApplicationId)" name="SignatureFile" class="col-auto border border-1 px-2 py-1" role="button">選擇檔案</label> *@
                                         @* <input asp-for="SignatureFile" type="file" id="SignatureFile@(Model.RentalApplicationId)" class="d-none"> *@
                                         <canvas id="signatureCanvas@(Model.RentalApplicationId)" width="400" height="200" style="border: 1px solid #000;"></canvas>
                                         <input type="hidden" name="SignatureDataUrl" id="signatureDataUrl@(Model.RentalApplicationId)" />

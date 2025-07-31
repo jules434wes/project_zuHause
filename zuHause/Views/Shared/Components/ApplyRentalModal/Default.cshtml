@@ -1,8 +1,8 @@
 ﻿@using zuHause.ViewModels.MemberViewModel
 @model RentalApplicationViewModel
-
-<button type="button" class="btn btn-aqua py-0 col-auto" data-bs-toggle="modal" data-bs-target="#applyRental">
-    (房客)申請租賃
+@* data-bs-toggle="modal" *@
+<button type="button" class="btn btn-aqua py-0 col-auto apply-rental-btn" data-bs-target="#applyRental" data-pass="@(Model.NationalIdNo == null ? false : true )">
+    申請租賃
 </button>
 
 
@@ -180,5 +180,39 @@
                 </div>
             </div>
         </form>
+    </div>
+</div>
+
+
+<div class="modal fade" id="noticeModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="alertNotice" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg modal-fullscreen-lg-down">
+
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="applyRentalLabel">提醒</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-3">
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    @:請先完成身分認證，方可進行申請
+                }
+                else
+                {
+                    @:請先登入並完成身分認證，方可進行申請
+                }
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    <a href="@Url.Action("MemberProfile", "Member")" class="btn btn-aqua">前往身分認證</a>
+                }
+                else
+                {
+                    <a href="@Url.Action("Login", "Member")" class="btn btn-aqua">前往登入</a>
+                }
+            </div>
+        </div>
     </div>
 </div>
