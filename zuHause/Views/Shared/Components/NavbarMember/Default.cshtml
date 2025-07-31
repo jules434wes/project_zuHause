@@ -162,3 +162,21 @@
         </div>
     </nav>
 </header>
+
+<style>
+/* 通用 dropdown hover 樣式 - 覆蓋 Bootstrap 預設 */
+header.navbar-glass nav .dropdown-item:focus,
+header.navbar-glass nav .dropdown-item:hover {
+    background-color: #d1e3e6 !important;
+    color: #225e5d !important;
+}
+
+/* 特殊按鈕樣式 - 我的通知和登出按鈕 */
+header.navbar-glass .dropdown-menu .notification-link:hover,
+header.navbar-glass .dropdown-menu .notification-link:focus,
+header.navbar-glass .dropdown-menu #logoutSubmitButton:hover,
+header.navbar-glass .dropdown-menu #logoutSubmitButton:focus {
+    background-color: #225e5d !important;
+    color: white !important;
+}
+</style>
