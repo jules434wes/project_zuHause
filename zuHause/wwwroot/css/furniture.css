@@ -68,7 +68,25 @@
         }
     }
 }
+/*導覽列會員狀態*/
+.auth-links .nav-link {
+    color: #155a56 !important;
+    font-weight: 500;
+    font-size: 1rem;
+    text-decoration: none;
+    padding-top: 2px;
+    padding-bottom: 2px;
+}
 
+    .auth-links .nav-link:hover {
+        color: #0d807a !important;
+    }
+
+.auth-links .vr {
+    width: 1px;
+    height: 20px;
+    background-color: #0d807a;
+}
 
 
 

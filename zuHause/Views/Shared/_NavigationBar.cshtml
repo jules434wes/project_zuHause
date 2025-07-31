@@ -33,7 +33,8 @@
 
     <header>
         @* Bootstrap 響應式導覽列 *@
-        <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm">
+        <nav class="navbar navbar-expand-lg fixed-top navbar-glass">
+
             <div class="container-fluid">
 
                 @* 左側 LOGO *@
@@ -71,12 +72,17 @@
                         }
                         else
                         {
-                            <a href="@Url.Action("Login", "Member", new { ReturnUrl = Context.Request.Path })" class="text-decoration-none text-dark d-flex align-items-center">
-                                <i class="bi bi-person-fill text-muted me-1"></i>
-                                <span class="me-3">訪客</span>
-                            </a>
-                            <a href="@Url.Action("Login", "Member", new { ReturnUrl = Context.Request.Path })" class="btn btn-outline-secondary btn-sm me-2">登入</a>
-                            <a href="@Url.Action("RegisterVerifyPhone", "Member", new { ReturnUrl = Context.Request.Path })" class="btn btn-outline-primary btn-sm">註冊</a>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="d-flex align-items-center text-dark me-3">
+                                    <i class="bi bi-person-fill me-1"></i>
+                                    <span>訪客</span>
+                                </div>
+                                <div class="d-flex align-items-center auth-links">
+                                    <a href="@Url.Action("RegisterVerifyPhone", "Member", new { ReturnUrl = Context.Request.Path })" class="nav-link px-2">註冊</a>
+                                    <div class="vr mx-1"></div>
+                                    <a href="@Url.Action("Login", "Member", new { ReturnUrl = Context.Request.Path })" class="nav-link px-2">登入</a>
+                                </div>
+                            </div>
                         }
                     </div>
                 </div>
@@ -84,7 +90,7 @@
         </nav>
     </header>
 
-    <main class="container-fluid mt-5">
+    <main class="container-fluid mt-5 pt-5">
         @RenderBody()
     </main>
 
@@ -125,28 +131,33 @@
             </div>
         </div>
     </footer>
-
+    @* 頁尾 *@
+    @await Html.PartialAsync("_PartialMemberToast")
     <style>
-        /* 淺綠導覽列背景 + 高度 */
-            .navbar {
-                background-color: #c5eee5 !important;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                height: 77px;
-                position: relative;
-                z-index: 1050;
-            }
+        /* 導覽列背景 + 高度 */
+        .navbar-glass {
+            background-color: rgba(255, 255, 255, 0.7); /* 半透明白色 */
+            backdrop-filter: blur(12px); /* 毛玻璃模糊 */
+            -webkit-backdrop-filter: blur(12px); /* Safari 支援 */
+            height: 77px;
+            position: fixed;
+            z-index: 1050;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+        }
 
-            .navbar .nav-link,
-            .navbar .navbar-brand,
-            .navbar span {
-                color: #006b5e !important; /* 深綠字 */
+       .navbar-glass .nav-link,
+       .navbar-glass .navbar-brand,
+       .navbar-glass span {
+                color: #004d40 !important; /* 深綠字 */
                 font-weight: 500;
-            }
+        }
 
-            .navbar-brand img {
-                height: 65px;
-                margin-top: -5px;
-            }
+        .navbar-brand img {
+            height: 65px;
+            margin-top: -5px;
+        }
+
 
             main {
                 padding: 0;
