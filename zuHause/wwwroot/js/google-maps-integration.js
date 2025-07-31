@@ -30,6 +30,12 @@ class PropertyMapManager {
                 this.showFallbackContent();
                 return;
             }
+            
+            // 檢查是否需要顯示降級內容（座標不完整等情況）
+            if (mapData.showFallback) {
+                this.showFallbackContent(mapData.fallbackMessage);
+                return;
+            }
 
             // 3. 檢查 API 限制狀態
             if (mapData.isLimited) {
@@ -54,7 +60,7 @@ class PropertyMapManager {
             
         } catch (error) {
             console.warn('地圖載入失敗，顯示靜態資訊:', error);
-            this.showFallbackContent();
+            this.showFallbackContent(error.message);
         }
     }
 
@@ -95,7 +101,24 @@ class PropertyMapManager {
             });
 
             if (!response.ok) {
-                throw new Error(`API 請求失敗: ${response.status} ${response.statusText}`);
+                if (response.status === 400) {
+                    // 座標不完整時顯示友善訊息，這是預期的情況，不算錯誤
+                    console.info('🗺️ 房源座標資料不完整，顯示降級內容');
+                    return {
+                        success: false,
+                        showFallback: true,
+                        fallbackMessage: '地圖資料準備中，請稍後重新整理頁面查看'
+                    };
+                }
+                
+                // 處理其他錯誤狀態
+                let errorMessage = `API 請求失敗: ${response.status}`;
+                if (response.status === 404) {
+                    errorMessage = '找不到此房源的地圖資料';
+                } else if (response.status === 500) {
+                    errorMessage = '地圖服務暫時無法使用，請稍後再試';
+                }
+                throw new Error(errorMessage);
             }
 
             const data = await response.json();
@@ -103,8 +126,16 @@ class PropertyMapManager {
             return data;
             
         } catch (error) {
-            console.error('獲取房源地圖資料失敗:', error);
-            return null;
+            // 只有非 400 錯誤和網路錯誤才會到這裡
+            if (error.message && error.message.includes('API 請求失敗')) {
+                // 重新拋出 API 錯誤，保持原有的錯誤處理
+                console.error('獲取房源地圖資料失敗:', error);
+                return null;
+            } else {
+                // 處理網路錯誤或其他異常
+                console.error('獲取房源地圖資料時發生網路錯誤:', error);
+                return null;
+            }
         }
     }
 
@@ -384,13 +415,15 @@ class PropertyMapManager {
     /**
      * 顯示降級內容
      */
-    showFallbackContent() {
+    showFallbackContent(errorMessage) {
         if (this.mapContainer) {
+            const displayMessage = errorMessage || '地圖載入失敗';
             this.mapContainer.innerHTML = `
                 <div class="map-message fallback-message">
                     <div class="text-center p-4">
                         <i class="fas fa-map-marker-alt fa-2x mb-3 text-muted"></i>
-                        <h6>地圖載入失敗</h6>
+                        <h6>地圖暫時無法顯示</h6>
+                        <p class="mb-2 text-muted small">${displayMessage}</p>
                         <p class="mb-0">請查看下方的交通資訊</p>
                     </div>
                 </div>
@@ -405,6 +438,12 @@ class PropertyMapManager {
 
 // 當頁面載入完成後自動初始化
 document.addEventListener('DOMContentLoaded', function() {
+    // 檢查是否被其他腳本阻止自動初始化（例如座標補全流程）
+    if (window.skipAutoMapInit) {
+        console.log('🗺️ 跳過自動地圖初始化（由其他腳本控制）');
+        return;
+    }
+    
     // 從頁面 URL 或資料屬性取得房源ID
     const propertyId = getPropertyIdFromPage();
     

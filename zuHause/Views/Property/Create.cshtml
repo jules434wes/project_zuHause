@@ -867,6 +867,80 @@
                 min-width: 140px;
             }
         }
+        
+        /* 即時驗證樣式 */
+        .form-control.is-invalid,
+        .form-select.is-invalid {
+            border-color: #dc3545;
+            box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+        }
+        
+        .form-control.is-invalid:focus,
+        .form-select.is-invalid:focus {
+            border-color: #dc3545;
+            box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+        }
+        
+        /* 即時驗證錯誤文字樣式 */
+        .text-danger.small {
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        
+        /* 表單提交載入覆蓋層樣式 */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .loading-content {
+            text-align: center;
+            color: white;
+            padding: 2rem;
+            max-width: 400px;
+        }
+        
+        .loading-spinner {
+            margin-bottom: 1rem;
+        }
+        
+        .loading-text {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        
+        .loading-description {
+            font-size: 1rem;
+            opacity: 0.9;
+            margin-bottom: 1.5rem;
+        }
+        
+        .loading-progress {
+            width: 100%;
+        }
+        
+        .loading-progress .progress {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        
+        .loading-progress .progress-bar {
+            background-color: #28a745;
+            transition: width 0.6s ease;
+        }
+        
+        /* 防止背景滾動 */
+        body.loading-active {
+            overflow: hidden;
+        }
     </style>
     
     <link rel="stylesheet" href="~/css/_LoginPartialShared.css" asp-append-version="true" />
@@ -991,6 +1065,7 @@
                                     <div class="input-group">
                                         <span class="input-group-text">NT$</span>
                                         <input type="number" class="form-control" id="MonthlyRent" name="MonthlyRent" 
+                                               value="@(Model.PropertyData?.MonthlyRent ?? 0)" 
                                                placeholder="請輸入月租金" 
                                                min="1000" max="999999" step="100" required>
                                         <span class="input-group-text">元</span>
@@ -1010,6 +1085,7 @@
                                     <label class="form-label required" for="RoomCount">房間數</label>
                                     <div class="input-group">
                                         <input type="number" class="form-control" id="RoomCount" name="RoomCount" 
+                                               value="@(Model.PropertyData?.RoomCount ?? 0)" 
                                                placeholder="請輸入房間數" 
                                                min="0" max="10" step="1" required>
                                         <span class="input-group-text">房</span>
@@ -1023,6 +1099,7 @@
                                     <label class="form-label required" for="LivingRoomCount">客廳數</label>
                                     <div class="input-group">
                                         <input type="number" class="form-control" id="LivingRoomCount" name="LivingRoomCount" 
+                                               value="@(Model.PropertyData?.LivingRoomCount ?? 0)" 
                                                placeholder="請輸入客廳數" 
                                                min="0" max="5" step="1" required>
                                         <span class="input-group-text">廳</span>
@@ -1036,6 +1113,7 @@
                                     <label class="form-label required" for="BathroomCount">衛浴數</label>
                                     <div class="input-group">
                                         <input type="number" class="form-control" id="BathroomCount" name="BathroomCount" 
+                                               value="@(Model.PropertyData?.BathroomCount ?? 1)" 
                                                placeholder="請輸入衛浴數" 
                                                min="1" max="10" step="1" required>
                                         <span class="input-group-text">衛</span>
@@ -1049,6 +1127,7 @@
                                     <label class="form-label required" for="Area">坪數</label>
                                     <div class="input-group">
                                         <input type="number" class="form-control" id="Area" name="Area" 
+                                               value="@(Model.PropertyData?.Area ?? 0)" 
                                                placeholder="請輸入坪數" 
                                                min="1" max="1000" step="0.1" required>
                                         <span class="input-group-text">坪</span>
@@ -1064,6 +1143,7 @@
                                     <label class="form-label required" for="CurrentFloor">所在樓層</label>
                                     <div class="input-group">
                                         <input type="number" class="form-control" id="CurrentFloor" name="CurrentFloor" 
+                                               value="@(Model.PropertyData?.CurrentFloor ?? 0)" 
                                                placeholder="請輸入所在樓層" 
                                                min="-3" max="50" step="1" required>
                                         <span class="input-group-text">樓</span>
@@ -1081,6 +1161,7 @@
                                     <label class="form-label required" for="TotalFloors">總樓層數</label>
                                     <div class="input-group">
                                         <input type="number" class="form-control" id="TotalFloors" name="TotalFloors" 
+                                               value="@(Model.PropertyData?.TotalFloors ?? 0)" 
                                                placeholder="請輸入總樓層數" 
                                                min="1" max="50" step="1" required>
                                         <span class="input-group-text">層</span>
@@ -1105,6 +1186,7 @@
                                     <div class="input-group">
                                         <span class="input-group-text">NT$</span>
                                         <input type="number" class="form-control" id="DepositAmount" name="DepositAmount" 
+                                               value="@(Model.PropertyData?.DepositAmount ?? 0)" 
                                                placeholder="請輸入押金金額" 
                                                min="0" max="999999" step="100" required>
                                         <span class="input-group-text">元</span>
@@ -1118,6 +1200,7 @@
                                     <label class="form-label required" for="DepositMonths">押金月數</label>
                                     <div class="input-group">
                                         <input type="number" class="form-control" id="DepositMonths" name="DepositMonths" 
+                                               value="@(Model.PropertyData?.DepositMonths ?? 0)" 
                                                placeholder="請輸入押金月數" 
                                                min="0" max="6" step="1" required>
                                         <span class="input-group-text">個月</span>
@@ -1173,6 +1256,7 @@
                                         <div class="input-group mt-2">
                                             <span class="input-group-text">NT$</span>
                                             <input type="number" class="form-control" id="ManagementFeeAmount" name="ManagementFeeAmount" 
+                                                   value="@(Model.PropertyData?.ManagementFeeAmount ?? 0)" 
                                                    placeholder="請輸入管理費金額" min="0" step="100">
                                             <span class="input-group-text">元/月</span>
                                         </div>
@@ -1205,6 +1289,7 @@
                                         <div class="input-group mt-2">
                                             <span class="input-group-text">NT$</span>
                                             <input type="number" class="form-control" id="CustomWaterFee" name="CustomWaterFee" 
+                                                   value="@(Model.PropertyData?.CustomWaterFee ?? 0)" 
                                                    placeholder="請輸入自訂水費" min="0" step="0.1">
                                             <span class="input-group-text">元/月</span>
                                         </div>
@@ -1230,6 +1315,7 @@
                                         <div class="input-group mt-2">
                                             <span class="input-group-text">NT$</span>
                                             <input type="number" class="form-control" id="CustomElectricityFee" name="CustomElectricityFee" 
+                                                   value="@(Model.PropertyData?.CustomElectricityFee ?? 0)" 
                                                    placeholder="請輸入自訂電費" min="0" step="0.1">
                                             <span class="input-group-text">元/度</span>
                                         </div>
@@ -1262,6 +1348,7 @@
                                         <div class="input-group mt-2">
                                             <span class="input-group-text">NT$</span>
                                             <input type="number" class="form-control" id="CleaningFeeAmount" name="CleaningFeeAmount" 
+                                                   value="@(Model.PropertyData?.CleaningFeeAmount ?? 0)" 
                                                    placeholder="請輸入清潔費金額" min="0" step="100">
                                             <span class="input-group-text">元</span>
                                         </div>
@@ -1294,8 +1381,9 @@
                             </div>
                             <div id="ParkingFeeContainer" style="display: none;">
                                 <div class="form-check mt-2">
+                                    <input type="hidden" name="ParkingFeeRequired" value="false" />
                                     <input class="form-check-input" type="checkbox" id="ParkingFeeRequired" name="ParkingFeeRequired" 
-                                           checked="@(Model.PropertyData?.ParkingFeeRequired == true)">
+                                           value="true" checked="@(Model.PropertyData?.ParkingFeeRequired == true)">
                                     <label class="form-check-label" for="ParkingFeeRequired">
                                         停車費須額外收取
                                     </label>
@@ -1304,6 +1392,7 @@
                                     <div class="input-group mt-2">
                                         <span class="input-group-text">NT$</span>
                                         <input type="number" class="form-control" id="ParkingFeeAmount" name="ParkingFeeAmount" 
+                                               value="@(Model.PropertyData?.ParkingFeeAmount ?? 0)" 
                                                placeholder="請輸入停車費金額" min="0" step="100">
                                         <span class="input-group-text">元/月</span>
                                     </div>
@@ -1492,23 +1581,59 @@
                             <i class="fas fa-file-pdf me-2"></i>房產證明文件
                         </h2>
                         
-                        <div class="form-group">
-                            <label class="form-label">房產證明文件 <span class="text-muted">(選填)</span></label>
-                            <div class="document-upload-area" id="documentUploadArea">
-                                <i class="fas fa-cloud-upload-alt upload-icon text-danger"></i>
-                                <h4>點擊或拖曳 PDF 文件到此處</h4>
-                                <p class="text-muted mb-3">支援 PDF 格式，單檔最大 10MB</p>
-                                <input type="file" asp-for="PropertyData.PropertyProofDocument" id="documentFile" accept="application/pdf" style="display: none;">
-                                <button type="button" class="btn btn-outline-danger" onclick="document.getElementById('documentFile').click()">
-                                    <i class="fas fa-file-pdf me-2"></i>選擇 PDF 文件
-                                </button>
+                        @if (Model.IsProofDocumentLocked)
+                        {
+                            <!-- 已鎖定文件區塊 -->
+                            <div class="alert alert-info d-flex align-items-center mb-3">
+                                <i class="fas fa-shield-check me-3 text-info" style="font-size: 1.5rem;"></i>
+                                <div>
+                                    <h6 class="mb-1">房產證明文件已鎖定</h6>
+                                    <small class="text-muted">
+                                        房源狀態：@(Model.PropertyData?.StatusCode == "LISTED" ? "已上架" : "已出租")
+                                        <span class="ms-2">已上傳證明文件無法修改</span>
+                                    </small>
+                                </div>
                             </div>
-                            <div class="form-text">
-                                <i class="fas fa-info-circle me-1"></i>
-                                請上傳房屋所有權狀、租賃契約或其他相關證明文件
+                            
+                            <!-- 鎖定狀態的文件顯示 -->
+                            <div class="form-group">
+                                <label class="form-label">房產證明文件 <span class="badge bg-info ms-2">已鎖定</span></label>
+                                <div class="document-upload-area locked-document">
+                                    <i class="fas fa-lock text-info upload-icon"></i>
+                                    <h5 class="text-info">文件已鎖定保護</h5>
+                                    <p class="text-muted mb-3">房源上架後證明文件無法修改，如需更新請聯繫客服</p>
+                                    <input type="file" asp-for="PropertyData.PropertyProofDocument" id="documentFile" accept="application/pdf" style="display: none;" disabled>
+                                    <button type="button" class="btn btn-outline-secondary" disabled>
+                                        <i class="fas fa-lock me-2"></i>文件已鎖定
+                                    </button>
+                                </div>
+                                <div class="form-text">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    房源上架後證明文件受到保護，確保房源資訊的真實性
+                                </div>
                             </div>
-                            <span asp-validation-for="PropertyData.PropertyProofDocument" class="text-danger small"></span>
-                        </div>
+                        }
+                        else
+                        {
+                            <!-- 一般文件上傳區塊 -->
+                            <div class="form-group">
+                                <label class="form-label">房產證明文件 <span class="text-muted">(選填)</span></label>
+                                <div class="document-upload-area" id="documentUploadArea">
+                                    <i class="fas fa-cloud-upload-alt upload-icon text-danger"></i>
+                                    <h4>點擊或拖曳 PDF 文件到此處</h4>
+                                    <p class="text-muted mb-3">支援 PDF 格式，單檔最大 10MB</p>
+                                    <input type="file" asp-for="PropertyData.PropertyProofDocument" id="documentFile" accept="application/pdf" style="display: none;">
+                                    <button type="button" class="btn btn-outline-danger" onclick="document.getElementById('documentFile').click()">
+                                        <i class="fas fa-file-pdf me-2"></i>選擇 PDF 文件
+                                    </button>
+                                </div>
+                                <div class="form-text">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    請上傳房屋所有權狀、租賃契約或其他相關證明文件
+                                </div>
+                                <span asp-validation-for="PropertyData.PropertyProofDocument" class="text-danger small"></span>
+                            </div>
+                        }
                         
                         <!-- PDF 預覽區域 -->
                         <div id="documentPreview" class="mt-3" style="display: none;">
@@ -1678,6 +1803,27 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">關閉預覽</button>
                 </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 表單提交載入覆蓋層 -->
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <div class="loading-content">
+            <div class="loading-spinner">
+                <div class="spinner-border text-light" role="status" style="width: 3rem; height: 3rem;">
+                    <span class="visually-hidden">載入中...</span>
+                </div>
+            </div>
+            <h4 class="loading-text mt-3">正在提交房源資料...</h4>
+            <p class="loading-description">請稍候，我們正在處理您的房源資訊</p>
+            <div class="loading-progress">
+                <div class="progress mb-2" style="height: 6px;">
+                    <div id="loadingProgressBar" class="progress-bar progress-bar-striped progress-bar-animated" 
+                         role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                    </div>
+                </div>
+                <small id="loadingProgressText" class="text-light">準備中...</small>
             </div>
         </div>
     </div>
@@ -2305,6 +2451,9 @@
                     // 更新預覽顯示
                     updatePropertyImagePreview();
                     
+                    // 觸發圖片上傳完成事件
+                    document.dispatchEvent(new CustomEvent('imageUploadComplete'));
+                    
                     // 隱藏上傳進度
                     propertyImageUploadProgress.style.display = 'none';
                     
@@ -2555,12 +2704,18 @@
                         updatePropertyImagePreview();
                         updateImageInfoStatus();
                         console.log('🗑️ 移除圖片，目前有', UploadManager.uploadedImages.length, '張圖片');
+                        
+                        // 觸發圖片移除完成事件
+                        document.dispatchEvent(new CustomEvent('imageUploadComplete'));
                     }, 400); // 配合 CSS 動畫時間
                 } else {
                     // 如果找不到卡片，直接移除
                     UploadManager.uploadedImages.splice(index, 1);
                     updatePropertyImagePreview();
                     updateImageInfoStatus();
+                    
+                    // 觸發圖片移除完成事件
+                    document.dispatchEvent(new CustomEvent('imageUploadComplete'));
                 }
             }
             
@@ -2679,6 +2834,9 @@
                     // 更新預覽顯示
                     updateDocumentPreview();
                     
+                    // 觸發文件上傳完成事件
+                    document.dispatchEvent(new CustomEvent('documentUploadComplete'));
+                    
                     // 隱藏上傳進度
                     documentUploadProgress.style.display = 'none';
                     
@@ -2726,6 +2884,9 @@
                 
                 updateDocumentPreview();
                 updateImageInfoStatus();
+                
+                // 觸發文件移除完成事件
+                document.dispatchEvent(new CustomEvent('documentUploadComplete'));
                 
                 console.log('🗑️ PDF 文件已移除，可重新上傳');
             }
@@ -2790,6 +2951,11 @@
                 // 更新圖片預覽顯示
                 updatePropertyImagePreview();
                 
+                // 觸發圖片載入完成事件
+                if (UploadManager.uploadedImages.length > 0) {
+                    document.dispatchEvent(new CustomEvent('imageUploadComplete'));
+                }
+                
                 @if (Model.PropertyData.ExistingImages.Any(img => img.Category == ImageCategory.Document))
                 {
                     var existingDoc = Model.PropertyData.ExistingImages.First(img => img.Category == ImageCategory.Document);
@@ -2805,6 +2971,9 @@
                     
                     // 更新 PDF 預覽顯示
                     updateDocumentPreview();
+                    
+                    // 觸發文件載入完成事件
+                    document.dispatchEvent(new CustomEvent('documentUploadComplete'));
                     </text>
                 }
                 </text>
@@ -2914,8 +3083,15 @@
                         // 添加圖片順序資料到表單
                         addImageOrderDataToForm(form);
                         
-                        console.log('✅ 圖片順序資料已添加，提交表單');
-                        form.submit();
+                        console.log('✅ 圖片順序資料已添加，開始載入動畫');
+                        
+                        // 顯示載入覆蓋層並開始提交
+                        showLoadingOverlay();
+                        
+                        // 稍微延遲提交，讓載入動畫能夠顯示
+                        setTimeout(() => {
+                            form.submit();
+                        }, 500);
                     } else {
                         console.warn('❌ 最終驗證失敗，請檢查表單');
                     }
@@ -2924,12 +3100,26 @@
                 }
             });
             
-            // 表單驗證和按鈕狀態更新
+            // 表單驗證和按鈕狀態更新 - 綁定所有相關事件
             document.addEventListener('input', updateSubmitButtonState);
             document.addEventListener('change', updateSubmitButtonState);
             
-            // 初始化按鈕狀態
-            updateSubmitButtonState();
+            // 即時欄位驗證
+            initializeRealTimeValidation();
+            
+            // 特別監聽檔案上傳完成事件
+            document.addEventListener('imageUploadComplete', updateSubmitButtonState);
+            document.addEventListener('documentUploadComplete', updateSubmitButtonState);
+            
+            // 初始化按鈕狀態 - 延遲執行確保所有組件已載入
+            setTimeout(() => {
+                updateSubmitButtonState();
+            }, 100);
+            
+            // 定期檢查按鈕狀態，確保在各種情況下都能正確更新
+            const buttonStateInterval = setInterval(() => {
+                updateSubmitButtonState();
+            }, 1000);
         }
         
         /**
@@ -3268,6 +3458,164 @@
             }
             
             return isValid;
+        }
+        
+        /**
+         * 初始化即時欄位驗證
+         */
+        function initializeRealTimeValidation() {
+            // 定義需要即時驗證的欄位和其規則
+            const validationRules = {
+                'LivingRoomCount': {
+                    min: 0,
+                    max: 5,
+                    fieldName: '客廳數',
+                    errorMessage: '客廳數必須介於 0-5 廳之間'
+                },
+                'RoomCount': {
+                    min: 1,
+                    max: 10,
+                    fieldName: '房間數',
+                    errorMessage: '房間數必須介於 1-10 房之間'
+                },
+                'BathroomCount': {
+                    min: 1,
+                    max: 10,
+                    fieldName: '衛浴數',
+                    errorMessage: '衛浴數必須介於 1-10 衛之間'
+                },
+                'Area': {
+                    min: 1,
+                    max: 1000,
+                    fieldName: '坪數',
+                    errorMessage: '坪數必須介於 1-1000 坪之間'
+                },
+                'CurrentFloor': {
+                    min: -10,
+                    max: 50,
+                    fieldName: '所在樓層',
+                    errorMessage: '所在樓層必須介於 -10 到 50 樓之間'
+                },
+                'TotalFloors': {
+                    min: 1,
+                    max: 50,
+                    fieldName: '總樓層數',
+                    errorMessage: '總樓層數必須介於 1-50 樓之間'
+                },
+                'DepositMonths': {
+                    min: 0,
+                    max: 6,
+                    fieldName: '押金月數',
+                    errorMessage: '押金月數必須介於 0-6 個月之間'
+                },
+                'MonthlyRent': {
+                    min: 1000,
+                    max: 999999,
+                    fieldName: '每月租金',
+                    errorMessage: '每月租金必須介於 1,000-999,999 元之間'
+                }
+            };
+
+            // 為每個欄位添加即時驗證
+            Object.keys(validationRules).forEach(fieldId => {
+                const field = document.getElementById(fieldId);
+                if (field) {
+                    // 獲取或創建錯誤提示元素
+                    let errorElement = document.getElementById(`${fieldId}_realtime_error`);
+                    if (!errorElement) {
+                        errorElement = document.createElement('div');
+                        errorElement.id = `${fieldId}_realtime_error`;
+                        errorElement.className = 'text-danger small mt-1';
+                        errorElement.style.display = 'none';
+                        field.parentElement.appendChild(errorElement);
+                    }
+
+                    // 添加即時驗證事件監聽器
+                    field.addEventListener('input', function() {
+                        validateFieldRealTime(fieldId, validationRules[fieldId], errorElement);
+                    });
+
+                    field.addEventListener('blur', function() {
+                        validateFieldRealTime(fieldId, validationRules[fieldId], errorElement);
+                    });
+                }
+            });
+
+            // 特殊處理：樓層數邏輯驗證
+            const currentFloorField = document.getElementById('CurrentFloor');
+            const totalFloorsField = document.getElementById('TotalFloors');
+            
+            if (currentFloorField && totalFloorsField) {
+                [currentFloorField, totalFloorsField].forEach(field => {
+                    field.addEventListener('input', function() {
+                        validateFloorLogic();
+                    });
+                    field.addEventListener('blur', function() {
+                        validateFloorLogic();
+                    });
+                });
+            }
+        }
+
+        /**
+         * 即時驗證單一欄位
+         */
+        function validateFieldRealTime(fieldId, rule, errorElement) {
+            const field = document.getElementById(fieldId);
+            if (!field) return;
+
+            const value = parseFloat(field.value);
+            let hasError = false;
+            let errorMessage = '';
+
+            // 檢查是否為空值
+            if (field.value === '' || isNaN(value)) {
+                hasError = false; // 空值不顯示錯誤，由必填驗證處理
+            }
+            // 檢查最小值
+            else if (value < rule.min) {
+                hasError = true;
+                errorMessage = rule.errorMessage;
+            }
+            // 檢查最大值
+            else if (value > rule.max) {
+                hasError = true;
+                errorMessage = rule.errorMessage;
+            }
+
+            // 顯示或隱藏錯誤訊息
+            if (hasError) {
+                errorElement.textContent = errorMessage;
+                errorElement.style.display = 'block';
+                field.classList.add('is-invalid');
+            } else {
+                errorElement.style.display = 'none';
+                field.classList.remove('is-invalid');
+            }
+        }
+
+        /**
+         * 驗證樓層邏輯（所在樓層不能大於總樓層數）
+         */
+        function validateFloorLogic() {
+            const currentFloorField = document.getElementById('CurrentFloor');
+            const totalFloorsField = document.getElementById('TotalFloors');
+            const floorErrorElement = document.getElementById('floorValidationError');
+            
+            if (!currentFloorField || !totalFloorsField || !floorErrorElement) return;
+
+            const currentFloor = parseInt(currentFloorField.value);
+            const totalFloors = parseInt(totalFloorsField.value);
+
+            if (!isNaN(currentFloor) && !isNaN(totalFloors) && currentFloor > totalFloors) {
+                floorErrorElement.style.display = 'block';
+                currentFloorField.classList.add('is-invalid');
+                totalFloorsField.classList.add('is-invalid');
+            } else {
+                floorErrorElement.style.display = 'none';
+                currentFloorField.classList.remove('is-invalid');
+                totalFloorsField.classList.remove('is-invalid');
+            }
         }
         
         /**
@@ -3673,6 +4021,77 @@
                     return false;
             }
         }
+        
+        /**
+         * 顯示載入覆蓋層
+         */
+        function showLoadingOverlay() {
+            const overlay = document.getElementById('loadingOverlay');
+            const progressBar = document.getElementById('loadingProgressBar');
+            const progressText = document.getElementById('loadingProgressText');
+            
+            if (overlay) {
+                // 顯示覆蓋層
+                overlay.style.display = 'flex';
+                document.body.classList.add('loading-active');
+                
+                // 重置進度條
+                progressBar.style.width = '0%';
+                progressBar.setAttribute('aria-valuenow', '0');
+                progressText.textContent = '準備中...';
+                
+                // 開始進度動畫
+                startLoadingProgress();
+            }
+        }
+        
+        /**
+         * 開始載入進度動畫
+         */
+        function startLoadingProgress() {
+            const progressBar = document.getElementById('loadingProgressBar');
+            const progressText = document.getElementById('loadingProgressText');
+            
+            const progressSteps = [
+                { progress: 20, text: '驗證表單資料...', delay: 300 },
+                { progress: 40, text: '處理圖片資訊...', delay: 600 },
+                { progress: 60, text: '上傳文件資料...', delay: 900 },
+                { progress: 80, text: '生成房源資訊...', delay: 1200 },
+                { progress: 95, text: '完成處理...', delay: 1500 }
+            ];
+            
+            progressSteps.forEach((step, index) => {
+                setTimeout(() => {
+                    progressBar.style.width = step.progress + '%';
+                    progressBar.setAttribute('aria-valuenow', step.progress.toString());
+                    progressText.textContent = step.text;
+                }, step.delay);
+            });
+        }
+        
+        /**
+         * 隱藏載入覆蓋層
+         */
+        function hideLoadingOverlay() {
+            const overlay = document.getElementById('loadingOverlay');
+            if (overlay) {
+                overlay.style.display = 'none';
+                document.body.classList.remove('loading-active');
+            }
+        }
+        
+        /**
+         * 處理表單提交錯誤時隱藏載入覆蓋層
+         */
+        window.addEventListener('beforeunload', function() {
+            // 如果頁面即將卸載但載入覆蓋層仍然顯示，說明表單提交成功
+            // 不需要隱藏覆蓋層，讓它保持到新頁面載入
+        });
+        
+        // 監聽頁面錯誤事件，如果有錯誤則隱藏載入覆蓋層
+        window.addEventListener('error', function() {
+            hideLoadingOverlay();
+        });
     </script>
 </body>
 </html>

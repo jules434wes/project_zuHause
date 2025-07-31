@@ -7,6 +7,7 @@ using zuHause.Helpers;
 using zuHause.Enums;
 using zuHause.DTOs;
 using zuHause.Services.Interfaces;
+using zuHause.Constants;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 
@@ -24,6 +25,8 @@ namespace zuHause.Controllers
         private readonly ITempSessionService _tempSessionService;
         private readonly IBlobMigrationService _blobMigrationService;
         private readonly IBlobStorageService _blobStorageService;
+        private readonly IBlobUrlGenerator _blobUrlGenerator;
+        private readonly IGoogleMapsService _googleMapsService;
 
         public PropertyController(
             ZuHauseContext context, 
@@ -35,7 +38,9 @@ namespace zuHause.Controllers
             IEquipmentCategoryQueryService equipmentCategoryQueryService,
             ITempSessionService tempSessionService,
             IBlobMigrationService blobMigrationService,
-            IBlobStorageService blobStorageService)
+            IBlobStorageService blobStorageService,
+            IBlobUrlGenerator blobUrlGenerator,
+            IGoogleMapsService googleMapsService)
         {
             _context = context;
             _logger = logger;
@@ -47,6 +52,8 @@ namespace zuHause.Controllers
             _tempSessionService = tempSessionService;
             _blobMigrationService = blobMigrationService;
             _blobStorageService = blobStorageService;
+            _blobUrlGenerator = blobUrlGenerator;
+            _googleMapsService = googleMapsService ?? throw new ArgumentNullException(nameof(googleMapsService));
         }
 
         /// <summary>
@@ -161,6 +168,20 @@ namespace zuHause.Controllers
                         NearbyAttractions = new List<string> { "大安森林公園", "信義商圈", "101大樓" }
                     }
                 };
+
+                // 檢查當前用戶身份
+                if (User.Identity?.IsAuthenticated == true)
+                {
+                    var currentUserIdClaim = User.FindFirst("UserId")?.Value;
+                    var isLandlordClaim = User.FindFirst("IsLandlord")?.Value;
+                    
+                    if (int.TryParse(currentUserIdClaim, out int currentUserId))
+                    {
+                        viewModel.LandlordMemberId = property.LandlordMemberId;
+                        viewModel.IsCurrentUserPropertyOwner = (currentUserId == property.LandlordMemberId);
+                        viewModel.IsCurrentUserLandlord = (isLandlordClaim == "True" || isLandlordClaim == "true");
+                    }
+                }
 
                 return View(viewModel);
             }
@@ -1741,12 +1762,14 @@ namespace zuHause.Controllers
         private Dictionary<string, string> GenerateImageUrls(ImageCategory category, int entityId, Guid imageGuid)
         {
             var urls = new Dictionary<string, string>();
-            var basePath = $"{category.ToString().ToLowerInvariant()}/{entityId}";
 
-            // 生成各種尺寸的URL
-            foreach (var size in new[] { "thumbnail", "medium", "large", "original" })
+            // 使用 BlobUrlGenerator 生成正確的 Azure Blob Storage URL
+            foreach (var sizeStr in new[] { "thumbnail", "medium", "large", "original" })
             {
-                urls[size] = $"/api/images/{basePath}/{size}/{imageGuid:N}.webp";
+                if (Enum.TryParse<ImageSize>(sizeStr, true, out var imageSize))
+                {
+                    urls[sizeStr] = _blobUrlGenerator.GenerateImageUrl(category, entityId, imageGuid, imageSize);
+                }
             }
 
             return urls;
@@ -1808,6 +1831,7 @@ namespace zuHause.Controllers
                 // 刊登資訊
                 ListingPlanId = property.ListingPlanId ?? 1, // 使用預設方案ID
                 PropertyProofUrl = property.PropertyProofUrl ?? string.Empty,
+                StatusCode = property.StatusCode,
                 
                 // 設備資訊
                 SelectedEquipmentIds = property.PropertyEquipmentRelations
@@ -1857,7 +1881,16 @@ namespace zuHause.Controllers
             property.ParkingFeeAmount = dto.ParkingFeeAmount;
             property.CleaningFeeRequired = dto.CleaningFeeRequired;
             property.CleaningFeeAmount = dto.CleaningFeeAmount;
-            property.PropertyProofUrl = dto.PropertyProofUrl;
+            
+            // 房產證明文件保護邏輯：已上架或已出租的房源且有證明文件時，不允許修改
+            bool isProofDocumentLocked = !string.IsNullOrEmpty(property.PropertyProofUrl) && 
+                                       (property.StatusCode == PropertyStatusConstants.LISTED || property.StatusCode == PropertyStatusConstants.ALREADY_RENTED);
+            
+            if (!isProofDocumentLocked)
+            {
+                property.PropertyProofUrl = dto.PropertyProofUrl;
+            }
+            
             property.UpdatedAt = DateTime.Now;
             
             await _context.SaveChangesAsync();
@@ -2333,5 +2366,197 @@ namespace zuHause.Controllers
             }
         }
 
+        /// <summary>
+        /// 提交房源投訴
+        /// </summary>
+        /// <param name="model">投訴資料</param>
+        /// <returns>處理結果</returns>
+        [HttpPost]
+        public async Task<IActionResult> SubmitComplaint(PropertyComplaintViewModel model)
+        {
+            try
+            {
+                // 驗證用戶身份
+                if (!User.Identity?.IsAuthenticated == true)
+                {
+                    return Json(new { success = false, message = "請先登入後再進行投訴" });
+                }
+
+                var userId = Convert.ToInt32(User.FindFirst("UserId")?.Value);
+                if (userId != model.ComplainantId)
+                {
+                    return Json(new { success = false, message = "身份驗證失敗" });
+                }
+
+                // 驗證模型
+                if (!ModelState.IsValid)
+                {
+                    var errors = string.Join(", ", ModelState.Values
+                        .SelectMany(v => v.Errors)
+                        .Select(e => e.ErrorMessage));
+                    return Json(new { success = false, message = errors });
+                }
+
+                // 驗證房源存在性
+                var property = await _context.Properties
+                    .Include(p => p.LandlordMember)
+                    .FirstOrDefaultAsync(p => p.PropertyId == model.PropertyId);
+
+                if (property == null)
+                {
+                    return Json(new { success = false, message = "房源不存在" });
+                }
+
+                // 驗證投訴人不是房東本人
+                if (property.LandlordMemberId == userId)
+                {
+                    return Json(new { success = false, message = "不能投訴自己的房源" });
+                }
+
+                // 檢查是否已有未處理的投訴
+                var existingComplaint = await _context.PropertyComplaints
+                    .Where(pc => pc.PropertyId == model.PropertyId && 
+                                pc.ComplainantId == userId && 
+                                pc.StatusCode != "RESOLVED" && 
+                                pc.StatusCode != "CLOSED")
+                    .FirstOrDefaultAsync();
+
+                if (existingComplaint != null)
+                {
+                    return Json(new { success = false, message = "您已有針對此房源的未處理投訴，請等待處理結果" });
+                }
+
+                // 建立投訴記錄
+                var complaint = new PropertyComplaint
+                {
+                    PropertyId = model.PropertyId,
+                    ComplainantId = userId,
+                    LandlordId = property.LandlordMemberId,
+                    ComplaintContent = model.ComplaintContent.Trim(),
+                    StatusCode = "PENDING",
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+
+                _context.PropertyComplaints.Add(complaint);
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation("新投訴已建立 - 投訴ID: {ComplaintId}, 房源ID: {PropertyId}, 投訴人ID: {ComplainantId}", 
+                    complaint.ComplaintId, model.PropertyId, userId);
+
+                return Json(new { 
+                    success = true, 
+                    message = "投訴已成功提交，我們會在24小時內進行審查並回覆您", 
+                    complaintId = complaint.ComplaintId 
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "提交投訴時發生錯誤 - PropertyId: {PropertyId}, UserId: {UserId}", 
+                    model.PropertyId, User.FindFirst("UserId")?.Value);
+
+                return Json(new { success = false, message = "系統錯誤，請稍後再試" });
+            }
+        }
+
+        /// <summary>
+        /// 房源座標自動補全 API
+        /// </summary>
+        [HttpPost]
+        [Route("api/property/coordinate-completion")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CoordinateCompletion([FromBody] CoordinateCompletionRequest request)
+        {
+            try
+            {
+                _logger.LogInformation("🗺️ 開始房源座標自動補全: PropertyId={PropertyId}, Address={Address}", 
+                    request.PropertyId, request.Address);
+
+                // 驗證請求參數
+                if (request.PropertyId <= 0 || string.IsNullOrWhiteSpace(request.Address))
+                {
+                    return Json(new { success = false, message = "無效的房源ID或地址" });
+                }
+
+                // 查詢房源是否存在且需要補全座標
+                var property = await _context.Properties
+                    .FirstOrDefaultAsync(p => p.PropertyId == request.PropertyId && p.DeletedAt == null);
+
+                if (property == null)
+                {
+                    return Json(new { success = false, message = "找不到指定的房源" });
+                }
+
+                // 檢查是否確實需要補全座標
+                if (property.Latitude.HasValue && property.Longitude.HasValue && 
+                    property.Latitude != 0 && property.Longitude != 0)
+                {
+                    _logger.LogInformation("房源座標已存在，無需補全: PropertyId={PropertyId}", request.PropertyId);
+                    return Json(new { success = true, message = "房源座標已存在", skipped = true });
+                }
+
+                // 使用 GoogleMapsService 進行地理編碼
+                var geocodingRequest = new zuHause.DTOs.GoogleMaps.GeocodingRequest
+                {
+                    Address = request.Address,
+                    Language = "zh-TW",
+                    Region = "TW"
+                };
+
+                var geocodingResult = await _googleMapsService.GeocodeAsync(geocodingRequest);
+
+                if (geocodingResult.IsSuccess && geocodingResult.Latitude.HasValue && geocodingResult.Longitude.HasValue)
+                {
+                    // 更新房源座標
+                    property.Latitude = (decimal)geocodingResult.Latitude.Value;
+                    property.Longitude = (decimal)geocodingResult.Longitude.Value;
+                    property.UpdatedAt = DateTime.Now;
+
+                    await _context.SaveChangesAsync();
+
+                    _logger.LogInformation("✅ 房源座標補全成功: PropertyId={PropertyId}, Lat={Lat}, Lng={Lng}", 
+                        request.PropertyId, geocodingResult.Latitude.Value, geocodingResult.Longitude.Value);
+
+                    return Json(new 
+                    { 
+                        success = true, 
+                        message = "座標補全成功",
+                        latitude = geocodingResult.Latitude.Value,
+                        longitude = geocodingResult.Longitude.Value
+                    });
+                }
+                else
+                {
+                    _logger.LogWarning("⚠️ 房源座標轉換失敗: PropertyId={PropertyId}, Error={Error}", 
+                        request.PropertyId, geocodingResult.ErrorMessage);
+
+                    return Json(new 
+                    { 
+                        success = false, 
+                        message = geocodingResult.ErrorMessage ?? "無法轉換地址為座標" 
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ 房源座標補全發生異常: PropertyId={PropertyId}", request.PropertyId);
+                
+                return Json(new 
+                { 
+                    success = false, 
+                    message = "座標補全服務暫時無法使用，請稍後再試" 
+                });
+            }
+        }
+
+    }
+
+    /// <summary>
+    /// 座標補全請求模型
+    /// </summary>
+    public class CoordinateCompletionRequest
+    {
+        public int PropertyId { get; set; }
+        public string Address { get; set; } = string.Empty;
     }
 }

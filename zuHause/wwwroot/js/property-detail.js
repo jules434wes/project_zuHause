@@ -497,30 +497,7 @@ class PropertyDetail {
             });
         }
 
-        // 回報按鈕
-        const reportBtn = document.getElementById('reportBtn');
-        if (reportBtn) {
-            reportBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                this.showNotification('回報功能開發中...');
-            });
-        }
-
-        // 申租按鈕
-        const applyBtn = document.querySelector('.btn-apply-rent');
-        if (applyBtn) {
-            applyBtn.addEventListener('click', () => {
-                this.showNotification('申租功能開發中...');
-            });
-        }
-
-        // 預約看房按鈕
-        const scheduleBtn = document.querySelector('.btn-schedule-visit');
-        if (scheduleBtn) {
-            scheduleBtn.addEventListener('click', () => {
-                this.showNotification('預約看房功能開發中...');
-            });
-        }
+        // 開發訊息已移除，功能由 Modal 元件處理
     }
 
     // 切換收藏狀態

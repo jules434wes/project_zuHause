@@ -16,11 +16,19 @@ namespace zuHause.Controllers
     {
         private readonly ZuHauseContext _context;
         private readonly IImageQueryService _imageQueryService;
+        private readonly IGoogleMapsService _googleMapsService;
+        private readonly ILogger<AdminController> _logger;
 
-        public AdminController(ZuHauseContext context, IImageQueryService imageQueryService)
+        public AdminController(
+            ZuHauseContext context, 
+            IImageQueryService imageQueryService,
+            IGoogleMapsService googleMapsService,
+            ILogger<AdminController> logger)
         {
             _context = context;
             _imageQueryService = imageQueryService;
+            _googleMapsService = googleMapsService ?? throw new ArgumentNullException(nameof(googleMapsService));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         /// <summary>
@@ -2361,6 +2369,149 @@ namespace zuHause.Controllers
                 counter++;
             }
             return string.Format("{0:n1} {1}", number, suffixes[counter]);
+        }
+
+        /// <summary>
+        /// 資料遷移：批次轉換房源地址為座標
+        /// </summary>
+        [HttpPost]
+        [Route("Admin/DataMigration/migrate-coordinates")]
+        public async Task<IActionResult> MigrateCoordinates()
+        {
+            try
+            {
+                _logger.LogInformation("🗺️ 開始執行座標遷移作業");
+
+                // 查詢所有座標為 null 的房源
+                var propertiesWithoutCoordinates = await _context.Properties
+                    .Where(p => (p.Latitude == null || p.Longitude == null) && 
+                               !string.IsNullOrWhiteSpace(p.AddressLine) &&
+                               p.DeletedAt == null)
+                    .Select(p => new { p.PropertyId, p.AddressLine })
+                    .ToListAsync();
+
+                _logger.LogInformation("📊 找到 {Count} 個需要座標的房源", propertiesWithoutCoordinates.Count);
+
+                if (!propertiesWithoutCoordinates.Any())
+                {
+                    return Ok(new
+                    {
+                        success = true,
+                        message = "所有房源都已具備座標資料",
+                        processed = 0,
+                        failed = 0,
+                        details = new List<object>()
+                    });
+                }
+
+                var processed = 0;
+                var failed = 0;
+                var details = new List<object>();
+
+                foreach (var property in propertiesWithoutCoordinates)
+                {
+                    try
+                    {
+                        _logger.LogInformation("🏠 處理房源 {PropertyId}: {Address}", property.PropertyId, property.AddressLine);
+
+                        var geocodingRequest = new zuHause.DTOs.GoogleMaps.GeocodingRequest
+                        {
+                            Address = property.AddressLine,
+                            Language = "zh-TW",
+                            Region = "TW"
+                        };
+
+                        var geocodingResult = await _googleMapsService.GeocodeAsync(geocodingRequest);
+
+                        if (geocodingResult.IsSuccess && geocodingResult.Latitude.HasValue && geocodingResult.Longitude.HasValue)
+                        {
+                            // 更新房源座標
+                            var propertyEntity = await _context.Properties
+                                .FirstOrDefaultAsync(p => p.PropertyId == property.PropertyId);
+
+                            if (propertyEntity != null)
+                            {
+                                propertyEntity.Latitude = (decimal)geocodingResult.Latitude.Value;
+                                propertyEntity.Longitude = (decimal)geocodingResult.Longitude.Value;
+                                propertyEntity.UpdatedAt = DateTime.Now;
+
+                                await _context.SaveChangesAsync();
+                                processed++;
+
+                                details.Add(new
+                                {
+                                    propertyId = property.PropertyId,
+                                    address = property.AddressLine,
+                                    latitude = geocodingResult.Latitude.Value,
+                                    longitude = geocodingResult.Longitude.Value,
+                                    status = "success"
+                                });
+
+                                _logger.LogInformation("✅ 房源 {PropertyId} 座標更新成功", property.PropertyId);
+                            }
+                        }
+                        else
+                        {
+                            failed++;
+                            details.Add(new
+                            {
+                                propertyId = property.PropertyId,
+                                address = property.AddressLine,
+                                latitude = (double?)null,
+                                longitude = (double?)null,
+                                status = "failed",
+                                error = geocodingResult.ErrorMessage ?? "座標轉換失敗"
+                            });
+
+                            _logger.LogWarning("⚠️ 房源 {PropertyId} 座標轉換失敗: {Error}", 
+                                property.PropertyId, geocodingResult.ErrorMessage);
+                        }
+
+                        // 每 5 個請求後暫停 1 秒，避免 API 限制
+                        if ((processed + failed) % 5 == 0)
+                        {
+                            await Task.Delay(1000);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        failed++;
+                        details.Add(new
+                        {
+                            propertyId = property.PropertyId,
+                            address = property.AddressLine,
+                            latitude = (double?)null,
+                            longitude = (double?)null,
+                            status = "error",
+                            error = ex.Message
+                        });
+
+                        _logger.LogError(ex, "❌ 處理房源 {PropertyId} 時發生異常", property.PropertyId);
+                    }
+                }
+
+                _logger.LogInformation("🎉 座標遷移作業完成 - 成功: {Processed}, 失敗: {Failed}", processed, failed);
+
+                return Ok(new
+                {
+                    success = true,
+                    message = "批次座標轉換完成",
+                    processed,
+                    failed,
+                    details
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ 座標遷移作業發生系統錯誤");
+                
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "座標遷移作業失敗",
+                    error = ex.Message
+                });
+            }
         }
     }
 

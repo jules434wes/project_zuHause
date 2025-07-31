@@ -209,18 +209,26 @@
                                     <i class="fas fa-share me-1"></i>
                                     分享
                                 </button>
-                                <button class="action-btn-v2 @(Model.IsFavorite ? "active" : "")" id="favoriteBtn" data-property-id="@Model.PropertyId">
-                                    <i class="@(Model.IsFavorite ? "fas" : "far") fa-heart me-1"></i>
-                                    @(Model.IsFavorite ? "已收藏" : "收藏")
-                                </button>
+                                <!-- 收藏按鈕已隱藏 -->
                                 <div class="dropdown">
                                     <button class="action-btn-v2" data-bs-toggle="dropdown">
                                         <i class="fas fa-ellipsis-v"></i>
                                     </button>
                                     <ul class="dropdown-menu">
-                                        <li><a class="dropdown-item" href="#" id="reportBtn">
-                                            <i class="fas fa-flag me-2"></i>回報此房源問題
-                                        </a></li>
+                                        <li>
+                                            @if (User.Identity?.IsAuthenticated == true)
+                                            {
+                                                <button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#propertyComplaintModal">
+                                                    <i class="fas fa-flag me-2"></i>回報此房源問題
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <a class="dropdown-item" href="/Member/Login">
+                                                    <i class="fas fa-flag me-2"></i>回報此房源問題
+                                                </a>
+                                            }
+                                        </li>
                                     </ul>
                                 </div>
                             </div>
@@ -605,17 +613,68 @@
 
                             <!-- 立即申租按鈕 (特殊樣式) -->
                             <div class="mb-3">
-                                <button class="btn-apply-rent w-100">
-                                    🔥 立即申租
-                                </button>
+                                @if (User.Identity?.IsAuthenticated == true)
+                                {
+                                    @if (Model.IsCurrentUserPropertyOwner)
+                                    {
+                                        <button class="btn-apply-rent w-100" disabled title="房東不能申請自己的房源">
+                                            🔥 這是您的房源
+                                        </button>
+                                    }
+                                    else if (Model.IsCurrentUserLandlord)
+                                    {
+                                        <button class="btn-apply-rent w-100" disabled title="房東身份無法申請租屋">
+                                            🔥 房東無法申租
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <button type="button" class="btn-apply-rent w-100" data-bs-toggle="modal" data-bs-target="#applyRental">
+                                            🔥 立即申租
+                                        </button>
+                                    }
+                                }
+                                else
+                                {
+                                    <button class="btn-apply-rent w-100" onclick="location.href='/Member/Login'">
+                                        🔥 立即申租
+                                    </button>
+                                }
                             </div>
 
                             <!-- 其他操作按鈕 -->
                             <div class="action-buttons">
-                                <button class="btn-schedule-visit w-100 mb-2">
-                                    <i class="fas fa-calendar me-2"></i>
-                                    預約看房
-                                </button>
+                                @if (User.Identity?.IsAuthenticated == true)                                
+                                {
+                                    @if (Model.IsCurrentUserPropertyOwner)
+                                    {
+                                        <button class="btn-schedule-visit w-100 mb-2" disabled title="房東不能預約看自己的房源">
+                                            <i class="fas fa-calendar me-2"></i>
+                                            這是您的房源
+                                        </button>
+                                    }
+                                    else if (Model.IsCurrentUserLandlord)
+                                    {
+                                        <button class="btn-schedule-visit w-100 mb-2" disabled title="房東身份無法預約看房">
+                                            <i class="fas fa-calendar me-2"></i>
+                                            房東無法預約
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <button type="button" class="btn-schedule-visit w-100 mb-2" data-bs-toggle="modal" data-bs-target="#applyHouse">
+                                            <i class="fas fa-calendar me-2"></i>
+                                            預約看房
+                                        </button>
+                                    }
+                                }
+                                else
+                                {
+                                    <button class="btn-schedule-visit w-100 mb-2" onclick="location.href='/Member/Login'">
+                                        <i class="fas fa-calendar me-2"></i>
+                                        預約看房
+                                    </button>
+                                }
                                 <button class="btn-contact w-100" data-bs-toggle="modal" data-bs-target="#contactModal">
                                     <i class="fas fa-envelope me-2"></i>
                                     立即聯絡
@@ -694,22 +753,86 @@
         </div>
     </div>
 
+    <!-- 房源互動功能 Modal 區域 -->
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        <!-- 申請租屋 Modal -->
+        @await Component.InvokeAsync("ApplyRentalModal", new { 
+            propertyId = Model.PropertyId, 
+            userId = Convert.ToInt32(User.FindFirst("UserId")!.Value) 
+        })
+
+        <!-- 預約看房 Modal -->
+        @await Component.InvokeAsync("ApplyHouseModal", new { 
+            propertyId = Model.PropertyId, 
+            userId = Convert.ToInt32(User.FindFirst("UserId")!.Value) 
+        })
+
+    }
+
+    <!-- 房源投訴 Modal (所有登入用戶都可使用) -->
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        @await Component.InvokeAsync("PropertyComplaintModal", new { 
+            propertyId = Model.PropertyId, 
+            userId = Convert.ToInt32(User.FindFirst("UserId")!.Value) 
+        })
+    }
+
     <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- 房源互動功能所需的 JavaScript -->
+    <script src="~/js/selectDistrict.js"></script>
+    <script src="~/js/applyRentalInput.js"></script>
+    <script src="~/js/rentalDateCount.js"></script>
+    
     <!-- Property Detail JS -->
     <script src="~/js/property-detail.js"></script>
     <!-- Google Maps Integration JS -->
     <script src="~/js/google-maps-integration.js"></script>
-
+    <!-- Coordinate Completion JS -->
+    <script src="~/js/coordinate-completion.js"></script>
+    
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
+            // 阻止 google-maps-integration.js 的自動初始化
+            window.skipAutoMapInit = true;
+            
+            // 初始化座標自動補全功能
+            const coordinateManager = new CoordinateCompletionManager();
+            
+            // 從模型數據初始化
+            const propertyId = @Model.PropertyId;
+            const address = '@Html.Raw(Model.Address.Replace("'", "\\'").Replace("\r", "").Replace("\n", ""))';
+            const latitude = @(Model.Location.Latitude != 0 ? Model.Location.Latitude.ToString("F6", System.Globalization.CultureInfo.InvariantCulture) : "null");
+            const longitude = @(Model.Location.Longitude != 0 ? Model.Location.Longitude.ToString("F6", System.Globalization.CultureInfo.InvariantCulture) : "null");
+            
             try {
-                const mapManager = new PropertyMapManager();
-                mapManager.initMap(@Model.PropertyId);
-            } catch (e) {
-                console.warn('地圖初始化腳本錯誤', e);
+                // 先執行座標補全檢查並等待完成
+                await coordinateManager.initialize(propertyId, address, latitude, longitude);
+                
+                // 座標補全完成後，延遲初始化地圖
+                setTimeout(() => {
+                    if (window.PropertyMapManager) {
+                        const mapManager = new PropertyMapManager();
+                        mapManager.initMap(propertyId);
+                    }
+                }, 2000); // 給座標補全足夠時間完成
+                
+            } catch (error) {
+                console.warn('座標補全過程中發生錯誤，仍嘗試載入地圖:', error);
+                
+                // 即使座標補全失敗，也嘗試載入地圖
+                setTimeout(() => {
+                    if (window.PropertyMapManager) {
+                        const mapManager = new PropertyMapManager();
+                        mapManager.initMap(propertyId);
+                    }
+                }, 3000);
             }
         });
     </script>
+
 </body>
 </html>

@@ -471,6 +471,12 @@ namespace zuHause.DTOs
         [JsonPropertyName("propertyProofUrl")]
         public string? PropertyProofUrl { get; set; }
 
+        /// <summary>
+        /// 房源狀態代碼（用於判斷文件鎖定狀態）
+        /// </summary>
+        [JsonPropertyName("statusCode")]
+        public string? StatusCode { get; set; }
+
         // === 編輯模式支援 ===
 
         /// <summary>

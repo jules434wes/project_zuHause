@@ -14,6 +14,9 @@ namespace zuHause.ViewModels
         public string LandlordName { get; set; } = string.Empty;
         public string LandlordPhone { get; set; } = string.Empty;
         public string LandlordEmail { get; set; } = string.Empty;
+        public int LandlordMemberId { get; set; }
+        public bool IsCurrentUserLandlord { get; set; }
+        public bool IsCurrentUserPropertyOwner { get; set; }
         public DateTime CreatedDate { get; set; }
         public bool IsActive { get; set; }
         public bool IsFavorite { get; set; }
