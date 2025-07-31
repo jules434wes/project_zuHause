@@ -9,6 +9,8 @@ using System.Runtime.ConstrainedExecution;
 using System.Threading.Tasks; // 用於非同步操作 (如 async/await)
 using zuHause.Models; // 引入資料庫模型，例如 Property, City, District 等
 using zuHause.ViewModels.TenantViewModel; // 引入用於前端顯示的 ViewModel
+using zuHause.Enums; // 引入枚舉類型
+using zuHause.Interfaces; // 引入服務介面
 
 namespace zuHause.Controllers
 {
@@ -16,11 +18,13 @@ namespace zuHause.Controllers
     public class SearchController : Controller
     {
         private readonly ZuHauseContext _context; // 資料庫上下文，用於與資料庫互動
+        private readonly IBlobUrlGenerator _blobUrlGenerator; // Blob URL 生成服務
 
-        // 建構子：透過依賴注入 (DI) 獲取資料庫上下文實例
-        public SearchController(ZuHauseContext context)
+        // 建構子：透過依賴注入 (DI) 獲取資料庫上下文實例和 Blob URL 生成服務
+        public SearchController(ZuHauseContext context, IBlobUrlGenerator blobUrlGenerator)
         {
             _context = context;
+            _blobUrlGenerator = blobUrlGenerator;
         }
 
         // Search Action：用於返回搜尋頁面的 View
@@ -395,38 +399,76 @@ namespace zuHause.Controllers
 
             // --- 6. 最終的 Select 投影：使用 Join 獲取 CityName 和 DistrictName ---
             // 在這裡進行 Join，將篩選和分頁後的房源與 City 和 District 表聯結
-            var houseListings = await (from p in propertiesQuery
-                                       join c in _context.Cities on p.CityId equals c.CityId
-                                       join d in _context.Districts on p.DistrictId equals d.DistrictId
-                                       where c.IsActive && d.IsActive // 確保城市和行政區是啟用的
-                                       select new SearchViewModel
-                                       {
-                                           PropertyId = p.PropertyId,
-                                           Title = p.Title,
-                                           AddressLine = p.AddressLine, // AddressLine 已包含 CityName 和 DistrictName
-                                           RoomCount = p.RoomCount,
-                                           LivingRoomCount = p.LivingRoomCount,
-                                           BathroomCount = p.BathroomCount,
-                                           CurrentFloor = p.CurrentFloor,
-                                           TotalFloors = p.TotalFloors,
-                                           Area = p.Area,
-                                           MonthlyRent = p.MonthlyRent,
-                                           ImagePath = p.PropertyImages
-                                                        .Where(img => img.PropertyId == p.PropertyId) 
-                                                         .OrderBy(img => img.DisplayOrder) // IsPrimary 為 true 的會排在前面
-                                                         .Select(img => img.ImagePath) // 選擇圖片路徑
-                                                         .FirstOrDefault(),            // 取得第一張
-                                           PublishedAt = p.PublishedAt,
-                                           // Features 需要額外載入或在這邊做子查詢
-                                           Features = _context.PropertyEquipmentRelations
-                                                  .Where(per => per.PropertyId == p.PropertyId)
-                                                  .Select(per => per.Category.CategoryName) // 直接使用導航屬性獲取 CategoryName
-                                                  .ToList(),
-                                           IsFavorited = false // TODO: 此處需要根據用戶登入狀態判斷是否收藏
-                                       }).ToListAsync(); // 執行資料庫查詢
+            var propertyData = await (from p in propertiesQuery
+                                      join c in _context.Cities on p.CityId equals c.CityId
+                                      join d in _context.Districts on p.DistrictId equals d.DistrictId
+                                      where c.IsActive && d.IsActive // 確保城市和行政區是啟用的
+                                      select new
+                                      {
+                                          PropertyId = p.PropertyId,
+                                          Title = p.Title,
+                                          AddressLine = p.AddressLine,
+                                          RoomCount = p.RoomCount,
+                                          LivingRoomCount = p.LivingRoomCount,
+                                          BathroomCount = p.BathroomCount,
+                                          CurrentFloor = p.CurrentFloor,
+                                          TotalFloors = p.TotalFloors,
+                                          Area = p.Area,
+                                          MonthlyRent = p.MonthlyRent,
+                                          PublishedAt = p.PublishedAt,
+                                          Features = _context.PropertyEquipmentRelations
+                                                 .Where(per => per.PropertyId == p.PropertyId)
+                                                 .Select(per => per.Category.CategoryName)
+                                                 .ToList()
+                                      }).ToListAsync();
+
+            // --- 7. 在記憶體中處理圖片路徑和最終轉換 ---
+            var houseListings = new List<SearchViewModel>();
+            
+            foreach (var property in propertyData)
+            {
+                // 從 Images 表獲取 Azure Blob 圖片路徑
+                var imageInfo = await _context.Images
+                    .Where(img => img.EntityId == property.PropertyId && 
+                                  img.EntityType == EntityType.Property && 
+                                  img.Category == ImageCategory.Gallery && 
+                                  img.IsActive)
+                    .OrderBy(img => img.DisplayOrder ?? int.MaxValue)
+                    .ThenBy(img => img.UploadedAt)
+                    .Select(img => new { img.Category, img.EntityId, img.ImageGuid })
+                    .FirstOrDefaultAsync();
+
+                string imagePath = null;
+                if (imageInfo != null)
+                {
+                    imagePath = _blobUrlGenerator.GenerateImageUrl(
+                        imageInfo.Category, 
+                        imageInfo.EntityId, 
+                        imageInfo.ImageGuid, 
+                        ImageSize.Medium);
+                }
+
+                houseListings.Add(new SearchViewModel
+                {
+                    PropertyId = property.PropertyId,
+                    Title = property.Title,
+                    AddressLine = property.AddressLine,
+                    RoomCount = property.RoomCount,
+                    LivingRoomCount = property.LivingRoomCount,
+                    BathroomCount = property.BathroomCount,
+                    CurrentFloor = property.CurrentFloor,
+                    TotalFloors = property.TotalFloors,
+                    Area = property.Area,
+                    MonthlyRent = property.MonthlyRent,
+                    ImagePath = imagePath, // 使用 Azure Blob 路徑，沒有時為 null
+                    PublishedAt = property.PublishedAt,
+                    Features = property.Features,
+                    IsFavorited = false
+                });
+            }
 
 
-            // --- 7. 返回結果 ---
+            // --- 8. 返回結果 ---
             var pagedResult = new PagedSearchResultViewModel
             {
                 Properties = houseListings,
