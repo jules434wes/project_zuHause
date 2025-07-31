@@ -24,6 +24,7 @@ namespace zuHause.Controllers
         private readonly ITempSessionService _tempSessionService;
         private readonly IBlobMigrationService _blobMigrationService;
         private readonly IBlobStorageService _blobStorageService;
+        private readonly IGoogleMapsService _googleMapsService;
 
         public PropertyController(
             ZuHauseContext context, 
@@ -35,7 +36,8 @@ namespace zuHause.Controllers
             IEquipmentCategoryQueryService equipmentCategoryQueryService,
             ITempSessionService tempSessionService,
             IBlobMigrationService blobMigrationService,
-            IBlobStorageService blobStorageService)
+            IBlobStorageService blobStorageService,
+            IGoogleMapsService googleMapsService)
         {
             _context = context;
             _logger = logger;
@@ -47,6 +49,7 @@ namespace zuHause.Controllers
             _tempSessionService = tempSessionService;
             _blobMigrationService = blobMigrationService;
             _blobStorageService = blobStorageService;
+            _googleMapsService = googleMapsService ?? throw new ArgumentNullException(nameof(googleMapsService));
         }
 
         /// <summary>
@@ -241,15 +244,41 @@ namespace zuHause.Controllers
         /// </summary>
         [HttpGet("property/new")]
         [HttpGet("property/create")] // 向後相容性保留
-        public async Task<IActionResult> Create()
+        public async Task<IActionResult> Create(bool reset = false)
         {
             // 強制禁用快取
             Response.Headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
             Response.Headers["Pragma"] = "no-cache";
             Response.Headers["Expires"] = "0";
             
-            _logger.LogInformation("用戶訪問房源創建頁面 - IP: {IpAddress}", 
-                HttpContext.Connection.RemoteIpAddress);
+            _logger.LogInformation("用戶訪問房源創建頁面 - IP: {IpAddress}, Reset: {Reset}", 
+                HttpContext.Connection.RemoteIpAddress, reset);
+            
+            if (reset)
+            {
+                // 清除可能存在的表單資料暫存
+                TempData.Clear();
+                
+                // 清除臨時會話數據（圖片上傳等）
+                try
+                {
+                    var currentTempSessionId = _tempSessionService.GetOrCreateTempSessionId(HttpContext);
+                    if (!string.IsNullOrEmpty(currentTempSessionId))
+                    {
+                        await _tempSessionService.InvalidateTempSessionAsync(currentTempSessionId);
+                        _logger.LogInformation("清除臨時會話數據: {TempSessionId}", currentTempSessionId);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "清除臨時會話數據時發生警告，但不影響表單載入");
+                }
+                
+                // 清除相關的 Session 數據
+                HttpContext.Session.Remove("SelectedPropertyId");
+                
+                _logger.LogInformation("清除表單暫存資料，建立全新房源表單");
+            }
             
             return await BuildPropertyForm(PropertyFormMode.Create);
         }
@@ -685,8 +714,7 @@ namespace zuHause.Controllers
                     _logger.LogInformation("🎉 成功創建房源，房源ID: {PropertyId}, 房東ID: {LandlordId}", 
                         property.PropertyId, currentUserId.Value);
 
-                    TempData["SuccessMessageTitle"] = "房源創建成功！";
-                    TempData["SuccessMessageContent"] = "您的房源已成功提交審核，預計 2-3 個工作天完成審核。";
+                    // 移除吐司訊息，因為 CreationSuccess 頁面本身就是成功確認頁面
                     return RedirectToAction("CreationSuccess", new { id = property.PropertyId });
                 }
                 catch (Exception transactionEx)
@@ -1381,6 +1409,51 @@ namespace zuHause.Controllers
             // 生成唯一的 PropertyId (因為資料庫中 PropertyId 不是 IDENTITY 欄位)
             var newPropertyId = await GenerateUniquePropertyIdAsync();
 
+            // 生成房源座標資料
+            decimal? latitude = null;
+            decimal? longitude = null;
+            
+            if (!string.IsNullOrWhiteSpace(dto.AddressLine))
+            {
+                try
+                {
+                    _logger.LogInformation("🗺️ 開始為房源生成座標 - PropertyId: {PropertyId}, Address: {Address}", 
+                        newPropertyId, dto.AddressLine);
+
+                    var geocodingRequest = new zuHause.DTOs.GoogleMaps.GeocodingRequest
+                    {
+                        Address = dto.AddressLine,
+                        Language = "zh-TW",
+                        Region = "TW"
+                    };
+
+                    var geocodingResult = await _googleMapsService.GeocodeAsync(geocodingRequest);
+                    
+                    if (geocodingResult.IsSuccess && geocodingResult.Latitude.HasValue && geocodingResult.Longitude.HasValue)
+                    {
+                        latitude = (decimal)geocodingResult.Latitude.Value;
+                        longitude = (decimal)geocodingResult.Longitude.Value;
+                        
+                        _logger.LogInformation("✅ 座標生成成功 - PropertyId: {PropertyId}, Lat: {Lat}, Lng: {Lng}", 
+                            newPropertyId, latitude, longitude);
+                    }
+                    else
+                    {
+                        _logger.LogWarning("⚠️ 座標生成失敗 - PropertyId: {PropertyId}, Address: {Address}, Status: {Status}, Error: {Error}", 
+                            newPropertyId, dto.AddressLine, geocodingResult.Status, geocodingResult.ErrorMessage);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "❌ 座標生成過程中發生異常 - PropertyId: {PropertyId}, Address: {Address}", 
+                        newPropertyId, dto.AddressLine);
+                }
+            }
+            else
+            {
+                _logger.LogWarning("⚠️ 地址為空，無法生成座標 - PropertyId: {PropertyId}", newPropertyId);
+            }
+
             return new Property
             {
                 PropertyId = newPropertyId,
@@ -1390,6 +1463,8 @@ namespace zuHause.Controllers
                 CityId = dto.CityId,
                 DistrictId = dto.DistrictId,
                 AddressLine = dto.AddressLine,
+                Latitude = latitude,
+                Longitude = longitude,
                 MonthlyRent = dto.MonthlyRent,
                 DepositAmount = dto.DepositAmount,
                 DepositMonths = dto.DepositMonths,
@@ -2333,5 +2408,104 @@ namespace zuHause.Controllers
             }
         }
 
+        /// <summary>
+        /// 房源座標自動補全 API
+        /// </summary>
+        [HttpPost]
+        [Route("api/property/coordinate-completion")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CoordinateCompletion([FromBody] CoordinateCompletionRequest request)
+        {
+            try
+            {
+                _logger.LogInformation("🗺️ 開始房源座標自動補全: PropertyId={PropertyId}, Address={Address}", 
+                    request.PropertyId, request.Address);
+
+                // 驗證請求參數
+                if (request.PropertyId <= 0 || string.IsNullOrWhiteSpace(request.Address))
+                {
+                    return Json(new { success = false, message = "無效的房源ID或地址" });
+                }
+
+                // 查詢房源是否存在且需要補全座標
+                var property = await _context.Properties
+                    .FirstOrDefaultAsync(p => p.PropertyId == request.PropertyId && p.DeletedAt == null);
+
+                if (property == null)
+                {
+                    return Json(new { success = false, message = "找不到指定的房源" });
+                }
+
+                // 檢查是否確實需要補全座標
+                if (property.Latitude.HasValue && property.Longitude.HasValue && 
+                    property.Latitude != 0 && property.Longitude != 0)
+                {
+                    _logger.LogInformation("房源座標已存在，無需補全: PropertyId={PropertyId}", request.PropertyId);
+                    return Json(new { success = true, message = "房源座標已存在", skipped = true });
+                }
+
+                // 使用 GoogleMapsService 進行地理編碼
+                var geocodingRequest = new zuHause.DTOs.GoogleMaps.GeocodingRequest
+                {
+                    Address = request.Address,
+                    Language = "zh-TW",
+                    Region = "TW"
+                };
+
+                var geocodingResult = await _googleMapsService.GeocodeAsync(geocodingRequest);
+
+                if (geocodingResult.IsSuccess && geocodingResult.Latitude.HasValue && geocodingResult.Longitude.HasValue)
+                {
+                    // 更新房源座標
+                    property.Latitude = (decimal)geocodingResult.Latitude.Value;
+                    property.Longitude = (decimal)geocodingResult.Longitude.Value;
+                    property.UpdatedAt = DateTime.Now;
+
+                    await _context.SaveChangesAsync();
+
+                    _logger.LogInformation("✅ 房源座標補全成功: PropertyId={PropertyId}, Lat={Lat}, Lng={Lng}", 
+                        request.PropertyId, geocodingResult.Latitude.Value, geocodingResult.Longitude.Value);
+
+                    return Json(new 
+                    { 
+                        success = true, 
+                        message = "座標補全成功",
+                        latitude = geocodingResult.Latitude.Value,
+                        longitude = geocodingResult.Longitude.Value
+                    });
+                }
+                else
+                {
+                    _logger.LogWarning("⚠️ 房源座標轉換失敗: PropertyId={PropertyId}, Error={Error}", 
+                        request.PropertyId, geocodingResult.ErrorMessage);
+
+                    return Json(new 
+                    { 
+                        success = false, 
+                        message = geocodingResult.ErrorMessage ?? "無法轉換地址為座標" 
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ 房源座標補全發生異常: PropertyId={PropertyId}", request.PropertyId);
+                
+                return Json(new 
+                { 
+                    success = false, 
+                    message = "座標補全服務暫時無法使用，請稍後再試" 
+                });
+            }
+        }
+
+    }
+
+    /// <summary>
+    /// 座標補全請求模型
+    /// </summary>
+    public class CoordinateCompletionRequest
+    {
+        public int PropertyId { get; set; }
+        public string Address { get; set; } = string.Empty;
     }
 }

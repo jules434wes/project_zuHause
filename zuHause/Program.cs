@@ -23,12 +23,25 @@ var builder = WebApplication.CreateBuilder(args);
 // 只在非測試環境載入 PDF 庫
 if (Environment.GetEnvironmentVariable("SKIP_PDF_LIBRARY") != "true")
 {
-    var context = new CustomAssemblyLoadContext();
+    try
+    {
+        var context = new CustomAssemblyLoadContext();
 
-    var path = Path.Combine(Directory.GetCurrentDirectory(), "DinkToPdfLib", "libwkhtmltox.dll");
-    context.LoadUnmanagedLibrary(path);
+        var path = Path.Combine(Directory.GetCurrentDirectory(), "DinkToPdfLib", "libwkhtmltox.dll");
+        context.LoadUnmanagedLibrary(path);
 
-    builder.Services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
+        builder.Services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
+    }
+    catch (System.DllNotFoundException ex)
+    {
+        // WSL 環境中忽略 libwkhtmltox.dll 載入錯誤
+        Console.WriteLine($"PDF 庫載入失敗 (WSL 環境中正常): {ex.Message}");
+        // 註冊空的 PDF 轉換器或跳過
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"PDF 庫載入失敗: {ex.Message}");
+    }
 }
 
 builder.Services.AddControllers().AddJsonOptions(options =>

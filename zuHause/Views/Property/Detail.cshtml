@@ -700,16 +700,48 @@
     <script src="~/js/property-detail.js"></script>
     <!-- Google Maps Integration JS -->
     <script src="~/js/google-maps-integration.js"></script>
-
+    <!-- Coordinate Completion JS -->
+    <script src="~/js/coordinate-completion.js"></script>
+    
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
+            // 阻止 google-maps-integration.js 的自動初始化
+            window.skipAutoMapInit = true;
+            
+            // 初始化座標自動補全功能
+            const coordinateManager = new CoordinateCompletionManager();
+            
+            // 從模型數據初始化
+            const propertyId = @Model.PropertyId;
+            const address = '@Html.Raw(Model.Address.Replace("'", "\\'").Replace("\r", "").Replace("\n", ""))';
+            const latitude = @(Model.Location.Latitude != 0 ? Model.Location.Latitude.ToString("F6", System.Globalization.CultureInfo.InvariantCulture) : "null");
+            const longitude = @(Model.Location.Longitude != 0 ? Model.Location.Longitude.ToString("F6", System.Globalization.CultureInfo.InvariantCulture) : "null");
+            
             try {
-                const mapManager = new PropertyMapManager();
-                mapManager.initMap(@Model.PropertyId);
-            } catch (e) {
-                console.warn('地圖初始化腳本錯誤', e);
+                // 先執行座標補全檢查並等待完成
+                await coordinateManager.initialize(propertyId, address, latitude, longitude);
+                
+                // 座標補全完成後，延遲初始化地圖
+                setTimeout(() => {
+                    if (window.PropertyMapManager) {
+                        const mapManager = new PropertyMapManager();
+                        mapManager.initMap(propertyId);
+                    }
+                }, 2000); // 給座標補全足夠時間完成
+                
+            } catch (error) {
+                console.warn('座標補全過程中發生錯誤，仍嘗試載入地圖:', error);
+                
+                // 即使座標補全失敗，也嘗試載入地圖
+                setTimeout(() => {
+                    if (window.PropertyMapManager) {
+                        const mapManager = new PropertyMapManager();
+                        mapManager.initMap(propertyId);
+                    }
+                }, 3000);
             }
         });
     </script>
+
 </body>
 </html>
