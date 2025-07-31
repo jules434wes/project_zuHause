@@ -239,7 +239,8 @@
                         <td>${row.quantity}</td>
                          <td>
                             ${row.sourceType === 'shrinkage' ? '🧹 減損' :
-                             row.sourceType === 'restock' ? '📦 補貨' :
+                            row.sourceType === 'restock' ? '📦 補貨' :
+                            row.sourceType === 'order' ? '📃 訂單' :
                             row.sourceType === 'manual' ? '✋ 手動' : row.sourceType}
                         </td>
                         <td>${row.sourceId}</td>
