@@ -839,6 +839,7 @@ namespace zuHause.Controllers
                         FurnitureInventoryId = Guid.NewGuid(),
                         ProductId = item.ProductId,
                         SourceId = orderId,
+                        SourceType = "order",
                         Quantity = -item.Quantity,
                         EventType = "OUTGOING",
                         OccurredAt = DateTime.Now,
