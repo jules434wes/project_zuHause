@@ -1,0 +1,325 @@
+/* 房源創建成功頁面樣式 - 參考房源管理頁面設計系統 */
+
+/* === CSS 設計變數系統 === */
+:root {
+    /* 基礎顏色系統（與房源管理頁面一致） */
+    --cs-background: hsl(0, 0%, 100%);
+    --cs-foreground: hsl(0, 0%, 3.9%);
+    --cs-card: hsl(0, 0%, 100%);
+    --cs-card-foreground: hsl(0, 0%, 3.9%);
+    --cs-primary: hsl(0, 0%, 9%);
+    --cs-primary-foreground: hsl(0, 0%, 98%);
+    --cs-secondary: hsl(0, 0%, 96.1%);
+    --cs-secondary-foreground: hsl(0, 0%, 9%);
+    --cs-muted: hsl(0, 0%, 96.1%);
+    --cs-muted-foreground: hsl(0, 0%, 45.1%);
+    --cs-border: hsl(0, 0%, 89.8%);
+    --cs-accent: hsl(0, 0%, 96.1%);
+    --cs-accent-foreground: hsl(0, 0%, 9%);
+    --cs-radius: 0.75rem;
+    
+    /* 專案特定顏色 */
+    --cs-blue-primary: hsl(214, 88%, 27%);
+    --cs-blue-accent: hsl(214, 95%, 93%);
+    --cs-success: hsl(142, 71%, 45%);
+    --cs-warning: hsl(38, 92%, 50%);
+    --cs-info: hsl(201, 96%, 32%);
+}
+
+/* === 整體頁面背景 === */
+.creation-success-container {
+    background: linear-gradient(135deg, var(--cs-secondary) 0%, var(--cs-background) 100%);
+    min-height: 100vh;
+    padding: 2rem 0;
+}
+
+/* === 成功圖示動畫 === */
+.success-icon i {
+    animation: successPulse 2s ease-in-out infinite;
+    filter: drop-shadow(0 4px 8px rgba(34, 197, 94, 0.3));
+}
+
+@keyframes successPulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* === 主標題區域 === */
+.success-header {
+    background: linear-gradient(135deg, var(--cs-background) 0%, var(--cs-secondary) 100%);
+    border-radius: var(--cs-radius);
+    padding: 3rem 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border: 1px solid var(--cs-border);
+    text-align: center;
+}
+
+.success-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--cs-success);
+    margin-bottom: 1rem;
+    text-shadow: 0 2px 4px rgba(34, 197, 94, 0.1);
+}
+
+.success-subtitle {
+    font-size: 1.25rem;
+    font-weight: 400;
+    color: var(--cs-muted-foreground);
+    margin: 0;
+}
+
+/* === 卡片系統 === */
+.creation-success-card {
+    background: var(--cs-card);
+    border-radius: var(--cs-radius);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border: 1px solid var(--cs-border);
+    margin-bottom: 2rem;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.creation-success-card:hover {
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+    transform: translateY(-2px);
+}
+
+.creation-success-card-header {
+    background: linear-gradient(135deg, var(--cs-accent) 0%, var(--cs-secondary) 100%);
+    border-radius: var(--cs-radius) var(--cs-radius) 0 0;
+    border-bottom: 1px solid var(--cs-border);
+    padding: 1.5rem 2rem;
+}
+
+.creation-success-card-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--cs-foreground);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.creation-success-card-body {
+    padding: 2rem;
+}
+
+/* === 審核流程步驟 === */
+.review-process-step {
+    text-align: center;
+    position: relative;
+}
+
+.step-number {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s ease;
+}
+
+.step-number.step-1 {
+    background: linear-gradient(135deg, var(--cs-blue-primary) 0%, hsl(214, 88%, 35%) 100%);
+}
+
+.step-number.step-2 {
+    background: linear-gradient(135deg, var(--cs-warning) 0%, hsl(38, 92%, 58%) 100%);
+}
+
+.step-number.step-3 {
+    background: linear-gradient(135deg, var(--cs-success) 0%, hsl(142, 71%, 53%) 100%);
+}
+
+.review-process-step:hover .step-number {
+    transform: scale(1.1);
+}
+
+.step-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--cs-foreground);
+    margin-bottom: 0.5rem;
+}
+
+.step-description {
+    font-size: 0.9rem;
+    color: var(--cs-muted-foreground);
+    margin-bottom: 1rem;
+    line-height: 1.5;
+}
+
+.step-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    background: var(--cs-accent);
+    color: var(--cs-accent-foreground);
+    border: 1px solid var(--cs-border);
+}
+
+.step-badge.success {
+    background: var(--cs-success);
+    color: white;
+    border-color: var(--cs-success);
+}
+
+/* === 提醒區域 === */
+.alert-info-custom {
+    background: linear-gradient(135deg, var(--cs-blue-accent) 0%, rgba(59, 130, 246, 0.1) 100%);
+    border: 1px solid hsl(214, 95%, 85%);
+    border-radius: var(--cs-radius);
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+}
+
+.alert-warning-custom {
+    background: linear-gradient(135deg, hsl(38, 100%, 95%) 0%, rgba(251, 191, 36, 0.1) 100%);
+    border: 1px solid hsl(38, 92%, 85%);
+    border-radius: var(--cs-radius);
+    padding: 1.5rem;
+}
+
+/* === 按鈕系統 === */
+.creation-success-btn {
+    border-radius: var(--cs-radius);
+    padding: 0.875rem 2rem;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 48px;
+}
+
+.creation-success-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    text-decoration: none;
+}
+
+.creation-success-btn-primary {
+    background: linear-gradient(135deg, var(--cs-blue-primary) 0%, hsl(214, 88%, 35%) 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.creation-success-btn-primary:hover {
+    color: white;
+    box-shadow: 0 8px 24px rgba(59, 130, 246, 0.4);
+}
+
+.creation-success-btn-outline {
+    background: transparent;
+    color: var(--cs-blue-primary);
+    border-color: var(--cs-blue-primary);
+}
+
+.creation-success-btn-outline:hover {
+    background: var(--cs-blue-primary);
+    color: white;
+    border-color: var(--cs-blue-primary);
+}
+
+/* === 頁腳區域 === */
+.creation-success-footer {
+    border-top: 1px solid var(--cs-border);
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(10px);
+    padding: 2rem 0;
+    margin-top: 3rem;
+}
+
+.creation-success-footer p {
+    color: var(--cs-muted-foreground);
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+.creation-success-footer a {
+    color: var(--cs-blue-primary);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.creation-success-footer a:hover {
+    text-decoration: underline;
+}
+
+/* === 響應式設計 === */
+@media (max-width: 768px) {
+    .creation-success-container {
+        padding: 1rem 0;
+    }
+    
+    .success-header {
+        padding: 2rem 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .success-title {
+        font-size: 2rem;
+    }
+    
+    .success-subtitle {
+        font-size: 1.1rem;
+    }
+    
+    .creation-success-card-header,
+    .creation-success-card-body {
+        padding: 1.5rem;
+    }
+    
+    .step-number {
+        width: 50px;
+        height: 50px;
+        font-size: 1.25rem;
+    }
+    
+    .creation-success-btn {
+        padding: 0.75rem 1.5rem;
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .success-header {
+        padding: 1.5rem 1rem;
+    }
+    
+    .success-title {
+        font-size: 1.75rem;
+    }
+    
+    .creation-success-card-header,
+    .creation-success-card-body {
+        padding: 1rem;
+    }
+    
+    .alert-info-custom,
+    .alert-warning-custom {
+        padding: 1rem;
+    }
+}

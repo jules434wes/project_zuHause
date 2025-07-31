@@ -1,8 +1,13 @@
 ﻿ul, li {
     list-style-type: none;
 }
-header nav {
-    background-color: #ebffff;
+/* 半透明毛玻璃效果導覽列 */
+header.navbar-glass nav {
+    background-color: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(229, 229, 229, 0.5);
+    box-shadow: 0 2px 3px 0 rgba(0, 0, 0, 0.05);
 }
 
 
@@ -35,8 +40,8 @@ header nav {
 
         header nav .dropdown-item:focus,
         header nav .dropdown-item:hover {
-            background-color: #225e5d;
-            color: white;
+            background-color: #d1e3e6 !important;
+            color: #225e5d !important;
         }
 
 header .btn-group .btn, header .nav-link {
@@ -58,7 +63,24 @@ header .navbar[data-bs-theme=aqua] {
     --bs-navbar-toggler-border-color: rgba(255, 255, 255, 0.1);
 }
 
-header .dropdown-msg {
-    color: #225e5d;
-    width: 350px;
+/* 通知下拉特定樣式 - 保持與個人檔案下拉一致的寬度 */
+header .dropdown-menu {
+    min-width: 200px;
 }
+
+
+/* 我的通知和登出按鈕特殊樣式 - 使用 #225e5d */
+header .dropdown-menu .notification-link,
+header .dropdown-menu #logoutSubmitButton {
+    color: #225e5d;
+    font-weight: 500;
+}
+
+header .dropdown-menu .notification-link:hover,
+header .dropdown-menu .notification-link:focus,
+header .dropdown-menu #logoutSubmitButton:hover,
+header .dropdown-menu #logoutSubmitButton:focus {
+    background-color: #225e5d !important;
+    color: white !important;
+}
+

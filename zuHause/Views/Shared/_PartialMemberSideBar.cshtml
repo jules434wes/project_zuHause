@@ -3,6 +3,11 @@
     string page = ViewData["activePage"] as string ?? "MemberProfile";
     string? role = User.FindFirst(ClaimTypes.Role)?.Value;
 }
+<style>
+    .list-group .list-group-item:hover {
+            background: #d1e3e6;
+    }
+</style>
 
 <div class="list-group col-2 px-3 d-flex flex-column gap-3 position-sticky top-0">
     <a asp-controller="Member" asp-action="MemberProfile" class="list-group-item list-group-item-action rounded-1 text-center @(page == "MemberProfile" ? "active" : "") " aria-current="true">

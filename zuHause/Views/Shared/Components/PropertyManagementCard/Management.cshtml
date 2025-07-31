@@ -228,10 +228,13 @@
                             <!-- 付款按鈕（僅 PENDING_PAYMENT） -->
                             @if (property.StatusCode == "PENDING_PAYMENT")
                             {
-                                <a href="#" class="btn-payment" title="立即付款">
-                                    <i class="fas fa-credit-card"></i>
-                                    <span>立即付款</span>
-                                </a>
+                                <button type="button" 
+                                        class="btn btn-success btn-sm property-payment-btn" 
+                                        data-property-id="@property.PropertyId"
+                                        data-property-title="@property.Title"
+                                        title="立即付款">
+                                    <i class="fas fa-credit-card me-1"></i>立即付款
+                                </button>
                             }
 
                             <!-- 檢視房源（通用功能） -->
