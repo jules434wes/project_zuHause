@@ -31,12 +31,10 @@
 .carousel-container {
     position: relative;
     margin-bottom: 30px;
-    /* 設定最大寬度，例如 1200px */
-    max-width: 1200px;
-    /* 讓容器寬度佔滿父容器，直到達到 max-width */
-    width: 100%; /* 這會讓它在小於 max-width 時響應式縮小 */
-    /* 水平居中 */
-    margin-left: auto;
+    /* 移除最大寬度限制，讓輪播符合瀏覽器寬度 */
+    width: 100vw; /* 使用視窗寬度 */
+    /* 由於要全寬度，調整定位 */
+    margin-left: calc(-50vw + 50%);
     margin-right: auto;
 }
 
@@ -276,9 +274,9 @@
 
 /* 自定義圖片輪播圖樣式 */
 #myCustomCarousel {
-    width: 100%;
-    max-width: 1200px; /* 根據您的需求調整最大寬度 */
-    margin: 0 auto; /* 置中 */
+    width: 100%; /* 佔滿父容器寬度 */
+    /* 移除 max-width 限制，讓輪播符合瀏覽器寬度 */
+    margin: 0; /* 移除自動置中 */
     overflow: hidden; /* 隱藏超出容器的圖片 */
     position: relative; /* 為了絕對定位子元素 */
 }

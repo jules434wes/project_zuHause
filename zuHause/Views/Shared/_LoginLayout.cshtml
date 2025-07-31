@@ -16,10 +16,10 @@
     <link rel="stylesheet" href="~/css/_LoginPartialShared.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/zuHause.styles.css" asp-append-version="true" />
 </head>
-<body class="position-relative d-flex flex-column min-vh-100">
+<body class="position-relative d-flex flex-column">
 
     @await Component.InvokeAsync("NavbarMember")
-    <main role="main" class="d-flex justify-content-center flex-fill">
+    <main role="main" class="d-flex justify-content-center flex-fill min-vh-100">
         <div class="container d-flex flex-column @(needCenter?"justify-content-center":"justify-content-start") align-items-center mx-auto my-5 position-relative">
             @RenderBody()
 
