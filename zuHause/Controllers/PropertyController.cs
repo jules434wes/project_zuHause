@@ -169,6 +169,20 @@ namespace zuHause.Controllers
                     }
                 };
 
+                // 檢查當前用戶身份
+                if (User.Identity?.IsAuthenticated == true)
+                {
+                    var currentUserIdClaim = User.FindFirst("UserId")?.Value;
+                    var isLandlordClaim = User.FindFirst("IsLandlord")?.Value;
+                    
+                    if (int.TryParse(currentUserIdClaim, out int currentUserId))
+                    {
+                        viewModel.LandlordMemberId = property.LandlordMemberId;
+                        viewModel.IsCurrentUserPropertyOwner = (currentUserId == property.LandlordMemberId);
+                        viewModel.IsCurrentUserLandlord = (isLandlordClaim == "True" || isLandlordClaim == "true");
+                    }
+                }
+
                 return View(viewModel);
             }
             catch (Exception ex)
@@ -248,41 +262,15 @@ namespace zuHause.Controllers
         /// </summary>
         [HttpGet("property/new")]
         [HttpGet("property/create")] // 向後相容性保留
-        public async Task<IActionResult> Create(bool reset = false)
+        public async Task<IActionResult> Create()
         {
             // 強制禁用快取
             Response.Headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
             Response.Headers["Pragma"] = "no-cache";
             Response.Headers["Expires"] = "0";
             
-            _logger.LogInformation("用戶訪問房源創建頁面 - IP: {IpAddress}, Reset: {Reset}", 
-                HttpContext.Connection.RemoteIpAddress, reset);
-            
-            if (reset)
-            {
-                // 清除可能存在的表單資料暫存
-                TempData.Clear();
-                
-                // 清除臨時會話數據（圖片上傳等）
-                try
-                {
-                    var currentTempSessionId = _tempSessionService.GetOrCreateTempSessionId(HttpContext);
-                    if (!string.IsNullOrEmpty(currentTempSessionId))
-                    {
-                        await _tempSessionService.InvalidateTempSessionAsync(currentTempSessionId);
-                        _logger.LogInformation("清除臨時會話數據: {TempSessionId}", currentTempSessionId);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "清除臨時會話數據時發生警告，但不影響表單載入");
-                }
-                
-                // 清除相關的 Session 數據
-                HttpContext.Session.Remove("SelectedPropertyId");
-                
-                _logger.LogInformation("清除表單暫存資料，建立全新房源表單");
-            }
+            _logger.LogInformation("用戶訪問房源創建頁面 - IP: {IpAddress}", 
+                HttpContext.Connection.RemoteIpAddress);
             
             return await BuildPropertyForm(PropertyFormMode.Create);
         }
@@ -718,7 +706,8 @@ namespace zuHause.Controllers
                     _logger.LogInformation("🎉 成功創建房源，房源ID: {PropertyId}, 房東ID: {LandlordId}", 
                         property.PropertyId, currentUserId.Value);
 
-                    // 移除吐司訊息，因為 CreationSuccess 頁面本身就是成功確認頁面
+                    TempData["SuccessMessageTitle"] = "房源創建成功！";
+                    TempData["SuccessMessageContent"] = "您的房源已成功提交審核，預計 2-3 個工作天完成審核。";
                     return RedirectToAction("CreationSuccess", new { id = property.PropertyId });
                 }
                 catch (Exception transactionEx)
@@ -1413,51 +1402,6 @@ namespace zuHause.Controllers
             // 生成唯一的 PropertyId (因為資料庫中 PropertyId 不是 IDENTITY 欄位)
             var newPropertyId = await GenerateUniquePropertyIdAsync();
 
-            // 生成房源座標資料
-            decimal? latitude = null;
-            decimal? longitude = null;
-            
-            if (!string.IsNullOrWhiteSpace(dto.AddressLine))
-            {
-                try
-                {
-                    _logger.LogInformation("🗺️ 開始為房源生成座標 - PropertyId: {PropertyId}, Address: {Address}", 
-                        newPropertyId, dto.AddressLine);
-
-                    var geocodingRequest = new zuHause.DTOs.GoogleMaps.GeocodingRequest
-                    {
-                        Address = dto.AddressLine,
-                        Language = "zh-TW",
-                        Region = "TW"
-                    };
-
-                    var geocodingResult = await _googleMapsService.GeocodeAsync(geocodingRequest);
-                    
-                    if (geocodingResult.IsSuccess && geocodingResult.Latitude.HasValue && geocodingResult.Longitude.HasValue)
-                    {
-                        latitude = (decimal)geocodingResult.Latitude.Value;
-                        longitude = (decimal)geocodingResult.Longitude.Value;
-                        
-                        _logger.LogInformation("✅ 座標生成成功 - PropertyId: {PropertyId}, Lat: {Lat}, Lng: {Lng}", 
-                            newPropertyId, latitude, longitude);
-                    }
-                    else
-                    {
-                        _logger.LogWarning("⚠️ 座標生成失敗 - PropertyId: {PropertyId}, Address: {Address}, Status: {Status}, Error: {Error}", 
-                            newPropertyId, dto.AddressLine, geocodingResult.Status, geocodingResult.ErrorMessage);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "❌ 座標生成過程中發生異常 - PropertyId: {PropertyId}, Address: {Address}", 
-                        newPropertyId, dto.AddressLine);
-                }
-            }
-            else
-            {
-                _logger.LogWarning("⚠️ 地址為空，無法生成座標 - PropertyId: {PropertyId}", newPropertyId);
-            }
-
             return new Property
             {
                 PropertyId = newPropertyId,
@@ -1467,8 +1411,6 @@ namespace zuHause.Controllers
                 CityId = dto.CityId,
                 DistrictId = dto.DistrictId,
                 AddressLine = dto.AddressLine,
-                Latitude = latitude,
-                Longitude = longitude,
                 MonthlyRent = dto.MonthlyRent,
                 DepositAmount = dto.DepositAmount,
                 DepositMonths = dto.DepositMonths,
@@ -2421,6 +2363,99 @@ namespace zuHause.Controllers
                 
                 _logger.LogError("💥 堆疊追蹤: {StackTrace}", ex.StackTrace);
                 throw;
+            }
+        }
+
+        /// <summary>
+        /// 提交房源投訴
+        /// </summary>
+        /// <param name="model">投訴資料</param>
+        /// <returns>處理結果</returns>
+        [HttpPost]
+        public async Task<IActionResult> SubmitComplaint(PropertyComplaintViewModel model)
+        {
+            try
+            {
+                // 驗證用戶身份
+                if (!User.Identity?.IsAuthenticated == true)
+                {
+                    return Json(new { success = false, message = "請先登入後再進行投訴" });
+                }
+
+                var userId = Convert.ToInt32(User.FindFirst("UserId")?.Value);
+                if (userId != model.ComplainantId)
+                {
+                    return Json(new { success = false, message = "身份驗證失敗" });
+                }
+
+                // 驗證模型
+                if (!ModelState.IsValid)
+                {
+                    var errors = string.Join(", ", ModelState.Values
+                        .SelectMany(v => v.Errors)
+                        .Select(e => e.ErrorMessage));
+                    return Json(new { success = false, message = errors });
+                }
+
+                // 驗證房源存在性
+                var property = await _context.Properties
+                    .Include(p => p.LandlordMember)
+                    .FirstOrDefaultAsync(p => p.PropertyId == model.PropertyId);
+
+                if (property == null)
+                {
+                    return Json(new { success = false, message = "房源不存在" });
+                }
+
+                // 驗證投訴人不是房東本人
+                if (property.LandlordMemberId == userId)
+                {
+                    return Json(new { success = false, message = "不能投訴自己的房源" });
+                }
+
+                // 檢查是否已有未處理的投訴
+                var existingComplaint = await _context.PropertyComplaints
+                    .Where(pc => pc.PropertyId == model.PropertyId && 
+                                pc.ComplainantId == userId && 
+                                pc.StatusCode != "RESOLVED" && 
+                                pc.StatusCode != "CLOSED")
+                    .FirstOrDefaultAsync();
+
+                if (existingComplaint != null)
+                {
+                    return Json(new { success = false, message = "您已有針對此房源的未處理投訴，請等待處理結果" });
+                }
+
+                // 建立投訴記錄
+                var complaint = new PropertyComplaint
+                {
+                    PropertyId = model.PropertyId,
+                    ComplainantId = userId,
+                    LandlordId = property.LandlordMemberId,
+                    ComplaintContent = model.ComplaintContent.Trim(),
+                    StatusCode = "PENDING",
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+
+                _context.PropertyComplaints.Add(complaint);
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation("新投訴已建立 - 投訴ID: {ComplaintId}, 房源ID: {PropertyId}, 投訴人ID: {ComplainantId}", 
+                    complaint.ComplaintId, model.PropertyId, userId);
+
+                return Json(new { 
+                    success = true, 
+                    message = "投訴已成功提交，我們會在24小時內進行審查並回覆您", 
+                    complaintId = complaint.ComplaintId 
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "提交投訴時發生錯誤 - PropertyId: {PropertyId}, UserId: {UserId}", 
+                    model.PropertyId, User.FindFirst("UserId")?.Value);
+
+                return Json(new { success = false, message = "系統錯誤，請稍後再試" });
             }
         }
 
