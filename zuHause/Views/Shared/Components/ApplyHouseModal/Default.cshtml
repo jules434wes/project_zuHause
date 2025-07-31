@@ -1,13 +1,7 @@
 ﻿@using zuHause.ViewModels.MemberViewModel
 @model ApplicationViewModel
-<button type="button" class="btn btn-aqua py-0 col-auto" data-bs-toggle="modal"
-        data-bs-target="#applyHouse">
-    (房客)預約看房
-</button>
 
-
-<div class="modal fade" id="applyHouse" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
-     aria-labelledby="applyHouseLabel" aria-hidden="true">
+<div class="modal fade" id="applyHouse" tabindex="-1" aria-labelledby="applyHouseLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <form asp-controller="MemberApplications" asp-action="CreateApplyHouse" method="post" class="w-100">

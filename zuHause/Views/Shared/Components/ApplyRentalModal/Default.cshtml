@@ -6,7 +6,7 @@
 </button>
 
 
-<div class="modal fade" id="applyRental" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="applyRentalLabel" aria-hidden="true">
+<div class="modal fade" id="applyRental" tabindex="-1" aria-labelledby="applyRentalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg modal-fullscreen-lg-down">
         <form asp-controller="MemberApplications" asp-action="ApplyRental" method="post" class="w-100 apply-rental-form" enctype="multipart/form-data">
             <div class="modal-content">
@@ -58,7 +58,7 @@
                         <h6 class="col-12 m-0 me-2">
                             <div class="row m-0">
                                 <div class="col-3">租金：</div>
-                                <div class="col">NT$@Model.MonthlyRent.ToString("N0") 元 / 月</div>
+                                <div class="col">NT$@Model.MonthlyRent.ToString("0") 元 / 月</div>
                             </div>
                         </h6>
                         <h6 class="col-12 m-0 me-2">
@@ -131,9 +131,23 @@
                             }
                         </style>
                         <div class="col-12 upload-input-area">
-                            <!-- 插入input框 -->
-
-
+                            <!-- 預設上傳項目 -->
+                            <div class="row m-0 align-items-start input-item">
+                                <h6 class="col-auto mb-0 px-0 py-2">檔案：</h6>
+                                <div class="col-auto gap-2 py-0">
+                                    <div class="row align-items-center">
+                                        <label for="" class="col-auto border border-1 px-2 py-1" role="button">選擇檔案</label>
+                                        <input type="file" name="UploadFiles" id="" class="col-auto col-auto d-none">
+                                        <div class="col-auto input-file-name col-auto"></div>
+                                        <button type="button" class="col-auto btn p-0 del-btn">
+                                            <i class="bi bi-dash-square-fill"></i>
+                                        </button>
+                                    </div>
+                                    <div class="row input-feedback mt-1">
+                                        <small class="text-muted col p-0">支援 JPG、PNG、WEBP 格式，檔案大小請小於 5MB</small>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <template id="upload-template" class="d-none">

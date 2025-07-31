@@ -1,0 +1,206 @@
+@model zuHause.ViewModels.PropertyComplaintViewModel
+
+<div class="modal fade" id="propertyComplaintModal" tabindex="-1" aria-labelledby="propertyComplaintModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <form asp-controller="Property" asp-action="SubmitComplaint" method="post" class="w-100">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="propertyComplaintModalLabel">
+                        <i class="fas fa-flag text-danger me-2"></i>回報房源問題
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                
+                <div class="modal-body p-4">
+                    <!-- 隱藏欄位 -->
+                    <input type="hidden" asp-for="PropertyId" />
+                    <input type="hidden" asp-for="ComplainantId" />
+                    <input type="hidden" asp-for="LandlordId" />
+                    
+                    <!-- 房源資訊展示 -->
+                    <div class="card bg-light mb-4">
+                        <div class="card-body">
+                            <h6 class="card-title mb-3">
+                                <i class="fas fa-home me-2"></i>房源資訊
+                            </h6>
+                            <div class="row g-3">
+                                <div class="col-md-8">
+                                    <div class="mb-2">
+                                        <small class="text-muted">房源標題：</small>
+                                        <div class="fw-medium">@Model.PropertyTitle</div>
+                                    </div>
+                                    <div class="mb-2">
+                                        <small class="text-muted">房源地址：</small>
+                                        <div>@Model.PropertyAddress</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-2">
+                                        <small class="text-muted">房東：</small>
+                                        <div class="fw-medium">@Model.LandlordName</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 投訴人資訊展示 -->
+                    <div class="card bg-light mb-4">
+                        <div class="card-body">
+                            <h6 class="card-title mb-3">
+                                <i class="fas fa-user me-2"></i>投訴人資訊
+                            </h6>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <small class="text-muted">姓名：</small>
+                                    <div class="fw-medium">@Model.ComplainantName</div>
+                                </div>
+                                <div class="col-md-4">
+                                    <small class="text-muted">電話：</small>
+                                    <div>@(string.IsNullOrEmpty(Model.ComplainantPhone) ? "未提供" : Model.ComplainantPhone)</div>
+                                </div>
+                                <div class="col-md-4">
+                                    <small class="text-muted">Email：</small>
+                                    <div>@(string.IsNullOrEmpty(Model.ComplainantEmail) ? "未提供" : Model.ComplainantEmail)</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 投訴內容 -->
+                    <div class="mb-4">
+                        <label asp-for="ComplaintTypeCode" class="form-label fw-semibold">
+                            <i class="fas fa-tags me-1"></i>問題類型 <span class="text-danger">*</span>
+                        </label>
+                        <select asp-for="ComplaintTypeCode" asp-items="Model.ComplaintTypes" class="form-select" required>
+                            <option value="">請選擇投訴類型</option>
+                        </select>
+                        <span asp-validation-for="ComplaintTypeCode" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-4">
+                        <label asp-for="ComplaintContent" class="form-label fw-semibold">
+                            <i class="fas fa-comment-dots me-1"></i>詳細說明 <span class="text-danger">*</span>
+                        </label>
+                        <textarea asp-for="ComplaintContent" 
+                                  class="form-control" 
+                                  rows="6" 
+                                  placeholder="請詳細描述您遇到的問題，我們將盡快處理並回覆您..." 
+                                  maxlength="1000" 
+                                  required></textarea>
+                        <div class="form-text">
+                            <small class="text-muted">請提供詳細的問題描述，最少10字，最多1000字</small>
+                        </div>
+                        <span asp-validation-for="ComplaintContent" class="text-danger small"></span>
+                    </div>
+
+                    <!-- 注意事項 -->
+                    <div class="alert alert-info">
+                        <h6 class="alert-heading">
+                            <i class="fas fa-info-circle me-1"></i>投訴須知
+                        </h6>
+                        <ul class="mb-0 small">
+                            <li>我們會在收到投訴後的 24 小時內進行初步審查</li>
+                            <li>必要時，我們會聯繫您以獲取更多資訊</li>
+                            <li>調查結果將透過站內信或 Email 通知您</li>
+                            <li>惡意投訴或虛假資訊可能導致帳號受限</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>取消
+                    </button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-paper-plane me-1"></i>提交投訴
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 投訴表單處理
+    const complaintForm = document.querySelector('#propertyComplaintModal form');
+    const complaintContent = document.querySelector('#ComplaintContent');
+    const complaintType = document.querySelector('#ComplaintTypeCode');
+    const submitBtn = document.querySelector('#propertyComplaintModal .btn-danger');
+    const modal = document.querySelector('#propertyComplaintModal');
+    
+    if (complaintForm) {
+        complaintForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            let isValid = true;
+            
+            // 驗證投訴類型
+            if (!complaintType.value) {
+                isValid = false;
+                complaintType.classList.add('is-invalid');
+            } else {
+                complaintType.classList.remove('is-invalid');
+            }
+            
+            // 驗證投訴內容
+            if (!complaintContent.value.trim() || complaintContent.value.trim().length < 10) {
+                isValid = false;
+                complaintContent.classList.add('is-invalid');
+            } else {
+                complaintContent.classList.remove('is-invalid');
+            }
+            
+            if (!isValid) {
+                alert('請填寫完整的投訴資訊');
+                return;
+            }
+            
+            // 禁用提交按鈕，顯示載入狀態
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>提交中...';
+            
+            // 準備表單資料
+            const formData = new FormData(complaintForm);
+            
+            // 使用 fetch 提交表單
+            fetch('/Property/SubmitComplaint', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // 顯示成功訊息
+                    alert(data.message);
+                    
+                    // 關閉 Modal
+                    const modalInstance = bootstrap.Modal.getInstance(modal);
+                    if (modalInstance) {
+                        modalInstance.hide();
+                    }
+                    
+                    // 重置表單
+                    complaintForm.reset();
+                } else {
+                    // 顯示錯誤訊息
+                    alert(data.message || '投訴提交失敗，請稍後再試');
+                }
+            })
+            .catch(error => {
+                console.error('投訴提交錯誤:', error);
+                alert('系統錯誤，請稍後再試');
+            })
+            .finally(() => {
+                // 恢復submit按鈕
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-paper-plane me-1"></i>提交投訴';
+            });
+        });
+    }
+});
+</script>
