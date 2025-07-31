@@ -11,7 +11,7 @@
     <div class="col-10 d-flex justify-content-start flex-column
         align-items-center">
         <div class="row w-100">
-            <h1 class="fs-3 text-white px-0">個人檔案檢視</h1>
+            <h1 class="fs-3 text-black px-0">個人檔案檢視</h1>
             <div class="col-12 card border-dark my-3">
                 <div class="card-body row">
                     <div class="col-2 d-flex flex-column gap-2">
@@ -144,8 +144,8 @@
             </div>
         </div>
         <hr class="w-100">
-        <div class="row w-100 text-white mt-2">
-            <h2 class="fs-3 text-white px-0">會員資料修改</h2>
+        <div class="row w-100 text-black mt-2">
+            <h2 class="fs-3 text-black px-0">會員資料修改</h2>
             <p>@TempData["SuccessMessage"]</p>
                 <form asp-action="UpdatememberProfile" method="post" class="w-100">
             <div class="col-12 mt-3 d-flex flex-column gap-3 align-items-start justify-content-center">
@@ -191,7 +191,7 @@
                             <input type="hidden" readonly class="form-control-plaintext" asp-for="MemberName">
                             <p class="m-0">@Model.MemberName</p>
                             <div class="review-status d-flex align-items-center gap-1">
-                                <span class="text-white">
+                                <span class="text-aqua">
                                     <i class="bi bi-check-circle-fill fs-6"></i>
                                     已實名認證
                                 </span>
@@ -336,11 +336,11 @@
                 </form>
         </div>
         <hr class="w-100">
-        <div id="identity-section" class="row w-100 text-white identity-verification-area mt-2">
-            <h2 class="fs-3 text-white px-0">身分認證</h2>
+        <div id="identity-section" class="row w-100 text-black identity-verification-area mt-2">
+            <h2 class="fs-3 text-black px-0">身分認證</h2>
             <div class="col-12 mt-3 d-flex flex-column gap-3 align-items-start justify-content-center">
 
-                <div class="row align-items-center w-100 input-id-area">
+                <div class="row align-items-center w-100 input-id-area text-black">
                     <p class="col-2 col-form-label text-end">身分證正面</p>
                     <div class="col pe-0 d-flex align-items-center gap-3 input-id-area-front">
                         <div class="row align-items-center w-100">
@@ -359,7 +359,7 @@
                                 }
                                 else
                                 {
-                                <span class="text-white">
+                                <span class="text-aqua">
                                     <i class="bi bi-check-circle-fill fs-6"></i>
                                     已完成審核
                                 </span>
@@ -368,7 +368,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="row align-items-center w-100 input-id-area">
+                <div class="row align-items-center w-100 input-id-area text-black">
                     <p class="col-2 col-form-label text-end">身分證反面</p>
                     <div class="col pe-0 d-flex align-items-center gap-3 input-id-area-back">
                         <div class="row align-items-center w-100">
@@ -387,7 +387,7 @@
                                 }
                                 else
                                 {
-                                <span class="text-white">
+                                <span class="text-aqua">
                                     <i class="bi bi-check-circle-fill fs-6"></i>
                                     已完成審核
                                 </span>
