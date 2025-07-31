@@ -4,7 +4,7 @@
     string? role = User.FindFirst(ClaimTypes.Role)?.Value;
 }
 @model zuHause.ViewModels.NavbarMemberViewModel
-<header class="position-sticky w-100 top-0 z-3">
+<header class="position-sticky w-100 top-0 navbar-glass" style="z-index: 50;">
     <nav class="navbar navbar-expand-lg position-relative py-0" data-bs-theme="aqua">
         <div class="container-fluid">
             @if (Model.NavigationType == "landlord")
@@ -77,36 +77,32 @@
                                         </span>
                                 }
                             </button>
-                            <ul class="dropdown-menu dropdown-msg left-50 p-0 rounded-0">
-                                <li class="py-1 px-2">
-                                    通知總覽
+                            <ul class="dropdown-menu dropdown-menu-end notification-dropdown">
+                                <li>
+                                    <h6 class="dropdown-header">通知總覽</h6>
                                 </li>
                                 <li>
-                                    <hr class="dropdown-divider m-0">
+                                    <hr class="dropdown-divider">
+                                </li>
+                                @foreach (SystemMessageViewModel item in Model.LatestNotifications)
+                                {
+                                    <li class="@((item.IsRead == false && item.ModuleCode != "System") ? "bg-primary-subtle" : "")">
+                                        <a class="dropdown-item" asp-action="Index" asp-controller="MemberInbox" asp-route-notificationId="@item.NotificationId">
+                                            <div class="d-flex w-100 justify-content-between">
+                                                <span class="fw-bold">
+                                                    @(item.AudienceTypeCode == "User" ? "系統通知" : "系統公告")
+                                                </span>
+                                                <small>@(item.SentAt)</small>
+                                            </div>
+                                            <small class="text-muted text-truncate d-block">@(item.Title)</small>
+                                        </a>
+                                    </li>
+                                }
+                                <li>
+                                    <hr class="dropdown-divider">
                                 </li>
                                 <li>
-                                    <ul class="dropdown-sub-list p-0">
-
-
-                                        @foreach (SystemMessageViewModel item in Model.LatestNotifications)
-                                        {
-                                            <li class="border-bottom @((item.IsRead == false && item.ModuleCode != "System") ? "border-primary bg-primary-subtle" : "")">
-                                                <a class="dropdown-item" asp-action="Index" asp-controller="MemberInbox" asp-route-notificationId="@item.NotificationId">
-                                                    <div class="d-flex w-100 justify-content-between">
-                                                        <p class="mb-1">
-                                                            @(item.AudienceTypeCode == "User" ? "系統通知" : "系統公告")
-                                                        </p>
-                                                        <small>@(item.SentAt)</small>
-                                                    </div>
-                                                    <small class="mb-0 text-start text-truncate d-block w-100">@(item.Title)</small>
-                                                </a>
-                                            </li>
-                                        }
-
-                                    </ul>
-                                </li>
-                                <li class="d-flex justify-content-center p-0">
-                                    <a asp-action="Index" asp-controller="MemberInbox" class=" d-block text-center btn btn-aqua rounded-0 w-100">我的通知</a>
+                                    <a asp-action="Index" asp-controller="MemberInbox" class="dropdown-item text-center notification-link">我的通知</a>
                                 </li>
                             </ul>
                         </div>
