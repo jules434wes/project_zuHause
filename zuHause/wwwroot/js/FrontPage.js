@@ -49,7 +49,7 @@
         selectedCityCode = $(this).data('citycode'); 
         $cityDropdownBtn.text(selectedCity);
         $cityDropdownBtn.data('citycode', selectedCityCode); 
-        console.log('賦值後 $cityDropdownBtn 的 citycode (來自 jQuery 內部):', $cityDropdownBtn.data('citycode')); // 賦值後從 jQuery 內部讀取
+        //console.log('賦值後 $cityDropdownBtn 的 citycode (來自 jQuery 內部):', $cityDropdownBtn.data('citycode')); // 賦值後從 jQuery 內部讀取
     });
 
     // 搜尋歷史紀錄邏輯
@@ -463,11 +463,18 @@
             const layoutInfo = `${roomCount}房${livingRoomCount}廳${bathroomCount}衛`;
             const rentText = monthlyRent !== undefined && monthlyRent !== null ? `NT$ ${monthlyRent.toLocaleString()}/月` : '價格面議';
             const propertyUrl = `/Property/${propertyId}`;
+             
+            let displayedFeatures = [];
+            if (features.length > 8) {
+                // 若特色>8個，隨機選取 8 個功能
+                const shuffled = features.sort(() => 0.5 - Math.random()); // 隨機排序
+                displayedFeatures = shuffled.slice(0, 8); // 取前 8 個
+            }
+            else {
+                displayedFeatures = features;
+            }
 
 
-            //<button type="button" class="btn btn-link p-0 love-button" data-favorited="${isFavorited}" data-property-id="${propertyId}">
-            //    <i class="bi ${isFavorited ? 'bi-heart-fill' : 'bi-heart'} love-icon"></i>
-            //</button>
             htmlContent += `
                 <div class="col">
                     <div class="card card-listing">
@@ -484,7 +491,7 @@
                                 <i class="bi bi-house"></i> ${layoutInfo} | ${area}坪
                             </p>
                             <div class="tags d-flex flex-wrap mt-2">
-                                ${features.map(feature => `<span class="badge bg-info text-dark me-1 mb-1">${feature}</span>`).join('')}
+                                ${displayedFeatures.map(feature => `<span class="badge bg-info text-dark me-1 mb-1">${feature}</span>`).join('')}
                             </div>
                         </div>
                         <div class="card-footer d-flex justify-content-between align-items-center">
@@ -553,11 +560,9 @@
             if (tenantPreferredCityCode) {
                 initialSearchParams= tenantPreferredCityCode; // 覆蓋或添加 cityCode
                 targetCityCode = tenantPreferredCityCode; // 也更新給 exploreMoreBtn 用
-                //console.log("使用租客偏好城市:", targetCityCode);
+                console.log("使用租客偏好城市:", targetCityCode);
             }
-        } else if (!isLoggedIn() && !initialSearchParams.cityCode && !initialSearchParams.districtCode) {
-            //console.log("用戶未登入且無上次搜尋城市/區域偏好，將使用預設城市 TPE。");
-        }
+        } 
 
 
         // 3. 如果經過上述判斷後仍然沒有城市/區域參數（即 initialSearchParams 中完全沒有城市或區域，且沒從 localStorage 或租客偏好獲取到）
@@ -573,8 +578,8 @@
 
         // A. 第一輪 API 搜尋 (使用處理後的 initialSearchParams)
         const firstBatchProperties = await fetchPropertiesFromApi(initialSearchParams, 8); 
+        //console.log(firstBatchProperties);
         let pageNum = 1; // 用於追蹤分頁的頁碼
-        const BATCH_SIZE = 12; // 每次 API 請求的數量，保持較大以增加去重後的成功率
         const MAX_FETCH_ATTEMPTS = 5; // 設定最大嘗試次數，避免無限迴圈
 
         let finalProperties = [];
@@ -593,7 +598,7 @@
             //console.log(`第一輪房源不足 ${neededCount} 個，發送第二次請求補足。`);
             const noFilterParams = {}; // 空參數表示無篩選
             const secondBatchProperties = await fetchPropertiesFromApi(noFilterParams, 8);
-
+            console.log(secondBatchProperties);
             secondBatchProperties.forEach(p => {
                 if (finalProperties.length < 8 && !uniquePropertyIds.has(p.propertyId)) {
                     finalProperties.push(p);

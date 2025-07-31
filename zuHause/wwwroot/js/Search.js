@@ -331,6 +331,15 @@ async function performSearch() {
                     formattedDate = `${year}-${month}-${day}`;
                 }
 
+                if (features.length > 8) {
+                    // 若特色>8個，隨機選取 8 個功能
+                    const shuffled = features.sort(() => 0.5 - Math.random()); // 隨機排序
+                    displayedFeatures = shuffled.slice(0, 8); // 取前 8 個
+                }
+                else {
+                    displayedFeatures = features;
+                }
+
                 // 組合格局資訊
                 const layoutInfo = `${roomCount}房${livingRoomCount}廳${bathroomCount}衛`;
                 // 組合樓層資訊
@@ -352,7 +361,7 @@ async function performSearch() {
                                 <i class="bi bi-house"></i> ${layoutInfo} | ${floorInfo} | ${area}坪
                             </div>
                             <div class="tags d-flex flex-wrap mt-2">
-                                ${features.map(feature => `<span class="badge">${feature}</span>`).join('')}
+                                ${displayedFeatures.map(feature => `<span class="badge">${feature}</span>`).join('')}
                             </div>
                         </div>
                         <div class="d-flex flex-column align-items-end ms-auto">
