@@ -71,7 +71,7 @@
 								<button class="btn btn-info" onclick="openPropertyProofModal()">
 									<i class="bi bi-file-earmark-pdf me-1"></i>檢視產權證明
 								</button>
-								<a href="@(Model.Data.PropertyProofUrl)" class="btn btn-outline-info" target="_blank">
+								<a href="@(!string.IsNullOrEmpty(Model.Data.PropertyProofUrl) && Model.Data.PropertyProofUrl.StartsWith("http") ? Model.Data.PropertyProofUrl : $"https://zuhauseimg.blob.core.windows.net/zuhaus-images/{Model.Data.PropertyProofUrl}")" class="btn btn-outline-info" target="_blank">
 									<i class="bi bi-download me-1"></i>下載產權證明
 								</a>
 							}
@@ -399,7 +399,7 @@
 	</div>
 
 	<!-- 審核記錄頁籤 -->
-	<div class="tab-pane fade" id="approval-history" role="tabpanel" aria-labelledby="approval-history-tab">
+	@* <div class="tab-pane fade" id="approval-history" role="tabpanel" aria-labelledby="approval-history-tab">
 		<div class="card">
 			<div class="card-header">
 				<h5 class="mb-0">審核歷史記錄</h5>
@@ -444,5 +444,5 @@
 				</div>
 			</div>
 		</div>
-	</div>
+	</div> *@
 </div>

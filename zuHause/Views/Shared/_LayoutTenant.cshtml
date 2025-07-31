@@ -13,18 +13,18 @@
 		
 		.social-icons .bi {
 			font-size: 1.5rem; /* 調整圖示大小 */
-			color: #f8f9fa; /* 圖示顏色 */
+			color: #000000; /* 圖示顏色 */
 			margin-right: 10px; /* 圖示之間的間距 */
 			transition: color 0.3s; /* 添加過渡效果 */
 		}
 
 		/* 確保服務條款、免責聲明、隱私權說明等連結的顏色 */
-		.list-inline-item a.text-white {
+		.list-inline-item a.text-black {
 			transition: color 0.3s ease-in-out; /* 添加平滑的過渡效果 */
 		}
 
 			/* 滑鼠懸停時的顏色 */
-			.list-inline-item a.text-white:hover,
+			.list-inline-item a.text-black:hover,
 			.social-icons .bi:hover {
 				color: #258cfb !important; /* 使用您想要的藍色，!important 可以確保覆蓋 Bootstrap 的預設 hover 顏色 */
 			}
@@ -36,44 +36,41 @@
 		<main role="main">
 			@RenderBody()
 		</main>
-	</div>
+	
+	<footer style="background: linear-gradient(to right, #A8E6CF, #DCFFFB); color: #1c1e22; padding: 30px 0;">
+		<div class="container d-flex justify-content-between align-items-center flex-wrap">
 
-	<footer class="bg-dark text-white py-4">
-		<div class="container">
-			<div class="row align-items-center">
-				<div class="col-md-4 text-center mb-3 mb-md-0">
-					<a href="/" class="text-white text-decoration-none">
-						<img src="~/images/zuHause_logo.png" alt="zuHause Logo" >
-					</a>
+        <div class="d-flex align-items-center">
+            <img src="~/images/logo.png" alt="zuHause Logo" style="height: 80px; margin-right: 20px;">
+            <div>
+                <div>熊好租股份有限公司</div>
+                <div>台中市南屯區公益路二段51號</div>
+            </div>
+        </div>
+
+			<div class="text-end mt-3 mt-md-0">
+				<ul class="list-inline">
+					<li class="list-inline-item">
+						<a asp-controller="Announcement" asp-action="Announcement" asp-route-section="announcements" class="text-black text-decoration-none">最新公告</a>
+					</li>
+					<li class="list-inline-item">
+							<a asp-controller="Announcement" asp-action="Announcement" asp-route-section="terms" class="text-black text-decoration-none">服務條款</a>
+					</li>
+					<li class="list-inline-item">
+							<a asp-controller="Announcement" asp-action="Announcement" asp-route-section="disclaimer" class="text-black text-decoration-none">免責聲明</a>
+					</li>
+					<li class="list-inline-item">
+							<a asp-controller="Announcement" asp-action="Announcement" asp-route-section="privacy" class="text-black text-decoration-none">隱私權說明</a>
+					</li>
+				</ul>
+				<div class="social-icons mb-3">
+						<a href="#" class="text-black mx-2"><i class="bi bi-facebook bi-lg"></i></a>
+						<a href="#" class="text-black mx-2"><i class="bi bi-twitter bi-lg"></i></a>
+						<a href="#" class="text-black mx-2"><i class="bi bi-youtube bi-lg"></i></a>
+						<a href="#" class="text-black mx-2"><i class="bi bi-envelope bi-lg"></i></a>
+						<a href="#" class="text-black mx-2"><i class="bi bi-instagram bi-lg"></i></a>
 				</div>
-				<div class="col-md-4 text-center mb-3 mb-md-0">
-					<p class="mt-2">熊好租股份有限公司</p>
-					<p>台中市南屯區公益路二段51號</p>
-				</div>
-				<div class="col-md-4 text-center">
-					<ul class="list-inline">
-						<li class="list-inline-item">
-							<a asp-controller="Announcement" asp-action="Announcement" asp-route-section="announcements" class="text-white text-decoration-none">最新公告</a>
-						</li>
-						<li class="list-inline-item">
-							<a asp-controller="Announcement" asp-action="Announcement" asp-route-section="terms" class="text-white text-decoration-none">服務條款</a>
-						</li>
-						<li class="list-inline-item">
-							<a asp-controller="Announcement" asp-action="Announcement" asp-route-section="disclaimer" class="text-white text-decoration-none">免責聲明</a>
-						</li>
-						<li class="list-inline-item">
-							<a asp-controller="Announcement" asp-action="Announcement" asp-route-section="privacy" class="text-white text-decoration-none">隱私權說明</a>
-						</li>
-					</ul>
-					<div class="social-icons mb-3">
-						<a href="#" class="text-white mx-2"><i class="bi bi-facebook bi-lg"></i></a>
-						<a href="#" class="text-white mx-2"><i class="bi bi-twitter bi-lg"></i></a>
-						<a href="#" class="text-white mx-2"><i class="bi bi-youtube bi-lg"></i></a>
-						<a href="#" class="text-white mx-2"><i class="bi bi-envelope bi-lg"></i></a>
-						<a href="#" class="text-white mx-2"><i class="bi bi-instagram bi-lg"></i></a>
-					</div>
-					<p class="text-white text-decoration-none">Copyright © @DateTime.Now.Year 熊好租. All rights reserved.</p>
-				</div>
+					<p class="text-black text-decoration-none">Copyright © @DateTime.Now.Year 熊好租. All rights reserved.</p>
 			</div>
 		</div>
 	</footer>
@@ -88,4 +85,3 @@
 
 </body>
 </html>
-
