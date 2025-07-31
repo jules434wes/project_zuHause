@@ -8,10 +8,9 @@ using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using Stripe;
 using Stripe.Checkout;
-using Stripe.Issuing;
 using System.Security.Claims;
 using zuHause.Models; // EF Core 的資料模型
-
+using zuHause.ViewModels;
 
 
 namespace zuHause.Controllers
@@ -173,7 +172,7 @@ namespace zuHause.Controllers
                     c.RentalApplication != null &&
                     c.RentalApplication.Property != null && // 加這行！
                     c.RentalApplication.MemberId == memberId &&
-                    c.Status == "active")
+                   (c.Status == "active" || c.Status == "signed"))
                 .Select(c => Tuple.Create(
                     c.RentalApplication!.Property!.PropertyId,
                     c.RentalApplication.Property.Title,
@@ -253,10 +252,10 @@ namespace zuHause.Controllers
             // 🔹 所有合約資料
             var propertyContracts = _context.Contracts
                 .Include(c => c.RentalApplication)
-                .ThenInclude(ra => ra!.Property)    
+                .ThenInclude(ra => ra!.Property)
                 .Where(c => c.RentalApplication != null &&
                             c.RentalApplication.MemberId == memberId &&
-                            c.Status == "ACTIVE" &&
+                            ContractStatuses.ValidStatuses.Contains(c.Status) &&
                             c.EndDate >= DateOnly.FromDateTime(DateTime.Today))
                 .ToList();
 
@@ -370,13 +369,16 @@ namespace zuHause.Controllers
             return View(cart);
         }
 
-
         //加入商品到購物車清單add
         [HttpPost]
         public async Task<IActionResult> AddToCart(string productId, int selectedPropertyId, int rentalDays, int quantity)
         {
-            // 模擬登入會員
-            var memberId = 2;
+            // 從 Claims 中取得登入會員 ID
+            var memberIdStr = User.FindFirst("UserId")?.Value;
+            if (string.IsNullOrEmpty(memberIdStr) || !int.TryParse(memberIdStr, out int memberId))
+            {
+                return RedirectToAction("Login", "Member");
+            }
 
             // 1. 根據會員 + 房源找出是否已有購物車
             var cart = await _context.FurnitureCarts
@@ -384,6 +386,7 @@ namespace zuHause.Controllers
                 .FirstOrDefaultAsync(c => c.MemberId == memberId
                                        && c.PropertyId == selectedPropertyId
                                        && c.Status != "ORDERED");
+
 
             // 2. 若沒有就建立一筆購物車資料
             if (cart == null)
@@ -463,7 +466,6 @@ namespace zuHause.Controllers
             public int Quantity { get; set; }
         }
 
-
         // 租借說明頁面
         public IActionResult InstructionsForUse()
         {
@@ -538,8 +540,7 @@ namespace zuHause.Controllers
                     c.RentalApplication.Property != null &&
                     c.RentalApplication.MemberId == memberId &&
                     c.RentalApplication.PropertyId == selectedPropertyId &&
-                    c.Status == "active"
-                );
+                    ContractStatuses.ValidStatuses.Contains(c.Status));
 
 
             if (contract != null && contract.EndDate != null)
@@ -605,11 +606,11 @@ namespace zuHause.Controllers
             // 儲存簽名資料
             var newSignature = new ContractSignature
             {
-                    ContractId = _context.Contracts
+                ContractId = _context.Contracts
                     .Where(c => c.RentalApplication != null &&
                                 c.RentalApplication.MemberId == memberId &&
                                 c.RentalApplication.PropertyId == dto.SelectedPropertyId &&
-                                c.Status == "active")
+                                ContractStatuses.ValidStatuses.Contains(c.Status))
                     .Select(c => c.ContractId)
                     .FirstOrDefault(),
 
@@ -634,7 +635,7 @@ namespace zuHause.Controllers
         //接前端的電子簽約 POST JSON 內容
         public class SignatureDto
         {
-            public string? SignatureDataUrl { get; set; } 
+            public string? SignatureDataUrl { get; set; }
             public int SelectedPropertyId { get; set; }
         }
 
@@ -642,7 +643,8 @@ namespace zuHause.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateCheckoutSession(string furnitureCartId, int totalAmount)
         {
-            var domain = "https://localhost:7010";
+            //var domain = "https://localhost:7010";
+            var domain = $"{Request.Scheme}://{Request.Host}";
 
             var options = new SessionCreateOptions
             {
@@ -691,17 +693,16 @@ namespace zuHause.Controllers
             public int SelectedPropertyId { get; set; }
         }
 
-
         //支付成功
         public async Task<IActionResult> Success()
         {
             Console.WriteLine("✅ 成功進入 Success 方法");
             SetCurrentMemberInfo();
-            
+
             // 統一認證機制：優先使用 Cookie，回退到 Session，並處理 Stripe 返回場景
             int memberId = 0;
             bool authenticationValid = false;
-            
+
             // 1. 嘗試從 Cookie 認證獲取會員 ID
             var memberIdString = User.FindFirst("UserId")?.Value;
             if (!string.IsNullOrEmpty(memberIdString) && int.TryParse(memberIdString, out memberId))
@@ -718,7 +719,7 @@ namespace zuHause.Controllers
                     memberId = sessionMemberId.Value;
                     authenticationValid = true;
                     Console.WriteLine($"✅ Session 認證成功，會員 ID: {memberId}");
-                    
+
                     // 重新建立 Cookie 認證以保持一致性
                     var member = _context.Members.FirstOrDefault(m => m.MemberId == memberId);
                     if (member != null)
@@ -732,14 +733,14 @@ namespace zuHause.Controllers
                         var identity = new ClaimsIdentity(claims, "MemberCookieAuth");
                         var principal = new ClaimsPrincipal(identity);
                         await HttpContext.SignInAsync("MemberCookieAuth", principal);
-                        
+
                         // 同時確保 Session 也有設置
                         HttpContext.Session.SetInt32("MemberId", memberId);
                         SetCurrentMemberInfo();
                     }
                 }
             }
-            
+
             // 3. 認證失效處理 - 顯示友善頁面而非強制登入
             if (!authenticationValid)
             {
@@ -750,10 +751,10 @@ namespace zuHause.Controllers
                 ViewBag.Message = "支付已完成，但登入狀態過期。請重新登入查看訂單。";
                 return View();
             }
-            
+
             ViewBag.IsAuthExpired = false;
             ViewBag.CurrentMemberId = memberId;
-            
+
             // 使用 Session 獲取選擇的房源 ID
             var selectedPropertyId = HttpContext.Session.GetInt32("SelectedPropertyId");
             if (selectedPropertyId == null)
@@ -774,7 +775,7 @@ namespace zuHause.Controllers
                 return RedirectToAction("RentalCart");
             }
 
-            string orderId = Guid.NewGuid().ToString();
+            string orderId = GenerateOrderId(selectedPropertyId.Value);
 
             // 計算總金額
             decimal totalAmount = 0;
@@ -862,11 +863,11 @@ namespace zuHause.Controllers
         public IActionResult CancelPayment(int selectedPropertyId)
         {
             SetCurrentMemberInfo();
-            
+
             // 彈性認證檢查：優先使用 Cookie 認證，回退到 Session
             var memberIdString = User.FindFirst("UserId")?.Value;
             int memberId;
-            
+
             if (string.IsNullOrEmpty(memberIdString) || !int.TryParse(memberIdString, out memberId))
             {
                 // Cookie 認證失效，嘗試使用 Session
@@ -936,15 +937,25 @@ namespace zuHause.Controllers
                         .Select(e => e.EventType)
                         .FirstOrDefault() ?? "PENDING"
                 })
-                .Where(x => x.CurrentStage != "RETURNED") // ✅ 排除已完成訂單
+               .Where(x => x.CurrentStage != "RETURNED" &&
+                    x.Status != "DELIVERED" &&
+                    x.Status != "RETURNED") // ✅ 排除已完成訂單
                 .OrderByDescending(x => x.CreatedAt)
                 .ToList();
 
             // 歷史訂單
+            // ✅ Step 1: 抓取已完成訂單 ID（只抓 status 是 DELIVERED 或 RETURNED 的）
+            var completedOrderIds = _context.FurnitureOrders
+                .Where(o => o.MemberId == memberId &&
+                            (o.Status == "DELIVERED" || o.Status == "RETURNED"))
+                .Select(o => o.FurnitureOrderId)
+                .ToList();
+
+            // ✅ Step 2: 再用這些 ID 撈歷史訂單
             var completedOrders = _context.FurnitureOrderHistories
                 .Include(his => his.Order)
                 .ThenInclude(order => order.Property)
-                .Where(his => his.Order.MemberId == memberId)
+                .Where(his => completedOrderIds.Contains(his.OrderId)) // ✅ 只抓已完成的
                 .OrderByDescending(his => his.CreatedAt)
                 .Select(his => new
                 {
@@ -962,16 +973,18 @@ namespace zuHause.Controllers
                 })
                 .ToList();
 
+
             ViewBag.OngoingOrders = ongoingOrders;
             ViewBag.CompletedOrders = completedOrders;
 
             return View("OrderHistory");
         }
 
-        // 客服聯繫頁面
+        // 客服聯繫紀錄頁面
         public IActionResult ContactRecords()
         {
             SetCurrentMemberInfo();
+
             var memberIdString = User.FindFirst("UserId")?.Value;
             if (string.IsNullOrEmpty(memberIdString) || !int.TryParse(memberIdString, out int memberId))
             {
@@ -986,18 +999,37 @@ namespace zuHause.Controllers
                 .Where(t => t.MemberId == memberId && t.CategoryCode == "FURNITURE")
                 .OrderByDescending(t => t.CreatedAt)
                 .ToList();
+
+            // 設定狀態代碼
             foreach (var t in tickets)
             {
                 t.StatusCode = string.IsNullOrWhiteSpace(t.ReplyContent) ? "WAITING" : "REPLIED";
             }
 
+            // 🔍 抓出所有客服單關聯的訂單 ID
+            var orderIds = tickets
+                .Where(t => !string.IsNullOrEmpty(t.FurnitureOrderId))
+                .Select(t => t.FurnitureOrderId!)
+                .Distinct()
+                .ToList();
+
+            // 🔍 抓出每張訂單的一筆商品（或全部）
+            var orderItemDict = _context.FurnitureOrderItems
+                .Where(i => orderIds.Contains(i.OrderId))
+                .GroupBy(i => i.OrderId)
+                .ToDictionary(g => g.Key, g => g.FirstOrDefault()); // 只取第一項商品
+
+            // ✅ 傳遞商品資訊到 View
+            ViewBag.OrderItemDict = orderItemDict;
+
+            // 會員名稱
             ViewBag.MemberName = _context.Members
                 .Where(m => m.MemberId == memberId)
                 .Select(m => m.MemberName)
                 .FirstOrDefault() ?? "會員";
 
             return View("ContactRecords", tickets);
-            }
+        }
 
         //客服表單畫面
         public IActionResult ContactUsForm(string orderId)
@@ -1042,7 +1074,6 @@ namespace zuHause.Controllers
             return View("ContactUsForm");
         }
 
-
         //提交聯絡方式
         [HttpPost]
         public IActionResult SubmitContactForm(string Subject, string TicketContent, int? PropertyId)
@@ -1072,6 +1103,13 @@ namespace zuHause.Controllers
             return RedirectToAction("ContactRecords");
         }
 
+        //歷史訂單排序編碼
+        private string GenerateOrderId(int propertyId)
+        {
+            var now = DateTime.Now;
+            string timestamp = now.ToString("yyyyMMddHHmmssfff"); // 年月日時分秒毫秒
+            return $"FO{timestamp}_{propertyId}";
+        }
 
     }
 }

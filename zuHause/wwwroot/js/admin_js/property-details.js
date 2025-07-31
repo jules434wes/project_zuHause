@@ -98,15 +98,24 @@ function loadPropertyProofPDF() {
 
 // 獲取 PDF URL
 function getPDFUrl() {
-    // 從頁面中尋找 PDF URL，可能從 data attribute 或其他方式取得
+    // 優先從全域變數取得
+    if (window.currentPropertyProofUrl && window.currentPropertyProofUrl.trim() !== '') {
+        const proofUrl = window.currentPropertyProofUrl.trim();
+        
+        // 如果是相對路徑（Azure Blob Storage格式），需要轉換成完整URL
+        if (!proofUrl.startsWith('http')) {
+            // Azure Blob Storage 基礎URL
+            const blobBaseUrl = 'https://zuhauseimg.blob.core.windows.net/zuhaus-images';
+            return `${blobBaseUrl}/${proofUrl}`;
+        }
+        
+        return proofUrl;
+    }
+    
+    // 備用：從頁面中尋找 PDF URL
     const proofLink = document.querySelector('a[href*=".pdf"]');
     if (proofLink) {
         return proofLink.href;
-    }
-    
-    // 或者從全域變數取得（需要在頁面載入時設定）
-    if (window.currentPropertyProofUrl) {
-        return window.currentPropertyProofUrl;
     }
     
     return null;

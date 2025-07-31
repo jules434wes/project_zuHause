@@ -1,9 +1,24 @@
+@model AdminCustomerServiceDetailsViewModel
+
 <!-- 客服回覆區卡片 -->
 <div class="card">
     <div class="card-header">
         <h5 class="mb-0">客服回覆處理</h5>
     </div>
     <div class="card-body">
+        @if (!string.IsNullOrEmpty(Model.ReplyContent))
+        {
+            <!-- 現有回覆顯示區 -->
+            <div class="alert alert-info mb-3">
+                <h6><i class="bi bi-reply"></i> 現有回覆內容：</h6>
+                <div style="white-space: pre-wrap;">@Model.ReplyContent</div>
+                @if (Model.ReplyAt.HasValue)
+                {
+                    <small class="text-muted">回覆時間: @Model.ReplyAt.Value.ToString("yyyy-MM-dd HH:mm:ss")</small>
+                }
+            </div>
+        }
+        
         <!-- 回覆模板控制區 -->
         <div class="template-control-section mb-3">
             <div class="row g-3">
@@ -33,17 +48,40 @@
         
         <!-- 回覆內容編輯區 -->
         <div class="mb-3">
-            <label for="replyContent" class="form-label">回覆內容</label>
-            <textarea class="form-control" id="replyContent" rows="8" placeholder="請在此輸入回覆內容，或使用上方的模板快速插入..."></textarea>
+            <label for="replyContent" class="form-label">@(string.IsNullOrEmpty(Model.ReplyContent) ? "回覆內容" : "更新回覆內容")</label>
+            <textarea class="form-control" id="replyContent" rows="8" placeholder="請在此輸入回覆內容，或使用上方的模板快速插入...">@Model.ReplyContent</textarea>
         </div>
         
         <!-- 狀態更新區 -->
         <div class="mb-3">
             <label for="statusUpdate" class="form-label">案件狀態</label>
             <select id="statusUpdate" class="form-select">
-                <option value="PENDING">待處理</option>
-                <option value="PROGRESS">處理中</option>
-                <option value="RESOLVED">已處理</option>
+                @if (Model.StatusCode == "PENDING")
+                {
+                    <option value="PENDING" selected>待處理</option>
+                }
+                else
+                {
+                    <option value="PENDING">待處理</option>
+                }
+                
+                @if (Model.StatusCode == "PROGRESS")
+                {
+                    <option value="PROGRESS" selected>處理中</option>
+                }
+                else
+                {
+                    <option value="PROGRESS">處理中</option>
+                }
+                
+                @if (Model.StatusCode == "RESOLVED")
+                {
+                    <option value="RESOLVED" selected>已處理</option>
+                }
+                else
+                {
+                    <option value="RESOLVED">已處理</option>
+                }
             </select>
         </div>
         

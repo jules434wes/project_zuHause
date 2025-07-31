@@ -30,6 +30,16 @@
         font-size: 1.2rem;
         box-shadow: 0 2px 10px rgba(0,0,0,0.2);
     }
+
+
+    .modal-content-custom {
+        background-color: #fff;
+        padding: 20px 30px;
+        border-radius: 10px;
+        text-align: center;
+        font-size: 1.2rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
 </style>
 
 <div class="card p-4">
@@ -155,19 +165,14 @@
         const previewContainer = document.createElement("div");
         let signatureImg = null;
 
-        // 放在 canvas 下方插入預覽圖容器
         canvas.insertAdjacentElement("afterend", previewContainer);
 
-        // 更新按鈕啟用狀態
         function updateButtonState() {
             confirmBtn.disabled = !(checkbox.checked && hasSigned);
         }
 
-        // 顯示簽名預覽
         function showSignaturePreview() {
-            if (signatureImg) {
-                signatureImg.remove();
-            }
+            if (signatureImg) signatureImg.remove();
             const dataURL = canvas.toDataURL("image/png");
             signatureImg = document.createElement("img");
             signatureImg.src = dataURL;
@@ -179,7 +184,6 @@
             previewContainer.appendChild(signatureImg);
         }
 
-        // 清除簽名預覽
         function clearPreview() {
             previewContainer.innerHTML = "";
             if (signatureImg) {
@@ -188,7 +192,6 @@
             }
         }
 
-        // 畫布簽名邏輯
         canvas.addEventListener("mousedown", () => drawing = true);
         canvas.addEventListener("mouseup", () => {
             drawing = false;
@@ -209,8 +212,6 @@
             ctx.moveTo(event.clientX - rect.left, event.clientY - rect.top);
             hasSigned = true;
             updateButtonState();
-
-            // 實時更新預覽圖
             showSignaturePreview();
         }
 
@@ -231,18 +232,24 @@
         checkbox.addEventListener("change", updateButtonState);
         document.querySelector("button[onclick='clearSignature()']").addEventListener("click", clearSignature);
 
-               confirmBtn.addEventListener("click", function () {
+        window.addEventListener("DOMContentLoaded", () => {
+            confirmBtn.disabled = true;
+        });
+
+        // 點擊送出
+        confirmBtn.addEventListener("click", function () {
             if (!checkbox.checked) {
                 alert("請勾選同意合約條款");
                 return;
             }
-
             if (isCanvasBlank(canvas)) {
                 alert("請先簽名再進行提交");
                 return;
             }
 
-            // 把簽名圖送去後端儲存
+            confirmBtn.disabled = true;
+            confirmBtn.innerHTML = "⏳ 上傳簽名中...";
+
             const dataURL = canvas.toDataURL("image/png");
 
             fetch("/Furniture/SaveSignature", {
@@ -255,31 +262,41 @@
             })
             .then(res => {
                 if (res.ok) {
-                    // ✅ 簽名儲存成功，開始送 Stripe 表單
-                   fetch("/Furniture/BeforeStripePayment", {
+                    return fetch("/Furniture/BeforeStripePayment", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ selectedPropertyId: @ViewBag.SelectedPropertyId })
-                    })
-                    .then(res => {
-                        if (res.ok) {
-                            // 成功設置 TempData，送出 Stripe 表單
-                            document.getElementById("stripeForm").submit();
-                        } else {
-                            alert("付款前暫存失敗，請稍後再試");
-                        }
                     });
-
                 } else {
-                    alert("簽名儲存失敗，請稍後再試");
+                    throw new Error("簽名儲存失敗");
                 }
             })
-            .catch(() => {
-                alert("傳送失敗，請檢查網路");
+            .then(res => {
+                if (res.ok) {
+                    let countdown = 3;
+                    confirmBtn.innerHTML = `✔ 簽名成功！即將跳轉 (${countdown})`;
+                    const interval = setInterval(() => {
+                        countdown--;
+                        if (countdown <= 0) {
+                            clearInterval(interval);
+                            document.getElementById("stripeForm").submit();
+                        } else {
+                            confirmBtn.innerHTML = `✔ 簽名成功！即將跳轉 (${countdown})`;
+                        }
+                    }, 1000);
+                } else {
+                    throw new Error("付款前暫存失敗");
+                }
+            })
+            .catch(err => {
+                alert("發生錯誤：" + err.message);
+                confirmBtn.disabled = false;
+                confirmBtn.innerHTML = "💳 使用 Stripe 測試付款";
             });
         });
     </script>
 }
+
 
 
 
