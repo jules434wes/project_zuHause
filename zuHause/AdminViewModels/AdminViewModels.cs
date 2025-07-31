@@ -435,7 +435,7 @@ namespace zuHause.AdminViewModels
                     Summary = pc.ComplaintContent.Length > 20 ? pc.ComplaintContent.Substring(0, 20) + "..." : pc.ComplaintContent,
                     TargetProperty = pc.Property.Title,
                     ComplaintDate = pc.CreatedAt,
-                    Status = pc.StatusCode == "RESOLVED" ? "已回覆" : "處理中",
+                    Status = pc.StatusCode == "RESOLVED" ? "已處理" : "處理中",
                     ComplaintUrl = $"/Admin/ComplaintDetails/{pc.ComplaintId}",
                     PropertyUrl = $"/Property/Details/{pc.PropertyId}"
                 })
