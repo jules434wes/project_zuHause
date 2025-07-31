@@ -237,18 +237,25 @@
 											<td><a href="/Property/Details/@property.PropertyID" target="_blank" class="text-decoration-none">@property.PropertyTitle</a></td>
 											<td>@property.Address</td>
 											<td>
-												@if (property.Status == "已上架")
-												{
-													<span class="badge bg-success">@property.Status</span>
+												@{
+													var badgeClass = property.Status switch
+													{
+														"審核中" => "bg-warning ",
+														"待付款" => "bg-info ",
+														"審核未通過(待補件)" => "bg-warning text-dark",
+														"審核未通過" => "bg-danger",
+														"上架中" => "bg-success",
+														"已發出合約" => "bg-info text-dark",
+														"待續約" => "bg-warning text-dark",
+														"續約(房客申請中)" => "bg-info text-dark",
+														"閒置中" => "bg-light text-dark",
+														"出租中" => "bg-success",
+														"房源已下架" => "bg-secondary",
+														"房源違規遭強制下架，請重新申請上架" => "bg-danger",
+														_ => "bg-secondary"
+													};
 												}
-												else if (property.Status == "待付款")
-												{
-													<span class="badge bg-warning">@property.Status</span>
-												}
-												else
-												{
-													<span class="badge bg-secondary">@property.Status</span>
-												}
+												<span class="badge @badgeClass">@property.Status</span>
 											</td>
 											<td>@property.ExpiryDate</td>
 										</tr>

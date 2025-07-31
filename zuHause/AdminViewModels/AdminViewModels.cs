@@ -371,20 +371,56 @@ namespace zuHause.AdminViewModels
 
         private List<PropertyData> LoadOwnedProperties(ZuHauseContext context, int memberId)
         {
-            return context.Properties
+            var properties = context.Properties
                 .Include(p => p.City)
                 .Include(p => p.District)
                 .Where(p => p.LandlordMemberId == memberId)
-                .Select(p => new PropertyData
+                .Select(p => new
                 {
-                    PropertyID = p.PropertyId.ToString(),
-                    PropertyTitle = p.Title,
-                    Address = $"{(p.City != null ? p.City.CityName : "")}{(p.District != null ? p.District.DistrictName : "")}{p.AddressLine ?? ""}".Trim(),
-                    Status = p.StatusCode == "ACTIVE" ? "已上架" : "未上架",
-                    ExpiryDate = p.ExpireAt.HasValue ? p.ExpireAt.Value.ToString("yyyy-MM-dd") : "-"
+                    PropertyId = p.PropertyId,
+                    Title = p.Title,
+                    CityName = p.City != null ? p.City.CityName : "",
+                    DistrictName = p.District != null ? p.District.DistrictName : "",
+                    AddressLine = p.AddressLine ?? "",
+                    StatusCode = p.StatusCode,
+                    ExpireAt = p.ExpireAt
                 })
-                .OrderByDescending(p => p.PropertyID)
+                .OrderByDescending(p => p.PropertyId)
                 .ToList();
+
+            return properties.Select(p => new PropertyData
+            {
+                PropertyID = p.PropertyId.ToString(),
+                PropertyTitle = p.Title,
+                Address = $"{p.CityName}{p.DistrictName}{p.AddressLine}".Trim(),
+                Status = GetPropertyStatusDisplayText(p.StatusCode),
+                ExpiryDate = p.ExpireAt.HasValue ? p.ExpireAt.Value.ToString("yyyy-MM-dd") : "-"
+            }).ToList();
+        }
+
+        /// <summary>
+        /// 根據房源狀態代碼取得顯示文字
+        /// </summary>
+        /// <param name="statusCode">房源狀態代碼</param>
+        /// <returns>狀態顯示文字</returns>
+        private string GetPropertyStatusDisplayText(string statusCode)
+        {
+            return statusCode switch
+            {
+                "PENDING" => "審核中",
+                "PENDING_PAYMENT" => "待付款", 
+                "REJECT_REVISE" => "審核未通過(待補件)",
+                "REJECTED" => "審核未通過",
+                "LISTED" => "上架中",
+                "CONTRACT_ISSUED" => "已發出合約",
+                "PENDING_RENEWAL" => "待續約",
+                "LEASE_EXPIRED_RENEWING" => "續約(房客申請中)",
+                "IDLE" => "閒置中",
+                "ALREADY_RENTED" => "出租中",
+                "INVALID" => "房源已下架",
+                "BANNED" => "房源違規遭強制下架，請重新申請上架",
+                _ => "未知狀態"
+            };
         }
 
         private List<ComplaintData> LoadReceivedComplaints(ZuHauseContext context, int memberId)
