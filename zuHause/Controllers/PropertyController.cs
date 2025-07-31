@@ -7,6 +7,7 @@ using zuHause.Helpers;
 using zuHause.Enums;
 using zuHause.DTOs;
 using zuHause.Services.Interfaces;
+using zuHause.Constants;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 
@@ -24,6 +25,7 @@ namespace zuHause.Controllers
         private readonly ITempSessionService _tempSessionService;
         private readonly IBlobMigrationService _blobMigrationService;
         private readonly IBlobStorageService _blobStorageService;
+        private readonly IBlobUrlGenerator _blobUrlGenerator;
         private readonly IGoogleMapsService _googleMapsService;
 
         public PropertyController(
@@ -37,6 +39,7 @@ namespace zuHause.Controllers
             ITempSessionService tempSessionService,
             IBlobMigrationService blobMigrationService,
             IBlobStorageService blobStorageService,
+            IBlobUrlGenerator blobUrlGenerator,
             IGoogleMapsService googleMapsService)
         {
             _context = context;
@@ -49,6 +52,7 @@ namespace zuHause.Controllers
             _tempSessionService = tempSessionService;
             _blobMigrationService = blobMigrationService;
             _blobStorageService = blobStorageService;
+            _blobUrlGenerator = blobUrlGenerator;
             _googleMapsService = googleMapsService ?? throw new ArgumentNullException(nameof(googleMapsService));
         }
 
@@ -1816,12 +1820,14 @@ namespace zuHause.Controllers
         private Dictionary<string, string> GenerateImageUrls(ImageCategory category, int entityId, Guid imageGuid)
         {
             var urls = new Dictionary<string, string>();
-            var basePath = $"{category.ToString().ToLowerInvariant()}/{entityId}";
 
-            // 生成各種尺寸的URL
-            foreach (var size in new[] { "thumbnail", "medium", "large", "original" })
+            // 使用 BlobUrlGenerator 生成正確的 Azure Blob Storage URL
+            foreach (var sizeStr in new[] { "thumbnail", "medium", "large", "original" })
             {
-                urls[size] = $"/api/images/{basePath}/{size}/{imageGuid:N}.webp";
+                if (Enum.TryParse<ImageSize>(sizeStr, true, out var imageSize))
+                {
+                    urls[sizeStr] = _blobUrlGenerator.GenerateImageUrl(category, entityId, imageGuid, imageSize);
+                }
             }
 
             return urls;
@@ -1883,6 +1889,7 @@ namespace zuHause.Controllers
                 // 刊登資訊
                 ListingPlanId = property.ListingPlanId ?? 1, // 使用預設方案ID
                 PropertyProofUrl = property.PropertyProofUrl ?? string.Empty,
+                StatusCode = property.StatusCode,
                 
                 // 設備資訊
                 SelectedEquipmentIds = property.PropertyEquipmentRelations
@@ -1932,7 +1939,16 @@ namespace zuHause.Controllers
             property.ParkingFeeAmount = dto.ParkingFeeAmount;
             property.CleaningFeeRequired = dto.CleaningFeeRequired;
             property.CleaningFeeAmount = dto.CleaningFeeAmount;
-            property.PropertyProofUrl = dto.PropertyProofUrl;
+            
+            // 房產證明文件保護邏輯：已上架或已出租的房源且有證明文件時，不允許修改
+            bool isProofDocumentLocked = !string.IsNullOrEmpty(property.PropertyProofUrl) && 
+                                       (property.StatusCode == PropertyStatusConstants.LISTED || property.StatusCode == PropertyStatusConstants.ALREADY_RENTED);
+            
+            if (!isProofDocumentLocked)
+            {
+                property.PropertyProofUrl = dto.PropertyProofUrl;
+            }
+            
             property.UpdatedAt = DateTime.Now;
             
             await _context.SaveChangesAsync();

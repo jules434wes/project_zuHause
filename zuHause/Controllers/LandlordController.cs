@@ -18,15 +18,18 @@ namespace zuHause.Controllers
         private readonly ILogger<LandlordController> _logger;
         private readonly ZuHauseContext _context;
         private readonly IImageQueryService _imageQueryService;
+        private readonly IPropertyPaymentService _propertyPaymentService;
         
         public LandlordController(
             ILogger<LandlordController> logger, 
             ZuHauseContext context,
-            IImageQueryService imageQueryService)
+            IImageQueryService imageQueryService,
+            IPropertyPaymentService propertyPaymentService)
         {
             _logger = logger;
             _context = context;
             _imageQueryService = imageQueryService;
+            _propertyPaymentService = propertyPaymentService;
         }
 
         // GET: /landlord/become
@@ -464,6 +467,172 @@ namespace zuHause.Controllers
             public int ViewCount { get; set; }
             public int FavoriteCount { get; set; }
             public int ApplicationCount { get; set; }
+        }
+
+        // === 房源付款相關 API ===
+
+        /// <summary>
+        /// 建立房源付款 Session
+        /// </summary>
+        [HttpPost("landlord/property/{propertyId:int}/create-payment-session")]
+        [Authorize(AuthenticationSchemes = "MemberCookieAuth")]
+        public async Task<IActionResult> CreatePropertyPaymentSession(int propertyId)
+        {
+            try
+            {
+                var landlordId = GetCurrentLandlordId();
+                if (landlordId == null)
+                {
+                    return Json(new { success = false, message = "無效的房東身份" });
+                }
+
+                var result = await _propertyPaymentService.CreatePaymentSessionAsync(propertyId, landlordId.Value);
+                
+                if (!result.IsSuccess)
+                {
+                    _logger.LogWarning("房源付款 Session 建立失敗 - PropertyId: {PropertyId}, LandlordId: {LandlordId}, Error: {Error}",
+                        propertyId, landlordId, result.ErrorMessage);
+                    
+                    return Json(new { 
+                        success = false, 
+                        message = result.ErrorMessage,
+                        errorCode = result.ErrorCode
+                    });
+                }
+
+                _logger.LogInformation("房源付款 Session 建立成功 - PropertyId: {PropertyId}, LandlordId: {LandlordId}, SessionId: {SessionId}",
+                    propertyId, landlordId, result.StripeSession!.Id);
+
+                return Json(new {
+                    success = true,
+                    sessionId = result.StripeSession!.Id,
+                    sessionUrl = result.StripeSession.Url,
+                    amount = result.Amount,
+                    propertyTitle = result.PropertyTitle,
+                    listingDays = result.ListingDays
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "建立房源付款 Session 時發生未預期錯誤 - PropertyId: {PropertyId}",
+                    propertyId);
+                
+                return Json(new { 
+                    success = false, 
+                    message = "系統錯誤，請稍後再試" 
+                });
+            }
+        }
+
+        /// <summary>
+        /// 處理房源付款成功回調
+        /// </summary>
+        [HttpGet("landlord/property/payment/success")]
+        [Authorize(AuthenticationSchemes = "MemberCookieAuth")]
+        public async Task<IActionResult> PropertyPaymentSuccess([FromQuery(Name = "session_id")] string sessionId)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(sessionId))
+                {
+                    TempData["ErrorMessage"] = "無效的付款資訊";
+                    return RedirectToAction("PropertyManagement");
+                }
+
+                var result = await _propertyPaymentService.HandlePaymentSuccessAsync(sessionId);
+                
+                if (!result.IsSuccess)
+                {
+                    _logger.LogError("房源付款成功處理失敗 - SessionId: {SessionId}, Error: {Error}",
+                        sessionId, result.ErrorMessage);
+                    
+                    TempData["ErrorMessage"] = $"付款處理失敗：{result.ErrorMessage}";
+                    return RedirectToAction("PropertyManagement");
+                }
+
+                _logger.LogInformation("房源付款成功處理完成 - PropertyId: {PropertyId}, Amount: {Amount}",
+                    result.PropertyId, result.PaidAmount);
+
+                TempData["SuccessMessage"] = $"房源「{result.PropertyTitle}」付款成功！已支付 NT$ {result.PaidAmount:N0}，房源將上架至 {result.ExpireAt:yyyy/MM/dd}";
+                
+                return RedirectToAction("PropertyManagement");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "處理房源付款成功回調時發生錯誤 - SessionId: {SessionId}",
+                    sessionId);
+                
+                TempData["ErrorMessage"] = "付款處理過程中發生錯誤，請聯絡客服";
+                return RedirectToAction("PropertyManagement");
+            }
+        }
+
+        /// <summary>
+        /// 處理房源付款取消
+        /// </summary>
+        [HttpGet("landlord/property/payment/cancel")]
+        [Authorize(AuthenticationSchemes = "MemberCookieAuth")]
+        public IActionResult PropertyPaymentCancel()
+        {
+            TempData["InfoMessage"] = "您已取消付款，房源狀態維持待付款";
+            return RedirectToAction("PropertyManagement");
+        }
+
+        /// <summary>
+        /// 取得房源刊登費用資訊 (AJAX API)
+        /// </summary>
+        [HttpGet("landlord/property/{propertyId:int}/listing-fee")]
+        [Authorize(AuthenticationSchemes = "MemberCookieAuth")]
+        public async Task<IActionResult> GetPropertyListingFee(int propertyId)
+        {
+            try
+            {
+                var landlordId = GetCurrentLandlordId();
+                if (landlordId == null)
+                {
+                    return Json(new { success = false, message = "無效的房東身份" });
+                }
+
+                // 驗證房源擁有權
+                var validation = await _propertyPaymentService.ValidatePaymentEligibilityAsync(propertyId, landlordId.Value);
+                if (!validation.IsValid)
+                {
+                    return Json(new { 
+                        success = false, 
+                        message = validation.ErrorMessage,
+                        errorCode = validation.ErrorCode
+                    });
+                }
+
+                // 計算費用
+                var feeCalculation = await _propertyPaymentService.CalculateAndPersistListingFeeAsync(propertyId);
+                if (!feeCalculation.IsSuccess)
+                {
+                    return Json(new { 
+                        success = false, 
+                        message = feeCalculation.ErrorMessage 
+                    });
+                }
+
+                return Json(new {
+                    success = true,
+                    amount = feeCalculation.Amount,
+                    currency = feeCalculation.Currency,
+                    listingDays = feeCalculation.ListingDays,
+                    pricePerDay = feeCalculation.PricePerDay,
+                    planName = feeCalculation.PlanName
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "取得房源刊登費用時發生錯誤 - PropertyId: {PropertyId}",
+                    propertyId);
+                
+                return Json(new { 
+                    success = false, 
+                    message = "系統錯誤，請稍後再試" 
+                });
+            }
         }
     }
 } 

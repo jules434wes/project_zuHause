@@ -2,6 +2,7 @@ using zuHause.DTOs;
 using zuHause.Models;
 using zuHause.Services.Interfaces;
 using zuHause.Enums;
+using zuHause.Constants;
 
 namespace zuHause.ViewModels
 {
@@ -89,5 +90,14 @@ namespace zuHause.ViewModels
         /// 房源ID (編輯模式使用)
         /// </summary>
         public int? PropertyId => IsEditMode ? PropertyData?.PropertyId : null;
+
+        /// <summary>
+        /// 判斷房產證明文件是否已鎖定（基於現有欄位）
+        /// 條件：編輯模式 + 有證明文件 + 房源已上架或出租
+        /// </summary>
+        public bool IsProofDocumentLocked => 
+            IsEditMode && 
+            !string.IsNullOrEmpty(PropertyData?.PropertyProofUrl) && 
+            (PropertyData?.StatusCode == PropertyStatusConstants.LISTED || PropertyData?.StatusCode == PropertyStatusConstants.ALREADY_RENTED);
     }
 }

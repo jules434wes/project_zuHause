@@ -56,9 +56,6 @@
             <section class="property-section mb-5">
                 <div class="section-header-modern mb-4">
                     <div class="d-flex align-items-center">
-                        <div class="section-icon bg-success bg-opacity-10 me-3">
-                            <i class="fas fa-check-circle text-success"></i>
-                        </div>
                         <div>
                             <h3 class="section-title-modern mb-1">
                                 可用房源 
@@ -153,12 +150,13 @@
 </div>
 
 <!-- 確認對話框 Modal -->
-<div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="confirmModal" tabindex="-1" 
+     aria-labelledby="confirmModalLabel" aria-describedby="confirmMessage">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">確認操作</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <h5 class="modal-title" id="confirmModalLabel">確認操作</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="關閉"></button>
             </div>
             <div class="modal-body">
                 <p id="confirmMessage">您確定要執行此操作嗎？</p>
@@ -187,5 +185,15 @@
 </div>
 
 @section Scripts {
+    <!-- Stripe.js -->
+    <script src="https://js.stripe.com/v3/"></script>
+    
+    <!-- SweetAlert2 for better user experience (optional) -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <!-- 房源付款功能 -->
+    <script src="~/js/property-payment.js" asp-append-version="true"></script>
+    
+    <!-- 原有的房源管理功能 -->
     <script src="~/js/property-management.js" asp-append-version="true"></script>
 }

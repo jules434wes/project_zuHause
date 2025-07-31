@@ -1065,6 +1065,7 @@
                                     <div class="input-group">
                                         <span class="input-group-text">NT$</span>
                                         <input type="number" class="form-control" id="MonthlyRent" name="MonthlyRent" 
+                                               value="@(Model.PropertyData?.MonthlyRent ?? 0)" 
                                                placeholder="請輸入月租金" 
                                                min="1000" max="999999" step="100" required>
                                         <span class="input-group-text">元</span>
@@ -1084,6 +1085,7 @@
                                     <label class="form-label required" for="RoomCount">房間數</label>
                                     <div class="input-group">
                                         <input type="number" class="form-control" id="RoomCount" name="RoomCount" 
+                                               value="@(Model.PropertyData?.RoomCount ?? 0)" 
                                                placeholder="請輸入房間數" 
                                                min="0" max="10" step="1" required>
                                         <span class="input-group-text">房</span>
@@ -1097,6 +1099,7 @@
                                     <label class="form-label required" for="LivingRoomCount">客廳數</label>
                                     <div class="input-group">
                                         <input type="number" class="form-control" id="LivingRoomCount" name="LivingRoomCount" 
+                                               value="@(Model.PropertyData?.LivingRoomCount ?? 0)" 
                                                placeholder="請輸入客廳數" 
                                                min="0" max="5" step="1" required>
                                         <span class="input-group-text">廳</span>
@@ -1110,6 +1113,7 @@
                                     <label class="form-label required" for="BathroomCount">衛浴數</label>
                                     <div class="input-group">
                                         <input type="number" class="form-control" id="BathroomCount" name="BathroomCount" 
+                                               value="@(Model.PropertyData?.BathroomCount ?? 1)" 
                                                placeholder="請輸入衛浴數" 
                                                min="1" max="10" step="1" required>
                                         <span class="input-group-text">衛</span>
@@ -1123,6 +1127,7 @@
                                     <label class="form-label required" for="Area">坪數</label>
                                     <div class="input-group">
                                         <input type="number" class="form-control" id="Area" name="Area" 
+                                               value="@(Model.PropertyData?.Area ?? 0)" 
                                                placeholder="請輸入坪數" 
                                                min="1" max="1000" step="0.1" required>
                                         <span class="input-group-text">坪</span>
@@ -1138,6 +1143,7 @@
                                     <label class="form-label required" for="CurrentFloor">所在樓層</label>
                                     <div class="input-group">
                                         <input type="number" class="form-control" id="CurrentFloor" name="CurrentFloor" 
+                                               value="@(Model.PropertyData?.CurrentFloor ?? 0)" 
                                                placeholder="請輸入所在樓層" 
                                                min="-3" max="50" step="1" required>
                                         <span class="input-group-text">樓</span>
@@ -1155,6 +1161,7 @@
                                     <label class="form-label required" for="TotalFloors">總樓層數</label>
                                     <div class="input-group">
                                         <input type="number" class="form-control" id="TotalFloors" name="TotalFloors" 
+                                               value="@(Model.PropertyData?.TotalFloors ?? 0)" 
                                                placeholder="請輸入總樓層數" 
                                                min="1" max="50" step="1" required>
                                         <span class="input-group-text">層</span>
@@ -1179,6 +1186,7 @@
                                     <div class="input-group">
                                         <span class="input-group-text">NT$</span>
                                         <input type="number" class="form-control" id="DepositAmount" name="DepositAmount" 
+                                               value="@(Model.PropertyData?.DepositAmount ?? 0)" 
                                                placeholder="請輸入押金金額" 
                                                min="0" max="999999" step="100" required>
                                         <span class="input-group-text">元</span>
@@ -1192,6 +1200,7 @@
                                     <label class="form-label required" for="DepositMonths">押金月數</label>
                                     <div class="input-group">
                                         <input type="number" class="form-control" id="DepositMonths" name="DepositMonths" 
+                                               value="@(Model.PropertyData?.DepositMonths ?? 0)" 
                                                placeholder="請輸入押金月數" 
                                                min="0" max="6" step="1" required>
                                         <span class="input-group-text">個月</span>
@@ -1247,6 +1256,7 @@
                                         <div class="input-group mt-2">
                                             <span class="input-group-text">NT$</span>
                                             <input type="number" class="form-control" id="ManagementFeeAmount" name="ManagementFeeAmount" 
+                                                   value="@(Model.PropertyData?.ManagementFeeAmount ?? 0)" 
                                                    placeholder="請輸入管理費金額" min="0" step="100">
                                             <span class="input-group-text">元/月</span>
                                         </div>
@@ -1279,6 +1289,7 @@
                                         <div class="input-group mt-2">
                                             <span class="input-group-text">NT$</span>
                                             <input type="number" class="form-control" id="CustomWaterFee" name="CustomWaterFee" 
+                                                   value="@(Model.PropertyData?.CustomWaterFee ?? 0)" 
                                                    placeholder="請輸入自訂水費" min="0" step="0.1">
                                             <span class="input-group-text">元/月</span>
                                         </div>
@@ -1304,6 +1315,7 @@
                                         <div class="input-group mt-2">
                                             <span class="input-group-text">NT$</span>
                                             <input type="number" class="form-control" id="CustomElectricityFee" name="CustomElectricityFee" 
+                                                   value="@(Model.PropertyData?.CustomElectricityFee ?? 0)" 
                                                    placeholder="請輸入自訂電費" min="0" step="0.1">
                                             <span class="input-group-text">元/度</span>
                                         </div>
@@ -1336,6 +1348,7 @@
                                         <div class="input-group mt-2">
                                             <span class="input-group-text">NT$</span>
                                             <input type="number" class="form-control" id="CleaningFeeAmount" name="CleaningFeeAmount" 
+                                                   value="@(Model.PropertyData?.CleaningFeeAmount ?? 0)" 
                                                    placeholder="請輸入清潔費金額" min="0" step="100">
                                             <span class="input-group-text">元</span>
                                         </div>
@@ -1379,6 +1392,7 @@
                                     <div class="input-group mt-2">
                                         <span class="input-group-text">NT$</span>
                                         <input type="number" class="form-control" id="ParkingFeeAmount" name="ParkingFeeAmount" 
+                                               value="@(Model.PropertyData?.ParkingFeeAmount ?? 0)" 
                                                placeholder="請輸入停車費金額" min="0" step="100">
                                         <span class="input-group-text">元/月</span>
                                     </div>
@@ -1567,23 +1581,59 @@
                             <i class="fas fa-file-pdf me-2"></i>房產證明文件
                         </h2>
                         
-                        <div class="form-group">
-                            <label class="form-label">房產證明文件 <span class="text-muted">(選填)</span></label>
-                            <div class="document-upload-area" id="documentUploadArea">
-                                <i class="fas fa-cloud-upload-alt upload-icon text-danger"></i>
-                                <h4>點擊或拖曳 PDF 文件到此處</h4>
-                                <p class="text-muted mb-3">支援 PDF 格式，單檔最大 10MB</p>
-                                <input type="file" asp-for="PropertyData.PropertyProofDocument" id="documentFile" accept="application/pdf" style="display: none;">
-                                <button type="button" class="btn btn-outline-danger" onclick="document.getElementById('documentFile').click()">
-                                    <i class="fas fa-file-pdf me-2"></i>選擇 PDF 文件
-                                </button>
+                        @if (Model.IsProofDocumentLocked)
+                        {
+                            <!-- 已鎖定文件區塊 -->
+                            <div class="alert alert-info d-flex align-items-center mb-3">
+                                <i class="fas fa-shield-check me-3 text-info" style="font-size: 1.5rem;"></i>
+                                <div>
+                                    <h6 class="mb-1">房產證明文件已鎖定</h6>
+                                    <small class="text-muted">
+                                        房源狀態：@(Model.PropertyData?.StatusCode == "LISTED" ? "已上架" : "已出租")
+                                        <span class="ms-2">已上傳證明文件無法修改</span>
+                                    </small>
+                                </div>
                             </div>
-                            <div class="form-text">
-                                <i class="fas fa-info-circle me-1"></i>
-                                請上傳房屋所有權狀、租賃契約或其他相關證明文件
+                            
+                            <!-- 鎖定狀態的文件顯示 -->
+                            <div class="form-group">
+                                <label class="form-label">房產證明文件 <span class="badge bg-info ms-2">已鎖定</span></label>
+                                <div class="document-upload-area locked-document">
+                                    <i class="fas fa-lock text-info upload-icon"></i>
+                                    <h5 class="text-info">文件已鎖定保護</h5>
+                                    <p class="text-muted mb-3">房源上架後證明文件無法修改，如需更新請聯繫客服</p>
+                                    <input type="file" asp-for="PropertyData.PropertyProofDocument" id="documentFile" accept="application/pdf" style="display: none;" disabled>
+                                    <button type="button" class="btn btn-outline-secondary" disabled>
+                                        <i class="fas fa-lock me-2"></i>文件已鎖定
+                                    </button>
+                                </div>
+                                <div class="form-text">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    房源上架後證明文件受到保護，確保房源資訊的真實性
+                                </div>
                             </div>
-                            <span asp-validation-for="PropertyData.PropertyProofDocument" class="text-danger small"></span>
-                        </div>
+                        }
+                        else
+                        {
+                            <!-- 一般文件上傳區塊 -->
+                            <div class="form-group">
+                                <label class="form-label">房產證明文件 <span class="text-muted">(選填)</span></label>
+                                <div class="document-upload-area" id="documentUploadArea">
+                                    <i class="fas fa-cloud-upload-alt upload-icon text-danger"></i>
+                                    <h4>點擊或拖曳 PDF 文件到此處</h4>
+                                    <p class="text-muted mb-3">支援 PDF 格式，單檔最大 10MB</p>
+                                    <input type="file" asp-for="PropertyData.PropertyProofDocument" id="documentFile" accept="application/pdf" style="display: none;">
+                                    <button type="button" class="btn btn-outline-danger" onclick="document.getElementById('documentFile').click()">
+                                        <i class="fas fa-file-pdf me-2"></i>選擇 PDF 文件
+                                    </button>
+                                </div>
+                                <div class="form-text">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    請上傳房屋所有權狀、租賃契約或其他相關證明文件
+                                </div>
+                                <span asp-validation-for="PropertyData.PropertyProofDocument" class="text-danger small"></span>
+                            </div>
+                        }
                         
                         <!-- PDF 預覽區域 -->
                         <div id="documentPreview" class="mt-3" style="display: none;">
