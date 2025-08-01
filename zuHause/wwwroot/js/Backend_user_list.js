@@ -18,7 +18,7 @@
                 <td>${user.account}</td>
                 <td>••••••</td>
                 <td>${user.name}</td>
-                <td>${user.roleCode}</td>
+                <td>${user.roleName}</td>
                 <td>
                     <button class="btn btn-warning btn-sm me-1" onclick="editUser('${user.adminId}')">編輯</button>
                     <button class="btn btn-danger btn-sm" onclick="deleteUser('${user.adminId}')">刪除</button>

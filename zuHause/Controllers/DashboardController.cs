@@ -1546,18 +1546,21 @@ namespace zuHause.Controllers
         {
             var admins = _context.Admins
                 .Where(a => a.DeletedAt == null && a.IsActive)
+                .Include(a => a.RoleCodeNavigation) // ✅ 加入角色關聯
                 .Select(a => new
                 {
                     a.AdminId,
                     a.Account,
                     a.Name,
-                    a.RoleCode
+                    a.RoleCode,
+                    RoleName = a.RoleCodeNavigation.RoleName // ✅ 顯示角色名稱
                 })
                 .OrderBy(a => a.AdminId)
                 .ToList();
 
             return Json(admins);
         }
+
 
         [HttpPost("admins/create")]
         public IActionResult CreateAdmin([FromBody] CreateAdminRequest request)
