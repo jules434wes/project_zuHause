@@ -147,7 +147,7 @@
         <form id="stripeForm" method="post" action="/Furniture/CreateCheckoutSession">
             <input type="hidden" name="furnitureCartId" value="@ViewBag.FurnitureCartId" />
             <input type="hidden" name="totalAmount" value="@(totalRentalFee + deliveryFee)" />
-            <button id="confirmBtn" type="button" class="btn btn-primary">💳 使用 Stripe 測試付款</button>
+            <button id="confirmBtn" type="button" class="btn btn-primary"> Stripe 付款</button>
         </form>
     </div>
 
