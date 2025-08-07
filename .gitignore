@@ -59,3 +59,11 @@ CLAUDE.schema.json
 wsl-dotnet-setup.sh
 ~/.nuget/
 /~/.nuget/packages
+/zuHause/appsettings.json
+/zuHause/debug-previewurl.cs
+/zuHause/Models/ZuHauseContext.cs
+/zuHause/TempModels/TempDbContext.cs
+/zuHause/TempModels/TempDbContext.cs
+/zuHause/Models/ZuHauseContext.cs
+/zuHause/debug-previewurl.cs
+/zuHause/appsettings.json
